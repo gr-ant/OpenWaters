@@ -1,0 +1,135 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "american_bullfrog",
+  "name": "American bullfrog",
+  "scientific": "Lithobates catesbeianus",
+  "description": "The biggest North American frog. Sits at the pond edge and swallows almost anything that fits: insects, crayfish, fish, even other frogs. Length is snout to vent.",
+  "size": {
+    "length_cm": {
+      "min": 7,
+      "typical": 13,
+      "max": 20,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.137,
+      "b": 3.0
+    },
+    "condition_sd": 0.12
+  },
+  "body": {
+    "plan": "frog",
+    "height": 0.4,
+    "width": 0.5,
+    "parts": {
+      "legs": 0.8,
+      "eye": 0.65,
+      "warts": 0.1,
+      "pose": "sit",
+      "webbing": 0.8
+    },
+    "colors": {
+      "back": "#4a5a2a",
+      "flank": "#6a7a3a",
+      "belly": "#e8e4c8",
+      "fins": "#5a6a30",
+      "eye": "#c8a040",
+      "mouth": "#d8d0b0"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#3a4420",
+        "amount": 0.25,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "pond": 1,
+      "lake": 0.8,
+      "river": 0.3
+    },
+    "depth_m": {
+      "min": 0.05,
+      "preferred": 0.5,
+      "max": 3
+    },
+    "temperature_c": {
+      "min": 10,
+      "optimal": 27,
+      "max": 33
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.3
+    },
+    "turbidity_max": 0.9,
+    "cover": {
+      "lilies": 1,
+      "reeds": 0.9,
+      "weeds": 0.8,
+      "rocks": 0.2,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 1,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 10
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.2,
+    "burst_bl_s": 6,
+    "turn_rate": 3,
+    "station_holding": 0,
+    "ambush": 0.9,
+    "depth_zone": {
+      "surface": 0.7,
+      "mid": 0.2,
+      "bottom": 0.1
+    },
+    "wariness": 0.6,
+    "spook_m": 4,
+    "recover_s": 30,
+    "curiosity": 0.7,
+    "rise_per_hour": 0.5,
+    "breath_hold_s": 300,
+    "surface_s": 120,
+    "haul_out": 0.6,
+    "leap_per_hour": 0,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "insects": 0.4,
+      "crayfish": 0.15,
+      "fish": 0.15,
+      "frogs": 0.1,
+      "snails": 0.1,
+      "worms": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.6,
+      "mid": 0.3,
+      "bottom": 0.1
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.2,
+    "stamina": 0.2,
+    "jumps": 0.5,
+    "runs": 0.1
+  }
+}

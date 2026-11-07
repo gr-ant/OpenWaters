@@ -1,0 +1,158 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 25,
+      "typical": 40,
+      "max": 91
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.014,
+      "b": 3.0
+    }
+  },
+  "body": {
+    "profile": [
+      0.45,
+      0.78,
+      0.95,
+      1,
+      0.95,
+      0.8,
+      0.55,
+      0.3
+    ],
+    "height": 0.42,
+    "width": 0.06,
+    "flex": 0.8,
+    "head": {
+      "length": 0.2,
+      "snout": 0.45,
+      "mouth": 0.3,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "rounded",
+      "size": 0.14,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.1,
+          "length": 0.65,
+          "height": 0.05,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.4,
+        "length": 0.45,
+        "height": 0.05
+      },
+      "pectoral": 0.05,
+      "pelvic": 0.03,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#6a6248",
+        "density": 0.2,
+        "size": 1,
+        "region": "upper",
+        "alpha": 0.6
+      }
+    ],
+    "lie": "right",
+    "colors": {
+      "back": "#3e3a2c",
+      "flank": "#4e4836",
+      "belly": "#f2f0e8",
+      "fins": "#d88030",
+      "eye": "#141410",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.35
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1,
+      "weeds": 0.3
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 10,
+      "max": 20
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 8,
+      "max": 150
+    }
+  },
+  "population": {
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 50,
+    "density": 0.5
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 5,
+    "turn_rate": 2,
+    "station_holding": 0,
+    "ambush": 0.7,
+    "wariness": 0.4,
+    "spook_m": 3,
+    "recover_s": 30,
+    "curiosity": 0.5,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 3,
+    "food": {
+      "worms": 0.35,
+      "crayfish": 0.25,
+      "snails": 0.2,
+      "fish": 0.2
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.1,
+      "bottom": 0.9
+    }
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.45,
+    "jumps": 0,
+    "runs": 0.35
+  },
+  "id": "starry_flounder",
+  "name": "Starry flounder",
+  "scientific": "Platichthys stellatus",
+  "description": "Big flounder with bold orange and black bars across its dorsal, anal and tail fins and star-shaped rough scales on a dark upper side. Common in estuaries and often swims up rivers."
+}

@@ -1,0 +1,133 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "harbor_seal",
+  "name": "Harbor seal",
+  "scientific": "Phoca vitulina",
+  "description": "Round-headed, spotted grey seal of cold coasts. Hauls out on low rocky and sandy shores to rest, slipping into the water at the first sign of you, and pops its head up to watch.",
+  "size": {
+    "length_cm": {
+      "min": 120,
+      "typical": 160,
+      "max": 190,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.0207,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "pinniped",
+    "height": 0.22,
+    "width": 0.24,
+    "flex": 0.7,
+    "swim": "auto",
+    "parts": {
+      "snout": 0.45,
+      "neck": 0.05,
+      "fore": 0.3,
+      "rear": "flippers",
+      "whiskers": 1,
+      "ears": 0,
+      "eye": 0.85
+    },
+    "colors": {
+      "back": "#66665f",
+      "flank": "#8a8a80",
+      "belly": "#c8c4b4",
+      "fins": "#4a4a44",
+      "eye": "#0a0a0a",
+      "mouth": "#5a3a3a"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#2e2e2a",
+        "density": 0.45,
+        "size": 1,
+        "region": "all",
+        "alpha": 0.85
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 10,
+      "max": 100
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 12,
+      "max": 24
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "open": 1,
+      "rocks": 0.6,
+      "weeds": 0.4
+    }
+  },
+  "population": {
+    "density": 0.05,
+    "school": {
+      "min": 1,
+      "max": 3
+    },
+    "home_range_m": 150
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 4,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.3,
+      "mid": 0.6,
+      "bottom": 0.1
+    },
+    "wariness": 0.7,
+    "spook_m": 10,
+    "recover_s": 40,
+    "curiosity": 0.7,
+    "rise_per_hour": 0,
+    "breath_hold_s": 180,
+    "surface_s": 6,
+    "leap_per_hour": 0,
+    "haul_out": 0.7,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.8,
+      "crayfish": 0.1,
+      "shrimp": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.6,
+      "bottom": 0.3
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.8,
+    "stamina": 0.8,
+    "jumps": 0.1,
+    "runs": 0.7
+  }
+}

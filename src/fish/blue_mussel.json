@@ -1,0 +1,120 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "blue_mussel",
+  "name": "Blue mussel",
+  "scientific": "Mytilus edulis",
+  "description": "Blue-black mussel that anchors in dense beds on rocks and pilings with tough threads, filtering plankton from the tide. Length is shell length.",
+  "size": {
+    "length_cm": {
+      "min": 2.5,
+      "typical": 5,
+      "max": 10,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.072,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "plan": "bivalve",
+    "height": 0.48,
+    "width": 0.36,
+    "parts": {
+      "shell": "mussel",
+      "ribs": 0,
+      "gape": 0.35
+    },
+    "colors": {
+      "back": "#1a1e2e",
+      "flank": "#2a3248",
+      "belly": "#e8a060",
+      "fins": "#3a4258",
+      "eye": "#000000",
+      "mouth": "#c8c8e0"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#141826",
+        "count": 10,
+        "width": 0.2,
+        "region": "all",
+        "alpha": 0.4
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.1,
+      "preferred": 2,
+      "max": 10
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 14,
+      "max": 24
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.6,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "rocks": 1,
+      "open": 0.2,
+      "weeds": 0.2
+    }
+  },
+  "population": {
+    "density": 8,
+    "school": {
+      "min": 10,
+      "max": 30
+    },
+    "home_range_m": 1
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.01,
+    "burst_bl_s": 0.3,
+    "turn_rate": 0.2,
+    "station_holding": 1,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "wariness": 0.3,
+    "spook_m": 1,
+    "recover_s": 30,
+    "curiosity": 0.1,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.02,
+    "stamina": 0.02,
+    "jumps": 0,
+    "runs": 0
+  }
+}

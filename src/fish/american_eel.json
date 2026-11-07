@@ -1,0 +1,151 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "american_eel",
+  "name": "American eel",
+  "scientific": "Anguilla rostrata",
+  "description": "Snake-like fish that swims with waves down its whole body. Hides by day in rocks, logs and undercut banks of creeks, rivers and lakes, and hunts the bottom at night. Born in the sea, so it turns up almost anywhere.",
+  "size": {
+    "length_cm": {
+      "min": 30,
+      "typical": 60,
+      "max": 120,
+      "spread": 0.3
+    },
+    "weight": {
+      "a": 0.0006,
+      "b": 3.2
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.6,
+      0.8,
+      0.92,
+      1,
+      1,
+      0.95,
+      0.8,
+      0.5
+    ],
+    "height": 0.07,
+    "width": 0.055,
+    "flex": 1.2,
+    "swim": "anguilliform",
+    "head": {
+      "length": 0.12,
+      "snout": 0.4,
+      "mouth": 0.6,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "pointed",
+      "size": 0.1
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.35,
+          "length": 0.62,
+          "height": 0.03
+        }
+      ],
+      "anal": {
+        "at": 0.5,
+        "length": 0.48,
+        "height": 0.03
+      },
+      "pectoral": 0.035,
+      "pelvic": 0
+    },
+    "colors": {
+      "back": "#38321e",
+      "flank": "#665c32",
+      "belly": "#d8cc88",
+      "fins": "#4a4224",
+      "eye": "#101010",
+      "mouth": "#c8b8a0"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "river": 1,
+      "creek": 0.7,
+      "lake": 0.6,
+      "pond": 0.5,
+      "sea": 0.2
+    },
+    "depth_m": {
+      "min": 0.2,
+      "preferred": 1.5,
+      "max": 10
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 20,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.2
+    },
+    "turbidity_max": 1,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "rocks": 0.8,
+      "wood": 1,
+      "weeds": 0.6,
+      "reeds": 0.3,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 0.5,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 30
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 3,
+    "turn_rate": 2.5,
+    "station_holding": 0.2,
+    "ambush": 0.4,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.1,
+      "bottom": 0.9
+    },
+    "wariness": 0.5,
+    "spook_m": 3,
+    "recover_s": 30,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.3,
+      "crayfish": 0.3,
+      "worms": 0.2,
+      "nymphs": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.6,
+    "stamina": 0.9,
+    "jumps": 0,
+    "runs": 0.3
+  }
+}

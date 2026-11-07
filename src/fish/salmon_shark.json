@@ -1,0 +1,161 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "salmon_shark",
+  "name": "Salmon shark",
+  "scientific": "Lamna ditropis",
+  "description": "Stocky, warm-bodied cousin of the white shark, dark grey-blue above and white below with dusky blotches on the belly, a crescent tail and strong keels. Keeps its body far warmer than the cold North Pacific around it and runs down migrating salmon. Length is nose to tail tip.",
+  "size": {
+    "length_cm": {
+      "min": 120,
+      "typical": 220,
+      "max": 305,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.07,
+      "b": 2.7
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.32,
+      0.74,
+      0.97,
+      1,
+      0.88,
+      0.62,
+      0.34,
+      0.17
+    ],
+    "height": 0.25,
+    "width": 0.21,
+    "flex": 0.5,
+    "swim": "thunniform",
+    "head": {
+      "length": 0.21,
+      "snout": 0.55,
+      "mouth": 0.6,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.22,
+      "fork": 0.62
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.36,
+          "length": 0.09,
+          "height": 0.12,
+          "spiny": false
+        },
+        {
+          "at": 0.7,
+          "length": 0.025,
+          "height": 0.02,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.72,
+        "length": 0.025,
+        "height": 0.02
+      },
+      "pectoral": 0.14,
+      "pelvic": 0.05
+    },
+    "colors": {
+      "back": "#2e3a48",
+      "flank": "#3e4a58",
+      "belly": "#f0f0ec",
+      "fins": "#2a3440",
+      "eye": "#050508",
+      "mouth": "#d8c4bc"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#4e5864",
+        "density": 0.3,
+        "size": 1,
+        "region": "lower",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 5,
+      "preferred": 40,
+      "max": 650
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 10,
+      "max": 24
+    },
+    "current_ms": {
+      "preferred": 0.3,
+      "max": 2
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.015,
+    "school": {
+      "min": 1,
+      "max": 3
+    },
+    "home_range_m": 2000
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.45,
+    "burst_bl_s": 5,
+    "turn_rate": 1.6,
+    "station_holding": 0,
+    "ambush": 0.1,
+    "depth_zone": {
+      "surface": 0.35,
+      "mid": 0.6,
+      "bottom": 0.05
+    },
+    "wariness": 0.3,
+    "spook_m": 6,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.9,
+      "shrimp": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.35,
+      "mid": 0.6,
+      "bottom": 0.05
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.95,
+    "stamina": 0.95,
+    "jumps": 0.05,
+    "runs": 1,
+    "teeth": 0.8
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "hard_clam",
+  "name": "Hard clam",
+  "scientific": "Mercenaria mercenaria",
+  "description": "Thick-shelled clam (quahog) that lives buried in sand and mud of bays, filtering plankton through its siphons. Length is shell length.",
+  "size": {
+    "length_cm": {
+      "min": 4,
+      "typical": 7,
+      "max": 12,
+      "spread": 0.18
+    },
+    "weight": {
+      "a": 0.29,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "plan": "bivalve",
+    "height": 0.82,
+    "width": 0.55,
+    "parts": {
+      "shell": "clam",
+      "ribs": 0,
+      "gape": 0.4
+    },
+    "colors": {
+      "back": "#7a7468",
+      "flank": "#a8a090",
+      "belly": "#e8c8a0",
+      "fins": "#8a8070",
+      "eye": "#000000",
+      "mouth": "#e8e0e8"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#6a6458",
+        "count": 14,
+        "width": 0.25,
+        "region": "all",
+        "alpha": 0.4
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 2,
+      "max": 15
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 22,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 1
+    },
+    "turbidity_max": 0.9,
+    "oxygen_min_mgL": 2,
+    "cover": {
+      "open": 1,
+      "weeds": 0.3
+    }
+  },
+  "population": {
+    "density": 8,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 1
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.01,
+    "burst_bl_s": 0.3,
+    "turn_rate": 0.2,
+    "station_holding": 1,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "wariness": 0.3,
+    "spook_m": 1,
+    "recover_s": 30,
+    "curiosity": 0.1,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.02,
+    "stamina": 0.02,
+    "jumps": 0,
+    "runs": 0
+  }
+}

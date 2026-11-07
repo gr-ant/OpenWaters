@@ -1,0 +1,131 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "river_otter",
+  "name": "North American river otter",
+  "scientific": "Lontra canadensis",
+  "description": "Sleek, playful brown otter with a thick tapering tail and dense waterproof fur. Dives in rivers, lakes and creeks after fish and crayfish, surfacing to breathe and hauling out on banks to rest. Length is nose to tail tip.",
+  "size": {
+    "length_cm": {
+      "min": 90,
+      "typical": 120,
+      "max": 140,
+      "spread": 0.1
+    },
+    "weight": {
+      "a": 0.0046,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "pinniped",
+    "height": 0.14,
+    "width": 0.16,
+    "flex": 1,
+    "swim": "auto",
+    "parts": {
+      "snout": 0.35,
+      "neck": 0.12,
+      "fore": 0.4,
+      "rear": "tail",
+      "tail": 0.38,
+      "whiskers": 1,
+      "ears": 0.3,
+      "eye": 0.7
+    },
+    "colors": {
+      "back": "#4a3424",
+      "flank": "#6a4c34",
+      "belly": "#b8a48a",
+      "fins": "#3a281c",
+      "eye": "#0a0a0a",
+      "mouth": "#4a2a2a"
+    },
+    "pattern": []
+  },
+  "habitat": {
+    "waters": {
+      "river": 1,
+      "lake": 0.8,
+      "creek": 0.7
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 2,
+      "max": 15
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 12,
+      "max": 26
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.2
+    },
+    "turbidity_max": 0.6,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "wood": 0.8,
+      "rocks": 0.6,
+      "reeds": 0.7,
+      "weeds": 0.5,
+      "open": 0.3
+    }
+  },
+  "population": {
+    "density": 0.03,
+    "school": {
+      "min": 1,
+      "max": 4
+    },
+    "home_range_m": 300
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.7,
+    "burst_bl_s": 3,
+    "turn_rate": 2.8,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.15,
+      "mid": 0.55,
+      "bottom": 0.3
+    },
+    "wariness": 0.6,
+    "spook_m": 10,
+    "recover_s": 40,
+    "curiosity": 0.8,
+    "rise_per_hour": 0,
+    "breath_hold_s": 45,
+    "surface_s": 5,
+    "leap_per_hour": 0,
+    "haul_out": 0.4,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.6,
+      "crayfish": 0.2,
+      "frogs": 0.1,
+      "insects": 0.05,
+      "snails": 0.05
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.5,
+      "bottom": 0.4
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.6,
+    "jumps": 0,
+    "runs": 0.6
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "offshore_rod",
+  "type": "rod",
+  "name": "Offshore trolling rod",
+  "description": "Short, brutally strong stand-up rod with roller guides, for trolling lures behind a boat for marlin and sharks.",
+  "length_m": 1.68,
+  "power": "extra_heavy",
+  "action": "moderate",
+  "line_lb": {
+    "min": 50,
+    "max": 130
+  },
+  "lure_g": {
+    "min": 60,
+    "max": 500
+  },
+  "reel": "conventional",
+  "handle": "eva",
+  "guides": 5,
+  "colors": {
+    "blank": "#e9e9ea",
+    "handle": "#1a1a1a",
+    "wraps": "#d8b030"
+  }
+}

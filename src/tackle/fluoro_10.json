@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "fluoro_10",
+  "type": "line",
+  "name": "10 lb fluorocarbon",
+  "description": "Nearly invisible under water, sinks, a little stiff.",
+  "material": "fluoro",
+  "strength_lb": 10,
+  "diameter_mm": 0.28,
+  "stretch": 0.15,
+  "visibility": 0.2,
+  "colors": {
+    "line": "#eef4f4"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "ultralight_spinning",
+  "type": "rod",
+  "name": "Ultralight spinning rod",
+  "description": "Short, soft and whippy. Light line and tiny baits for panfish, perch and creek trout; makes a small fish feel big.",
+  "length_m": 1.68,
+  "power": "ultralight",
+  "action": "fast",
+  "line_lb": {
+    "min": 2,
+    "max": 6
+  },
+  "lure_g": {
+    "min": 1,
+    "max": 7
+  },
+  "reel": "spinning",
+  "handle": "cork",
+  "guides": 6,
+  "colors": {
+    "blank": "#3b4a3a",
+    "handle": "#caa26a",
+    "wraps": "#d8c070"
+  }
+}

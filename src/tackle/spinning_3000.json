@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "spinning_3000",
+  "type": "reel",
+  "name": "Medium spinning reel (3000)",
+  "description": "The everyday freshwater and inshore reel.",
+  "kind": "spinning",
+  "max_drag_kg": 8,
+  "gear_ratio": 6.2,
+  "retrieve_cm": 84,
+  "capacity": {
+    "line_lb": 8,
+    "m": 200
+  },
+  "colors": {
+    "body": "#3a3d44",
+    "spool": "#d0a040",
+    "handle": "#1d1f24"
+  }
+}

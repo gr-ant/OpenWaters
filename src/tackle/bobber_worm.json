@@ -1,0 +1,19 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "bobber_worm",
+  "type": "rig",
+  "name": "Bobber & worm",
+  "description": "The first rig everyone learns: a worm under a bobber. Panfish, perch, trout, bass, catfish: something always bites.",
+  "parts": {
+    "rod": "ultralight_spinning",
+    "reel": "spinning_1000",
+    "line": "mono_6",
+    "hook": "hook_8",
+    "sinker": "split_shot",
+    "float": "bobber",
+    "bait": "nightcrawler"
+  },
+  "drag": 0.3,
+  "waters": ["pond", "lake", "creek", "river"],
+  "float_depth_m": 0.9
+}

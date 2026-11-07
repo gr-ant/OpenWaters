@@ -1,0 +1,126 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "banded_coral_shrimp",
+  "name": "Banded coral shrimp",
+  "scientific": "Stenopus hispidus",
+  "description": "Red-and-white banded shrimp with enormous white antennae that sets up a cleaning station in reef crevices, climbing onto fish to pick off parasites. Length is body length without the antennae.",
+  "size": {
+    "length_cm": {
+      "min": 3,
+      "typical": 6,
+      "max": 8,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.015,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "shrimp",
+    "parts": {
+      "carapace": 0.36,
+      "rostrum": 0.06,
+      "claws": 0.5,
+      "antennae": 2.2,
+      "curl": 0.1,
+      "fan": 0.14,
+      "legs": 0.6
+    },
+    "colors": {
+      "back": "#c42a22",
+      "flank": "#f0ece4",
+      "belly": "#f4e8e0",
+      "fins": "#e8e0d4",
+      "eye": "#101010",
+      "mouth": "#d83a2a"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#f4f0e8",
+        "count": 4,
+        "width": 0.18,
+        "region": "upper",
+        "alpha": 0.9
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 15,
+      "max": 210
+    },
+    "temperature_c": {
+      "min": 22,
+      "optimal": 26,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.0,
+      "max": 0.5
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "coral": 1,
+      "rocks": 1,
+      "open": 0.02
+    },
+    "cover_required": 0.8
+  },
+  "population": {
+    "density": 1.5,
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 4
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 4,
+    "turn_rate": 3,
+    "station_holding": 0.3,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.1,
+      "bottom": 0.9
+    },
+    "wariness": 0.3,
+    "spook_m": 1,
+    "recover_s": 15,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "worms": 0.4,
+      "plankton": 0.3,
+      "eggs": 0.1,
+      "shrimp": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.1,
+      "bottom": 0.9
+    },
+    "meals_per_day": 5
+  },
+  "fight": {
+    "strength": 0.03,
+    "stamina": 0.05,
+    "jumps": 0,
+    "runs": 0.05
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "heavy_casting",
+  "type": "rod",
+  "name": "Heavy baitcasting rod",
+  "description": "Stiff casting rod for heavy lures, thick cover and toothy fish. Pairs with a baitcaster and braid.",
+  "length_m": 2.21,
+  "power": "heavy",
+  "action": "fast",
+  "line_lb": {
+    "min": 14,
+    "max": 40
+  },
+  "lure_g": {
+    "min": 10,
+    "max": 56
+  },
+  "reel": "casting",
+  "handle": "eva",
+  "guides": 9,
+  "colors": {
+    "blank": "#141414",
+    "handle": "#2a2a2a",
+    "wraps": "#c0302a"
+  }
+}

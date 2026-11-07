@@ -1,0 +1,119 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "blue_crab",
+  "name": "Blue crab",
+  "scientific": "Callinectes sapidus",
+  "description": "Aggressive swimming crab of estuaries and bays, with blue claws, sharp side spines and paddle-shaped back legs. Length is carapace width.",
+  "size": {
+    "length_cm": {
+      "min": 8,
+      "typical": 15,
+      "max": 23,
+      "spread": 0.18
+    },
+    "weight": {
+      "a": 0.059,
+      "b": 3.0
+    },
+    "condition_sd": 0.12
+  },
+  "body": {
+    "plan": "crab",
+    "height": 0.2,
+    "width": 0.45,
+    "parts": {
+      "claws": 0.55,
+      "legs": 0.7,
+      "spines": 1,
+      "paddles": true,
+      "eyestalks": 0.5
+    },
+    "colors": {
+      "back": "#5a6a5a",
+      "flank": "#7a8a7a",
+      "belly": "#eee8dc",
+      "fins": "#4a7ab0",
+      "eye": "#101010",
+      "mouth": "#c03a2a"
+    },
+    "pattern": []
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.3
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 3,
+      "max": 30
+    },
+    "temperature_c": {
+      "min": 10,
+      "optimal": 24,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 0.8
+    },
+    "turbidity_max": 0.8,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "weeds": 0.8,
+      "open": 0.6,
+      "reeds": 0.4,
+      "rocks": 0.2
+    }
+  },
+  "population": {
+    "density": 1.5,
+    "school": {
+      "min": 1,
+      "max": 3
+    },
+    "home_range_m": 30
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 6,
+    "turn_rate": 3,
+    "station_holding": 0,
+    "ambush": 0.3,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.15,
+      "bottom": 0.85
+    },
+    "wariness": 0.5,
+    "spook_m": 3,
+    "recover_s": 20,
+    "curiosity": 0.7,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "snails": 0.3,
+      "fish": 0.2,
+      "worms": 0.2,
+      "shrimp": 0.15,
+      "plants": 0.15
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.1,
+      "bottom": 0.9
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.3
+  }
+}

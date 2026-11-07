@@ -1,0 +1,172 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.25,
+      "min": 80,
+      "typical": 200,
+      "max": 330
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0177,
+      "b": 3
+    }
+  },
+  "body": {
+    "profile": [
+      0.4,
+      0.72,
+      0.92,
+      1,
+      0.95,
+      0.75,
+      0.42,
+      0.14
+    ],
+    "height": 0.27,
+    "width": 0.17,
+    "flex": 0.6,
+    "head": {
+      "length": 0.24,
+      "snout": 0.35,
+      "mouth": 0.45,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.24,
+      "fork": 0.6
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.14,
+          "height": 0.08,
+          "spiny": true
+        },
+        {
+          "at": 0.5,
+          "length": 0.07,
+          "height": 0.09,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.55,
+        "length": 0.07,
+        "height": 0.09
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.05,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#dfe6ec",
+        "count": 18,
+        "width": 0.12,
+        "region": "lower",
+        "from": 0.3,
+        "to": 0.85,
+        "alpha": 0.3
+      },
+      {
+        "type": "stripe",
+        "color": "#c8b050",
+        "v": 0,
+        "width": 0.03,
+        "region": "all",
+        "from": 0.88,
+        "alpha": 0.6
+      }
+    ],
+    "swim": "thunniform",
+    "colors": {
+      "back": "#0e1c46",
+      "flank": "#9aa8b8",
+      "belly": "#eef0f2",
+      "fins": "#2a3048",
+      "eye": "#0e0e14",
+      "mouth": "#c8c0c0"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 3
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1
+    },
+    "temperature_c": {
+      "min": 5,
+      "optimal": 17,
+      "max": 30
+    },
+    "depth_m": {
+      "min": 5,
+      "preferred": 30,
+      "max": 1000
+    }
+  },
+  "population": {
+    "school": {
+      "min": 1,
+      "max": 4
+    },
+    "home_range_m": 500,
+    "density": 0.01
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1.0,
+    "burst_bl_s": 6,
+    "turn_rate": 1.6,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.6,
+    "spook_m": 8,
+    "recover_s": 40,
+    "curiosity": 0.4,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.3,
+      "mid": 0.7,
+      "bottom": 0
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 3,
+    "food": {
+      "fish": 0.8,
+      "shrimp": 0.1,
+      "plankton": 0.1
+    },
+    "feeding_zone": {
+      "surface": 0.3,
+      "mid": 0.7,
+      "bottom": 0
+    }
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 1,
+    "jumps": 0.05,
+    "runs": 1
+  },
+  "id": "atlantic_bluefin_tuna",
+  "name": "Atlantic bluefin tuna",
+  "scientific": "Thunnus thynnus",
+  "description": "The giant of the tunas: a warm-bodied, deep-chested ocean racer with a steel-blue back and silver belly. Follows herring and mackerel schools into cool coastal waters each summer."
+}

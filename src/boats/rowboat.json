@@ -1,0 +1,68 @@
+{
+  "schema": "embercrown-boat/1",
+  "id": "rowboat",
+  "name": "Wooden rowboat",
+  "description": "A sturdy clinker dinghy with two oars and plank benches. Slow but steady, at home on any lake.",
+  "hull": {
+    "length_m": 3.7,
+    "beam_m": 1.4,
+    "depth_m": 0.52,
+    "draft_m": 0.16,
+    "bottom": "round",
+    "bow": "pointed",
+    "stern": "transom",
+    "transom_width": 0.62,
+    "fullness": 0.55,
+    "sheer_bow_m": 0.18,
+    "floor_m": 0.04,
+    "decks": {
+      "bow": 0.06,
+      "stern": 0
+    }
+  },
+  "colors": {
+    "hull": "#2a5a7a",
+    "bottom": "#7a2a1e",
+    "deck": "#b89464",
+    "trim": "#e8e0d0",
+    "interior": "#a88452",
+    "accent": "#a88452"
+  },
+  "propulsion": {
+    "type": "oars",
+    "max_speed_ms": 1.6,
+    "accel_ms2": 0.5,
+    "turn_rate": 0.7,
+    "reverse": 0.8,
+    "noise": 0.1
+  },
+  "handling": {
+    "stability": 0.6,
+    "waves_max": 0.55,
+    "current_drift": 0.9
+  },
+  "crew": {
+    "seat_at": 0.45,
+    "eye_height_m": 1.0
+  },
+  "seats": [
+    {
+      "type": "bench",
+      "at": 0.15,
+      "height": 0.3
+    },
+    {
+      "type": "bench",
+      "at": 0.45,
+      "height": 0.3
+    },
+    {
+      "type": "bench",
+      "at": 0.78,
+      "height": 0.3
+    }
+  ],
+  "features": {
+    "paddle": "oars"
+  }
+}

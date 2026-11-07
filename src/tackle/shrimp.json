@@ -1,0 +1,22 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "shrimp",
+  "type": "bait",
+  "name": "Shrimp",
+  "description": "A whole shrimp: the universal saltwater bait.",
+  "food": {
+    "shrimp": 1,
+    "crayfish": 0.5
+  },
+  "size_cm": 6,
+  "scent": 0.8,
+  "wiggle": 0.2,
+  "lasts": 2,
+  "floats": false,
+  "shape": "shrimp",
+  "weight_g": 5,
+  "colors": {
+    "body": "#e8b8a0",
+    "accent": "#c87050"
+  }
+}

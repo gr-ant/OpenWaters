@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "minnow_slip_float",
+  "type": "rig",
+  "name": "Live minnow, slip float",
+  "description": "A lively minnow hanging deep under a slip float: pike, bass, perch and trout.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "mono_12",
+    "leader": "fluoro_leader_20",
+    "hook": "hook_2",
+    "sinker": "split_shot",
+    "float": "slip_float",
+    "bait": "live_minnow"
+  },
+  "drag": 0.3,
+  "waters": ["lake", "river"],
+  "float_depth_m": 2.5
+}

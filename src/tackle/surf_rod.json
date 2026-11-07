@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "surf_rod",
+  "type": "rod",
+  "name": "Surf rod",
+  "description": "Twelve feet of rod to throw a heavy sinker and bait past the breakers from the beach.",
+  "length_m": 3.66,
+  "power": "medium_heavy",
+  "action": "moderate",
+  "line_lb": {
+    "min": 15,
+    "max": 30
+  },
+  "lure_g": {
+    "min": 56,
+    "max": 170
+  },
+  "reel": "spinning",
+  "handle": "eva",
+  "guides": 6,
+  "colors": {
+    "blank": "#e8e4d8",
+    "handle": "#1e1e1e",
+    "wraps": "#2a6a9a"
+  }
+}

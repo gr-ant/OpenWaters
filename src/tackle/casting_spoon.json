@@ -1,0 +1,40 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "casting_spoon",
+  "type": "lure",
+  "name": "Casting spoon",
+  "description": "A curved slab of polished metal that wobbles and flashes like a wounded baitfish. Casts a mile.",
+  "style": "spoon",
+  "imitates": {
+    "fish": 1
+  },
+  "size_cm": 7,
+  "weight_g": 28,
+  "buoyant": false,
+  "sink_ms": 0.9,
+  "dive_m": 0,
+  "lift": 0.35,
+  "speed_ms": {
+    "min": 0.4,
+    "best": 0.9,
+    "max": 1.8
+  },
+  "action": 0.7,
+  "flash": 1,
+  "noise": 0.1,
+  "scent": 0,
+  "pause": 0.3,
+  "hooks": {
+    "kind": "treble",
+    "count": 1,
+    "strength_lb": 30,
+    "hold": 0.72
+  },
+  "colors": {
+    "body": "#d8dce0",
+    "back": "#d8dce0",
+    "belly": "#d8dce0",
+    "accent": "#e0b020",
+    "blade": "#d8dce0"
+  }
+}

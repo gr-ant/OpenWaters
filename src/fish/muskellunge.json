@@ -1,0 +1,161 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.22,
+      "min": 60,
+      "typical": 95,
+      "max": 150
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0043,
+      "b": 3.15
+    }
+  },
+  "body": {
+    "profile": [
+      0.35,
+      0.6,
+      0.8,
+      0.9,
+      0.95,
+      1,
+      0.9,
+      0.55
+    ],
+    "height": 0.14,
+    "width": 0.09,
+    "flex": 0.9,
+    "head": {
+      "length": 0.27,
+      "snout": 0.25,
+      "mouth": 0.9,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.15,
+      "fork": 0.25
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.78,
+          "length": 0.12,
+          "height": 0.08,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.8,
+        "length": 0.1,
+        "height": 0.07
+      },
+      "pectoral": 0.08,
+      "pelvic": 0.06,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#3a3a22",
+        "count": 12,
+        "width": 0.35,
+        "region": "flank",
+        "from": 0.2,
+        "alpha": 0.65,
+        "wavy": 0.7
+      }
+    ],
+    "colors": {
+      "back": "#4a5032",
+      "flank": "#a8a06a",
+      "belly": "#ece8d4",
+      "fins": "#8a5a34",
+      "eye": "#101010",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "lake": 1,
+      "river": 0.5
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 0.8
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "weeds": 1,
+      "wood": 0.7,
+      "rocks": 0.4,
+      "reeds": 0.4,
+      "open": 0.2
+    },
+    "temperature_c": {
+      "min": 8,
+      "optimal": 22,
+      "max": 29
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 4,
+      "max": 15
+    }
+  },
+  "population": {
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 60,
+    "density": 0.04
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 9,
+    "turn_rate": 1.6,
+    "station_holding": 0,
+    "ambush": 0.9,
+    "wariness": 0.7,
+    "spook_m": 6,
+    "recover_s": 80,
+    "curiosity": 0.6,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.7,
+      "bottom": 0.2
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 10,
+    "meals_per_day": 1,
+    "food": {
+      "fish": 0.88,
+      "frogs": 0.12
+    },
+    "feeding_zone": {
+      "surface": 0.15,
+      "mid": 0.75,
+      "bottom": 0.1
+    }
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 0.6,
+    "jumps": 0.4,
+    "runs": 0.8,
+    "teeth": 0.9
+  },
+  "id": "muskellunge",
+  "name": "Muskellunge",
+  "scientific": "Esox masquinongy",
+  "description": "The fish of ten thousand casts: a huge, long-bodied pike, light bronze-green with dark bars or blotches and a duckbill jaw full of teeth. A rare, solitary ambusher of weedy lakes and slow rivers."
+}

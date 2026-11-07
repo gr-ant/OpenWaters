@@ -1,0 +1,170 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "stoplight_parrotfish",
+  "name": "Stoplight parrotfish",
+  "scientific": "Sparisoma viride",
+  "description": "Chunky green reef fish with a beak of fused teeth for scraping coral; you can hear it crunching. Males are green with an orange bar and a yellow spot.",
+  "size": {
+    "length_cm": {
+      "min": 25,
+      "typical": 40,
+      "max": 64,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.015,
+      "b": 3.05
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.85,
+      1,
+      1,
+      0.92,
+      0.72,
+      0.45,
+      0.3
+    ],
+    "height": 0.3,
+    "width": 0.13,
+    "flex": 1,
+    "head": {
+      "length": 0.25,
+      "snout": 0.7,
+      "mouth": 0.35,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16,
+      "fork": 0.2
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.27,
+          "length": 0.5,
+          "height": 0.07,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.62,
+        "length": 0.15,
+        "height": 0.06
+      },
+      "pectoral": 0.11,
+      "pelvic": 0.05,
+      "adipose": false
+    },
+    "colors": {
+      "back": "#1e7a5a",
+      "flank": "#2ea078",
+      "belly": "#7ac89a",
+      "fins": "#e86a3a",
+      "eye": "#101010",
+      "mouth": "#e0a090"
+    },
+    "pattern": [
+      {
+        "type": "spot",
+        "color": "#f0d040",
+        "at": 0.24,
+        "v": 0.6,
+        "size": 0.05,
+        "region": "all"
+      },
+      {
+        "type": "bars",
+        "color": "#f08040",
+        "count": 1,
+        "width": 1,
+        "from": 0.93,
+        "to": 1,
+        "region": "all",
+        "alpha": 0.9
+      },
+      {
+        "type": "scales",
+        "color": "#14604a",
+        "alpha": 0.3
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 6,
+      "max": 40
+    },
+    "temperature_c": {
+      "min": 22,
+      "optimal": 27,
+      "max": 31
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.15,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "coral": 1,
+      "rocks": 0.6,
+      "open": 0.2
+    }
+  },
+  "population": {
+    "density": 1.2,
+    "school": {
+      "min": 1,
+      "max": 5
+    },
+    "home_range_m": 60
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.8,
+    "burst_bl_s": 6,
+    "turn_rate": 2.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "wariness": 0.5,
+    "spook_m": 4,
+    "recover_s": 20,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 0.9,
+      "snails": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "meals_per_day": 8
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.5,
+    "jumps": 0,
+    "runs": 0.4
+  }
+}

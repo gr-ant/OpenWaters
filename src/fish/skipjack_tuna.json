@@ -1,0 +1,177 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 35,
+      "typical": 60,
+      "max": 108
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0059,
+      "b": 3.25
+    }
+  },
+  "body": {
+    "profile": [
+      0.4,
+      0.72,
+      0.92,
+      1,
+      0.95,
+      0.75,
+      0.42,
+      0.14
+    ],
+    "height": 0.25,
+    "width": 0.17,
+    "flex": 0.6,
+    "head": {
+      "length": 0.24,
+      "snout": 0.35,
+      "mouth": 0.45,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.24,
+      "fork": 0.6
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.14,
+          "height": 0.08,
+          "spiny": true
+        },
+        {
+          "at": 0.5,
+          "length": 0.07,
+          "height": 0.1,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.55,
+        "length": 0.07,
+        "height": 0.09
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.05,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "stripe",
+        "color": "#2a3048",
+        "v": -0.2,
+        "width": 0.04,
+        "region": "lower",
+        "alpha": 0.85
+      },
+      {
+        "type": "stripe",
+        "color": "#2a3048",
+        "v": -0.45,
+        "width": 0.04,
+        "region": "lower",
+        "alpha": 0.85
+      },
+      {
+        "type": "stripe",
+        "color": "#2a3048",
+        "v": -0.7,
+        "width": 0.04,
+        "region": "lower",
+        "alpha": 0.8
+      }
+    ],
+    "swim": "thunniform",
+    "colors": {
+      "back": "#1c2650",
+      "flank": "#b4bcc8",
+      "belly": "#eef0f4",
+      "fins": "#2a3050",
+      "eye": "#101014",
+      "mouth": "#c8c0c0"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 3
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1
+    },
+    "temperature_c": {
+      "min": 19,
+      "optimal": 26,
+      "max": 31
+    },
+    "depth_m": {
+      "min": 2,
+      "preferred": 20,
+      "max": 250
+    }
+  },
+  "population": {
+    "school": {
+      "min": 6,
+      "max": 20
+    },
+    "home_range_m": 300,
+    "density": 0.08
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1.4,
+    "burst_bl_s": 12,
+    "turn_rate": 1.6,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.6,
+    "spook_m": 8,
+    "recover_s": 40,
+    "curiosity": 0.4,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.3,
+      "mid": 0.7,
+      "bottom": 0
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 5,
+    "food": {
+      "fish": 0.55,
+      "shrimp": 0.25,
+      "plankton": 0.2
+    },
+    "feeding_zone": {
+      "surface": 0.5,
+      "mid": 0.5,
+      "bottom": 0
+    }
+  },
+  "fight": {
+    "strength": 0.75,
+    "stamina": 0.7,
+    "jumps": 0.1,
+    "runs": 0.9
+  },
+  "id": "skipjack_tuna",
+  "name": "Skipjack tuna",
+  "scientific": "Katsuwonus pelamis",
+  "description": "Small, plump tuna of warm seas, dark purple-blue above with four to six dark stripes along its silver belly. Boils at the surface in huge schools chasing baitfish."
+}

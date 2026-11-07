@@ -1,0 +1,155 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "mahi_mahi",
+  "name": "Mahi-mahi",
+  "scientific": "Coryphaena hippurus",
+  "description": "Brilliant gold, green and blue fast-growing fish of warm blue water, with a blunt forehead on big bulls and one long dorsal fin. Chases flying fish and hangs under floating weed and debris; length is fork length.",
+  "size": {
+    "length_cm": {
+      "min": 50,
+      "typical": 90,
+      "max": 160,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0065,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.85,
+      1,
+      0.95,
+      0.8,
+      0.6,
+      0.4,
+      0.25
+    ],
+    "height": 0.2,
+    "width": 0.09,
+    "flex": 1,
+    "head": {
+      "length": 0.2,
+      "snout": 0.3,
+      "mouth": 0.6,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.2,
+      "fork": 0.55
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.12,
+          "length": 0.7,
+          "height": 0.1,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.62,
+        "length": 0.28,
+        "height": 0.08
+      },
+      "pectoral": 0.09,
+      "pelvic": 0.06
+    },
+    "colors": {
+      "back": "#2a8a6a",
+      "flank": "#c8b830",
+      "belly": "#f0eac0",
+      "fins": "#3a9ac0",
+      "eye": "#101010",
+      "mouth": "#e0d8d0"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#3a8ad0",
+        "density": 0.15,
+        "size": 1,
+        "region": "upper_flank",
+        "alpha": 0.7
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0,
+      "preferred": 15,
+      "max": 150
+    },
+    "temperature_c": {
+      "min": 20,
+      "optimal": 27,
+      "max": 31
+    },
+    "current_ms": {
+      "preferred": 0.3,
+      "max": 2
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1,
+      "weeds": 0.3
+    }
+  },
+  "population": {
+    "density": 0.05,
+    "school": {
+      "min": 1,
+      "max": 8
+    },
+    "home_range_m": 500
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1,
+    "burst_bl_s": 10,
+    "turn_rate": 3,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.55,
+      "mid": 0.4,
+      "bottom": 0.05
+    },
+    "wariness": 0.4,
+    "spook_m": 8,
+    "recover_s": 40,
+    "curiosity": 0.7,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.8,
+      "shrimp": 0.15,
+      "plankton": 0.05
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.5,
+      "mid": 0.45,
+      "bottom": 0.05
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.8,
+    "stamina": 0.6,
+    "jumps": 0.9,
+    "runs": 0.8
+  }
+}

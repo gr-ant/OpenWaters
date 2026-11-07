@@ -1,0 +1,148 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "bottlenose_dolphin",
+  "name": "Bottlenose dolphin",
+  "scientific": "Tursiops truncatus",
+  "description": "Grey, short-beaked dolphin in pods of a few to a dozen. Curious and playful: rolls up to breathe every minute or so with a puff from its blowhole, and often leaps clear of the water.",
+  "size": {
+    "length_cm": {
+      "min": 200,
+      "typical": 280,
+      "max": 400,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.0114,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "profile": [
+      0.3,
+      0.62,
+      0.85,
+      0.97,
+      1,
+      0.85,
+      0.55,
+      0.3
+    ],
+    "height": 0.2,
+    "width": 0.19,
+    "flex": 0.8,
+    "swim": "cetacean",
+    "head": {
+      "length": 0.18,
+      "snout": 0.2,
+      "mouth": 0.55,
+      "jaw": "terminal",
+      "bill": 0.06,
+      "bill_kind": "beak"
+    },
+    "tail": {
+      "shape": "flukes",
+      "size": 0.16
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.45,
+          "length": 0.14,
+          "height": 0.11
+        }
+      ],
+      "anal": {
+        "at": 0.8,
+        "length": 0.01,
+        "height": 0.004
+      },
+      "pectoral": 0.1,
+      "pelvic": 0
+    },
+    "colors": {
+      "back": "#5c646e",
+      "flank": "#89919a",
+      "belly": "#e6e8ea",
+      "fins": "#58606a",
+      "eye": "#101010",
+      "mouth": "#c88a8a"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 3,
+      "preferred": 15,
+      "max": 200
+    },
+    "temperature_c": {
+      "min": 10,
+      "optimal": 22,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.03,
+    "school": {
+      "min": 3,
+      "max": 10
+    },
+    "home_range_m": 300
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.7,
+    "burst_bl_s": 3,
+    "turn_rate": 2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.4,
+      "mid": 0.6,
+      "bottom": 0
+    },
+    "wariness": 0.2,
+    "spook_m": 4,
+    "recover_s": 20,
+    "curiosity": 0.9,
+    "rise_per_hour": 0,
+    "breath_hold_s": 45,
+    "surface_s": 3,
+    "leap_per_hour": 6,
+    "haul_out": 0,
+    "blow": 0.25
+  },
+  "diet": {
+    "food": {
+      "fish": 0.85,
+      "shrimp": 0.15
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.3,
+      "mid": 0.7,
+      "bottom": 0
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 1,
+    "jumps": 1,
+    "runs": 1
+  }
+}

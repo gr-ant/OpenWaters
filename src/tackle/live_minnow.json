@@ -1,0 +1,21 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "live_minnow",
+  "type": "bait",
+  "name": "Live minnow",
+  "description": "A small baitfish hooked through the lips; it swims and flashes on its own.",
+  "food": {
+    "fish": 1
+  },
+  "size_cm": 6,
+  "scent": 0.4,
+  "wiggle": 0.9,
+  "lasts": 3,
+  "floats": false,
+  "shape": "minnow",
+  "weight_g": 3,
+  "colors": {
+    "body": "#c8ccc4",
+    "accent": "#5a6a5a"
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "pumpkinseed_sunfish",
+  "name": "Pumpkinseed sunfish",
+  "scientific": "Lepomis gibbosus",
+  "description": "Small, round, jewel-bright sunfish with orange belly, wavy blue-green cheek lines and a red-tipped black ear flap. Guards sandy nests in weedy shallows and picks snails, insects and larvae.",
+  "size": {
+    "length_cm": {
+      "min": 7,
+      "typical": 13,
+      "max": 28,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0186,
+      "b": 3.1
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.9,
+      1,
+      0.98,
+      0.85,
+      0.62,
+      0.4,
+      0.28
+    ],
+    "height": 0.45,
+    "width": 0.14,
+    "flex": 0.8,
+    "head": {
+      "length": 0.26,
+      "snout": 0.3,
+      "mouth": 0.2,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.45,
+          "height": 0.18,
+          "spiny": true
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.68,
+        "length": 0.16,
+        "height": 0.12
+      },
+      "pectoral": 0.15,
+      "pelvic": 0.1
+    },
+    "colors": {
+      "back": "#6a7a3a",
+      "flank": "#c8a040",
+      "belly": "#f08a30",
+      "fins": "#c89a50",
+      "eye": "#506a50",
+      "mouth": "#a02818"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#e0702a",
+        "density": 0.3,
+        "size": 1,
+        "region": "upper_flank",
+        "alpha": 0.7
+      },
+      {
+        "type": "bars",
+        "color": "#4a6a4a",
+        "count": 8,
+        "width": 0.25,
+        "region": "upper_flank",
+        "alpha": 0.3
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "lake": 1,
+      "pond": 1,
+      "river": 0.4,
+      "creek": 0.3
+    },
+    "depth_m": {
+      "min": 0.2,
+      "preferred": 1.5,
+      "max": 6
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 24,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.3
+    },
+    "turbidity_max": 0.7,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "weeds": 1,
+      "lilies": 0.7,
+      "reeds": 0.6,
+      "wood": 0.5,
+      "rocks": 0.2
+    }
+  },
+  "population": {
+    "density": 3,
+    "school": {
+      "min": 2,
+      "max": 8
+    },
+    "home_range_m": 20
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.8,
+    "burst_bl_s": 8,
+    "turn_rate": 3.5,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.2,
+      "mid": 0.5,
+      "bottom": 0.3
+    },
+    "wariness": 0.4,
+    "spook_m": 3,
+    "recover_s": 25,
+    "curiosity": 0.8,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "insects": 0.35,
+      "snails": 0.25,
+      "nymphs": 0.25,
+      "worms": 0.1,
+      "fish": 0.05
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.2,
+      "mid": 0.5,
+      "bottom": 0.3
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.2,
+    "stamina": 0.25,
+    "jumps": 0,
+    "runs": 0.2
+  }
+}

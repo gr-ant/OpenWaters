@@ -1,0 +1,121 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "pacific_oyster",
+  "name": "Pacific oyster",
+  "scientific": "Magallana gigas",
+  "description": "Rough, frilled oyster cemented to rock and to its neighbours in thick reefs, filtering plankton from the tide. Length is shell length.",
+  "size": {
+    "length_cm": {
+      "min": 6,
+      "typical": 12,
+      "max": 30,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.08,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "plan": "bivalve",
+    "height": 0.62,
+    "width": 0.3,
+    "parts": {
+      "shell": "oyster",
+      "ribs": 0.5,
+      "gape": 0.2
+    },
+    "colors": {
+      "back": "#8a8678",
+      "flank": "#aaa698",
+      "belly": "#e8e4d8",
+      "fins": "#7a766a",
+      "eye": "#000000",
+      "mouth": "#d8d0c0"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#5a564a",
+        "amount": 0.45,
+        "scale": 5,
+        "region": "all",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.2
+    },
+    "depth_m": {
+      "min": 0.2,
+      "preferred": 2,
+      "max": 12
+    },
+    "temperature_c": {
+      "min": 5,
+      "optimal": 20,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.5
+    },
+    "turbidity_max": 0.8,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "rocks": 1,
+      "open": 0.2,
+      "weeds": 0.1
+    }
+  },
+  "population": {
+    "density": 3,
+    "school": {
+      "min": 10,
+      "max": 40
+    },
+    "home_range_m": 1
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.01,
+    "burst_bl_s": 0.2,
+    "turn_rate": 0.2,
+    "station_holding": 1,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "wariness": 0.2,
+    "spook_m": 1,
+    "recover_s": 30,
+    "curiosity": 0.1,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.02,
+    "stamina": 0.02,
+    "jumps": 0,
+    "runs": 0
+  }
+}

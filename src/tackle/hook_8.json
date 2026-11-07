@@ -1,0 +1,13 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "hook_8",
+  "type": "hook",
+  "name": "#8 bait hook",
+  "description": "Small, fine-wire hook for worms and crickets. Panfish and trout.",
+  "style": "j",
+  "size": "#8",
+  "gap_mm": 6,
+  "strength_lb": 10,
+  "hold": 0.75,
+  "weight_g": 0.1
+}

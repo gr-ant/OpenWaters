@@ -1,0 +1,156 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 30,
+      "typical": 50,
+      "max": 71
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0085,
+      "b": 3.12
+    }
+  },
+  "body": {
+    "profile": [
+      0.42,
+      0.78,
+      0.96,
+      1,
+      0.9,
+      0.66,
+      0.4,
+      0.22
+    ],
+    "height": 0.27,
+    "width": 0.1,
+    "flex": 1,
+    "head": {
+      "length": 0.2,
+      "snout": 0.7,
+      "mouth": 0.25,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.18,
+      "fork": 0.4
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.4,
+          "length": 0.11,
+          "height": 0.1,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.7,
+        "length": 0.09,
+        "height": 0.06
+      },
+      "pectoral": 0.09,
+      "pelvic": 0.07,
+      "adipose": true
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#8a9298",
+        "alpha": 0.25
+      }
+    ],
+    "colors": {
+      "back": "#5a5a4a",
+      "flank": "#c0c0b0",
+      "belly": "#f0eee6",
+      "fins": "#8a8a78",
+      "eye": "#101010",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "river": 1,
+      "lake": 0.8,
+      "sea": 0.08
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.5
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 6,
+    "cover": {
+      "open": 0.9,
+      "weeds": 0.3,
+      "rocks": 0.3
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 8,
+      "max": 16
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 3,
+      "max": 20
+    }
+  },
+  "population": {
+    "school": {
+      "min": 2,
+      "max": 8
+    },
+    "home_range_m": 80,
+    "density": 0.6
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.9,
+    "burst_bl_s": 7,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.55,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.4,
+    "rise_per_hour": 1,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.35,
+      "bottom": 0.65
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 3,
+    "food": {
+      "nymphs": 0.4,
+      "snails": 0.3,
+      "worms": 0.15,
+      "shrimp": 0.15
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    }
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.5,
+    "jumps": 0.05,
+    "runs": 0.45
+  },
+  "id": "broad_whitefish",
+  "name": "Broad whitefish",
+  "scientific": "Coregonus nasus",
+  "description": "Large, deep-bodied whitefish with a small, blunt, overhung snout, an important subsistence fish of Arctic Alaska. Grazes snails, larvae and clams from the bottom of rivers, lakes and coastal lagoons."
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "embercrown-boat/1",
+  "id": "canoe",
+  "name": "Canoe",
+  "description": "A classic 16-foot open canoe. Light, quiet and quick to paddle on lakes, ponds and gentle rivers; tippy in waves and no place for the open sea.",
+  "hull": {
+    "length_m": 4.9,
+    "beam_m": 0.9,
+    "depth_m": 0.36,
+    "draft_m": 0.1,
+    "bottom": "round",
+    "bow": "pointed",
+    "stern": "pointed",
+    "fullness": 0.45,
+    "sheer_bow_m": 0.22,
+    "sheer_stern_m": 0.2,
+    "floor_m": 0.03,
+    "decks": {
+      "bow": 0.05,
+      "stern": 0.05
+    }
+  },
+  "colors": {
+    "hull": "#b8322a",
+    "bottom": "#9a2a22",
+    "deck": "#c8a878",
+    "trim": "#5a3a1e",
+    "interior": "#c49a62",
+    "accent": "#7a4a22"
+  },
+  "propulsion": {
+    "type": "paddle",
+    "max_speed_ms": 1.8,
+    "accel_ms2": 0.6,
+    "turn_rate": 0.8,
+    "reverse": 0.5,
+    "noise": 0.08
+  },
+  "handling": {
+    "stability": 0.3,
+    "waves_max": 0.45,
+    "current_drift": 1
+  },
+  "crew": {
+    "seat_at": 0.17,
+    "eye_height_m": 0.95
+  },
+  "seats": [
+    {
+      "type": "thwart",
+      "at": 0.15
+    },
+    {
+      "type": "thwart",
+      "at": 0.5
+    },
+    {
+      "type": "thwart",
+      "at": 0.84
+    }
+  ],
+  "features": {
+    "paddle": "single"
+  }
+}

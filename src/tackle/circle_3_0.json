@@ -1,0 +1,13 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "circle_3_0",
+  "type": "hook",
+  "name": "3/0 circle hook",
+  "description": "Sets itself in the corner of the mouth as the fish swims off: just reel, don't strike.",
+  "style": "circle",
+  "size": "3/0",
+  "gap_mm": 19,
+  "strength_lb": 60,
+  "hold": 0.92,
+  "weight_g": 1.2
+}

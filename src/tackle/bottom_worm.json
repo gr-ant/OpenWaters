@@ -1,0 +1,17 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "bottom_worm",
+  "type": "rig",
+  "name": "Bottom rig (worm)",
+  "description": "A sliding egg sinker and a big worm on the bottom: catfish, eels, carp and bass.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "mono_12",
+    "hook": "hook_2",
+    "sinker": "egg_sinker",
+    "bait": "nightcrawler"
+  },
+  "drag": 0.3,
+  "waters": ["river", "lake", "pond"]
+}

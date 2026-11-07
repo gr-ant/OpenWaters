@@ -1,0 +1,155 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "honeycomb_grouper",
+  "name": "Honeycomb grouper",
+  "scientific": "Epinephelus merra",
+  "description": "Small, stout grouper whose pale body is netted with a dark honeycomb of hexagonal spots. Lurks in reef crevices and rubble, ambushing small fish and crustaceans. Length is total length.",
+  "size": {
+    "length_cm": {
+      "min": 12,
+      "typical": 24,
+      "max": 32,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.016,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.88,
+      1,
+      1,
+      0.92,
+      0.72,
+      0.48,
+      0.32
+    ],
+    "height": 0.26,
+    "width": 0.15,
+    "flex": 1,
+    "head": {
+      "length": 0.32,
+      "snout": 0.55,
+      "mouth": 0.8,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "rounded",
+      "size": 0.17
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.45,
+          "height": 0.1,
+          "spiny": true
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.68,
+        "length": 0.13,
+        "height": 0.08
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.08
+    },
+    "colors": {
+      "back": "#9a8060",
+      "flank": "#cdb790",
+      "belly": "#e4d8bc",
+      "fins": "#a88a62",
+      "eye": "#101010",
+      "mouth": "#8a5a40"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#5a4028",
+        "density": 0.6,
+        "size": 1,
+        "region": "all",
+        "alpha": 0.85
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 8,
+      "max": 50
+    },
+    "temperature_c": {
+      "min": 23,
+      "optimal": 27,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 0.7
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "coral": 0.9,
+      "rocks": 1,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 0.5,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 25
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 8,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0.7,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.25,
+      "bottom": 0.75
+    },
+    "wariness": 0.5,
+    "spook_m": 3,
+    "recover_s": 35,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.45,
+      "shrimp": 0.3,
+      "crayfish": 0.25
+    },
+    "piscivore_from_cm": 10,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.6,
+    "stamina": 0.5,
+    "jumps": 0,
+    "runs": 0.55
+  }
+}

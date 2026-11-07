@@ -1,0 +1,57 @@
+{
+  "schema": "embercrown-boat/1",
+  "id": "touring_kayak",
+  "name": "Touring kayak",
+  "description": "A sleek sit-in sea kayak with a closed deck. Fast and seaworthy for its size; you sit low, right at the water.",
+  "hull": {
+    "length_m": 4.6,
+    "beam_m": 0.58,
+    "depth_m": 0.32,
+    "draft_m": 0.1,
+    "bottom": "round",
+    "bow": "pointed",
+    "stern": "pointed",
+    "fullness": 0.35,
+    "sheer_bow_m": 0.12,
+    "sheer_stern_m": 0.06,
+    "floor_m": 0.02,
+    "cockpit": [
+      0.33,
+      0.52
+    ]
+  },
+  "colors": {
+    "hull": "#f2c21c",
+    "bottom": "#e0b010",
+    "deck": "#f2c21c",
+    "trim": "#202020",
+    "interior": "#3a3a3a",
+    "accent": "#1a3a6a"
+  },
+  "propulsion": {
+    "type": "double_paddle",
+    "max_speed_ms": 2.3,
+    "accel_ms2": 0.8,
+    "turn_rate": 1.0,
+    "reverse": 0.5,
+    "noise": 0.06
+  },
+  "handling": {
+    "stability": 0.3,
+    "waves_max": 0.85,
+    "current_drift": 1
+  },
+  "crew": {
+    "seat_at": 0.4,
+    "eye_height_m": 0.72
+  },
+  "seats": [
+    {
+      "type": "kayak",
+      "at": 0.39
+    }
+  ],
+  "features": {
+    "paddle": "double"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "squid_strip",
+  "type": "bait",
+  "name": "Squid strip",
+  "description": "A tough strip of squid: smelly, flutters in the current and stays on the hook.",
+  "food": {
+    "fish": 1,
+    "shrimp": 0.6
+  },
+  "size_cm": 8,
+  "scent": 0.9,
+  "wiggle": 0.3,
+  "lasts": 4,
+  "floats": false,
+  "shape": "strip",
+  "weight_g": 4,
+  "colors": {
+    "body": "#f0e8e0",
+    "accent": "#c8a8a8"
+  }
+}

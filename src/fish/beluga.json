@@ -1,0 +1,147 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "beluga",
+  "name": "Beluga whale",
+  "scientific": "Delphinapterus leucas",
+  "description": "Pure white arctic whale with a bulbous melon forehead and no dorsal fin, at home among the pack ice. Travels in chattering pods and blows a small puff.",
+  "size": {
+    "length_cm": {
+      "min": 300,
+      "typical": 400,
+      "max": 550,
+      "spread": 0.12
+    },
+    "weight": {
+      "a": 0.0145,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.85,
+      0.97,
+      1,
+      0.95,
+      0.78,
+      0.5,
+      0.28
+    ],
+    "height": 0.22,
+    "width": 0.21,
+    "flex": 0.8,
+    "swim": "cetacean",
+    "head": {
+      "length": 0.16,
+      "snout": 1,
+      "mouth": 0.45,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "flukes",
+      "size": 0.16
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.5,
+          "length": 0.2,
+          "height": 0.012
+        }
+      ],
+      "anal": {
+        "at": 0.8,
+        "length": 0.01,
+        "height": 0.004
+      },
+      "pectoral": 0.1,
+      "pelvic": 0
+    },
+    "colors": {
+      "back": "#e8eaea",
+      "flank": "#eef0f0",
+      "belly": "#f6f6f4",
+      "fins": "#d8dcdc",
+      "eye": "#141414",
+      "mouth": "#c8a0a0"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 3,
+      "preferred": 15,
+      "max": 800
+    },
+    "temperature_c": {
+      "min": -2,
+      "optimal": 3,
+      "max": 14
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.6,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.01,
+    "school": {
+      "min": 3,
+      "max": 10
+    },
+    "home_range_m": 800
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 1.5,
+    "turn_rate": 1.6,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.4,
+      "mid": 0.6,
+      "bottom": 0
+    },
+    "wariness": 0.3,
+    "spook_m": 5,
+    "recover_s": 20,
+    "curiosity": 0.9,
+    "rise_per_hour": 0,
+    "breath_hold_s": 70,
+    "surface_s": 4,
+    "leap_per_hour": 0.3,
+    "haul_out": 0,
+    "blow": 0.2
+  },
+  "diet": {
+    "food": {
+      "fish": 0.6,
+      "shrimp": 0.3,
+      "worms": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.2,
+      "mid": 0.6,
+      "bottom": 0.2
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 1,
+    "jumps": 0.1,
+    "runs": 1
+  }
+}

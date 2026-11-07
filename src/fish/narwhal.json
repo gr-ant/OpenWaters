@@ -1,0 +1,158 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "narwhal",
+  "name": "Narwhal",
+  "scientific": "Monodon monoceros",
+  "description": "Mottled arctic whale whose males carry a single spiral tusk up to 3 m long. Lives in pods along the ice edge and dives deep for halibut and cod.",
+  "size": {
+    "length_cm": {
+      "min": 350,
+      "typical": 450,
+      "max": 550,
+      "spread": 0.1
+    },
+    "weight": {
+      "a": 0.0115,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.82,
+      0.96,
+      1,
+      0.94,
+      0.76,
+      0.48,
+      0.26
+    ],
+    "height": 0.2,
+    "width": 0.19,
+    "flex": 0.8,
+    "swim": "cetacean",
+    "head": {
+      "length": 0.15,
+      "snout": 0.9,
+      "mouth": 0.35,
+      "jaw": "terminal",
+      "bill": 0.32,
+      "bill_kind": "spear"
+    },
+    "tail": {
+      "shape": "flukes",
+      "size": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.5,
+          "length": 0.2,
+          "height": 0.015
+        }
+      ],
+      "anal": {
+        "at": 0.8,
+        "length": 0.01,
+        "height": 0.004
+      },
+      "pectoral": 0.08,
+      "pelvic": 0
+    },
+    "colors": {
+      "back": "#5a5e62",
+      "flank": "#8a8e90",
+      "belly": "#e2e4e2",
+      "fins": "#4a4e52",
+      "eye": "#101010",
+      "mouth": "#b89898"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#2e3236",
+        "density": 0.5,
+        "size": 1,
+        "region": "upper_flank",
+        "alpha": 0.85
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 5,
+      "preferred": 30,
+      "max": 1500
+    },
+    "temperature_c": {
+      "min": -2,
+      "optimal": 1,
+      "max": 10
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.006,
+    "school": {
+      "min": 2,
+      "max": 8
+    },
+    "home_range_m": 1200
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 1.5,
+    "turn_rate": 1.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.3,
+      "mid": 0.5,
+      "bottom": 0.2
+    },
+    "wariness": 0.6,
+    "spook_m": 8,
+    "recover_s": 40,
+    "curiosity": 0.5,
+    "rise_per_hour": 0,
+    "breath_hold_s": 600,
+    "surface_s": 5,
+    "leap_per_hour": 0,
+    "haul_out": 0,
+    "blow": 0.2
+  },
+  "diet": {
+    "food": {
+      "fish": 0.7,
+      "shrimp": 0.3
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 1,
+    "jumps": 0,
+    "runs": 1
+  }
+}

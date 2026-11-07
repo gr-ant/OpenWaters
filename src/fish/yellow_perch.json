@@ -1,0 +1,164 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "yellow_perch",
+  "name": "Yellow perch",
+  "scientific": "Perca flavescens",
+  "description": "Schooling, barred panfish of lakes. Roams in loose groups near weed edges by day; curious and easy to tempt.",
+  "size": {
+    "length_cm": {
+      "min": 10,
+      "typical": 20,
+      "max": 40,
+      "spread": 0.24
+    },
+    "weight": {
+      "a": 0.0089,
+      "b": 3.13
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.82,
+      0.98,
+      1,
+      0.9,
+      0.68,
+      0.42,
+      0.26
+    ],
+    "height": 0.24,
+    "width": 0.11,
+    "head": {
+      "length": 0.27,
+      "snout": 0.45,
+      "mouth": 0.5,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.17,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.2,
+          "height": 0.1,
+          "spiny": true
+        },
+        {
+          "at": 0.55,
+          "length": 0.14,
+          "height": 0.08
+        }
+      ],
+      "anal": {
+        "at": 0.72,
+        "length": 0.09,
+        "height": 0.07
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.08
+    },
+    "colors": {
+      "back": "#4a5a22",
+      "flank": "#d4c04a",
+      "belly": "#f0ecd8",
+      "fins": "#e0782a"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#2e3a14",
+        "count": 7,
+        "width": 0.45,
+        "alpha": 0.75,
+        "region": "upper"
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "lake": 1,
+      "pond": 0.5,
+      "river": 0.4
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 4,
+      "max": 15
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 21,
+      "max": 29
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.7
+    },
+    "turbidity_max": 0.7,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "weeds": 0.7,
+      "rocks": 0.3,
+      "reeds": 0.2,
+      "lilies": 0.3,
+      "wood": 0.5,
+      "open": 0.5
+    }
+  },
+  "population": {
+    "density": 3,
+    "school": {
+      "min": 5,
+      "max": 15
+    },
+    "home_range_m": 30
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.9,
+    "burst_bl_s": 7,
+    "turn_rate": 2.6,
+    "station_holding": 0,
+    "depth_zone": {
+      "surface": 0.05,
+      "mid": 0.55,
+      "bottom": 0.4
+    },
+    "wariness": 0.4,
+    "spook_m": 4,
+    "recover_s": 20,
+    "curiosity": 0.75,
+    "rise_per_hour": 0.5
+  },
+  "diet": {
+    "food": {
+      "nymphs": 0.3,
+      "fish": 0.25,
+      "worms": 0.15,
+      "crayfish": 0.1,
+      "snails": 0.1,
+      "insects": 0.1
+    },
+    "piscivore_from_cm": 22,
+    "feeding_zone": {
+      "surface": 0.05,
+      "mid": 0.45,
+      "bottom": 0.5
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.35,
+    "jumps": 0.05,
+    "runs": 0.2
+  }
+}

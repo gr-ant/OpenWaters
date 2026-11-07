@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "slip_float",
+  "type": "float",
+  "name": "Slip float",
+  "description": "Slides on the line down to a stop knot, so you can fish a bait deep and still cast.",
+  "kind": "slip",
+  "buoyancy_g": 10,
+  "depth_m": 2.5,
+  "size_mm": 18,
+  "colors": {
+    "top": "#ff8a1a",
+    "bottom": "#2e6a3a"
+  }
+}

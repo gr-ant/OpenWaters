@@ -1,0 +1,59 @@
+{
+  "schema": "embercrown-boat/1",
+  "id": "lobster_boat",
+  "name": "Lobster boat",
+  "description": "A heavy inboard workboat with a wheelhouse forward and a big open deck aft for hauling traps. Rides out rough seas; far too deep for shallow water.",
+  "hull": {
+    "length_m": 10.5,
+    "beam_m": 3.5,
+    "depth_m": 1.5,
+    "draft_m": 0.85,
+    "bottom": "vee",
+    "deadrise_deg": 14,
+    "bow": "pointed",
+    "stern": "transom",
+    "transom_width": 0.88,
+    "fullness": 0.6,
+    "sheer_bow_m": 0.55,
+    "floor_m": 0.2,
+    "decks": {
+      "bow": 0.12,
+      "stern": 0
+    }
+  },
+  "colors": {
+    "hull": "#2a6a4a",
+    "bottom": "#7a1e1a",
+    "deck": "#e8e2d2",
+    "trim": "#e8e2d2",
+    "interior": "#c8c2b4",
+    "accent": "#e8b020"
+  },
+  "propulsion": {
+    "type": "inboard",
+    "max_speed_ms": 9,
+    "accel_ms2": 1.5,
+    "turn_rate": 0.45,
+    "reverse": 0.35,
+    "noise": 0.8
+  },
+  "handling": {
+    "stability": 0.92,
+    "waves_max": 1.7,
+    "current_drift": 0.2
+  },
+  "crew": {
+    "seat_at": 0.5,
+    "eye_height_m": 1.7
+  },
+  "seats": [],
+  "features": {
+    "cabin": {
+      "from": 0.45,
+      "to": 0.78,
+      "height": 2.0
+    },
+    "rod_holders": 2,
+    "fish_finder": true
+  }
+}

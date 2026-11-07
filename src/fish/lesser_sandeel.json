@@ -1,0 +1,154 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "lesser_sandeel",
+  "name": "Lesser sandeel",
+  "scientific": "Ammodytes tobianus",
+  "description": "Slender, silvery eel-like fish that shoals in dense clouds over clean sand and dives into it to hide. Staple food of seabirds, bass and almost everything else.",
+  "size": {
+    "length_cm": {
+      "min": 8,
+      "typical": 14,
+      "max": 20,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.0022,
+      "b": 3.0
+    },
+    "condition_sd": 0.07
+  },
+  "body": {
+    "profile": [
+      0.45,
+      0.7,
+      0.85,
+      0.9,
+      0.9,
+      0.8,
+      0.6,
+      0.35
+    ],
+    "height": 0.1,
+    "width": 0.07,
+    "flex": 1.3,
+    "swim": "auto",
+    "head": {
+      "length": 0.2,
+      "snout": 0.75,
+      "mouth": 0.6,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.12,
+      "fork": 0.4
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.6,
+          "height": 0.04,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.62,
+        "length": 0.3,
+        "height": 0.04
+      },
+      "pectoral": 0.05,
+      "pelvic": 0.01,
+      "adipose": false
+    },
+    "colors": {
+      "back": "#5a7a68",
+      "flank": "#b8c8c0",
+      "belly": "#f4f4f0",
+      "fins": "#a8b4a8",
+      "eye": "#101010",
+      "mouth": "#d0c8c0"
+    },
+    "pattern": [
+      {
+        "type": "lateral_line",
+        "color": "#f0f4f0",
+        "v": 0.05,
+        "alpha": 0.7
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 5,
+      "max": 25
+    },
+    "temperature_c": {
+      "min": 6,
+      "optimal": 12,
+      "max": 20
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.2
+    },
+    "turbidity_max": 0.6,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1,
+      "rocks": 0.1,
+      "weeds": 0.2
+    }
+  },
+  "population": {
+    "density": 6,
+    "school": {
+      "min": 15,
+      "max": 60
+    },
+    "home_range_m": 80
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1.5,
+    "burst_bl_s": 10,
+    "turn_rate": 3.5,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.6,
+      "bottom": 0.3
+    },
+    "wariness": 0.8,
+    "spook_m": 6,
+    "recover_s": 20,
+    "curiosity": 0.2,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 0.8,
+      "shrimp": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.7,
+      "bottom": 0.2
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.02,
+    "stamina": 0.05,
+    "jumps": 0,
+    "runs": 0.1
+  }
+}

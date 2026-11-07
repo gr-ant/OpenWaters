@@ -1,0 +1,162 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 25,
+      "typical": 42,
+      "max": 69
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0163,
+      "b": 3
+    }
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.88,
+      1,
+      1,
+      0.9,
+      0.68,
+      0.42,
+      0.28
+    ],
+    "height": 0.27,
+    "width": 0.13,
+    "flex": 1,
+    "head": {
+      "length": 0.3,
+      "snout": 0.45,
+      "mouth": 0.7,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16,
+      "fork": 0.12
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.24,
+          "height": 0.12,
+          "spiny": true
+        },
+        {
+          "at": 0.55,
+          "length": 0.12,
+          "height": 0.08,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.68,
+        "length": 0.08,
+        "height": 0.08
+      },
+      "pectoral": 0.13,
+      "pelvic": 0.08,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#8a929a",
+        "amount": 0.35,
+        "scale": 6,
+        "region": "flank",
+        "alpha": 0.6
+      }
+    ],
+    "colors": {
+      "back": "#22262c",
+      "flank": "#5a6068",
+      "belly": "#c8ccd0",
+      "fins": "#2a2e34",
+      "eye": "#101010",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "rocks": 0.9,
+      "weeds": 0.7,
+      "open": 0.4
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 9,
+      "max": 16
+    },
+    "depth_m": {
+      "min": 2,
+      "preferred": 15,
+      "max": 55
+    }
+  },
+  "population": {
+    "school": {
+      "min": 4,
+      "max": 15
+    },
+    "home_range_m": 50,
+    "density": 0.6
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.7,
+    "burst_bl_s": 6,
+    "turn_rate": 2,
+    "station_holding": 0.2,
+    "ambush": 0.2,
+    "wariness": 0.3,
+    "spook_m": 3,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.2,
+      "mid": 0.65,
+      "bottom": 0.15
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 3,
+    "food": {
+      "fish": 0.45,
+      "shrimp": 0.3,
+      "plankton": 0.25
+    },
+    "feeding_zone": {
+      "surface": 0.2,
+      "mid": 0.65,
+      "bottom": 0.15
+    }
+  },
+  "fight": {
+    "strength": 0.55,
+    "stamina": 0.45,
+    "jumps": 0.05,
+    "runs": 0.4
+  },
+  "id": "black_rockfish",
+  "name": "Black rockfish",
+  "scientific": "Sebastes melanops",
+  "description": "Dusky blue-black rockfish with mottled grey sides that schools in mid-water over shallow reefs and kelp, often rising to the surface to feed."
+}

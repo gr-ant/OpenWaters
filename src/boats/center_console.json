@@ -1,0 +1,68 @@
+{
+  "schema": "embercrown-boat/1",
+  "id": "center_console",
+  "name": "Center console",
+  "description": "A deep-vee offshore fishing boat with a centre helm and windscreen, a big four-stroke and rod holders all round. Built for the open sea.",
+  "hull": {
+    "length_m": 7.2,
+    "beam_m": 2.6,
+    "depth_m": 1.0,
+    "draft_m": 0.38,
+    "bottom": "vee",
+    "deadrise_deg": 22,
+    "bow": "pointed",
+    "stern": "transom",
+    "transom_width": 0.8,
+    "fullness": 0.5,
+    "sheer_bow_m": 0.25,
+    "floor_m": 0.12,
+    "decks": {
+      "bow": 0.14,
+      "stern": 0
+    }
+  },
+  "colors": {
+    "hull": "#f2f2ee",
+    "bottom": "#1e3a6a",
+    "deck": "#e6e4dc",
+    "trim": "#a8b0b8",
+    "interior": "#dcdad2",
+    "accent": "#2a4a7a"
+  },
+  "propulsion": {
+    "type": "outboard",
+    "max_speed_ms": 19,
+    "accel_ms2": 4,
+    "turn_rate": 0.8,
+    "reverse": 0.25,
+    "noise": 1
+  },
+  "handling": {
+    "stability": 0.85,
+    "waves_max": 1.3,
+    "current_drift": 0.4
+  },
+  "crew": {
+    "seat_at": 0.38,
+    "eye_height_m": 1.62
+  },
+  "seats": [
+    {
+      "type": "bench",
+      "at": 0.36,
+      "height": 0.75
+    }
+  ],
+  "features": {
+    "motor": {
+      "hp": 250,
+      "color": "#f2f2f2"
+    },
+    "console": {
+      "at": 0.5,
+      "height": 1.0
+    },
+    "rod_holders": 6,
+    "fish_finder": true
+  }
+}

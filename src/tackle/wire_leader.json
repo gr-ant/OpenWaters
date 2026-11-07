@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "wire_leader",
+  "type": "leader",
+  "name": "Wire leader (30 lb)",
+  "description": "Thin steel: pike, barracuda and sharks can't bite through it. Fish can see it.",
+  "material": "wire",
+  "strength_lb": 30,
+  "diameter_mm": 0.4,
+  "length_m": 0.3,
+  "visibility": 0.7,
+  "abrasion": 1,
+  "colors": {
+    "line": "#9aa0a6"
+  }
+}

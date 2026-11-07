@@ -1,0 +1,22 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "sweetcorn",
+  "type": "bait",
+  "name": "Sweetcorn",
+  "description": "A few kernels of corn. Carp and other grazers can't resist it.",
+  "food": {
+    "plants": 1,
+    "eggs": 0.6
+  },
+  "size_cm": 1,
+  "scent": 0.5,
+  "wiggle": 0,
+  "lasts": 2,
+  "floats": false,
+  "shape": "kernel",
+  "weight_g": 1,
+  "colors": {
+    "body": "#f4d040",
+    "accent": "#e0b020"
+  }
+}

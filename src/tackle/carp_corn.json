@@ -1,0 +1,17 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "carp_corn",
+  "type": "rig",
+  "name": "Carp corn rig",
+  "description": "Sweetcorn on the bottom on a sliding sinker. Wait for the run.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "mono_12",
+    "hook": "hook_8",
+    "sinker": "egg_sinker",
+    "bait": "sweetcorn"
+  },
+  "drag": 0.3,
+  "waters": ["lake", "pond", "river"]
+}

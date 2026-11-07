@@ -1,0 +1,59 @@
+{
+  "schema": "embercrown-boat/1",
+  "id": "fishing_kayak",
+  "name": "Fishing kayak",
+  "description": "A wide, stable sit-on-top kayak with pedal drive, rod holders and a fish finder. Hands-free and silent for creeping up on fish in the shallows.",
+  "hull": {
+    "length_m": 3.9,
+    "beam_m": 0.86,
+    "depth_m": 0.34,
+    "draft_m": 0.08,
+    "bottom": "flat",
+    "bow": "pointed",
+    "stern": "pointed",
+    "fullness": 0.55,
+    "sheer_bow_m": 0.1,
+    "sheer_stern_m": 0.05,
+    "floor_m": 0.1,
+    "cockpit": [
+      0.12,
+      0.72
+    ]
+  },
+  "colors": {
+    "hull": "#3a7a3a",
+    "bottom": "#2e5e2e",
+    "deck": "#3a7a3a",
+    "trim": "#1a1a1a",
+    "interior": "#4a8a4a",
+    "accent": "#2a2a2a"
+  },
+  "propulsion": {
+    "type": "pedal",
+    "max_speed_ms": 2.0,
+    "accel_ms2": 0.9,
+    "turn_rate": 1.1,
+    "reverse": 0.8,
+    "noise": 0.04
+  },
+  "handling": {
+    "stability": 0.6,
+    "waves_max": 0.6,
+    "current_drift": 1
+  },
+  "crew": {
+    "seat_at": 0.36,
+    "eye_height_m": 0.95
+  },
+  "seats": [
+    {
+      "type": "kayak",
+      "at": 0.35
+    }
+  ],
+  "features": {
+    "rod_holders": 4,
+    "fish_finder": true,
+    "paddle": "double"
+  }
+}

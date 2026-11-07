@@ -1,0 +1,157 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 25,
+      "typical": 40,
+      "max": 91
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.022,
+      "b": 2.95
+    }
+  },
+  "body": {
+    "profile": [
+      0.62,
+      0.9,
+      1,
+      0.98,
+      0.88,
+      0.7,
+      0.48,
+      0.32
+    ],
+    "height": 0.3,
+    "width": 0.15,
+    "flex": 1,
+    "head": {
+      "length": 0.28,
+      "snout": 0.75,
+      "mouth": 0.35,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "square",
+      "size": 0.15,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.5,
+          "height": 0.08,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.66,
+        "length": 0.12,
+        "height": 0.07
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.07,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#1a1a16",
+        "amount": 0.45,
+        "scale": 5,
+        "region": "all",
+        "alpha": 0.7
+      }
+    ],
+    "colors": {
+      "back": "#2a2a26",
+      "flank": "#4a4a40",
+      "belly": "#8a8a7a",
+      "fins": "#3a3a34",
+      "eye": "#202018",
+      "mouth": "#c8b8a8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 5,
+    "temperature_c": {
+      "min": 6,
+      "optimal": 18,
+      "max": 25
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 8,
+      "max": 70
+    },
+    "cover": {
+      "rocks": 1,
+      "wood": 0.8,
+      "weeds": 0.4,
+      "open": 0
+    }
+  },
+  "population": {
+    "school": {
+      "min": 1,
+      "max": 3
+    },
+    "home_range_m": 20,
+    "density": 0.35
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 7,
+    "turn_rate": 2.2,
+    "station_holding": 0.7,
+    "ambush": 0.2,
+    "wariness": 0.6,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.4,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 3,
+    "food": {
+      "snails": 0.45,
+      "crayfish": 0.4,
+      "shrimp": 0.15
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.1,
+      "bottom": 0.9
+    }
+  },
+  "fight": {
+    "strength": 0.75,
+    "stamina": 0.5,
+    "jumps": 0,
+    "runs": 0.4
+  },
+  "id": "tautog",
+  "name": "Tautog",
+  "scientific": "Tautoga onitis",
+  "description": "Blackfish: a stout, blunt-headed wrasse with thick lips and strong teeth for crushing mussels and crabs, mottled dark grey-brown. Lives tight to rocks, pilings and wrecks."
+}

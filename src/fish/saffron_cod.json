@@ -1,0 +1,177 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 15,
+      "typical": 30,
+      "max": 55
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0058,
+      "b": 3.1
+    }
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.85,
+      1,
+      0.98,
+      0.88,
+      0.68,
+      0.45,
+      0.28
+    ],
+    "height": 0.2,
+    "width": 0.12,
+    "flex": 1,
+    "head": {
+      "length": 0.27,
+      "snout": 0.55,
+      "mouth": 0.6,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "square",
+      "size": 0.15,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.1,
+          "height": 0.06,
+          "spiny": false
+        },
+        {
+          "at": 0.45,
+          "length": 0.13,
+          "height": 0.05,
+          "spiny": false
+        },
+        {
+          "at": 0.64,
+          "length": 0.1,
+          "height": 0.05,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.45,
+        "length": 0.14,
+        "height": 0.05
+      },
+      "pectoral": 0.09,
+      "pelvic": 0.06,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#3a3622",
+        "amount": 0.4,
+        "scale": 7,
+        "region": "upper",
+        "alpha": 0.6
+      },
+      {
+        "type": "lateral_line",
+        "color": "#e8e2cc",
+        "v": 0.1,
+        "alpha": 0.7
+      }
+    ],
+    "barbels": 1,
+    "colors": {
+      "back": "#5a5636",
+      "flank": "#9a9268",
+      "belly": "#ece6d0",
+      "fins": "#6a6444",
+      "eye": "#101010",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.15
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 0.8,
+      "weeds": 0.4,
+      "rocks": 0.4
+    },
+    "temperature_c": {
+      "min": -2,
+      "optimal": 4,
+      "max": 13
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 8,
+      "max": 60
+    }
+  },
+  "population": {
+    "school": {
+      "min": 5,
+      "max": 15
+    },
+    "home_range_m": 60,
+    "density": 1.5
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.6,
+    "burst_bl_s": 7,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.3,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.7,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 4,
+    "food": {
+      "shrimp": 0.5,
+      "fish": 0.2,
+      "worms": 0.2,
+      "snails": 0.1
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    }
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.3
+  },
+  "id": "saffron_cod",
+  "name": "Saffron cod",
+  "scientific": "Eleginus gracilis",
+  "description": "Small, mottled olive-brown cod with a chin barbel and a jutting upper jaw, abundant in shallow, cold Arctic coastal waters; caught through the ice in winter."
+}

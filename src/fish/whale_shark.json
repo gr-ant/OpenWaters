@@ -1,0 +1,170 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "whale_shark",
+  "name": "Whale shark",
+  "scientific": "Rhincodon typus",
+  "description": "The largest fish alive: a gentle giant with a broad flat mouth and a blue-grey back covered in pale spots and stripes. Cruises warm seas with its mouth open, filtering plankton and small fish. Length is nose to tail tip.",
+  "size": {
+    "length_cm": {
+      "min": 300,
+      "typical": 800,
+      "max": 1200,
+      "spread": 0.18
+    },
+    "weight": {
+      "a": 0.01225,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.35,
+      0.75,
+      0.97,
+      1,
+      0.95,
+      0.78,
+      0.5,
+      0.28
+    ],
+    "height": 0.2,
+    "width": 0.22,
+    "flex": 0.6,
+    "swim": "auto",
+    "head": {
+      "length": 0.2,
+      "snout": 0.15,
+      "mouth": 0.95,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.2,
+      "fork": 0.5
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.36,
+          "length": 0.08,
+          "height": 0.1
+        },
+        {
+          "at": 0.7,
+          "length": 0.04,
+          "height": 0.04
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.72,
+        "length": 0.03,
+        "height": 0.03
+      },
+      "pectoral": 0.14,
+      "pelvic": 0.05
+    },
+    "colors": {
+      "back": "#3a4e60",
+      "flank": "#586e7c",
+      "belly": "#e8ece8",
+      "fins": "#3a4a58",
+      "eye": "#080808",
+      "mouth": "#2a3038"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#e4ece8",
+        "density": 0.35,
+        "size": 1,
+        "region": "upper_flank",
+        "alpha": 0.85
+      },
+      {
+        "type": "bars",
+        "color": "#d8e4e4",
+        "count": 14,
+        "width": 0.06,
+        "region": "upper",
+        "from": 0.15,
+        "to": 0.8,
+        "alpha": 0.5
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 15,
+      "max": 700
+    },
+    "temperature_c": {
+      "min": 21,
+      "optimal": 27,
+      "max": 31
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.5
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1,
+      "coral": 0.2
+    }
+  },
+  "population": {
+    "density": 0.01,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 3000
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.15,
+    "burst_bl_s": 0.5,
+    "turn_rate": 0.8,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.5,
+      "mid": 0.45,
+      "bottom": 0.05
+    },
+    "wariness": 0.2,
+    "spook_m": 10,
+    "recover_s": 30,
+    "curiosity": 0.8,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 0.8,
+      "fish": 0.1,
+      "shrimp": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.5,
+      "mid": 0.5,
+      "bottom": 0
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.9,
+    "stamina": 1,
+    "jumps": 0,
+    "runs": 0.6
+  }
+}

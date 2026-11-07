@@ -1,0 +1,41 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "inline_spinner",
+  "type": "lure",
+  "name": "Inline spinner",
+  "description": "A spinning blade on a weighted body. The flash and thump pull trout, perch and pike from a distance. Keep it moving.",
+  "style": "spinner",
+  "imitates": {
+    "fish": 1,
+    "insects": 0.6
+  },
+  "size_cm": 5,
+  "weight_g": 7,
+  "buoyant": false,
+  "sink_ms": 0.35,
+  "dive_m": 0,
+  "lift": 0.45,
+  "speed_ms": {
+    "min": 0.3,
+    "best": 0.6,
+    "max": 1.3
+  },
+  "action": 0.6,
+  "flash": 0.9,
+  "noise": 0.3,
+  "scent": 0,
+  "pause": 0.15,
+  "hooks": {
+    "kind": "treble",
+    "count": 1,
+    "strength_lb": 15,
+    "hold": 0.72
+  },
+  "colors": {
+    "body": "#c0c0c0",
+    "back": "#c0c0c0",
+    "belly": "#c0c0c0",
+    "accent": "#e03a2a",
+    "blade": "#e8e8f0"
+  }
+}

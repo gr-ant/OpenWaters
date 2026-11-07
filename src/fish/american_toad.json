@@ -1,0 +1,132 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "american_toad",
+  "name": "American toad",
+  "scientific": "Anaxyrus americanus",
+  "description": "Warty, short-legged toad that lives on land but crowds into shallow ponds in spring to breed, trilling all night. Length is snout to vent.",
+  "size": {
+    "length_cm": {
+      "min": 5,
+      "typical": 7,
+      "max": 11,
+      "spread": 0.18
+    },
+    "weight": {
+      "a": 0.1,
+      "b": 3.0
+    },
+    "condition_sd": 0.12
+  },
+  "body": {
+    "plan": "frog",
+    "height": 0.42,
+    "width": 0.55,
+    "parts": {
+      "legs": 0.35,
+      "eye": 0.5,
+      "warts": 1,
+      "pose": "sit",
+      "webbing": 0.2
+    },
+    "colors": {
+      "back": "#6a5236",
+      "flank": "#8a6c48",
+      "belly": "#e0d4b8",
+      "fins": "#7a6040",
+      "eye": "#c89a40",
+      "mouth": "#d8c8a8"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#3a2a1a",
+        "density": 0.25,
+        "size": 1,
+        "region": "upper",
+        "alpha": 0.7
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "pond": 1,
+      "creek": 0.3,
+      "lake": 0.3
+    },
+    "depth_m": {
+      "min": 0.02,
+      "preferred": 0.3,
+      "max": 1
+    },
+    "temperature_c": {
+      "min": 5,
+      "optimal": 22,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.2
+    },
+    "turbidity_max": 0.8,
+    "cover": {
+      "reeds": 0.8,
+      "weeds": 0.7,
+      "rocks": 0.5,
+      "lilies": 0.3,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 2,
+    "school": {
+      "min": 1,
+      "max": 6
+    },
+    "home_range_m": 8
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.15,
+    "burst_bl_s": 3,
+    "turn_rate": 2.5,
+    "station_holding": 0,
+    "ambush": 0.6,
+    "depth_zone": {
+      "surface": 0.6,
+      "mid": 0.2,
+      "bottom": 0.2
+    },
+    "wariness": 0.4,
+    "spook_m": 2,
+    "recover_s": 20,
+    "curiosity": 0.6,
+    "rise_per_hour": 0.2,
+    "breath_hold_s": 120,
+    "surface_s": 20,
+    "haul_out": 0.95,
+    "leap_per_hour": 0,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "insects": 0.6,
+      "worms": 0.25,
+      "snails": 0.15
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.4,
+      "mid": 0.2,
+      "bottom": 0.4
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.05,
+    "stamina": 0.05,
+    "jumps": 0.2,
+    "runs": 0
+  }
+}

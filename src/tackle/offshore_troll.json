@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "offshore_troll",
+  "type": "rig",
+  "name": "Offshore troll",
+  "description": "A skirted lure trolled behind a moving boat on heavy line. Drive at 4 m/s and wait for the reel to scream.",
+  "parts": {
+    "rod": "offshore_rod",
+    "reel": "big_game",
+    "line": "mono_80",
+    "leader": "mono_leader_130",
+    "lure": "trolling_skirt"
+  },
+  "drag": 0.3,
+  "waters": ["sea"]
+}

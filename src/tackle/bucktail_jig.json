@@ -1,0 +1,42 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "bucktail_jig",
+  "type": "lure",
+  "name": "Bucktail jig",
+  "description": "A lead head and a skirt of deer hair. Hop it off the bottom: striped bass, cod, snapper and halibut all eat it.",
+  "style": "jig",
+  "imitates": {
+    "fish": 1,
+    "shrimp": 0.8,
+    "crayfish": 0.5
+  },
+  "size_cm": 8,
+  "weight_g": 21,
+  "buoyant": false,
+  "sink_ms": 0.8,
+  "dive_m": 0,
+  "lift": 0.7,
+  "speed_ms": {
+    "min": 0.1,
+    "best": 0.4,
+    "max": 1
+  },
+  "action": 0.5,
+  "flash": 0.3,
+  "noise": 0.1,
+  "scent": 0,
+  "pause": 0.9,
+  "hooks": {
+    "kind": "single",
+    "count": 1,
+    "strength_lb": 50,
+    "hold": 0.82
+  },
+  "colors": {
+    "body": "#f4f0e6",
+    "back": "#f4f0e6",
+    "belly": "#f4f0e6",
+    "accent": "#d8302a",
+    "blade": "#e8e0d0"
+  }
+}

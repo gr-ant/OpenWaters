@@ -1,0 +1,173 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.22,
+      "min": 60,
+      "typical": 90,
+      "max": 190
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0204,
+      "b": 2.94
+    }
+  },
+  "body": {
+    "profile": [
+      0.48,
+      0.82,
+      0.97,
+      1,
+      0.92,
+      0.7,
+      0.4,
+      0.16
+    ],
+    "height": 0.24,
+    "width": 0.12,
+    "flex": 0.85,
+    "head": {
+      "length": 0.26,
+      "snout": 0.5,
+      "mouth": 0.55,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.22,
+      "fork": 0.6
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.06,
+          "height": 0.05,
+          "spiny": true
+        },
+        {
+          "at": 0.4,
+          "length": 0.36,
+          "height": 0.08,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.6,
+        "length": 0.18,
+        "height": 0.07
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.06,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "stripe",
+        "color": "#d0a040",
+        "v": 0.12,
+        "width": 0.05,
+        "region": "all",
+        "alpha": 0.7
+      },
+      {
+        "type": "bars",
+        "color": "#2a2a1a",
+        "count": 1,
+        "width": 1,
+        "from": 0.03,
+        "to": 0.12,
+        "region": "upper",
+        "alpha": 0.6
+      }
+    ],
+    "colors": {
+      "back": "#5a5a3a",
+      "flank": "#b8b49a",
+      "belly": "#ece8dc",
+      "fins": "#7a7454",
+      "eye": "#101010",
+      "mouth": "#d8d0c8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.3,
+      "max": 2.5
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 5,
+    "temperature_c": {
+      "min": 18,
+      "optimal": 25,
+      "max": 30
+    },
+    "depth_m": {
+      "min": 5,
+      "preferred": 40,
+      "max": 300
+    },
+    "cover": {
+      "rocks": 0.7,
+      "coral": 0.6,
+      "wood": 0.4,
+      "open": 0.8
+    }
+  },
+  "population": {
+    "school": {
+      "min": 2,
+      "max": 6
+    },
+    "home_range_m": 400,
+    "density": 0.03
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1.1,
+    "burst_bl_s": 11,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.45,
+    "spook_m": 6,
+    "recover_s": 30,
+    "curiosity": 0.85,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.6,
+      "bottom": 0.3
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 20,
+    "meals_per_day": 2,
+    "food": {
+      "fish": 0.75,
+      "shrimp": 0.1,
+      "crayfish": 0.15
+    },
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.6,
+      "bottom": 0.3
+    }
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 0.95,
+    "jumps": 0,
+    "runs": 1
+  },
+  "id": "greater_amberjack",
+  "name": "Greater amberjack",
+  "scientific": "Seriola dumerili",
+  "description": "The largest jack: a long, powerful brassy-olive fish with a dark diagonal band through the eye and an amber stripe along the side. Small schools patrol reef edges and drop-offs, crushing anglers in deep, dogged runs."
+}

@@ -1,0 +1,163 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "rainbow_trout",
+  "name": "Rainbow trout",
+  "scientific": "Oncorhynchus mykiss",
+  "description": "Acrobatic trout of fast rivers and cool lakes; feeds hard on drifting insects and leaps when hooked.",
+  "size": {
+    "length_cm": {
+      "min": 15,
+      "typical": 35,
+      "max": 76,
+      "spread": 0.28
+    },
+    "weight": {
+      "a": 0.0117,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.82,
+      0.97,
+      1,
+      0.9,
+      0.68,
+      0.42,
+      0.25
+    ],
+    "height": 0.21,
+    "width": 0.11,
+    "head": {
+      "length": 0.22,
+      "snout": 0.5,
+      "mouth": 0.45,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.17,
+      "fork": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.42,
+          "length": 0.13,
+          "height": 0.1
+        }
+      ],
+      "adipose": true,
+      "anal": {
+        "at": 0.72,
+        "length": 0.1,
+        "height": 0.07
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.07
+    },
+    "colors": {
+      "back": "#3f5a4c",
+      "flank": "#c9c6b6",
+      "belly": "#f2efe6",
+      "fins": "#8a8a74"
+    },
+    "pattern": [
+      {
+        "type": "stripe",
+        "color": "#d9798a",
+        "v": 0.02,
+        "width": 0.17,
+        "alpha": 0.85
+      },
+      {
+        "type": "spots",
+        "color": "#1e2620",
+        "density": 0.3,
+        "region": "upper"
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "river": 1,
+      "creek": 0.75,
+      "lake": 0.6
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 1.5,
+      "max": 15
+    },
+    "temperature_c": {
+      "min": 3,
+      "optimal": 15,
+      "max": 25
+    },
+    "current_ms": {
+      "preferred": 0.7,
+      "max": 2.4
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 6,
+    "cover": {
+      "rocks": 0.8,
+      "weeds": 0.3,
+      "reeds": 0.2,
+      "lilies": 0.1,
+      "wood": 0.6,
+      "open": 0.35
+    }
+  },
+  "population": {
+    "density": 1.2,
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 14
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 1.0,
+    "burst_bl_s": 10,
+    "turn_rate": 2.8,
+    "station_holding": 0.8,
+    "depth_zone": {
+      "surface": 0.15,
+      "mid": 0.45,
+      "bottom": 0.4
+    },
+    "wariness": 0.65,
+    "spook_m": 6,
+    "recover_s": 45,
+    "curiosity": 0.4,
+    "rise_per_hour": 5
+  },
+  "diet": {
+    "food": {
+      "insects": 0.4,
+      "nymphs": 0.3,
+      "eggs": 0.1,
+      "fish": 0.1,
+      "worms": 0.1
+    },
+    "piscivore_from_cm": 45,
+    "feeding_zone": {
+      "surface": 0.4,
+      "mid": 0.35,
+      "bottom": 0.25
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.7,
+    "stamina": 0.65,
+    "jumps": 0.85,
+    "runs": 0.6
+  }
+}

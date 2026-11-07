@@ -1,0 +1,139 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "axolotl",
+  "name": "Axolotl",
+  "scientific": "Ambystoma mexicanum",
+  "description": "A salamander that never grows up: it keeps its feathery gills and finned tail for life and stays in the water. Native only to the lakes and canals of Mexico City.",
+  "size": {
+    "length_cm": {
+      "min": 12,
+      "typical": 23,
+      "max": 30,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.0066,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "salamander",
+    "height": 0.1,
+    "width": 0.12,
+    "parts": {
+      "snout": 0.03,
+      "snout_width": 1,
+      "tail": 0.45,
+      "limbs": 0.4,
+      "scutes": 0,
+      "crest": 0.5,
+      "gills": 1,
+      "eye": 0.35,
+      "head_width": 1.4,
+      "head_height": 0.75
+    },
+    "colors": {
+      "back": "#3a3a2c",
+      "flank": "#4e4a36",
+      "belly": "#8a8064",
+      "fins": "#4a4634",
+      "eye": "#1a1a14",
+      "mouth": "#8a3a4a"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#2a2a20",
+        "density": 0.25,
+        "size": 1,
+        "region": "all",
+        "alpha": 0.5
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "lake": 1,
+      "pond": 0.6
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 1.5,
+      "max": 4
+    },
+    "temperature_c": {
+      "min": 6,
+      "optimal": 16,
+      "max": 22
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.2
+    },
+    "turbidity_max": 0.7,
+    "cover": {
+      "weeds": 1,
+      "reeds": 0.6,
+      "lilies": 0.4,
+      "open": 0.2,
+      "rocks": 0.1
+    }
+  },
+  "population": {
+    "density": 1,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 8
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.2,
+    "burst_bl_s": 4,
+    "turn_rate": 2,
+    "station_holding": 0,
+    "ambush": 0.6,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    },
+    "wariness": 0.3,
+    "spook_m": 1.5,
+    "recover_s": 20,
+    "curiosity": 0.7,
+    "rise_per_hour": 0.3,
+    "breath_hold_s": 0,
+    "surface_s": 5,
+    "haul_out": 0,
+    "leap_per_hour": 0,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "worms": 0.3,
+      "nymphs": 0.25,
+      "snails": 0.15,
+      "insects": 0.1,
+      "fish": 0.1,
+      "crayfish": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.05,
+    "stamina": 0.05,
+    "jumps": 0,
+    "runs": 0.1
+  }
+}

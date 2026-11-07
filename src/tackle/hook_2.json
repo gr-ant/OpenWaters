@@ -1,0 +1,13 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "hook_2",
+  "type": "hook",
+  "name": "#2 bait hook",
+  "description": "Mid-size hook for live minnows, big worms and catfish.",
+  "style": "j",
+  "size": "#2",
+  "gap_mm": 11,
+  "strength_lb": 25,
+  "hold": 0.8,
+  "weight_g": 0.4
+}

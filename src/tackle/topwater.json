@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "topwater",
+  "type": "rig",
+  "name": "Topwater popper",
+  "description": "Braid and a popper for explosive surface strikes at dawn and dusk.",
+  "parts": {
+    "rod": "heavy_casting",
+    "reel": "baitcaster",
+    "line": "braid_20",
+    "leader": "fluoro_leader_20",
+    "lure": "topwater_popper"
+  },
+  "drag": 0.3,
+  "waters": ["lake", "pond"]
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "braid_50",
+  "type": "line",
+  "name": "50 lb braid",
+  "description": "Thick braid for heavy cover, pike and the surf.",
+  "material": "braid",
+  "strength_lb": 50,
+  "diameter_mm": 0.3,
+  "stretch": 0.03,
+  "visibility": 0.9,
+  "colors": {
+    "line": "#c8c030"
+  }
+}

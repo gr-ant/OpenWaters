@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "mono_12",
+  "type": "line",
+  "name": "12 lb monofilament",
+  "description": "General-purpose nylon line. The stretch cushions head-shakes and jumps.",
+  "material": "mono",
+  "strength_lb": 12,
+  "diameter_mm": 0.33,
+  "stretch": 0.25,
+  "visibility": 0.55,
+  "colors": {
+    "line": "#d8ece4"
+  }
+}

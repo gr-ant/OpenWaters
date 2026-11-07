@@ -1,0 +1,163 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "bicolor_parrotfish",
+  "name": "Bicolor parrotfish",
+  "scientific": "Cetoscarus bicolor",
+  "description": "Large Indo-Pacific parrotfish; males are green with pink cheeks and a bulbous forehead, while females are cream with a red-orange rear. Scrapes algae and dead coral with a fused beak and leaves sand behind. Length is total length.",
+  "size": {
+    "length_cm": {
+      "min": 20,
+      "typical": 45,
+      "max": 90,
+      "spread": 0.22
+    },
+    "weight": {
+      "a": 0.015,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.85,
+      1,
+      1,
+      0.92,
+      0.72,
+      0.46,
+      0.3
+    ],
+    "height": 0.3,
+    "width": 0.14,
+    "flex": 1,
+    "head": {
+      "length": 0.26,
+      "snout": 0.35,
+      "mouth": 0.3,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.18,
+      "fork": 0.12
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.4,
+          "height": 0.1,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.62,
+        "length": 0.2,
+        "height": 0.09
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.07
+    },
+    "colors": {
+      "back": "#2a9a78",
+      "flank": "#4ab08a",
+      "belly": "#9ad0b0",
+      "fins": "#e0609a",
+      "eye": "#201810",
+      "mouth": "#58c8b8"
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#1a7a60",
+        "density": 0.5,
+        "region": "upper_flank",
+        "alpha": 0.5
+      },
+      {
+        "type": "mottled",
+        "color": "#e87aa8",
+        "amount": 0.25,
+        "scale": 5,
+        "region": "lower",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 8,
+      "max": 30
+    },
+    "temperature_c": {
+      "min": 24,
+      "optimal": 27,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 0.9
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "coral": 1,
+      "rocks": 0.6,
+      "open": 0.4
+    }
+  },
+  "population": {
+    "density": 1.0,
+    "school": {
+      "min": 1,
+      "max": 4
+    },
+    "home_range_m": 120
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.8,
+    "burst_bl_s": 7,
+    "turn_rate": 2.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.05,
+      "mid": 0.4,
+      "bottom": 0.55
+    },
+    "wariness": 0.5,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.35,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 0.8,
+      "snails": 0.1,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "meals_per_day": 5
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.5,
+    "jumps": 0,
+    "runs": 0.55
+  }
+}

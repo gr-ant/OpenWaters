@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "pike_spoon",
+  "type": "rig",
+  "name": "Pike spoon",
+  "description": "A big flashing spoon on braid with a wire leader, so the teeth can't cut you off.",
+  "parts": {
+    "rod": "heavy_casting",
+    "reel": "baitcaster",
+    "line": "braid_50",
+    "leader": "wire_leader",
+    "lure": "casting_spoon"
+  },
+  "drag": 0.3,
+  "waters": ["lake", "river"]
+}

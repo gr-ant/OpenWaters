@@ -1,0 +1,18 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "cricket_float",
+  "type": "rig",
+  "name": "Cricket under a bobber",
+  "description": "A live cricket a foot under a bobber: bluegill candy, and trout rise to it.",
+  "parts": {
+    "rod": "ultralight_spinning",
+    "reel": "spinning_1000",
+    "line": "mono_6",
+    "hook": "hook_8",
+    "float": "bobber",
+    "bait": "cricket"
+  },
+  "drag": 0.3,
+  "waters": ["pond", "creek", "lake"],
+  "float_depth_m": 0.35
+}

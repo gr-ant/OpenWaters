@@ -1,0 +1,123 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "queen_conch",
+  "name": "Queen conch",
+  "scientific": "Aliger gigas",
+  "description": "Heavy tropical sea snail with a flared pink-lipped shell crowned in blunt spines. Plods over seagrass and sand, grazing algae and detritus with eyes on stalks. Length is shell length.",
+  "size": {
+    "length_cm": {
+      "min": 12,
+      "typical": 22,
+      "max": 35,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.47,
+      "b": 2.5
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "snail",
+    "height": 0.6,
+    "width": 0.6,
+    "parts": {
+      "spire": 0.55,
+      "whorls": 5,
+      "aperture": 0.8,
+      "foot": 0.5,
+      "knobs": 0.8
+    },
+    "colors": {
+      "back": "#b8a284",
+      "flank": "#d4b894",
+      "belly": "#f0a8a0",
+      "fins": "#8a7a60",
+      "eye": "#201a10",
+      "mouth": "#f4b8b0"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#8a6a48",
+        "amount": 0.4,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 6,
+      "max": 40
+    },
+    "temperature_c": {
+      "min": 20,
+      "optimal": 27,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 0.8
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "weeds": 1,
+      "open": 0.6,
+      "coral": 0.2
+    }
+  },
+  "population": {
+    "density": 1.5,
+    "school": {
+      "min": 1,
+      "max": 5
+    },
+    "home_range_m": 15
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.03,
+    "burst_bl_s": 0.3,
+    "turn_rate": 0.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "wariness": 0.1,
+    "spook_m": 1,
+    "recover_s": 20,
+    "curiosity": 0.1,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 0.9,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.1,
+    "stamina": 0.1,
+    "jumps": 0,
+    "runs": 0
+  }
+}

@@ -1,0 +1,177 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 25,
+      "typical": 45,
+      "max": 91
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0068,
+      "b": 3.15
+    }
+  },
+  "body": {
+    "profile": [
+      0.42,
+      0.75,
+      0.94,
+      1,
+      0.94,
+      0.75,
+      0.48,
+      0.28
+    ],
+    "height": 0.2,
+    "width": 0.11,
+    "flex": 1,
+    "head": {
+      "length": 0.27,
+      "snout": 0.35,
+      "mouth": 0.75,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.17,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.18,
+          "height": 0.1,
+          "spiny": true
+        },
+        {
+          "at": 0.55,
+          "length": 0.14,
+          "height": 0.08,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.72,
+        "length": 0.09,
+        "height": 0.07
+      },
+      "pectoral": 0.09,
+      "pelvic": 0.08,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#3a3418",
+        "amount": 0.4,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.6
+      },
+      {
+        "type": "spot",
+        "color": "#1a1a10",
+        "at": 0.45,
+        "v": 0.85,
+        "size": 0.04,
+        "region": "all",
+        "alpha": 0.8
+      }
+    ],
+    "colors": {
+      "back": "#4a4a26",
+      "flank": "#b8a050",
+      "belly": "#f0ecd8",
+      "fins": "#8a7a40",
+      "eye": "#e8e0b0",
+      "mouth": "#e8e0d0"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "lake": 1,
+      "river": 0.7,
+      "pond": 0.1
+    },
+    "current_ms": {
+      "preferred": 0.15,
+      "max": 1.2
+    },
+    "turbidity_max": 0.8,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "rocks": 0.8,
+      "weeds": 0.5,
+      "wood": 0.5,
+      "open": 0.5
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 21,
+      "max": 28
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 6,
+      "max": 25
+    }
+  },
+  "population": {
+    "school": {
+      "min": 2,
+      "max": 6
+    },
+    "home_range_m": 60,
+    "density": 0.5
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.6,
+    "burst_bl_s": 8,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0.4,
+    "wariness": 0.55,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.5,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.05,
+      "mid": 0.45,
+      "bottom": 0.5
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 15,
+    "meals_per_day": 2,
+    "food": {
+      "fish": 0.7,
+      "crayfish": 0.1,
+      "leeches": 0.1,
+      "nymphs": 0.05,
+      "worms": 0.05
+    },
+    "feeding_zone": {
+      "surface": 0.05,
+      "mid": 0.5,
+      "bottom": 0.45
+    }
+  },
+  "fight": {
+    "strength": 0.55,
+    "stamina": 0.45,
+    "jumps": 0,
+    "runs": 0.45,
+    "teeth": 0.2
+  },
+  "id": "walleye",
+  "name": "Walleye",
+  "scientific": "Sander vitreus",
+  "description": "Olive-gold pike-perch with big, glassy eyes that see in the dark, a dark spot at the rear of its spiny dorsal and a white-tipped lower tail. Hunts perch and minnows in dim light and murky water."
+}

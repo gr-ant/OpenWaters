@@ -1,0 +1,130 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "sperm_whale",
+  "name": "Sperm whale",
+  "scientific": "Physeter macrocephalus",
+  "description": "Vast, wrinkle-skinned toothed whale with a huge square head and a blow angled forward and left. Dives over a kilometre into the deep for giant squid, which the game counts as fish food, then lies at the surface to breathe. Length is nose to tail flukes.",
+  "size": {
+    "length_cm": {
+      "min": 800,
+      "typical": 1000,
+      "max": 1600,
+      "spread": 0.12
+    },
+    "weight": {
+      "a": 0.013,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "pinniped",
+    "height": 0.3,
+    "width": 0.28,
+    "flex": 0.5,
+    "swim": "auto",
+    "parts": {
+      "snout": 1,
+      "neck": 0,
+      "fore": 0.18,
+      "rear": "tail",
+      "tail": 0.5,
+      "whiskers": 0,
+      "ears": 0,
+      "eye": 0.3
+    },
+    "colors": {
+      "back": "#4a4e58",
+      "flank": "#5e626c",
+      "belly": "#a8a8ac",
+      "fins": "#3a3e48",
+      "eye": "#7a7a80",
+      "mouth": "#0a0a0a"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#8a8a90",
+        "amount": 0.25,
+        "scale": 8,
+        "region": "lower",
+        "alpha": 0.5
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 300,
+      "preferred": 600,
+      "max": 1500
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 12,
+      "max": 26
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.008,
+    "school": {
+      "min": 1,
+      "max": 12
+    },
+    "home_range_m": 3000
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.15,
+    "burst_bl_s": 1,
+    "turn_rate": 0.6,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.5,
+      "bottom": 0.4
+    },
+    "wariness": 0.5,
+    "spook_m": 25,
+    "recover_s": 90,
+    "curiosity": 0.4,
+    "rise_per_hour": 0,
+    "breath_hold_s": 2400,
+    "surface_s": 480,
+    "leap_per_hour": 0.1,
+    "haul_out": 0,
+    "blow": 1
+  },
+  "diet": {
+    "food": {
+      "fish": 1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.5,
+      "bottom": 0.5
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 1,
+    "jumps": 0,
+    "runs": 0.8
+  }
+}

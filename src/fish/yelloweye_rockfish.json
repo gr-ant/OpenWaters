@@ -1,0 +1,160 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 25,
+      "typical": 50,
+      "max": 91
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0153,
+      "b": 3.06
+    }
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.88,
+      1,
+      1,
+      0.9,
+      0.68,
+      0.42,
+      0.28
+    ],
+    "height": 0.3,
+    "width": 0.13,
+    "flex": 1,
+    "head": {
+      "length": 0.3,
+      "snout": 0.45,
+      "mouth": 0.7,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "square",
+      "size": 0.15,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.24,
+          "height": 0.12,
+          "spiny": true
+        },
+        {
+          "at": 0.55,
+          "length": 0.12,
+          "height": 0.08,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.68,
+        "length": 0.08,
+        "height": 0.08
+      },
+      "pectoral": 0.13,
+      "pelvic": 0.08,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "lateral_line",
+        "color": "#f2c8a0",
+        "v": 0.05,
+        "alpha": 0.5
+      }
+    ],
+    "colors": {
+      "back": "#c84a20",
+      "flank": "#e8702e",
+      "belly": "#f0b080",
+      "fins": "#d8602a",
+      "eye": "#f0d020",
+      "mouth": "#f0c8a0"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "rocks": 1,
+      "weeds": 0.5,
+      "open": 0.1
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 8,
+      "max": 14
+    },
+    "depth_m": {
+      "min": 15,
+      "preferred": 90,
+      "max": 550
+    }
+  },
+  "population": {
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 30,
+    "density": 0.1
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 6,
+    "turn_rate": 2,
+    "station_holding": 0.6,
+    "ambush": 0.6,
+    "wariness": 0.3,
+    "spook_m": 3,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.35,
+      "bottom": 0.65
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 2,
+    "food": {
+      "fish": 0.55,
+      "crayfish": 0.2,
+      "shrimp": 0.25
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    }
+  },
+  "fight": {
+    "strength": 0.65,
+    "stamina": 0.4,
+    "jumps": 0,
+    "runs": 0.3
+  },
+  "id": "yelloweye_rockfish",
+  "name": "Yelloweye rockfish",
+  "scientific": "Sebastes ruberrimus",
+  "description": "Big orange-red rockfish with bright yellow eyes, living on deep rocky reefs; can live over a hundred years. Young fish carry a pale stripe along the side."
+}

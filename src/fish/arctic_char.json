@@ -1,0 +1,166 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "arctic_char",
+  "name": "Arctic char",
+  "scientific": "Salvelinus alpinus",
+  "description": "The northernmost freshwater fish: a trout-like char with a dark back, pale spots and a blazing red-orange belly in autumn. Lives in icy lakes and runs to the sea in summer.",
+  "size": {
+    "length_cm": {
+      "min": 25,
+      "typical": 45,
+      "max": 90,
+      "spread": 0.25
+    },
+    "weight": {
+      "a": 0.009,
+      "b": 3.05
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.82,
+      0.97,
+      1,
+      0.9,
+      0.7,
+      0.44,
+      0.27
+    ],
+    "height": 0.2,
+    "width": 0.11,
+    "flex": 1,
+    "head": {
+      "length": 0.23,
+      "snout": 0.45,
+      "mouth": 0.5,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.17,
+      "fork": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.42,
+          "length": 0.12,
+          "height": 0.09
+        }
+      ],
+      "adipose": true,
+      "anal": {
+        "at": 0.72,
+        "length": 0.09,
+        "height": 0.07
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.08
+    },
+    "colors": {
+      "back": "#2e3a40",
+      "flank": "#5a6a6a",
+      "belly": "#e2662a",
+      "fins": "#c8542a",
+      "eye": "#101010",
+      "mouth": "#e8d8c8"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#f0c8b0",
+        "density": 0.35,
+        "size": 1,
+        "region": "flank",
+        "alpha": 0.9
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "lake": 1,
+      "river": 0.6,
+      "creek": 0.5,
+      "sea": 0.3
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 4,
+      "max": 30
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 9,
+      "max": 16
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.2
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 6.5,
+    "cover": {
+      "rocks": 1,
+      "weeds": 0.3,
+      "wood": 0.4,
+      "open": 0.5
+    }
+  },
+  "population": {
+    "density": 1,
+    "school": {
+      "min": 1,
+      "max": 4
+    },
+    "home_range_m": 40
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.6,
+    "burst_bl_s": 7,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.15,
+      "mid": 0.45,
+      "bottom": 0.4
+    },
+    "wariness": 0.7,
+    "spook_m": 6,
+    "recover_s": 50,
+    "curiosity": 0.4,
+    "rise_per_hour": 0.8,
+    "breath_hold_s": 0,
+    "surface_s": 5,
+    "leap_per_hour": 0,
+    "haul_out": 0,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "insects": 0.25,
+      "nymphs": 0.3,
+      "fish": 0.25,
+      "shrimp": 0.1,
+      "snails": 0.1
+    },
+    "piscivore_from_cm": 35,
+    "feeding_zone": {
+      "surface": 0.2,
+      "mid": 0.4,
+      "bottom": 0.4
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.7,
+    "stamina": 0.7,
+    "jumps": 0.4,
+    "runs": 0.6
+  }
+}

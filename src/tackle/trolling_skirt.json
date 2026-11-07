@@ -1,0 +1,40 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "trolling_skirt",
+  "type": "lure",
+  "name": "Trolling skirt lure",
+  "description": "A heavy head trailing a plastic skirt. Pull it behind a moving boat at 4 m/s and it skips, smokes and dives on the surface. Marlin food.",
+  "style": "skirt",
+  "imitates": {
+    "fish": 1
+  },
+  "size_cm": 25,
+  "weight_g": 120,
+  "buoyant": false,
+  "sink_ms": 0.15,
+  "dive_m": 0,
+  "lift": 1.2,
+  "speed_ms": {
+    "min": 2.5,
+    "best": 4,
+    "max": 6.5
+  },
+  "action": 0.8,
+  "flash": 0.6,
+  "noise": 0.7,
+  "scent": 0,
+  "pause": 0,
+  "hooks": {
+    "kind": "single",
+    "count": 1,
+    "strength_lb": 200,
+    "hold": 0.85
+  },
+  "colors": {
+    "body": "#3070d0",
+    "back": "#20306a",
+    "belly": "#f0f0f8",
+    "accent": "#f0d020",
+    "blade": "#c8ccd0"
+  }
+}

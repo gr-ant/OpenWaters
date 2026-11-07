@@ -1,0 +1,138 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "snapping_turtle",
+  "name": "Common snapping turtle",
+  "scientific": "Chelydra serpentina",
+  "description": "Big-headed, rough-shelled ambusher of muddy ponds and slow rivers. Lies buried in the bottom and strikes with a fast, powerful bite. Length is carapace length.",
+  "size": {
+    "length_cm": {
+      "min": 15,
+      "typical": 30,
+      "max": 49,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.22,
+      "b": 3.0
+    },
+    "condition_sd": 0.12
+  },
+  "body": {
+    "plan": "turtle",
+    "height": 0.22,
+    "width": 0.8,
+    "parts": {
+      "flippers": false,
+      "neck": 0.3,
+      "head": 0.3,
+      "tail": 0.45,
+      "ridges": 1,
+      "legs": 0.6
+    },
+    "colors": {
+      "back": "#3a3a2a",
+      "flank": "#4a4a34",
+      "belly": "#c8b880",
+      "fins": "#4a4436",
+      "eye": "#c8a040",
+      "mouth": "#d0c0a0"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#2a2a1e",
+        "amount": 0.3,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "pond": 1,
+      "lake": 0.8,
+      "river": 0.6,
+      "creek": 0.2
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 1.5,
+      "max": 6
+    },
+    "temperature_c": {
+      "min": 5,
+      "optimal": 26,
+      "max": 34
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.4
+    },
+    "turbidity_max": 1,
+    "cover": {
+      "weeds": 0.9,
+      "reeds": 0.8,
+      "lilies": 0.7,
+      "rocks": 0.3,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 0.3,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 25
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.1,
+    "burst_bl_s": 3,
+    "turn_rate": 1.5,
+    "station_holding": 0,
+    "ambush": 0.85,
+    "depth_zone": {
+      "surface": 0.05,
+      "mid": 0.1,
+      "bottom": 0.85
+    },
+    "wariness": 0.4,
+    "spook_m": 3,
+    "recover_s": 40,
+    "curiosity": 0.6,
+    "rise_per_hour": 0.3,
+    "breath_hold_s": 600,
+    "surface_s": 8,
+    "haul_out": 0.15,
+    "leap_per_hour": 0,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.3,
+      "plants": 0.2,
+      "frogs": 0.15,
+      "crayfish": 0.15,
+      "snails": 0.1,
+      "insects": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.2,
+      "bottom": 0.7
+    },
+    "meals_per_day": 1
+  },
+  "fight": {
+    "strength": 0.9,
+    "stamina": 0.7,
+    "jumps": 0,
+    "runs": 0.3,
+    "teeth": 0.8
+  }
+}

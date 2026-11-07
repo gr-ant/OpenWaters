@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "texas_worm",
+  "type": "rig",
+  "name": "Texas-rigged worm",
+  "description": "A plastic worm crawled along the bottom on fluorocarbon. Slow, but the big bass live here.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "fluoro_10",
+    "lure": "soft_worm"
+  },
+  "drag": 0.3,
+  "waters": ["lake", "pond", "river"]
+}

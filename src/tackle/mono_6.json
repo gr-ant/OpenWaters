@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "mono_6",
+  "type": "line",
+  "name": "6 lb monofilament",
+  "description": "Thin, stretchy and forgiving. Good for light rods and wary fish.",
+  "material": "mono",
+  "strength_lb": 6,
+  "diameter_mm": 0.23,
+  "stretch": 0.25,
+  "visibility": 0.45,
+  "colors": {
+    "line": "#dce8e2"
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "kelp_greenling",
+  "name": "Kelp greenling",
+  "scientific": "Hexagrammos decagrammus",
+  "description": "Slender, spotted greenling of Pacific kelp forests. Males are blue-spotted grey, females golden-brown with bright orange-brown spots. Darts among the stipes after crabs, shrimp and small fish.",
+  "size": {
+    "length_cm": {
+      "min": 15,
+      "typical": 30,
+      "max": 61,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0085,
+      "b": 3.05
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.8,
+      0.95,
+      1,
+      0.95,
+      0.78,
+      0.5,
+      0.3
+    ],
+    "height": 0.2,
+    "width": 0.11,
+    "flex": 1,
+    "swim": "auto",
+    "head": {
+      "length": 0.25,
+      "snout": 0.6,
+      "mouth": 0.5,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.17,
+      "fork": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.5,
+          "height": 0.1,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.62,
+        "length": 0.28,
+        "height": 0.07
+      },
+      "pectoral": 0.11,
+      "pelvic": 0.07,
+      "adipose": false
+    },
+    "colors": {
+      "back": "#6a6a4a",
+      "flank": "#8a8a68",
+      "belly": "#e0d8b8",
+      "fins": "#7a7a58",
+      "eye": "#101010",
+      "mouth": "#d8b890"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#3a6a8a",
+        "density": 0.2,
+        "size": 1,
+        "region": "upper_flank",
+        "alpha": 0.8
+      },
+      {
+        "type": "mottled",
+        "color": "#4a4a30",
+        "amount": 0.3,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 10,
+      "max": 46
+    },
+    "temperature_c": {
+      "min": 6,
+      "optimal": 11,
+      "max": 17
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.2
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 6,
+    "cover": {
+      "weeds": 1,
+      "rocks": 0.8,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 0.8,
+    "school": {
+      "min": 1,
+      "max": 3
+    },
+    "home_range_m": 40
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.6,
+    "burst_bl_s": 8,
+    "turn_rate": 2.8,
+    "station_holding": 0,
+    "ambush": 0.2,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.5,
+      "bottom": 0.5
+    },
+    "wariness": 0.5,
+    "spook_m": 4,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "crayfish": 0.3,
+      "shrimp": 0.3,
+      "fish": 0.2,
+      "snails": 0.1,
+      "worms": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.5,
+      "bottom": 0.5
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.45,
+    "stamina": 0.45,
+    "jumps": 0,
+    "runs": 0.4
+  }
+}

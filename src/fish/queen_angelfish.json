@@ -1,0 +1,166 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "queen_angelfish",
+  "name": "Queen angelfish",
+  "scientific": "Holacanthus ciliaris",
+  "description": "Disc-shaped blue-and-gold angelfish with a dark, electric-blue-ringed crown on its forehead. Grazes sponges and tunicates among reef heads, usually in pairs. Length is total length.",
+  "size": {
+    "length_cm": {
+      "min": 12,
+      "typical": 30,
+      "max": 45,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.022,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.35,
+      0.8,
+      1,
+      1,
+      0.9,
+      0.66,
+      0.4,
+      0.28
+    ],
+    "height": 0.62,
+    "width": 0.1,
+    "flex": 0.7,
+    "head": {
+      "length": 0.24,
+      "snout": 0.45,
+      "mouth": 0.25,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "rounded",
+      "size": 0.17
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.5,
+          "height": 0.16,
+          "spiny": true
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.55,
+        "length": 0.3,
+        "height": 0.14
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.09
+    },
+    "colors": {
+      "back": "#2c6fb8",
+      "flank": "#e8c020",
+      "belly": "#e8d060",
+      "fins": "#f0b020",
+      "eye": "#101010",
+      "mouth": "#4a90d8"
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#2a58a0",
+        "density": 0.5,
+        "region": "upper_flank",
+        "alpha": 0.5
+      },
+      {
+        "type": "spots",
+        "color": "#1a2a8a",
+        "density": 0.12,
+        "size": 1,
+        "region": "upper",
+        "from": 0.1,
+        "to": 0.3,
+        "alpha": 0.9
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 2,
+      "preferred": 12,
+      "max": 70
+    },
+    "temperature_c": {
+      "min": 22,
+      "optimal": 26,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 0.8
+    },
+    "turbidity_max": 0.25,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "coral": 1,
+      "rocks": 0.6,
+      "open": 0.2,
+      "weeds": 0.1
+    }
+  },
+  "population": {
+    "density": 0.8,
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 60
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.6,
+    "burst_bl_s": 6,
+    "turn_rate": 3.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.6,
+      "bottom": 0.4
+    },
+    "wariness": 0.45,
+    "spook_m": 4,
+    "recover_s": 30,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 0.4,
+      "worms": 0.2,
+      "shrimp": 0.2,
+      "plankton": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "meals_per_day": 5
+  },
+  "fight": {
+    "strength": 0.35,
+    "stamina": 0.4,
+    "jumps": 0,
+    "runs": 0.4
+  }
+}

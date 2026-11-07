@@ -1,0 +1,156 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.15,
+      "min": 10,
+      "typical": 18,
+      "max": 27
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.025,
+      "b": 3
+    }
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.9,
+      1,
+      1,
+      0.9,
+      0.68,
+      0.42,
+      0.24
+    ],
+    "height": 0.48,
+    "width": 0.1,
+    "flex": 1,
+    "head": {
+      "length": 0.24,
+      "snout": 0.6,
+      "mouth": 0.2,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16,
+      "fork": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.24,
+          "length": 0.56,
+          "height": 0.08,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.48,
+        "length": 0.36,
+        "height": 0.07
+      },
+      "pectoral": 0.11,
+      "pelvic": 0.06,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#141414",
+        "count": 6,
+        "width": 0.08,
+        "region": "all",
+        "from": 0.12,
+        "to": 0.92,
+        "alpha": 0.95
+      }
+    ],
+    "colors": {
+      "back": "#b8c8b0",
+      "flank": "#dce4d8",
+      "belly": "#f4f6f0",
+      "fins": "#c8d0c0",
+      "eye": "#101010",
+      "mouth": "#d8d0c8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.5
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 4,
+    "temperature_c": {
+      "min": 21,
+      "optimal": 27,
+      "max": 31
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 3,
+      "max": 90
+    },
+    "cover": {
+      "coral": 0.8,
+      "rocks": 0.8,
+      "open": 0.4
+    }
+  },
+  "population": {
+    "school": {
+      "min": 10,
+      "max": 40
+    },
+    "home_range_m": 60,
+    "density": 2.5
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.7,
+    "burst_bl_s": 7,
+    "turn_rate": 2.6,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.55,
+    "spook_m": 4,
+    "recover_s": 20,
+    "curiosity": 0.4,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.05,
+      "mid": 0.45,
+      "bottom": 0.5
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 10,
+    "food": {
+      "plants": 1
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    }
+  },
+  "fight": {
+    "strength": 0.4,
+    "stamina": 0.45,
+    "jumps": 0,
+    "runs": 0.35
+  },
+  "id": "convict_surgeonfish",
+  "name": "Convict surgeonfish",
+  "scientific": "Acanthurus triostegus",
+  "description": "Pale greenish-white surgeonfish with six thin black bars like a prisoner's stripes. Big schools sweep across shallow reef flats grazing algae."
+}

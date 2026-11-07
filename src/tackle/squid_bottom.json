@@ -1,0 +1,18 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "squid_bottom",
+  "type": "rig",
+  "name": "Squid strip bottom rig",
+  "description": "Cut squid on the bottom in the sea: halibut, cod, dogfish, rays, sharks.",
+  "parts": {
+    "rod": "surf_rod",
+    "reel": "surf_spinning",
+    "line": "braid_50",
+    "leader": "wire_leader",
+    "hook": "circle_3_0",
+    "sinker": "pyramid_sinker",
+    "bait": "squid_strip"
+  },
+  "drag": 0.3,
+  "waters": ["sea"]
+}

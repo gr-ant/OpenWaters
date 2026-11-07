@@ -1,0 +1,124 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "common_cuttlefish",
+  "name": "Common cuttlefish",
+  "scientific": "Sepia officinalis",
+  "description": "Broad-bodied hunter of sandy and seagrass shallows with a rippling skirt fin. Flashes zebra stripes and strikes shrimp with two hidden tentacles. Length is mantle, head and arms (the mantle alone reaches about 45 cm).",
+  "size": {
+    "length_cm": {
+      "min": 12,
+      "typical": 30,
+      "max": 65,
+      "spread": 0.25
+    },
+    "weight": {
+      "a": 0.07,
+      "b": 2.7
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "cuttlefish",
+    "height": 0.22,
+    "width": 0.36,
+    "parts": {
+      "mantle": 0.68,
+      "fin_width": 0.035,
+      "tentacles": 0,
+      "eye": 0.7
+    },
+    "colors": {
+      "back": "#6a5a4a",
+      "flank": "#a8987e",
+      "belly": "#e8e0d0",
+      "fins": "#c8bca8",
+      "eye": "#c8a840",
+      "mouth": "#3a2a20"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#2a2018",
+        "count": 12,
+        "width": 0.35,
+        "wavy": 0.6,
+        "region": "upper",
+        "alpha": 0.75
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 10,
+      "max": 200
+    },
+    "temperature_c": {
+      "min": 8,
+      "optimal": 16,
+      "max": 24
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 0.6
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 4.5,
+    "cover": {
+      "weeds": 0.8,
+      "rocks": 0.6,
+      "open": 0.4
+    }
+  },
+  "population": {
+    "density": 0.4,
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 25
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 6,
+    "turn_rate": 3,
+    "station_holding": 0,
+    "ambush": 0.7,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "wariness": 0.5,
+    "spook_m": 4,
+    "recover_s": 40,
+    "curiosity": 0.8,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "shrimp": 0.5,
+      "crayfish": 0.25,
+      "fish": 0.25
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.45,
+    "stamina": 0.35,
+    "jumps": 0,
+    "runs": 0.3
+  }
+}

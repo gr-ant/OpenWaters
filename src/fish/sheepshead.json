@@ -1,0 +1,162 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "sheepshead",
+  "name": "Sheepshead",
+  "scientific": "Archosargus probatocephalus",
+  "description": "Deep-bodied silver fish with bold black bars and a mouthful of human-looking teeth for crushing barnacles, crabs and oysters. Haunts pilings, jetties and oyster reefs along the coast, nibbling bait delicately.",
+  "size": {
+    "length_cm": {
+      "min": 20,
+      "typical": 35,
+      "max": 76,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.023,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.85,
+      1,
+      1,
+      0.92,
+      0.7,
+      0.42,
+      0.26
+    ],
+    "height": 0.38,
+    "width": 0.12,
+    "flex": 0.9,
+    "head": {
+      "length": 0.24,
+      "snout": 0.5,
+      "mouth": 0.3,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16,
+      "fork": 0.2
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.4,
+          "height": 0.12,
+          "spiny": true
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.68,
+        "length": 0.12,
+        "height": 0.08
+      },
+      "pectoral": 0.11,
+      "pelvic": 0.08
+    },
+    "colors": {
+      "back": "#6e7478",
+      "flank": "#b4b8b0",
+      "belly": "#eceae0",
+      "fins": "#6a6c68",
+      "eye": "#101010",
+      "mouth": "#d8ccc0"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#1e2022",
+        "count": 6,
+        "width": 0.1,
+        "region": "flank",
+        "from": 0.2,
+        "to": 0.8,
+        "alpha": 0.75
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.15
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 4,
+      "max": 30
+    },
+    "temperature_c": {
+      "min": 10,
+      "optimal": 23,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.2
+    },
+    "turbidity_max": 0.6,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "rocks": 1,
+      "wood": 0.8,
+      "coral": 0.2,
+      "open": 0.2
+    }
+  },
+  "population": {
+    "density": 0.9,
+    "school": {
+      "min": 2,
+      "max": 8
+    },
+    "home_range_m": 40
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 6,
+    "turn_rate": 2.5,
+    "station_holding": 0,
+    "ambush": 0.1,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.5,
+      "bottom": 0.4
+    },
+    "wariness": 0.65,
+    "spook_m": 6,
+    "recover_s": 40,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "crayfish": 0.35,
+      "snails": 0.35,
+      "shrimp": 0.1,
+      "plants": 0.1,
+      "worms": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.6,
+    "stamina": 0.55,
+    "jumps": 0,
+    "runs": 0.4
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "cricket",
+  "type": "bait",
+  "name": "Cricket",
+  "description": "A live cricket; floats and kicks. Bluegill and trout love them.",
+  "food": {
+    "insects": 1
+  },
+  "size_cm": 2.5,
+  "scent": 0.3,
+  "wiggle": 0.5,
+  "lasts": 2,
+  "floats": true,
+  "shape": "cricket",
+  "weight_g": 0.5,
+  "colors": {
+    "body": "#2a2018",
+    "accent": "#5a4024"
+  }
+}

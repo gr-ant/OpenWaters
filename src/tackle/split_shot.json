@@ -1,0 +1,10 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "split_shot",
+  "type": "sinker",
+  "name": "Split shot",
+  "description": "A pinch of lead on the line: gets a bait down under a float.",
+  "shape": "split_shot",
+  "weight_g": 1.2,
+  "grip": 0.05
+}

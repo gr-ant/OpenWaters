@@ -1,0 +1,161 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 12,
+      "typical": 23,
+      "max": 49
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.01,
+      "b": 3.15
+    }
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.9,
+      1,
+      0.98,
+      0.86,
+      0.62,
+      0.38,
+      0.22
+    ],
+    "height": 0.44,
+    "width": 0.1,
+    "flex": 1,
+    "head": {
+      "length": 0.28,
+      "snout": 0.4,
+      "mouth": 0.65,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16,
+      "fork": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.42,
+          "length": 0.3,
+          "height": 0.13,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.5,
+        "length": 0.3,
+        "height": 0.12
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.07,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#1e241a",
+        "amount": 0.55,
+        "scale": 9,
+        "region": "all",
+        "alpha": 0.75
+      }
+    ],
+    "colors": {
+      "back": "#3a4630",
+      "flank": "#b8bca0",
+      "belly": "#eeeee0",
+      "fins": "#5a6046",
+      "eye": "#101010",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "lake": 1,
+      "pond": 0.9,
+      "river": 0.3
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.6
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "wood": 1,
+      "weeds": 0.8,
+      "lilies": 0.5,
+      "reeds": 0.4,
+      "open": 0.3
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 22,
+      "max": 30
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 3,
+      "max": 12
+    }
+  },
+  "population": {
+    "school": {
+      "min": 5,
+      "max": 15
+    },
+    "home_range_m": 30,
+    "density": 1.5
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.7,
+    "burst_bl_s": 6,
+    "turn_rate": 2.6,
+    "station_holding": 0.3,
+    "ambush": 0,
+    "wariness": 0.45,
+    "spook_m": 4,
+    "recover_s": 25,
+    "curiosity": 0.6,
+    "rise_per_hour": 0.5,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.7,
+      "bottom": 0.2
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 18,
+    "meals_per_day": 4,
+    "food": {
+      "fish": 0.35,
+      "insects": 0.2,
+      "nymphs": 0.2,
+      "plankton": 0.25
+    },
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.75,
+      "bottom": 0.15
+    }
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.3,
+    "jumps": 0.05,
+    "runs": 0.25
+  },
+  "id": "black_crappie",
+  "name": "Black crappie",
+  "scientific": "Pomoxis nigromaculatus",
+  "description": "Flat, silver-olive panfish speckled all over with black, with big fan-like dorsal and anal fins. Gathers in loose schools around sunken brush and weed edges in warm, clear ponds and lakes."
+}

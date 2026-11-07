@@ -1,0 +1,78 @@
+{
+  "schema": "embercrown-boat/1",
+  "id": "bass_boat",
+  "name": "Bass boat",
+  "description": "A low, glittering tournament bass boat: carpeted casting decks fore and aft, a bow trolling motor, a big outboard and electronics at the console. Very fast on flat water.",
+  "hull": {
+    "length_m": 6.2,
+    "beam_m": 2.3,
+    "depth_m": 0.66,
+    "draft_m": 0.22,
+    "bottom": "vee",
+    "deadrise_deg": 20,
+    "bow": "pointed",
+    "stern": "transom",
+    "transom_width": 0.85,
+    "fullness": 0.5,
+    "sheer_bow_m": 0.06,
+    "floor_m": 0.08,
+    "decks": {
+      "bow": 0,
+      "stern": 0
+    }
+  },
+  "colors": {
+    "hull": "#b8141e",
+    "bottom": "#e8e8ea",
+    "deck": "#3a3a40",
+    "trim": "#d8d8dc",
+    "interior": "#2e2e34",
+    "accent": "#e8e4dc"
+  },
+  "propulsion": {
+    "type": "outboard",
+    "max_speed_ms": 24,
+    "accel_ms2": 6,
+    "turn_rate": 1.0,
+    "reverse": 0.2,
+    "noise": 1
+  },
+  "handling": {
+    "stability": 0.75,
+    "waves_max": 0.7,
+    "current_drift": 0.6
+  },
+  "crew": {
+    "seat_at": 0.4,
+    "seat_side": 0.55,
+    "eye_height_m": 1.05
+  },
+  "seats": [
+    {
+      "type": "pedestal",
+      "at": 0.86,
+      "height": 0.6
+    },
+    {
+      "type": "pedestal",
+      "at": 0.1,
+      "height": 0.6
+    }
+  ],
+  "features": {
+    "motor": {
+      "hp": 200,
+      "color": "#1a1a1e"
+    },
+    "trolling_motor": true,
+    "console": {
+      "at": 0.5,
+      "height": 0.5,
+      "side": 0.55,
+      "screen": 0.14
+    },
+    "casting_decks": true,
+    "rod_holders": 4,
+    "fish_finder": true
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "green_sea_turtle",
+  "name": "Green sea turtle",
+  "scientific": "Chelonia mydas",
+  "description": "Big, gentle sea turtle with a smooth olive-brown shell patterned in scutes. Glides over warm seagrass beds and reefs on long front flippers, grazing, and rises every few minutes to breathe. Length is carapace length.",
+  "size": {
+    "length_cm": {
+      "min": 70,
+      "typical": 100,
+      "max": 140,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.13,
+      "b": 2.9
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "turtle",
+    "height": 0.2,
+    "width": 0.4,
+    "flex": 0.5,
+    "parts": {
+      "shell": 0.72,
+      "dome": 0.45,
+      "flippers": 1,
+      "head": 0.5,
+      "scutes": 1,
+      "eye": 0.5
+    },
+    "colors": {
+      "back": "#5a4a2a",
+      "flank": "#6e5a34",
+      "belly": "#e8dcb0",
+      "fins": "#4a4030",
+      "eye": "#141410",
+      "mouth": "#5a4a3a"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#3a2e18",
+        "amount": 0.45,
+        "scale": 7,
+        "region": "upper",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 6,
+      "max": 50
+    },
+    "temperature_c": {
+      "min": 20,
+      "optimal": 27,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "weeds": 1,
+      "coral": 0.7,
+      "open": 0.5
+    }
+  },
+  "population": {
+    "density": 0.08,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 200
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 2,
+    "turn_rate": 1.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.3,
+      "mid": 0.5,
+      "bottom": 0.2
+    },
+    "wariness": 0.3,
+    "spook_m": 4,
+    "recover_s": 20,
+    "curiosity": 0.7,
+    "rise_per_hour": 0,
+    "breath_hold_s": 240,
+    "surface_s": 6,
+    "leap_per_hour": 0,
+    "haul_out": 0,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 0.9,
+      "snails": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.8,
+    "stamina": 0.8,
+    "jumps": 0,
+    "runs": 0.5
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "schema": "embercrown-boat/1",
+  "id": "jon_boat",
+  "name": "Jon boat",
+  "description": "A flat-bottomed aluminium skiff with a square bow and a small tiller outboard. Draws almost no water, so it goes up creeks and into weedy backwaters.",
+  "hull": {
+    "length_m": 4.3,
+    "beam_m": 1.5,
+    "depth_m": 0.5,
+    "draft_m": 0.1,
+    "bottom": "flat",
+    "bow": "blunt",
+    "stern": "transom",
+    "transom_width": 0.95,
+    "fullness": 0.9,
+    "sheer_bow_m": 0.1,
+    "sheer_stern_m": 0,
+    "floor_m": 0.04,
+    "decks": {
+      "bow": 0.06,
+      "stern": 0
+    }
+  },
+  "colors": {
+    "hull": "#5a6a4a",
+    "bottom": "#8a8e90",
+    "deck": "#9aa0a4",
+    "trim": "#c8ccd0",
+    "interior": "#a8acb0",
+    "accent": "#303030"
+  },
+  "propulsion": {
+    "type": "outboard",
+    "max_speed_ms": 7,
+    "accel_ms2": 2.2,
+    "turn_rate": 1.0,
+    "reverse": 0.4,
+    "noise": 0.7
+  },
+  "handling": {
+    "stability": 0.65,
+    "waves_max": 0.5,
+    "current_drift": 0.8
+  },
+  "crew": {
+    "seat_at": 0.12,
+    "eye_height_m": 1.05
+  },
+  "seats": [
+    {
+      "type": "bench",
+      "at": 0.1,
+      "height": 0.3
+    },
+    {
+      "type": "bench",
+      "at": 0.46,
+      "height": 0.3
+    },
+    {
+      "type": "bench",
+      "at": 0.8,
+      "height": 0.3
+    }
+  ],
+  "features": {
+    "motor": {
+      "hp": 15,
+      "color": "#2a2a2a"
+    },
+    "rod_holders": 2
+  }
+}

@@ -1,0 +1,160 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 50,
+      "typical": 70,
+      "max": 100
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.011,
+      "b": 3.05
+    }
+  },
+  "body": {
+    "profile": [
+      0.48,
+      0.8,
+      0.96,
+      1,
+      0.92,
+      0.7,
+      0.42,
+      0.24
+    ],
+    "height": 0.22,
+    "width": 0.12,
+    "flex": 1,
+    "head": {
+      "length": 0.23,
+      "snout": 0.5,
+      "mouth": 0.55,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.17,
+      "fork": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.42,
+          "length": 0.12,
+          "height": 0.1,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.72,
+        "length": 0.1,
+        "height": 0.07
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.07,
+      "adipose": true
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#6a4a6a",
+        "count": 9,
+        "width": 0.3,
+        "region": "flank",
+        "from": 0.25,
+        "to": 0.85,
+        "alpha": 0.25,
+        "wavy": 0.6
+      }
+    ],
+    "colors": {
+      "back": "#3a5050",
+      "flank": "#c8d0cc",
+      "belly": "#f2f2ee",
+      "fins": "#4a5a58",
+      "eye": "#101010",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.45
+    },
+    "current_ms": {
+      "preferred": 0.3,
+      "max": 2.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 6,
+    "cover": {
+      "open": 0.8,
+      "rocks": 0.6,
+      "wood": 0.4
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 9,
+      "max": 16
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 10,
+      "max": 100
+    }
+  },
+  "population": {
+    "school": {
+      "min": 3,
+      "max": 10
+    },
+    "home_range_m": 250,
+    "density": 0.12
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 1,
+    "burst_bl_s": 10,
+    "turn_rate": 2.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.6,
+    "spook_m": 6,
+    "recover_s": 40,
+    "curiosity": 0.5,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.2,
+      "mid": 0.7,
+      "bottom": 0.1
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 3,
+    "food": {
+      "fish": 0.3,
+      "shrimp": 0.35,
+      "plankton": 0.35
+    },
+    "feeding_zone": {
+      "surface": 0.25,
+      "mid": 0.7,
+      "bottom": 0.05
+    }
+  },
+  "fight": {
+    "strength": 0.8,
+    "stamina": 0.8,
+    "jumps": 0.3,
+    "runs": 0.8
+  },
+  "id": "chum_salmon",
+  "name": "Chum salmon",
+  "scientific": "Oncorhynchus keta",
+  "description": "Dog salmon: a big, silvery-green salmon with no real spots and white-tipped lower fins; spawners show purple and green tiger bars and hooked, doglike teeth. The salmon of Arctic Alaska rivers."
+}

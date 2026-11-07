@@ -1,0 +1,127 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "american_lobster",
+  "name": "American lobster",
+  "scientific": "Homarus americanus",
+  "description": "Long-lived bottom crawler of cold rocky coasts with one crushing and one cutting claw. Hides in dens by day and forages at night. Length is body length, rostrum to tail fan, claws excluded.",
+  "size": {
+    "length_cm": {
+      "min": 12,
+      "typical": 25,
+      "max": 60,
+      "spread": 0.25
+    },
+    "weight": {
+      "a": 0.038,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "lobster",
+    "height": 0.21,
+    "width": 0.21,
+    "parts": {
+      "carapace": 0.42,
+      "rostrum": 0.05,
+      "claws": 0.8,
+      "antennae": 1,
+      "curl": 0,
+      "fan": 0.14,
+      "legs": 0.5
+    },
+    "colors": {
+      "back": "#2e3a2c",
+      "flank": "#4a5a3a",
+      "belly": "#d8a860",
+      "fins": "#7a4a2a",
+      "eye": "#101010",
+      "mouth": "#c86a30"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#1a2018",
+        "density": 0.2,
+        "size": 1,
+        "alpha": 0.6,
+        "region": "upper"
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 2,
+      "preferred": 15,
+      "max": 300
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 14,
+      "max": 20
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 0.8
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 4.5,
+    "cover": {
+      "rocks": 1,
+      "weeds": 0.4,
+      "open": 0.2
+    }
+  },
+  "population": {
+    "density": 1,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 15
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.2,
+    "burst_bl_s": 5,
+    "turn_rate": 1.8,
+    "station_holding": 0.2,
+    "ambush": 0.3,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.02,
+      "bottom": 0.98
+    },
+    "wariness": 0.6,
+    "spook_m": 3,
+    "recover_s": 40,
+    "curiosity": 0.7,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "crayfish": 0.3,
+      "snails": 0.3,
+      "fish": 0.2,
+      "worms": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.4,
+    "jumps": 0,
+    "runs": 0.2
+  }
+}

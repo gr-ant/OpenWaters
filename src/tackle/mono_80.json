@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "mono_80",
+  "type": "line",
+  "name": "80 lb monofilament",
+  "description": "Heavy trolling line for big game.",
+  "material": "mono",
+  "strength_lb": 80,
+  "diameter_mm": 0.85,
+  "stretch": 0.22,
+  "visibility": 0.8,
+  "colors": {
+    "line": "#cfe7f2"
+  }
+}

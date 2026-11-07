@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "bass_crankbait",
+  "type": "rig",
+  "name": "Bass crankbait",
+  "description": "A diving minnow on a medium rod: cast, crank it down, pause now and then.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "mono_12",
+    "lure": "minnow_crankbait"
+  },
+  "drag": 0.3,
+  "waters": ["lake", "pond", "river"]
+}

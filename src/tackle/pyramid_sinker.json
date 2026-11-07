@@ -1,0 +1,10 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "pyramid_sinker",
+  "type": "sinker",
+  "name": "Pyramid sinker (85 g)",
+  "description": "Digs into sand and holds the bait still against waves and current.",
+  "shape": "pyramid",
+  "weight_g": 85,
+  "grip": 0.9
+}

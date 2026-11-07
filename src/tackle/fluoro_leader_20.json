@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "fluoro_leader_20",
+  "type": "leader",
+  "name": "20 lb fluorocarbon leader",
+  "description": "A metre of near-invisible line between the main line and the lure. Tough against rough mouths and rocks.",
+  "material": "fluoro",
+  "strength_lb": 20,
+  "diameter_mm": 0.43,
+  "length_m": 0.9,
+  "visibility": 0.2,
+  "abrasion": 0.5,
+  "colors": {
+    "line": "#eef4f4"
+  }
+}

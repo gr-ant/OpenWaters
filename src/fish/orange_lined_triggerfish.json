@@ -1,0 +1,180 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "orange_lined_triggerfish",
+  "name": "Orange-lined triggerfish",
+  "scientific": "Balistapus undulatus",
+  "description": "Dark olive triggerfish crossed by bold orange lines, with a black blotch at the base of its orange tail and a locking dorsal spine. Crunches urchins, crabs and coral with strong teeth, and is feisty enough to nip divers. Length is total length.",
+  "size": {
+    "length_cm": {
+      "min": 8,
+      "typical": 22,
+      "max": 30,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0295,
+      "b": 2.92
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.4,
+      0.8,
+      1,
+      1,
+      0.92,
+      0.7,
+      0.46,
+      0.3
+    ],
+    "height": 0.42,
+    "width": 0.11,
+    "flex": 0.8,
+    "head": {
+      "length": 0.3,
+      "snout": 0.6,
+      "mouth": 0.2,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16,
+      "fork": 0.1
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.08,
+          "height": 0.12,
+          "spiny": true
+        },
+        {
+          "at": 0.52,
+          "length": 0.28,
+          "height": 0.1
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.55,
+        "length": 0.26,
+        "height": 0.09
+      },
+      "pectoral": 0.08,
+      "pelvic": 0.05
+    },
+    "colors": {
+      "back": "#3a4a28",
+      "flank": "#5a6a30",
+      "belly": "#8a9060",
+      "fins": "#e07a20",
+      "eye": "#201810",
+      "mouth": "#e0b830"
+    },
+    "pattern": [
+      {
+        "type": "stripe",
+        "color": "#f08a20",
+        "v": 0.05,
+        "width": 0.1,
+        "alpha": 0.9
+      },
+      {
+        "type": "stripe",
+        "color": "#f08a20",
+        "v": -0.2,
+        "width": 0.08,
+        "alpha": 0.85
+      },
+      {
+        "type": "bars",
+        "color": "#141410",
+        "count": 1,
+        "width": 0.14,
+        "region": "all",
+        "from": 0.7,
+        "to": 0.84,
+        "alpha": 0.8
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 6,
+      "max": 60
+    },
+    "temperature_c": {
+      "min": 23,
+      "optimal": 27,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 0.9
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "coral": 1,
+      "rocks": 0.8,
+      "open": 0.15
+    }
+  },
+  "population": {
+    "density": 0.8,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 50
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.6,
+    "burst_bl_s": 6,
+    "turn_rate": 2.8,
+    "station_holding": 0,
+    "ambush": 0.1,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "wariness": 0.4,
+    "spook_m": 3,
+    "recover_s": 25,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "crayfish": 0.3,
+      "snails": 0.25,
+      "worms": 0.2,
+      "shrimp": 0.15,
+      "plants": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.4,
+    "stamina": 0.5,
+    "jumps": 0,
+    "runs": 0.45,
+    "teeth": 0.3
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "largemouth_bass",
+  "name": "Largemouth bass",
+  "scientific": "Micropterus salmoides",
+  "description": "Warm-water ambush predator of weedy ponds and lake margins. Big mouth, eats almost anything that moves.",
+  "size": {
+    "length_cm": {
+      "min": 18,
+      "typical": 33,
+      "max": 70,
+      "spread": 0.3
+    },
+    "weight": {
+      "a": 0.0118,
+      "b": 3.08
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.85,
+      1,
+      1,
+      0.92,
+      0.72,
+      0.45,
+      0.3
+    ],
+    "height": 0.27,
+    "width": 0.13,
+    "head": {
+      "length": 0.3,
+      "snout": 0.55,
+      "mouth": 0.85,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.19,
+      "fork": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.34,
+          "length": 0.18,
+          "height": 0.1,
+          "spiny": true
+        },
+        {
+          "at": 0.54,
+          "length": 0.15,
+          "height": 0.09
+        }
+      ],
+      "anal": {
+        "at": 0.72,
+        "length": 0.12,
+        "height": 0.08
+      },
+      "pectoral": 0.11,
+      "pelvic": 0.08
+    },
+    "colors": {
+      "back": "#3e4f26",
+      "flank": "#8a9a5a",
+      "belly": "#ece6c6",
+      "fins": "#5a6a38",
+      "mouth": "#e2d8c4"
+    },
+    "pattern": [
+      {
+        "type": "stripe",
+        "color": "#25301a",
+        "v": 0.08,
+        "width": 0.13,
+        "alpha": 0.8
+      },
+      {
+        "type": "mottled",
+        "color": "#2c381c",
+        "amount": 0.3,
+        "scale": 6,
+        "region": "upper"
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "pond": 1,
+      "lake": 0.8,
+      "river": 0.3
+    },
+    "depth_m": {
+      "min": 0.4,
+      "preferred": 2,
+      "max": 8
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 27,
+      "max": 34
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.6
+    },
+    "turbidity_max": 0.8,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "weeds": 1,
+      "lilies": 0.9,
+      "reeds": 0.7,
+      "rocks": 0.3,
+      "wood": 1,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 0.8,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 20
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.6,
+    "burst_bl_s": 10,
+    "turn_rate": 2.4,
+    "station_holding": 0,
+    "ambush": 0.75,
+    "depth_zone": {
+      "surface": 0.2,
+      "mid": 0.5,
+      "bottom": 0.3
+    },
+    "wariness": 0.55,
+    "spook_m": 5,
+    "recover_s": 40,
+    "curiosity": 0.6,
+    "rise_per_hour": 1.5
+  },
+  "diet": {
+    "food": {
+      "fish": 0.45,
+      "crayfish": 0.2,
+      "frogs": 0.15,
+      "insects": 0.1,
+      "worms": 0.1
+    },
+    "piscivore_from_cm": 20,
+    "feeding_zone": {
+      "surface": 0.3,
+      "mid": 0.45,
+      "bottom": 0.25
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.75,
+    "stamina": 0.55,
+    "jumps": 0.6,
+    "runs": 0.4
+  }
+}

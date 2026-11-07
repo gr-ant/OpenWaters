@@ -1,0 +1,10 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "egg_sinker",
+  "type": "sinker",
+  "name": "Egg sinker (14 g)",
+  "description": "Slides on the line so a fish can run with the bait without feeling the weight.",
+  "shape": "egg",
+  "weight_g": 14,
+  "grip": 0.4
+}

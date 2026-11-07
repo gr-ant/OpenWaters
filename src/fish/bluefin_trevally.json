@@ -1,0 +1,171 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 30,
+      "typical": 60,
+      "max": 117
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0233,
+      "b": 2.92
+    }
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.86,
+      1,
+      0.98,
+      0.84,
+      0.58,
+      0.3,
+      0.12
+    ],
+    "height": 0.32,
+    "width": 0.12,
+    "flex": 0.85,
+    "head": {
+      "length": 0.27,
+      "snout": 0.6,
+      "mouth": 0.55,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.22,
+      "fork": 0.6
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.08,
+          "height": 0.07,
+          "spiny": true
+        },
+        {
+          "at": 0.42,
+          "length": 0.3,
+          "height": 0.12,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.52,
+        "length": 0.24,
+        "height": 0.1
+      },
+      "pectoral": 0.15,
+      "pelvic": 0.06,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#1a2a40",
+        "density": 0.25,
+        "size": 1,
+        "region": "upper",
+        "from": 0.2,
+        "alpha": 0.75
+      },
+      {
+        "type": "mottled",
+        "color": "#c8a860",
+        "amount": 0.25,
+        "scale": 5,
+        "region": "upper",
+        "alpha": 0.35
+      }
+    ],
+    "colors": {
+      "back": "#4a5a6a",
+      "flank": "#9ab0c0",
+      "belly": "#e8ecef",
+      "fins": "#2a6ad0",
+      "eye": "#101010",
+      "mouth": "#d8d0c8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.3,
+      "max": 2.5
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 5,
+    "temperature_c": {
+      "min": 21,
+      "optimal": 27,
+      "max": 31
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 15,
+      "max": 190
+    },
+    "cover": {
+      "coral": 0.7,
+      "rocks": 0.6,
+      "open": 0.8
+    }
+  },
+  "population": {
+    "school": {
+      "min": 1,
+      "max": 4
+    },
+    "home_range_m": 300,
+    "density": 0.12
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1.1,
+    "burst_bl_s": 11,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.45,
+    "spook_m": 6,
+    "recover_s": 30,
+    "curiosity": 0.8,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.25,
+      "mid": 0.6,
+      "bottom": 0.15
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 15,
+    "meals_per_day": 3,
+    "food": {
+      "fish": 0.85,
+      "shrimp": 0.1,
+      "crayfish": 0.05
+    },
+    "feeding_zone": {
+      "surface": 0.25,
+      "mid": 0.6,
+      "bottom": 0.15
+    }
+  },
+  "fight": {
+    "strength": 0.9,
+    "stamina": 0.8,
+    "jumps": 0.05,
+    "runs": 0.85
+  },
+  "id": "bluefin_trevally",
+  "name": "Bluefin trevally",
+  "scientific": "Caranx melampygus",
+  "description": "Steep-headed reef jack with electric-blue fins, a brassy back speckled with blue-black dots and a scute-armoured tail. Hunts reef fish along the drop-offs, sometimes in packs."
+}

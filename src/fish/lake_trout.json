@@ -1,0 +1,157 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.25,
+      "min": 35,
+      "typical": 60,
+      "max": 150
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0063,
+      "b": 3.15
+    }
+  },
+  "body": {
+    "profile": [
+      0.48,
+      0.8,
+      0.96,
+      1,
+      0.92,
+      0.7,
+      0.42,
+      0.24
+    ],
+    "height": 0.22,
+    "width": 0.12,
+    "flex": 1,
+    "head": {
+      "length": 0.23,
+      "snout": 0.5,
+      "mouth": 0.55,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.18,
+      "fork": 0.4
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.42,
+          "length": 0.12,
+          "height": 0.1,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.72,
+        "length": 0.1,
+        "height": 0.07
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.07,
+      "adipose": true
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#e4e0c8",
+        "density": 0.4,
+        "size": 1,
+        "region": "all",
+        "alpha": 0.85
+      }
+    ],
+    "colors": {
+      "back": "#3a4640",
+      "flank": "#7a8478",
+      "belly": "#ece8dc",
+      "fins": "#6a6a5a",
+      "eye": "#101010",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "lake": 1,
+      "river": 0.2
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.8
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 6,
+    "cover": {
+      "rocks": 0.8,
+      "open": 0.8
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 9,
+      "max": 16
+    },
+    "depth_m": {
+      "min": 2,
+      "preferred": 15,
+      "max": 60
+    }
+  },
+  "population": {
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 200,
+    "density": 0.25
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.7,
+    "burst_bl_s": 10,
+    "turn_rate": 2.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.5,
+    "spook_m": 6,
+    "recover_s": 40,
+    "curiosity": 0.5,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.6,
+      "bottom": 0.4
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 30,
+    "meals_per_day": 2,
+    "food": {
+      "fish": 0.75,
+      "shrimp": 0.1,
+      "nymphs": 0.1,
+      "crayfish": 0.05
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.65,
+      "bottom": 0.35
+    }
+  },
+  "fight": {
+    "strength": 0.75,
+    "stamina": 0.65,
+    "jumps": 0.1,
+    "runs": 0.6
+  },
+  "id": "lake_trout",
+  "name": "Lake trout",
+  "scientific": "Salvelinus namaycush",
+  "description": "Big, slow-growing char of deep, cold northern lakes: grey-green, covered in cream spots, with a deeply forked tail. Hunts ciscoes in the cold dark layer through summer and comes shallow when the water cools."
+}

@@ -1,0 +1,42 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "topwater_popper",
+  "type": "lure",
+  "name": "Topwater popper",
+  "description": "A cupped face that spits and pops on the surface. Twitch, pause, twitch: bass and pike come up and smash it.",
+  "style": "popper",
+  "imitates": {
+    "frogs": 1,
+    "insects": 0.8,
+    "fish": 0.5
+  },
+  "size_cm": 6,
+  "weight_g": 10,
+  "buoyant": true,
+  "sink_ms": 0,
+  "dive_m": 0,
+  "lift": 0,
+  "speed_ms": {
+    "min": 0.1,
+    "best": 0.35,
+    "max": 0.8
+  },
+  "action": 0.5,
+  "flash": 0.2,
+  "noise": 0.9,
+  "scent": 0,
+  "pause": 0.6,
+  "hooks": {
+    "kind": "treble",
+    "count": 2,
+    "strength_lb": 20,
+    "hold": 0.68
+  },
+  "colors": {
+    "body": "#e8e0b0",
+    "back": "#3a6a2a",
+    "belly": "#f6f2e0",
+    "accent": "#d8302a",
+    "blade": "#d8302a"
+  }
+}

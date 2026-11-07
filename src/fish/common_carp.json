@@ -1,0 +1,158 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "common_carp",
+  "name": "Common carp",
+  "scientific": "Cyprinus carpio",
+  "description": "Big, heavy-scaled grubber of muddy ponds and lakes. Small groups root along the bottom; very wary, very strong.",
+  "size": {
+    "length_cm": {
+      "min": 30,
+      "typical": 50,
+      "max": 100,
+      "spread": 0.25
+    },
+    "weight": {
+      "a": 0.0138,
+      "b": 3.05
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.8,
+      0.97,
+      1,
+      0.93,
+      0.75,
+      0.5,
+      0.32
+    ],
+    "height": 0.3,
+    "width": 0.15,
+    "head": {
+      "length": 0.24,
+      "snout": 0.6,
+      "mouth": 0.4,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.18,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.4,
+          "length": 0.38,
+          "height": 0.07
+        }
+      ],
+      "anal": {
+        "at": 0.75,
+        "length": 0.08,
+        "height": 0.07
+      },
+      "pectoral": 0.11,
+      "pelvic": 0.08
+    },
+    "barbels": 4,
+    "colors": {
+      "back": "#4a3e22",
+      "flank": "#b08c48",
+      "belly": "#e8d6a0",
+      "fins": "#8a6a3a",
+      "mouth": "#b88a78"
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#3a2c14",
+        "alpha": 0.35
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "pond": 1,
+      "lake": 0.9,
+      "river": 0.5
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 2,
+      "max": 8
+    },
+    "temperature_c": {
+      "min": 5,
+      "optimal": 26,
+      "max": 33
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.6
+    },
+    "turbidity_max": 1.0,
+    "oxygen_min_mgL": 2,
+    "cover": {
+      "weeds": 0.8,
+      "reeds": 0.6,
+      "lilies": 0.5,
+      "rocks": 0.1,
+      "wood": 0.4,
+      "open": 0.3
+    }
+  },
+  "population": {
+    "density": 0.8,
+    "school": {
+      "min": 2,
+      "max": 6
+    },
+    "home_range_m": 30
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 6,
+    "turn_rate": 1.6,
+    "station_holding": 0,
+    "depth_zone": {
+      "surface": 0.15,
+      "mid": 0.25,
+      "bottom": 0.6
+    },
+    "wariness": 0.8,
+    "spook_m": 7,
+    "recover_s": 90,
+    "curiosity": 0.3,
+    "rise_per_hour": 0.6
+  },
+  "diet": {
+    "food": {
+      "nymphs": 0.25,
+      "plants": 0.2,
+      "worms": 0.2,
+      "snails": 0.15,
+      "insects": 0.1,
+      "crayfish": 0.05,
+      "eggs": 0.05
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.15,
+      "mid": 0.1,
+      "bottom": 0.75
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.95,
+    "stamina": 0.9,
+    "jumps": 0.05,
+    "runs": 0.9
+  }
+}

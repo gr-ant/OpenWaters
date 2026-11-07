@@ -1,0 +1,157 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "atlantic_mackerel",
+  "name": "Atlantic mackerel",
+  "scientific": "Scomber scombrus",
+  "description": "Fast, tiger-striped sea fish that travels in big schools through open water, chasing shrimp and small fish.",
+  "size": {
+    "length_cm": {
+      "min": 20,
+      "typical": 32,
+      "max": 50,
+      "spread": 0.18
+    },
+    "weight": {
+      "a": 0.0065,
+      "b": 3.1
+    },
+    "condition_sd": 0.07
+  },
+  "body": {
+    "profile": [
+      0.45,
+      0.78,
+      0.95,
+      1,
+      0.9,
+      0.65,
+      0.35,
+      0.16
+    ],
+    "height": 0.17,
+    "width": 0.1,
+    "head": {
+      "length": 0.24,
+      "snout": 0.35,
+      "mouth": 0.45,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.2,
+      "fork": 0.5
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.12,
+          "height": 0.07,
+          "spiny": true
+        },
+        {
+          "at": 0.58,
+          "length": 0.08,
+          "height": 0.05
+        }
+      ],
+      "anal": {
+        "at": 0.62,
+        "length": 0.07,
+        "height": 0.05
+      },
+      "pectoral": 0.08,
+      "pelvic": 0.05
+    },
+    "colors": {
+      "back": "#1f4f6a",
+      "flank": "#c9d6dc",
+      "belly": "#f4f6f6",
+      "fins": "#4a5a66"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#0d2230",
+        "count": 18,
+        "width": 0.35,
+        "alpha": 0.9,
+        "region": "upper",
+        "wavy": 0.5
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1.5,
+      "preferred": 8,
+      "max": 200
+    },
+    "temperature_c": {
+      "min": 6,
+      "optimal": 11,
+      "max": 20
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 3
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 6,
+    "cover": {
+      "open": 1,
+      "rocks": 0.1,
+      "weeds": 0.1
+    }
+  },
+  "population": {
+    "density": 4,
+    "school": {
+      "min": 8,
+      "max": 30
+    },
+    "home_range_m": 60
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1.6,
+    "burst_bl_s": 12,
+    "turn_rate": 2.4,
+    "station_holding": 0,
+    "depth_zone": {
+      "surface": 0.15,
+      "mid": 0.75,
+      "bottom": 0.1
+    },
+    "wariness": 0.5,
+    "spook_m": 5,
+    "recover_s": 20,
+    "curiosity": 0.6,
+    "rise_per_hour": 2
+  },
+  "diet": {
+    "food": {
+      "fish": 0.4,
+      "shrimp": 0.35,
+      "plankton": 0.25
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.2,
+      "mid": 0.75,
+      "bottom": 0.05
+    },
+    "meals_per_day": 5
+  },
+  "fight": {
+    "strength": 0.6,
+    "stamina": 0.5,
+    "jumps": 0.1,
+    "runs": 0.6
+  }
+}

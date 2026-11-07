@@ -1,0 +1,155 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "blue_tang",
+  "name": "Blue tang",
+  "scientific": "Acanthurus coeruleus",
+  "description": "Bright blue, plate-shaped surgeonfish of tropical reefs. Grazes algae off the coral in roving schools.",
+  "size": {
+    "length_cm": {
+      "min": 12,
+      "typical": 20,
+      "max": 35,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.03,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.45,
+      0.8,
+      1,
+      1,
+      0.95,
+      0.75,
+      0.45,
+      0.25
+    ],
+    "height": 0.5,
+    "width": 0.1,
+    "flex": 1,
+    "head": {
+      "length": 0.24,
+      "snout": 0.5,
+      "mouth": 0.25,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.17,
+      "fork": 0.2
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.2,
+          "length": 0.6,
+          "height": 0.09,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.48,
+        "length": 0.38,
+        "height": 0.08
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.05,
+      "adipose": false
+    },
+    "colors": {
+      "back": "#1c3ea8",
+      "flank": "#2a5ad0",
+      "belly": "#3a66d8",
+      "fins": "#1e3a9a",
+      "eye": "#101010",
+      "mouth": "#5a5a8a"
+    },
+    "pattern": [
+      {
+        "type": "stripe",
+        "color": "#0e2470",
+        "v": 0.4,
+        "width": 0.04,
+        "region": "upper",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 6,
+      "max": 40
+    },
+    "temperature_c": {
+      "min": 22,
+      "optimal": 27,
+      "max": 31
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.15,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "coral": 1,
+      "rocks": 0.5,
+      "open": 0.3
+    }
+  },
+  "population": {
+    "density": 1.5,
+    "school": {
+      "min": 4,
+      "max": 14
+    },
+    "home_range_m": 60
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1,
+    "burst_bl_s": 7,
+    "turn_rate": 3,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.6,
+      "bottom": 0.4
+    },
+    "wariness": 0.5,
+    "spook_m": 4,
+    "recover_s": 15,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 0.9,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.4,
+    "jumps": 0,
+    "runs": 0.3
+  }
+}

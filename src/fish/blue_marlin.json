@@ -1,0 +1,162 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "blue_marlin",
+  "name": "Blue marlin",
+  "scientific": "Makaira nigricans",
+  "description": "Huge cobalt-blue billfish of warm open ocean. Cruises the deep blue water off tropical islands, slashing through bait schools with its spear. Rare, solitary, and the fight of a lifetime.",
+  "size": {
+    "length_cm": {
+      "min": 150,
+      "typical": 280,
+      "max": 450,
+      "spread": 0.22
+    },
+    "weight": {
+      "a": 0.0039,
+      "b": 3.1
+    },
+    "condition_sd": 0.12
+  },
+  "body": {
+    "profile": [
+      0.35,
+      0.62,
+      0.85,
+      0.97,
+      1,
+      0.88,
+      0.6,
+      0.28
+    ],
+    "height": 0.17,
+    "width": 0.11,
+    "flex": 0.7,
+    "swim": "thunniform",
+    "head": {
+      "length": 0.2,
+      "snout": 0.45,
+      "mouth": 0.6,
+      "jaw": "terminal",
+      "bill": 0.2,
+      "bill_kind": "spear"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.24,
+      "fork": 0.6
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.2,
+          "length": 0.27,
+          "height": 0.17
+        },
+        {
+          "at": 0.86,
+          "length": 0.03,
+          "height": 0.03
+        }
+      ],
+      "anal": {
+        "at": 0.66,
+        "length": 0.07,
+        "height": 0.07
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.06
+    },
+    "colors": {
+      "back": "#16245a",
+      "flank": "#3b6aa8",
+      "belly": "#e8eef2",
+      "fins": "#1a2a62",
+      "eye": "#0e0e14",
+      "mouth": "#c8c0c0"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#8ec0ee",
+        "count": 14,
+        "width": 0.22,
+        "region": "flank",
+        "from": 0.25,
+        "to": 0.85,
+        "alpha": 0.55
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 8,
+      "preferred": 40,
+      "max": 300
+    },
+    "temperature_c": {
+      "min": 20,
+      "optimal": 26,
+      "max": 31
+    },
+    "current_ms": {
+      "preferred": 0.3,
+      "max": 2.5
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.01,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 400
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 4,
+    "turn_rate": 1.1,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.35,
+      "mid": 0.65,
+      "bottom": 0
+    },
+    "wariness": 0.4,
+    "spook_m": 10,
+    "recover_s": 60,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.85,
+      "shrimp": 0.15
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.4,
+      "mid": 0.6,
+      "bottom": 0
+    },
+    "meals_per_day": 1
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 1,
+    "jumps": 1,
+    "runs": 1,
+    "teeth": 0.5
+  }
+}

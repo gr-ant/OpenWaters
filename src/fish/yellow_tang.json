@@ -1,0 +1,158 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "yellow_tang",
+  "name": "Yellow tang",
+  "scientific": "Zebrasoma flavescens",
+  "description": "Oval, brilliant lemon-yellow surgeonfish that grazes algae off reef rock in loose groups, with a white scalpel spine at the base of the tail. Length is total length.",
+  "size": {
+    "length_cm": {
+      "min": 7,
+      "typical": 15,
+      "max": 20,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.03,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.35,
+      0.8,
+      1,
+      1,
+      0.92,
+      0.7,
+      0.46,
+      0.3
+    ],
+    "height": 0.5,
+    "width": 0.09,
+    "flex": 0.8,
+    "head": {
+      "length": 0.24,
+      "snout": 0.8,
+      "mouth": 0.2,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.15,
+      "fork": 0.1
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.55,
+          "height": 0.14,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.6,
+        "length": 0.3,
+        "height": 0.12
+      },
+      "pectoral": 0.11,
+      "pelvic": 0.07
+    },
+    "colors": {
+      "back": "#f2d800",
+      "flank": "#f6dc10",
+      "belly": "#f6e44a",
+      "fins": "#f2d400",
+      "eye": "#101010",
+      "mouth": "#d8b020"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#ffffff",
+        "density": 0.04,
+        "size": 1,
+        "region": "flank",
+        "from": 0.68,
+        "to": 0.78,
+        "alpha": 0.9
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 8,
+      "max": 46
+    },
+    "temperature_c": {
+      "min": 23,
+      "optimal": 26,
+      "max": 29
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.0
+    },
+    "turbidity_max": 0.25,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "coral": 1,
+      "rocks": 0.8,
+      "open": 0.3,
+      "weeds": 0.1
+    }
+  },
+  "population": {
+    "density": 2.5,
+    "school": {
+      "min": 3,
+      "max": 10
+    },
+    "home_range_m": 50
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.8,
+    "burst_bl_s": 7,
+    "turn_rate": 3.5,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.4,
+      "bottom": 0.5
+    },
+    "wariness": 0.5,
+    "spook_m": 4,
+    "recover_s": 25,
+    "curiosity": 0.3,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 0.9,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.05,
+      "mid": 0.35,
+      "bottom": 0.6
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.35,
+    "jumps": 0,
+    "runs": 0.35
+  }
+}

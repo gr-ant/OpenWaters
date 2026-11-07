@@ -1,0 +1,156 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 20,
+      "typical": 35,
+      "max": 64
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0075,
+      "b": 3.1
+    }
+  },
+  "body": {
+    "profile": [
+      0.42,
+      0.78,
+      0.96,
+      1,
+      0.9,
+      0.66,
+      0.4,
+      0.22
+    ],
+    "height": 0.22,
+    "width": 0.1,
+    "flex": 1,
+    "head": {
+      "length": 0.2,
+      "snout": 0.5,
+      "mouth": 0.45,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.18,
+      "fork": 0.4
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.4,
+          "length": 0.11,
+          "height": 0.1,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.7,
+        "length": 0.09,
+        "height": 0.06
+      },
+      "pectoral": 0.09,
+      "pelvic": 0.07,
+      "adipose": true
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#8a9298",
+        "alpha": 0.25
+      }
+    ],
+    "colors": {
+      "back": "#5a6a72",
+      "flank": "#c8ccd0",
+      "belly": "#f2f2f0",
+      "fins": "#a0a8ac",
+      "eye": "#101010",
+      "mouth": "#e0dcd8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.5,
+      "lake": 0.2
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.5
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 6,
+    "cover": {
+      "open": 0.9,
+      "weeds": 0.3,
+      "rocks": 0.3
+    },
+    "temperature_c": {
+      "min": -1,
+      "optimal": 6,
+      "max": 13
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 4,
+      "max": 30
+    }
+  },
+  "population": {
+    "school": {
+      "min": 6,
+      "max": 20
+    },
+    "home_range_m": 150,
+    "density": 0.8
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.9,
+    "burst_bl_s": 7,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.55,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.4,
+    "rise_per_hour": 1,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.6,
+      "bottom": 0.3
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 5,
+    "food": {
+      "shrimp": 0.5,
+      "plankton": 0.25,
+      "fish": 0.15,
+      "insects": 0.1
+    },
+    "feeding_zone": {
+      "surface": 0.15,
+      "mid": 0.6,
+      "bottom": 0.25
+    }
+  },
+  "fight": {
+    "strength": 0.4,
+    "stamina": 0.4,
+    "jumps": 0.1,
+    "runs": 0.4
+  },
+  "id": "arctic_cisco",
+  "name": "Arctic cisco",
+  "scientific": "Coregonus autumnalis",
+  "description": "Silvery, slab-sided whitefish of the Beaufort Sea coast that feeds in brackish lagoons along the shore and runs far up Arctic rivers to spawn and overwinter."
+}

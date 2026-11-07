@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Open Waters</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="loading"><div class="ld-sketch"><canvas width="440" height="440"></canvas><i></i></div><span>Shaping the island…</span></div>
+<canvas id="canvas3d"></canvas>
+<div id="title" hidden>
+  <div class="ti-card" role="dialog" aria-labelledby="tiName">
+    <p class="ti-kicker">a fishing island</p>
+    <h1 id="tiName">Open Waters</h1>
+    <p class="ti-sub" id="tiSub">&nbsp;</p>
+    <nav class="ti-menu" aria-label="Start menu">
+      <button id="tiStart" class="ti-item ti-primary" type="button">Start</button>
+      <button id="tiNew" class="ti-item" type="button">New island</button>
+      <button id="tiSettings" class="ti-item" type="button">Settings</button>
+      <div class="ti-item ti-soon" aria-disabled="true" aria-label="Sandbox, coming soon">
+        <span class="ti-word">Sandbox
+          <svg class="ti-scrub" viewBox="0 0 160 40" preserveAspectRatio="none" aria-hidden="true"><path d="M4 22 C 20 12, 30 30, 46 18 S 72 28, 88 16 S 116 30, 132 18 S 150 22, 157 16 M 8 26 C 30 16, 50 30, 74 20 S 112 28, 152 16" /></svg></span>
+        <span class="ti-stamp">Coming soon</span>
+      </div>
+    </nav>
+    <p class="ti-foot" id="tiFoot"></p>
+  </div>
+</div>
+<canvas id="overlay" tabindex="-1"></canvas>
+<dialog id="pauseMenu" class="panel" aria-labelledby="pauseTitle" data-page="main">
+  <section class="pm-page" data-page="main">
+    <header class="pm-title"><small>OPEN WATERS</small><h2 id="pauseTitle">Paused</h2><p id="pmWhere"></p></header>
+    <nav class="pm-menu" aria-label="Pause menu">
+      <button id="resumeGame" class="pm-item pm-primary" type="button">Resume <kbd>Esc</kbd></button>
+      <button class="pm-item" type="button" data-go="settings">Settings</button>
+      <button class="pm-item" type="button" data-go="controls">Controls</button>
+      <button id="pmHelp" class="pm-item" type="button">Controls card</button>
+    </nav>
+    <footer id="pmFoot" class="pm-foot-note"></footer>
+  </section>
+  <section class="pm-page" data-page="settings" hidden aria-labelledby="pmSetTitle">
+    <header class="pm-bar"><button class="pm-back" type="button" data-go="main">‹ Back</button><h2 id="pmSetTitle">Settings</h2></header>
+    <div class="pm-body">
+      <div class="mouse-setting"><label for="mouseSensitivity">Mouse sensitivity</label><output id="mouseSensitivityValue" for="mouseSensitivity">100%</output>
+        <input id="mouseSensitivity" type="range" min="25" max="300" step="5" value="100" aria-describedby="mouseSensitivityHint">
+        <div class="sensitivity-scale"><span>Slower</span><span>Faster</span></div>
+        <p id="mouseSensitivityHint">Applies to mouse look and click-and-drag look. Saved automatically.</p>
+      </div>
+      <div class="pm-wild" role="radiogroup" aria-labelledby="wildTitle">
+        <div class="pm-wild-head"><b id="wildTitle">Wildlife</b><small>How many fish and animals live in each water. Takes effect straight away.</small></div>
+        <div class="pm-wild-opts">
+          <button type="button" role="radio" data-wild="1" aria-checked="false"><span data-icon="ui.wild1"></span><b>Sparse</b><small>a quiet water</small></button>
+          <button type="button" role="radio" data-wild="2" aria-checked="true"><span data-icon="ui.wild2"></span><b>Standard</b><small>a healthy water</small></button>
+          <button type="button" role="radio" data-wild="3" aria-checked="false"><span data-icon="ui.wild3"></span><b>Abundant</b><small>teeming</small></button>
+        </div>
+      </div>
+      <div class="pm-wild" role="radiogroup" aria-labelledby="groundTitle">
+        <div class="pm-wild-head"><b id="groundTitle">Ground cover</b><small>Grass, flowers, ferns, bushes and moss on land. Lower it if the game runs slowly.</small></div>
+        <div class="pm-wild-opts">
+          <button type="button" role="radio" data-ground="0" aria-checked="false"><b>Off</b><small>bare ground</small></button>
+          <button type="button" role="radio" data-ground="1" aria-checked="false"><b>Light</b><small>phones</small></button>
+          <button type="button" role="radio" data-ground="2" aria-checked="true"><b>Full</b><small>lush meadows</small></button>
+        </div>
+      </div>
+      <label class="pm-check"><input id="setReelKeys" type="checkbox" checked> <span>Show controls on the reel<small>Key labels pinned to the handle, bail and drag while you fish.</small></span></label>
+    </div>
+    <footer class="pm-foot"><button id="resetMouseSensitivity" class="pm-reset" type="button">Reset to default</button></footer>
+  </section>
+  <section class="pm-page" data-page="controls" hidden aria-labelledby="ksTitle">
+    <header class="pm-bar"><button class="pm-back" type="button" data-go="main">‹ Back</button><h2 id="ksTitle">Controls</h2>
+      <label class="pm-preset">Preset <select id="ksPreset"><option value="guppy">Guppy (classic)</option><option value="pike">Pike</option><option value="custom" hidden>Custom</option></select></label></header>
+    <p class="ks-hint">Click a key, then press the new key, side or middle mouse button, or scroll the wheel. Esc cancels, Backspace clears. Saved automatically. A <b style="color:#e8c04a">yellow</b> key is bound to more than one action.</p>
+    <div class="pm-body" id="ksList"></div>
+    <footer class="pm-foot"><p class="ks-hint">Fixed: Esc · arrow keys · Enter · Tab in menus · N, P on the map · left mouse · right-click.</p><button id="ksReset" class="pm-reset" type="button">Reset to preset</button></footer>
+  </section>
+</dialog>
+<div id="spawn" class="panel" hidden>
+  <header><span class="sp-art" data-icon="dock.spawn"></span><div class="tk-title"><h2>Spawn</h2><i>A little company on the water.</i></div><button id="spClose" class="round-x" title="Close" data-icon="ui.close"></button></header>
+  <label class="search"><span data-icon="ui.search"></span><input id="spSearch" type="search" placeholder="Find a boat or creature…" autocomplete="off"></label>
+  <div class="tabs" id="spTabs"></div>
+  <div class="subtabs" id="spSub"></div>
+  <ul id="spList"></ul>
+</div>
+<div id="tackle" class="panel" hidden>
+  <header><span class="tk-sprig" data-icon="ui.sprig"></span><div class="tk-title"><h2>Tackle box</h2><i>A little luck, the right lure.</i></div><button id="tkClose" class="round-x" title="Close (I)" data-icon="ui.close"></button></header>
+  <div class="tabs" id="tkTabs"></div>
+  <div id="tkBody"></div>
+  <div id="tkFoot"></div>
+</div>
+<div id="journal" class="panel" hidden>
+  <header><span class="tk-sprig" data-icon="dock.journal"></span><div class="tk-title"><h2>Journal</h2><i>Every fish, big and small.</i></div><button id="jnClose" class="round-x" title="Close (J)" data-icon="ui.close"></button></header>
+  <div id="jnBody"></div>
+</div>
+<!-- HUD: where you are, conditions, minimap frame, fishing status, messages, shortcut dock (filled in by js/hud/) -->
+<div id="hud">
+  <div id="hLoc"><span class="pines" data-icon="ui.pines"></span><div><b id="hLocName"></b><span id="hLocSub"></span></div></div>
+  <div id="hCond"><b id="hTime"></b><span class="sep"></span><span id="hSky"></span><span id="hTemp"></span><span class="sep"></span><span id="hWind"><span id="hWindArrow" data-icon="ui.windArrow"></span><span id="hWindV"></span></span></div>
+  <div id="hMap"><b id="hMapName"></b><span class="north" data-icon="ui.compass"></span><span id="hScale"><i></i><b></b></span></div>
+  <div id="hMsg"></div>
+  <div id="hReelKeys" hidden></div>
+  <div id="hStatus" hidden><span id="hStIcon"></span><div class="st-text"><b id="hStTitle"></b><small id="hStSub"></small><div id="hStBar"><i></i></div></div><span class="st-act"><kbd id="hStKey">R</kbd><span id="hStAct"></span></span></div>
+  <div id="hDock">
+    <button data-dock="tackle" title="Tackle"><span data-icon="dock.tackleBox"></span><kbd>I</kbd></button>
+    <button data-dock="journal" title="Journal"><span data-icon="dock.journal"></span><kbd>J</kbd></button>
+    <button data-dock="boats" title="Boats"><span data-icon="dock.boat"></span><kbd>B</kbd></button>
+    <button data-dock="rod" title="Rod"><span data-icon="dock.rod"></span><kbd>Q</kbd></button>
+    <button data-dock="map" title="Map"><span data-icon="dock.map"></span><kbd>M</kbd></button>
+    <button data-dock="torch" id="hTorch" title="Dive light" hidden><span data-icon="dock.torch"></span><kbd>L</kbd></button>
+  </div>
+  <div id="hKeys"></div>
+  <div id="hMapBtns">
+    <button id="hSeed" title="New island (press twice)"><span data-icon="dock.island"></span><kbd>N</kbd></button>
+    <button id="hPin" title="Show the small map while you play"><span data-icon="dock.pin"></span><kbd>P</kbd></button>
+    <small id="hSeedInfo"></small>
+  </div>
+  <div id="hHelp" class="panel" hidden><header><h2>Controls</h2><button class="round-x" data-icon="ui.close" data-help-close></button></header>
+    <dl><dt>WASD</dt><dd>move · Shift run · Space jump · C dive</dd><dt>Q</dt><dd>rod out / away</dd><dt>R / mouse</dt><dd>cast (hold, let go) · reel (Shift: faster) · strike</dd><dt>[ ]</dt><dd>drag</dd><dt>G</dt><dd>open / close the bail: line pays out so the lure sinks straight down (reeling closes it)</dd>
+    <dt>E / X</dt><dd>keep / release a catch</dd><dt>I · J · B</dt><dd>tackle box · journal · boats</dd><dt>↑ ↓ · ← → · Tab</dt><dd>in a menu: move · category · tab · Enter chooses</dd><dt>F</dt><dd>use · get in a boat · V helm</dd><dt>3</dt><dd>walk to the nearest water (again for the next kind)</dd>
+    <dt>2</dt><dd>fish radar</dd><dt>4</dt><dd>toggle live lure camera</dd><dt>M</dt><dd>map · arrows move · W/S zoom · Enter travels to the crosshair</dd><dt>T</dt><dd>hold for fast time · Y season · U weather</dd><dt>Esc</dt><dd>pause · mouse sensitivity</dd><dt>? /</dt><dd>this card</dd></dl><small id="hDebug"></small></div>
+  <button id="hSettings" title="Pause and settings (Esc)" aria-label="Pause and settings">Esc</button>
+  <button id="hHint" title="Controls (?)">?</button>
+</div>
+<div id="catch" hidden><b id="ccName"></b><i id="ccSci"></i><div id="ccSize"></div><div id="ccNote"></div><button id="ccKeep">Keep (E)</button><button id="ccRel">Release (X)</button></div>
+<div id="tui" hidden>
+  <nav class="tui-rail" aria-label="Touch shortcuts">
+    <button data-k="KeyM"><span class="ic" data-icon="dock.map"></span><b>Map</b></button>
+    <button data-k="KeyI"><span class="ic" data-icon="dock.tackleBox"></span><b>Tackle</b></button>
+    <button data-k="KeyJ"><span class="ic" data-icon="dock.journal"></span><b>Journal</b></button>
+    <button data-k="KeyB"><span class="ic" data-icon="dock.boat"></span><b>Boats</b></button>
+    <button id="bRod" data-k="KeyQ"><span class="ic" data-icon="dock.rod"></span><b>Rod</b></button>
+    <button id="bTorch" data-k="KeyL" hidden><span class="ic" data-icon="dock.torch"></span><b>Light</b></button>
+  </nav>
+  <button id="bUse" class="act a-main" data-k="KeyF">Use</button>
+  <button id="bCast" class="act a-main" data-k="KeyR" data-hold="1" hidden>Cast</button>
+  <button class="act a-jump" data-k="Space" data-hold="1">Jump</button>
+  <button class="act a-dive" data-k="KeyC" data-hold="1">Dive</button>
+  <button id="bHelm" class="act a-pill a-helm" data-k="KeyV" hidden>Stand</button>
+  <button id="bDrDn" class="act a-pill a-drdn" data-k="BracketLeft" hidden>Drag −</button>
+  <button id="bDrUp" class="act a-pill a-drup" data-k="BracketRight" hidden>Drag +</button>
+</div>
+<script src="js/config.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/world/worldgen.js"></script>
+<script src="js/world/island.js"></script>
+<script src="js/engine/shared.js"></script>
+<script src="js/shaders/lit.js"></script>
+<script src="js/shaders/water.js"></script>
+<script src="js/shaders/particles-sky.js"></script>
+<script src="js/models/mesh-builder.js"></script>
+<script src="js/models/trees.js"></script>
+<script src="js/models/water-plants.js"></script>
+<script src="js/models/particle-kinds.js"></script>
+<script src="js/mat4.js"></script>
+<script src="js/creatures/fish.js"></script>
+<script src="js/creatures/cephalopods-shellfish.js"></script>
+<script src="js/creatures/reptiles-amphibians.js"></script>
+<script src="js/world/seasons-weather.js"></script>
+<script src="js/world/water-temp.js"></script>
+<script src="js/world/water-plants-grid.js"></script>
+<script src="js/world/habitat.js"></script>
+<script src="js/world/fish-populations.js"></script>
+<script src="js/boats.js"></script>
+<script src="js/engine/engine.js"></script>
+<script src="js/engine/mouse-look.js"></script>
+<script src="js/engine/controls-menu.js"></script>
+<script src="js/engine/items.js"></script>
+<script src="js/engine/inventory-save.js"></script>
+<script src="js/engine/messages-particles.js"></script>
+<script src="js/engine/instance-batches.js"></script>
+<script src="js/engine/ripples-life.js"></script>
+<script src="js/engine/fish-cells.js"></script>
+<script src="js/engine/fish-behaviour.js"></script>
+<script src="js/engine/boats.js"></script>
+<script src="js/engine/on-board.js"></script>
+<script src="js/engine/spawn-panel.js"></script>
+<script src="js/engine/fish-update.js"></script>
+<script src="js/engine/projection-travel.js"></script>
+<script src="js/engine/update.js"></script>
+<script src="js/engine/map-menu.js"></script>
+<script src="js/engine/touch.js"></script>
+<script src="js/engine/gpu-helpers.js"></script>
+<script src="js/engine/terrain-chunks.js"></script>
+<script src="js/engine/item-icons.js"></script>
+<script src="js/engine/inventory-bag.js"></script>
+<script src="js/engine/sky-light.js"></script>
+<script src="js/engine/render.js"></script>
+<script src="js/engine/overlay.js"></script>
+<script src="js/engine/map.js"></script>
+<script src="js/tackle.js"></script>
+<script src="js/fishing/angler.js"></script>
+<script src="js/fishing/casting.js"></script>
+<script src="js/fishing/bites.js"></script>
+<script src="js/fishing/fight.js"></script>
+<script src="js/fishing/drawing.js"></script>
+<script src="js/fishing/lure-camera.js"></script>
+<script src="js/fishing/tackle-box.js"></script>
+<script src="js/game-api.js"></script>
+<script src="js/hud/icons.js"></script>
+<script src="js/hud/water-categories.js"></script>
+<script src="js/hud/snapshots.js"></script>
+<script src="js/hud/hud.js"></script>
+<script src="js/hud/reel.js"></script>
+<script src="js/hud/status-keys.js"></script>
+<script src="js/hud/journal.js"></script>
+<script src="js/hud/menu-keys.js"></script>
+<script src="js/game.js"></script>
+<!-- Walking trails and signposts are disabled for now. -->
+<script src="js/boot.js"></script>
+<!-- built-in fish species, boats and tackle: one JSON block each, the same format as files you drop onto the game -->
+<script type="application/json" data-builtin="fish" src="fish/ballan_wrasse.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/common_periwinkle.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/cunner.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/european_sea_bass.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/kelp_greenling.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/lesser_sandeel.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/pacific_oyster.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/plaice.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/sea_raven.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/shiner_perch.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/salmon_shark.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/banded_coral_shrimp.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bicolor_parrotfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bluestreak_cleaner_wrasse.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/giant_clam.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/hawksbill_sea_turtle.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/honeycomb_grouper.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/moorish_idol.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/orange_lined_triggerfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/queen_angelfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/red_lionfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/yellow_tang.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/atlantic_sailfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/dungeness_crab.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/flathead_catfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/goliath_grouper.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/haddock.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/mahi_mahi.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/pumpkinseed_sunfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/red_drum.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/sperm_whale.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/wahoo.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/atlantic_tarpon.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/burbot.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/caribbean_spiny_lobster.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/common_snook.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/giant_pacific_octopus.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/green_moray_eel.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/king_mackerel.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/lake_sturgeon.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/lingcod.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/swordfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/atlantic_pollock.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bowfin.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/cutthroat_trout.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/great_white_shark.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/queen_conch.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/river_otter.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/scalloped_hammerhead.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/sheepshead.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/spotted_seatrout.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/whale_shark.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/giant_squid.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/american_alligator.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/american_bullfrog.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/american_eel.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/american_lobster.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/american_toad.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/arctic_char.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/arctic_cisco.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/arctic_cod.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/arctic_flounder.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/arctic_grayling.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/atlantic_bluefin_tuna.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/atlantic_bonito.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/atlantic_cod.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/atlantic_herring.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/atlantic_mackerel.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/axolotl.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bay_scallop.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/beluga.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bigeye_scad.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/black_crappie.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/black_rockfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/black_sea_bass.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/blacktail_snapper.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/blacktip_reef_shark.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/blue_crab.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/blue_marlin.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/blue_mussel.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/blue_shark.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/blue_tang.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bluefin_trevally.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bluefish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bluegill.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bluespine_unicornfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bottlenose_dolphin.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/broad_whitefish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/brook_trout.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/brown_shrimp.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/brown_trout.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/bullethead_parrotfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/california_sea_lion.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/channel_catfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/chinook_salmon.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/chum_salmon.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/clownfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/coho_salmon.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/common_carp.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/common_cuttlefish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/common_octopus.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/convict_surgeonfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/copper_rockfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/dolly_varden.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/eastern_newt.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/giant_manta_ray.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/great_barracuda.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/greater_amberjack.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/green_sea_turtle.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/harbor_seal.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/hard_clam.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/hellbender.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/humpback_whale.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/humpback_whitefish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/knobbed_whelk.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/lake_trout.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/largemouth_bass.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/least_cisco.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/longfin_squid.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/longnose_gar.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/marine_iguana.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/muskellunge.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/narwhal.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/northern_pike.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/northern_water_snake.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/orca.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/pacific_halibut.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/pink_salmon.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/rainbow_trout.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/red_eared_slider.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/red_swamp_crayfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/redgill_emperor.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/saffron_cod.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/scribbled_rabbitfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/scup.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/sea_otter.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/sergeant_major.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/skipjack_tuna.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/smallmouth_bass.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/snapping_turtle.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/snow_crab.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/sockeye_salmon.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/southern_stingray.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/spiny_dogfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/starry_flounder.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/stoplight_parrotfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/striped_bass.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/summer_flounder.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/tautog.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/walleye.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/walrus.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/weakfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/west_indian_manatee.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/winter_flounder.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/yellow_bellied_sea_snake.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/yellow_perch.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/yelloweye_rockfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/yellowfin_goatfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/yellowfin_tuna.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/yellowtail_snapper.json"></script>
+<script type="application/json" data-builtin="boat" src="boats/bass_boat.json"></script>
+<script type="application/json" data-builtin="boat" src="boats/canoe.json"></script>
+<script type="application/json" data-builtin="boat" src="boats/center_console.json"></script>
+<script type="application/json" data-builtin="boat" src="boats/fishing_kayak.json"></script>
+<script type="application/json" data-builtin="boat" src="boats/jon_boat.json"></script>
+<script type="application/json" data-builtin="boat" src="boats/lobster_boat.json"></script>
+<script type="application/json" data-builtin="boat" src="boats/rowboat.json"></script>
+<script type="application/json" data-builtin="boat" src="boats/touring_kayak.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/cricket.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/live_minnow.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/nightcrawler.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/shrimp.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/squid_strip.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/sweetcorn.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/bobber.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/slip_float.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/circle_3_0.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/hook_2.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/hook_8.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/fluoro_leader_20.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/mono_leader_130.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/wire_leader.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/braid_20.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/braid_50.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/fluoro_10.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/mono_12.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/mono_6.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/mono_80.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/bucktail_jig.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/casting_spoon.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/inline_spinner.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/minnow_crankbait.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/soft_worm.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/topwater_popper.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/trolling_skirt.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/baitcaster.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/big_game.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/spinning_1000.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/spinning_3000.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/surf_spinning.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/bass_crankbait.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/bobber_worm.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/bottom_worm.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/carp_corn.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/cricket_float.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/minnow_slip_float.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/offshore_troll.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/pike_spoon.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/saltwater_jig.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/squid_bottom.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/surf_shrimp.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/texas_worm.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/topwater.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/trout_spinner.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/heavy_casting.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/medium_spinning.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/offshore_rod.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/surf_rod.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/ultralight_spinning.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/egg_sinker.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/pyramid_sinker.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/split_shot.json"></script>
+</body>
+</html>

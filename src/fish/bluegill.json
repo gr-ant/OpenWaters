@@ -1,0 +1,165 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "bluegill",
+  "name": "Bluegill",
+  "scientific": "Lepomis macrochirus",
+  "description": "Plate-shaped sunfish of warm, weedy shallows. Loose groups under lily pads, sipping insects off the surface all day.",
+  "size": {
+    "length_cm": {
+      "min": 8,
+      "typical": 15,
+      "max": 28,
+      "spread": 0.22
+    },
+    "weight": {
+      "a": 0.0174,
+      "b": 3.12
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "profile": [
+      0.45,
+      0.8,
+      1,
+      1,
+      0.95,
+      0.75,
+      0.45,
+      0.25
+    ],
+    "height": 0.45,
+    "width": 0.09,
+    "flex": 0.8,
+    "head": {
+      "length": 0.27,
+      "snout": 0.4,
+      "mouth": 0.3,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16,
+      "fork": 0.12
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.36,
+          "length": 0.36,
+          "height": 0.07,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.62,
+        "length": 0.22,
+        "height": 0.07
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.07
+    },
+    "colors": {
+      "back": "#2f4a40",
+      "flank": "#6b7f5a",
+      "belly": "#e8a440",
+      "fins": "#4a5a48",
+      "mouth": "#d9b8a8"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#2a3a30",
+        "count": 7,
+        "width": 0.4,
+        "alpha": 0.45
+      },
+      {
+        "type": "spot",
+        "color": "#121a2a",
+        "at": 0.26,
+        "v": 0.3,
+        "size": 0.07
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "pond": 1,
+      "lake": 0.8,
+      "river": 0.2
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 1.5,
+      "max": 6
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 27,
+      "max": 33
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.4
+    },
+    "turbidity_max": 0.8,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "lilies": 1,
+      "weeds": 0.9,
+      "reeds": 0.7,
+      "rocks": 0.2,
+      "wood": 0.6,
+      "open": 0.2
+    }
+  },
+  "population": {
+    "density": 5,
+    "school": {
+      "min": 3,
+      "max": 10
+    },
+    "home_range_m": 8
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1.0,
+    "burst_bl_s": 8,
+    "turn_rate": 3.4,
+    "station_holding": 0,
+    "depth_zone": {
+      "surface": 0.25,
+      "mid": 0.55,
+      "bottom": 0.2
+    },
+    "wariness": 0.35,
+    "spook_m": 3.5,
+    "recover_s": 15,
+    "curiosity": 0.8,
+    "rise_per_hour": 4
+  },
+  "diet": {
+    "food": {
+      "insects": 0.45,
+      "nymphs": 0.25,
+      "worms": 0.2,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.35,
+      "mid": 0.45,
+      "bottom": 0.2
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.25,
+    "stamina": 0.3,
+    "jumps": 0.05,
+    "runs": 0.2
+  }
+}

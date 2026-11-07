@@ -1,0 +1,165 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 15,
+      "typical": 28,
+      "max": 40
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0155,
+      "b": 3
+    }
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.84,
+      0.98,
+      1,
+      0.9,
+      0.68,
+      0.42,
+      0.26
+    ],
+    "height": 0.32,
+    "width": 0.12,
+    "flex": 1,
+    "head": {
+      "length": 0.3,
+      "snout": 0.45,
+      "mouth": 0.6,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16,
+      "fork": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.46,
+          "height": 0.09,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.66,
+        "length": 0.1,
+        "height": 0.08
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.08,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#1a1a1a",
+        "count": 1,
+        "width": 1,
+        "from": 0.92,
+        "to": 1,
+        "region": "all",
+        "alpha": 0.85
+      },
+      {
+        "type": "scales",
+        "color": "#a07848",
+        "alpha": 0.3
+      }
+    ],
+    "colors": {
+      "back": "#8a6a4a",
+      "flank": "#c8a070",
+      "belly": "#f0e0c8",
+      "fins": "#f0c830",
+      "eye": "#101010",
+      "mouth": "#e0c0a8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.35,
+    "oxygen_min_mgL": 4,
+    "temperature_c": {
+      "min": 21,
+      "optimal": 27,
+      "max": 31
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 8,
+      "max": 75
+    },
+    "cover": {
+      "coral": 1,
+      "rocks": 0.8,
+      "wood": 0.4,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "school": {
+      "min": 2,
+      "max": 8
+    },
+    "home_range_m": 40,
+    "density": 1
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 7,
+    "turn_rate": 2.2,
+    "station_holding": 0.4,
+    "ambush": 0.4,
+    "wariness": 0.55,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.5,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.5,
+      "bottom": 0.5
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 15,
+    "meals_per_day": 3,
+    "food": {
+      "crayfish": 0.4,
+      "fish": 0.35,
+      "shrimp": 0.25
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    }
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.45,
+    "jumps": 0,
+    "runs": 0.45,
+    "teeth": 0.1
+  },
+  "id": "blacktail_snapper",
+  "name": "Blacktail snapper",
+  "scientific": "Lutjanus fulvus",
+  "description": "Yellowish-bronze snapper with yellow lower fins and a black tail edged in white. Shelters in reef holes and lagoons by day and hunts crabs and small fish at night."
+}

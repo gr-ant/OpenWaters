@@ -1,0 +1,162 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 25,
+      "typical": 45,
+      "max": 98
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0072,
+      "b": 3.1
+    }
+  },
+  "body": {
+    "profile": [
+      0.46,
+      0.8,
+      0.96,
+      1,
+      0.92,
+      0.7,
+      0.44,
+      0.26
+    ],
+    "height": 0.2,
+    "width": 0.1,
+    "flex": 1,
+    "head": {
+      "length": 0.27,
+      "snout": 0.4,
+      "mouth": 0.75,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.17,
+      "fork": 0.1
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.32,
+          "length": 0.1,
+          "height": 0.1,
+          "spiny": true
+        },
+        {
+          "at": 0.44,
+          "length": 0.3,
+          "height": 0.06,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.68,
+        "length": 0.08,
+        "height": 0.06
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.07,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#2a3028",
+        "density": 0.35,
+        "size": 1,
+        "region": "upper",
+        "alpha": 0.7
+      }
+    ],
+    "colors": {
+      "back": "#4a5a46",
+      "flank": "#b8b8a8",
+      "belly": "#f2f0e8",
+      "fins": "#d0b050",
+      "eye": "#101010",
+      "mouth": "#e8b860"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 5,
+    "temperature_c": {
+      "min": 10,
+      "optimal": 20,
+      "max": 26
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 8,
+      "max": 30
+    },
+    "cover": {
+      "open": 1,
+      "weeds": 0.3
+    }
+  },
+  "population": {
+    "school": {
+      "min": 3,
+      "max": 10
+    },
+    "home_range_m": 150,
+    "density": 0.4
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.8,
+    "burst_bl_s": 7,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.5,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.5,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.15,
+      "mid": 0.6,
+      "bottom": 0.25
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 25,
+    "meals_per_day": 3,
+    "food": {
+      "fish": 0.55,
+      "shrimp": 0.35,
+      "worms": 0.1
+    },
+    "feeding_zone": {
+      "surface": 0.15,
+      "mid": 0.6,
+      "bottom": 0.25
+    }
+  },
+  "fight": {
+    "strength": 0.55,
+    "stamina": 0.45,
+    "jumps": 0.1,
+    "runs": 0.5,
+    "teeth": 0.2
+  },
+  "id": "weakfish",
+  "name": "Weakfish",
+  "scientific": "Cynoscion regalis",
+  "description": "Slender, iridescent sea trout: olive-green back with purple and gold sheen, sprinkled with dark speckles in wavy rows, and two canine teeth. Named for its tender mouth that hooks tear out of."
+}

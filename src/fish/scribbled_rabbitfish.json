@@ -1,0 +1,155 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.15,
+      "min": 10,
+      "typical": 17,
+      "max": 28
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0145,
+      "b": 3
+    }
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.88,
+      1,
+      1,
+      0.9,
+      0.66,
+      0.4,
+      0.24
+    ],
+    "height": 0.38,
+    "width": 0.1,
+    "flex": 1,
+    "head": {
+      "length": 0.22,
+      "snout": 0.6,
+      "mouth": 0.2,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.16,
+      "fork": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.24,
+          "length": 0.56,
+          "height": 0.09,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.5,
+        "length": 0.34,
+        "height": 0.07
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.06,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#3a3a2a",
+        "amount": 0.5,
+        "scale": 12,
+        "region": "all",
+        "alpha": 0.75
+      }
+    ],
+    "colors": {
+      "back": "#6a6a50",
+      "flank": "#a8a888",
+      "belly": "#d8d8c8",
+      "fins": "#8a8a6a",
+      "eye": "#101010",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "temperature_c": {
+      "min": 21,
+      "optimal": 27,
+      "max": 31
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 3,
+      "max": 20
+    },
+    "cover": {
+      "weeds": 1,
+      "coral": 0.6,
+      "rocks": 0.6,
+      "open": 0.2
+    }
+  },
+  "population": {
+    "school": {
+      "min": 8,
+      "max": 30
+    },
+    "home_range_m": 40,
+    "density": 1.5
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.6,
+    "burst_bl_s": 7,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.5,
+    "spook_m": 3,
+    "recover_s": 30,
+    "curiosity": 0.5,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 10,
+    "food": {
+      "plants": 1
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    }
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.25
+  },
+  "id": "scribbled_rabbitfish",
+  "name": "Scribbled rabbitfish",
+  "scientific": "Siganus spinus",
+  "description": "Small rabbitfish covered in a maze of pale and dark wavy lines, with venomous fin spines. Juveniles arrive on Guam's reef flats in huge seasonal runs (manahak)."
+}

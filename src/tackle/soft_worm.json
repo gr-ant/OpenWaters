@@ -1,0 +1,42 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "soft_worm",
+  "type": "lure",
+  "name": "Soft plastic worm",
+  "description": "A salted plastic worm on a weedless hook. Crawl it slowly along the bottom; most bites come as it falls.",
+  "style": "soft_plastic",
+  "imitates": {
+    "worms": 1,
+    "crayfish": 0.7,
+    "fish": 0.3
+  },
+  "size_cm": 15,
+  "weight_g": 7,
+  "buoyant": false,
+  "sink_ms": 0.25,
+  "dive_m": 0,
+  "lift": 0.25,
+  "speed_ms": {
+    "min": 0.02,
+    "best": 0.15,
+    "max": 0.45
+  },
+  "action": 0.6,
+  "flash": 0,
+  "noise": 0,
+  "scent": 0.3,
+  "pause": 0.95,
+  "hooks": {
+    "kind": "single",
+    "count": 1,
+    "strength_lb": 40,
+    "hold": 0.8
+  },
+  "colors": {
+    "body": "#3a2a4a",
+    "back": "#2a1a3a",
+    "belly": "#4a3a5a",
+    "accent": "#7a3a8a",
+    "blade": "#3a2a4a"
+  }
+}

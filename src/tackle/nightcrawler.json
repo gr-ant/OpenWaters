@@ -1,0 +1,21 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "nightcrawler",
+  "type": "bait",
+  "name": "Nightcrawler",
+  "description": "A big earthworm. Almost every freshwater fish will eat one.",
+  "food": {
+    "worms": 1
+  },
+  "size_cm": 10,
+  "scent": 0.7,
+  "wiggle": 0.6,
+  "lasts": 3,
+  "floats": false,
+  "shape": "worm",
+  "weight_g": 4,
+  "colors": {
+    "body": "#9a5650",
+    "accent": "#6a3436"
+  }
+}

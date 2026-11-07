@@ -1,0 +1,172 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 20,
+      "typical": 35,
+      "max": 66
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0144,
+      "b": 3.07
+    }
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.88,
+      1,
+      1,
+      0.9,
+      0.68,
+      0.42,
+      0.28
+    ],
+    "height": 0.3,
+    "width": 0.13,
+    "flex": 1,
+    "head": {
+      "length": 0.3,
+      "snout": 0.45,
+      "mouth": 0.7,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "square",
+      "size": 0.15,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.24,
+          "height": 0.12,
+          "spiny": true
+        },
+        {
+          "at": 0.55,
+          "length": 0.12,
+          "height": 0.08,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.68,
+        "length": 0.08,
+        "height": 0.08
+      },
+      "pectoral": 0.13,
+      "pelvic": 0.08,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#d89060",
+        "amount": 0.4,
+        "scale": 5,
+        "region": "flank",
+        "alpha": 0.7
+      },
+      {
+        "type": "stripe",
+        "color": "#f0d8c0",
+        "v": 0,
+        "width": 0.1,
+        "region": "all",
+        "from": 0.55,
+        "to": 0.9,
+        "alpha": 0.6
+      }
+    ],
+    "colors": {
+      "back": "#6a4428",
+      "flank": "#b07040",
+      "belly": "#f0d8b8",
+      "fins": "#8a5a34",
+      "eye": "#202010",
+      "mouth": "#e8c8a8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "rocks": 1,
+      "weeds": 0.5,
+      "open": 0.1
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 9,
+      "max": 16
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 12,
+      "max": 180
+    }
+  },
+  "population": {
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 15,
+    "density": 0.35
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 6,
+    "turn_rate": 2,
+    "station_holding": 0.6,
+    "ambush": 0.6,
+    "wariness": 0.3,
+    "spook_m": 3,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.35,
+      "bottom": 0.65
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 3,
+    "food": {
+      "crayfish": 0.35,
+      "shrimp": 0.3,
+      "fish": 0.35
+    },
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    }
+  },
+  "fight": {
+    "strength": 0.6,
+    "stamina": 0.4,
+    "jumps": 0,
+    "runs": 0.3
+  },
+  "id": "copper_rockfish",
+  "name": "Copper rockfish",
+  "scientific": "Sebastes caurinus",
+  "description": "Coppery-brown rockfish blotched with orange and pink, with a pale band along the rear half of the side. A solitary bottom fish of shallow rocks and kelp."
+}

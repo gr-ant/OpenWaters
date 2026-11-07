@@ -1,0 +1,129 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "caribbean_spiny_lobster",
+  "name": "Caribbean spiny lobster",
+  "scientific": "Panulirus argus",
+  "description": "Clawless, spiny-horned lobster of warm reefs and seagrass. Shelters in ledges by day and marches out at night to crack snails and clams. Length is body length, carapace to tail tip, antennae excluded.",
+  "size": {
+    "length_cm": {
+      "min": 15,
+      "typical": 30,
+      "max": 60,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.026,
+      "b": 3.0
+    },
+    "condition_sd": 0.12
+  },
+  "body": {
+    "plan": "lobster",
+    "height": 0.21,
+    "width": 0.21,
+    "parts": {
+      "carapace": 0.42,
+      "rostrum": 0.03,
+      "claws": 0,
+      "antennae": 1.6,
+      "curl": 0,
+      "fan": 0.14,
+      "legs": 0.5
+    },
+    "colors": {
+      "back": "#8a5a3a",
+      "flank": "#a87850",
+      "belly": "#e8d8b8",
+      "fins": "#7a4a30",
+      "eye": "#101010",
+      "mouth": "#c08a60"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#e8dcb0",
+        "density": 0.2,
+        "size": 1,
+        "region": "upper",
+        "alpha": 0.7
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 8,
+      "max": 90
+    },
+    "temperature_c": {
+      "min": 18,
+      "optimal": 26,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 0.8
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "coral": 0.9,
+      "rocks": 0.8,
+      "weeds": 0.4,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 0.8,
+    "school": {
+      "min": 1,
+      "max": 6
+    },
+    "home_range_m": 80
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 5,
+    "turn_rate": 2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "wariness": 0.5,
+    "spook_m": 4,
+    "recover_s": 30,
+    "curiosity": 0.4,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "snails": 0.4,
+      "worms": 0.2,
+      "shrimp": 0.2,
+      "crayfish": 0.1,
+      "plants": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.4
+  }
+}

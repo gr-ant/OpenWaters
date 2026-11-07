@@ -1,0 +1,134 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "giant_manta_ray",
+  "name": "Giant manta ray",
+  "scientific": "Mobula birostris",
+  "description": "The largest ray: black above with pale shoulder patches, white beneath. Flies slowly through warm blue water on wings several metres across, filtering plankton with its head fins unrolled. Length is measured along the body, nose to rear of the disc, not across the wings.",
+  "size": {
+    "length_cm": {
+      "min": 150,
+      "typical": 280,
+      "max": 450,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.03,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "ray",
+    "height": 0.07,
+    "flex": 0.6,
+    "parts": {
+      "shape": "manta",
+      "disc": 0.52,
+      "span": 1.55,
+      "tip": 0.56,
+      "sweep": 0.22,
+      "horns": 0.8,
+      "sting": 0,
+      "eye": 0.4,
+      "mouth": "front",
+      "bottom": 0
+    },
+    "colors": {
+      "back": "#1a1c22",
+      "flank": "#24262c",
+      "belly": "#eef0f0",
+      "fins": "#1a1c22",
+      "eye": "#0c0c0c",
+      "mouth": "#3a3a3e"
+    },
+    "pattern": [
+      {
+        "type": "spot",
+        "color": "#c8ccd0",
+        "at": 0.26,
+        "v": 0.72,
+        "size": 0.08,
+        "region": "upper",
+        "alpha": 0.85
+      },
+      {
+        "type": "spots",
+        "color": "#3a3a44",
+        "density": 0.12,
+        "size": 1,
+        "region": "lower"
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 3,
+      "preferred": 15,
+      "max": 120
+    },
+    "temperature_c": {
+      "min": 19,
+      "optimal": 26,
+      "max": 31
+    },
+    "current_ms": {
+      "preferred": 0.3,
+      "max": 2
+    },
+    "turbidity_max": 0.25,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1,
+      "coral": 0.4
+    }
+  },
+  "population": {
+    "density": 0.01,
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 400
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.25,
+    "burst_bl_s": 1.5,
+    "turn_rate": 0.7,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.35,
+      "mid": 0.65,
+      "bottom": 0
+    },
+    "wariness": 0.2,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.7,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.4,
+      "mid": 0.6,
+      "bottom": 0
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 1,
+    "jumps": 0.2,
+    "runs": 1
+  }
+}

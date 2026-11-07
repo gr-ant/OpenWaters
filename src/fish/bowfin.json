@@ -1,0 +1,172 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "bowfin",
+  "name": "Bowfin",
+  "scientific": "Amia calva",
+  "description": "Olive, mottled living fossil of swamps and weedy backwaters, with a long rippling dorsal fin and a dark eyespot at the tail base. Gulps air, ambushes fish and crayfish, and fights with savage, toothy power.",
+  "size": {
+    "length_cm": {
+      "min": 30,
+      "typical": 55,
+      "max": 100,
+      "spread": 0.22
+    },
+    "weight": {
+      "a": 0.0195,
+      "b": 2.85
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.85,
+      0.97,
+      1,
+      0.97,
+      0.88,
+      0.7,
+      0.5
+    ],
+    "height": 0.17,
+    "width": 0.12,
+    "flex": 1,
+    "head": {
+      "length": 0.2,
+      "snout": 0.35,
+      "mouth": 0.7,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "rounded",
+      "size": 0.15
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.55,
+          "height": 0.06
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.78,
+        "length": 0.07,
+        "height": 0.04
+      },
+      "pectoral": 0.09,
+      "pelvic": 0.05
+    },
+    "colors": {
+      "back": "#3a4228",
+      "flank": "#6a7440",
+      "belly": "#d8d8b8",
+      "fins": "#4a5a34",
+      "eye": "#2a2210",
+      "mouth": "#e0d4b0"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#222a16",
+        "amount": 0.4,
+        "scale": 6,
+        "region": "upper_flank",
+        "alpha": 0.7
+      },
+      {
+        "type": "spots",
+        "color": "#101008",
+        "density": 0.04,
+        "size": 2,
+        "region": "upper",
+        "from": 0.9,
+        "to": 1,
+        "alpha": 0.9
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "lake": 0.8,
+      "pond": 0.8,
+      "river": 0.5,
+      "creek": 0.4
+    },
+    "depth_m": {
+      "min": 0.2,
+      "preferred": 1.5,
+      "max": 6
+    },
+    "temperature_c": {
+      "min": 8,
+      "optimal": 25,
+      "max": 34
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.5
+    },
+    "turbidity_max": 0.9,
+    "oxygen_min_mgL": 1,
+    "cover": {
+      "weeds": 1,
+      "lilies": 0.8,
+      "reeds": 0.9,
+      "wood": 0.8,
+      "rocks": 0.1,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 0.4,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 25
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 8,
+    "turn_rate": 2,
+    "station_holding": 0,
+    "ambush": 0.7,
+    "depth_zone": {
+      "surface": 0.15,
+      "mid": 0.45,
+      "bottom": 0.4
+    },
+    "wariness": 0.45,
+    "spook_m": 4,
+    "recover_s": 40,
+    "curiosity": 0.6,
+    "rise_per_hour": 1
+  },
+  "diet": {
+    "food": {
+      "fish": 0.5,
+      "crayfish": 0.3,
+      "frogs": 0.1,
+      "insects": 0.1
+    },
+    "piscivore_from_cm": 15,
+    "feeding_zone": {
+      "surface": 0.2,
+      "mid": 0.4,
+      "bottom": 0.4
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.75,
+    "stamina": 0.65,
+    "jumps": 0.3,
+    "runs": 0.6,
+    "teeth": 0.4
+  }
+}

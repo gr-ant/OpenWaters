@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "baitcaster",
+  "type": "reel",
+  "name": "Low-profile baitcaster",
+  "description": "Sits on top of a casting rod; strong drag and quick retrieve, accurate with heavier lures.",
+  "kind": "baitcaster",
+  "max_drag_kg": 9,
+  "gear_ratio": 7.1,
+  "retrieve_cm": 76,
+  "capacity": {
+    "line_lb": 14,
+    "m": 140
+  },
+  "colors": {
+    "body": "#2a2c30",
+    "spool": "#9aa0a8",
+    "handle": "#b8322a"
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "west_indian_manatee",
+  "name": "West Indian manatee",
+  "scientific": "Trichechus manatus",
+  "description": "Slow, gentle grey 'sea cow' of warm shallows and river mouths. Grazes seagrass and weeds, drifts up for a breath every few minutes, and pushes along with a big round paddle tail.",
+  "size": {
+    "length_cm": {
+      "min": 250,
+      "typical": 300,
+      "max": 400,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.0185,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "pinniped",
+    "height": 0.3,
+    "width": 0.32,
+    "flex": 0.7,
+    "swim": "cetacean",
+    "parts": {
+      "snout": 0.15,
+      "neck": 0,
+      "fore": 0.35,
+      "rear": "paddle",
+      "whiskers": 0.6,
+      "ears": 0,
+      "eye": 0.3
+    },
+    "colors": {
+      "back": "#6e6a62",
+      "flank": "#7a766c",
+      "belly": "#8e8a80",
+      "fins": "#5e5a52",
+      "eye": "#0a0a0a",
+      "mouth": "#4a4040"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#5a564e",
+        "amount": 0.3,
+        "scale": 4,
+        "region": "all",
+        "alpha": 0.4
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.4
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 3,
+      "max": 10
+    },
+    "temperature_c": {
+      "min": 20,
+      "optimal": 26,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.8,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "weeds": 1,
+      "open": 0.5
+    }
+  },
+  "population": {
+    "density": 0.02,
+    "school": {
+      "min": 1,
+      "max": 3
+    },
+    "home_range_m": 300
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.15,
+    "burst_bl_s": 1,
+    "turn_rate": 0.8,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.2,
+      "mid": 0.5,
+      "bottom": 0.3
+    },
+    "wariness": 0.1,
+    "spook_m": 3,
+    "recover_s": 20,
+    "curiosity": 0.7,
+    "rise_per_hour": 0,
+    "breath_hold_s": 240,
+    "surface_s": 4,
+    "leap_per_hour": 0,
+    "haul_out": 0,
+    "blow": 0.05
+  },
+  "diet": {
+    "food": {
+      "plants": 1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.3,
+      "bottom": 0.6
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.8,
+    "stamina": 0.8,
+    "jumps": 0.1,
+    "runs": 0.7
+  }
+}

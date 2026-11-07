@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "surf_spinning",
+  "type": "reel",
+  "name": "Surf spinning reel (6000)",
+  "description": "Big spool for long casts and lots of line.",
+  "kind": "spinning",
+  "max_drag_kg": 13,
+  "gear_ratio": 4.9,
+  "retrieve_cm": 102,
+  "capacity": {
+    "line_lb": 20,
+    "m": 300
+  },
+  "colors": {
+    "body": "#e0e2e4",
+    "spool": "#3a6aa0",
+    "handle": "#202224"
+  }
+}

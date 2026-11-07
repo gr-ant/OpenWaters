@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "mono_leader_130",
+  "type": "leader",
+  "name": "130 lb mono leader",
+  "description": "A long, thick leader for billfish: their rough bills and sandpaper skin chew through light line.",
+  "material": "mono",
+  "strength_lb": 130,
+  "diameter_mm": 1.3,
+  "length_m": 4.5,
+  "visibility": 0.6,
+  "abrasion": 0.85,
+  "colors": {
+    "line": "#dbe9ef"
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "sea_otter",
+  "name": "Sea otter",
+  "scientific": "Enhydra lutris",
+  "description": "Thick-furred otter of cold coasts and kelp beds. Dives for crabs, urchins and clams, then floats at the surface for a long time eating them. Length is nose to tail tip.",
+  "size": {
+    "length_cm": {
+      "min": 100,
+      "typical": 125,
+      "max": 150,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.0154,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "pinniped",
+    "height": 0.2,
+    "width": 0.22,
+    "flex": 0.7,
+    "swim": "auto",
+    "parts": {
+      "snout": 0.4,
+      "neck": 0.25,
+      "fore": 0.2,
+      "rear": "tail",
+      "tail": 0.22,
+      "whiskers": 1,
+      "ears": 0.5,
+      "eye": 0.6
+    },
+    "colors": {
+      "back": "#4a3a2c",
+      "flank": "#5a4634",
+      "belly": "#6a5440",
+      "fins": "#3a2c20",
+      "eye": "#0a0a0a",
+      "mouth": "#5a3a30"
+    },
+    "pattern": [
+      {
+        "type": "spot",
+        "color": "#b8a890",
+        "at": 0.05,
+        "v": 0.3,
+        "size": 0.09,
+        "region": "all"
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 5,
+      "max": 40
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 12,
+      "max": 20
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "weeds": 1,
+      "rocks": 0.6,
+      "open": 0.4
+    }
+  },
+  "population": {
+    "density": 0.05,
+    "school": {
+      "min": 1,
+      "max": 4
+    },
+    "home_range_m": 100
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 2,
+    "turn_rate": 2.5,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.8,
+      "mid": 0.1,
+      "bottom": 0.1
+    },
+    "wariness": 0.5,
+    "spook_m": 8,
+    "recover_s": 30,
+    "curiosity": 0.8,
+    "rise_per_hour": 0,
+    "breath_hold_s": 60,
+    "surface_s": 25,
+    "leap_per_hour": 0,
+    "haul_out": 0.2,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "crayfish": 0.4,
+      "snails": 0.3,
+      "shrimp": 0.2,
+      "fish": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.3,
+      "mid": 0,
+      "bottom": 0.7
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.8,
+    "stamina": 0.8,
+    "jumps": 0.1,
+    "runs": 0.7
+  }
+}

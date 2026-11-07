@@ -1,0 +1,147 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "eastern_newt",
+  "name": "Eastern newt",
+  "scientific": "Notophthalmus viridescens",
+  "description": "Small olive newt with a yellow belly and a row of black-ringed red spots. Lives in weedy ponds and eats insect larvae, worms and frog eggs.",
+  "size": {
+    "length_cm": {
+      "min": 6,
+      "typical": 9,
+      "max": 12,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.0041,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "salamander",
+    "height": 0.07,
+    "width": 0.08,
+    "parts": {
+      "snout": 0.03,
+      "snout_width": 0.7,
+      "tail": 0.48,
+      "limbs": 0.45,
+      "scutes": 0,
+      "crest": 0.5,
+      "gills": 0,
+      "eye": 0.55,
+      "head_width": 0.9,
+      "head_height": 0.8
+    },
+    "colors": {
+      "back": "#5a5a2a",
+      "flank": "#8a7a3a",
+      "belly": "#e8c040",
+      "fins": "#6a6a30",
+      "eye": "#c8a040",
+      "mouth": "#d8a060"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#1a1a10",
+        "density": 0.2,
+        "size": 1,
+        "region": "all",
+        "alpha": 0.5
+      },
+      {
+        "type": "spots",
+        "color": "#c82a1a",
+        "density": 0.06,
+        "size": 1,
+        "region": "flank",
+        "alpha": 0.9
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "pond": 1,
+      "lake": 0.6,
+      "creek": 0.2
+    },
+    "depth_m": {
+      "min": 0.1,
+      "preferred": 0.6,
+      "max": 3
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 20,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.2
+    },
+    "turbidity_max": 0.6,
+    "cover": {
+      "weeds": 1,
+      "lilies": 0.5,
+      "reeds": 0.5,
+      "rocks": 0.2,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 4,
+    "school": {
+      "min": 1,
+      "max": 6
+    },
+    "home_range_m": 6
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 5,
+    "turn_rate": 3,
+    "station_holding": 0,
+    "ambush": 0.2,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.4,
+      "bottom": 0.5
+    },
+    "wariness": 0.4,
+    "spook_m": 1.5,
+    "recover_s": 15,
+    "curiosity": 0.6,
+    "rise_per_hour": 0.5,
+    "breath_hold_s": 300,
+    "surface_s": 5,
+    "haul_out": 0.05,
+    "leap_per_hour": 0,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "nymphs": 0.3,
+      "insects": 0.25,
+      "worms": 0.2,
+      "eggs": 0.15,
+      "snails": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.4,
+      "bottom": 0.5
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.03,
+    "stamina": 0.03,
+    "jumps": 0,
+    "runs": 0.05
+  }
+}

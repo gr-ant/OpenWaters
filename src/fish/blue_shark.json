@@ -1,0 +1,150 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "blue_shark",
+  "name": "Blue shark",
+  "scientific": "Prionace glauca",
+  "description": "Slender, deep-blue open-ocean shark with very long pectoral fins and a pointed snout. Cruises offshore, following schools of herring and squid.",
+  "size": {
+    "length_cm": {
+      "min": 180,
+      "typical": 250,
+      "max": 380,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0021,
+      "b": 3.1
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.3,
+      0.6,
+      0.85,
+      1,
+      0.92,
+      0.7,
+      0.45,
+      0.25
+    ],
+    "height": 0.11,
+    "width": 0.09,
+    "flex": 0.8,
+    "head": {
+      "length": 0.22,
+      "snout": 0.2,
+      "mouth": 0.6,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "heterocercal",
+      "size": 0.22
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.38,
+          "length": 0.09,
+          "height": 0.09,
+          "spiny": false
+        },
+        {
+          "at": 0.7,
+          "length": 0.03,
+          "height": 0.025,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.72,
+        "length": 0.03,
+        "height": 0.025
+      },
+      "pectoral": 0.22,
+      "pelvic": 0.05,
+      "adipose": false
+    },
+    "colors": {
+      "back": "#1e3e7a",
+      "flank": "#3a62a8",
+      "belly": "#f0f2f4",
+      "fins": "#1e3e7a",
+      "eye": "#0a0a0a",
+      "mouth": "#e0d0d0"
+    },
+    "pattern": []
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 8,
+      "preferred": 40,
+      "max": 400
+    },
+    "temperature_c": {
+      "min": 8,
+      "optimal": 15,
+      "max": 22
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.006,
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 800
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 4,
+    "turn_rate": 1.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.4,
+      "mid": 0.6,
+      "bottom": 0
+    },
+    "wariness": 0.2,
+    "spook_m": 4,
+    "recover_s": 20,
+    "curiosity": 0.8,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.7,
+      "shrimp": 0.3
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.3,
+      "mid": 0.7,
+      "bottom": 0
+    },
+    "meals_per_day": 1
+  },
+  "fight": {
+    "strength": 0.9,
+    "stamina": 0.8,
+    "jumps": 0.1,
+    "runs": 0.9,
+    "teeth": 1
+  }
+}

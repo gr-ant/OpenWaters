@@ -1,0 +1,156 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "humpback_whale",
+  "name": "Humpback whale",
+  "scientific": "Megaptera novaeangliae",
+  "description": "Huge baleen whale with very long white flippers. Cruises slowly offshore, blowing a tall spout every few minutes, and now and then breaches clear of the water.",
+  "size": {
+    "length_cm": {
+      "min": 1100,
+      "typical": 1350,
+      "max": 1600,
+      "spread": 0.1
+    },
+    "weight": {
+      "a": 0.0122,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "profile": [
+      0.35,
+      0.75,
+      0.95,
+      1,
+      0.9,
+      0.7,
+      0.42,
+      0.22
+    ],
+    "height": 0.2,
+    "width": 0.2,
+    "flex": 0.5,
+    "swim": "cetacean",
+    "head": {
+      "length": 0.28,
+      "snout": 0.6,
+      "mouth": 1,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "flukes",
+      "size": 0.2
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.62,
+          "length": 0.06,
+          "height": 0.03
+        }
+      ],
+      "anal": {
+        "at": 0.8,
+        "length": 0.01,
+        "height": 0.004
+      },
+      "pectoral": 0.3,
+      "pelvic": 0
+    },
+    "colors": {
+      "back": "#1e2024",
+      "flank": "#2a2c30",
+      "belly": "#d4d4d4",
+      "fins": "#e8e8e8",
+      "eye": "#0a0a0a",
+      "mouth": "#5a4a4a"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#2a2c30",
+        "amount": 0.35,
+        "scale": 5,
+        "region": "lower",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 10,
+      "preferred": 50,
+      "max": 500
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 15,
+      "max": 28
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.005,
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 2000
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.15,
+    "burst_bl_s": 0.6,
+    "turn_rate": 0.6,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.5,
+      "mid": 0.5,
+      "bottom": 0
+    },
+    "wariness": 0.1,
+    "spook_m": 4,
+    "recover_s": 20,
+    "curiosity": 0.6,
+    "rise_per_hour": 0,
+    "breath_hold_s": 180,
+    "surface_s": 15,
+    "leap_per_hour": 0.3,
+    "haul_out": 0,
+    "blow": 1
+  },
+  "diet": {
+    "food": {
+      "plankton": 0.6,
+      "fish": 0.4
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.4,
+      "mid": 0.6,
+      "bottom": 0
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 1,
+    "stamina": 1,
+    "jumps": 0.3,
+    "runs": 1
+  }
+}

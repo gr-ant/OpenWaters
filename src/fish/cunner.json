@@ -1,0 +1,167 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "cunner",
+  "name": "Cunner",
+  "scientific": "Tautogolabrus adspersus",
+  "description": "Small, mottled brown-green wrasse that picks at mussels and barnacles around rocks, weed and pilings, nibbling at any bait. Dozes in crevices at night and in cold water.",
+  "size": {
+    "length_cm": {
+      "min": 10,
+      "typical": 20,
+      "max": 38,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0125,
+      "b": 3.05
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.8,
+      0.97,
+      1,
+      0.92,
+      0.72,
+      0.46,
+      0.3
+    ],
+    "height": 0.25,
+    "width": 0.12,
+    "flex": 1,
+    "swim": "auto",
+    "head": {
+      "length": 0.26,
+      "snout": 0.55,
+      "mouth": 0.35,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "rounded",
+      "size": 0.17,
+      "fork": 0.05
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.5,
+          "height": 0.1,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.68,
+        "length": 0.14,
+        "height": 0.08
+      },
+      "pectoral": 0.11,
+      "pelvic": 0.07,
+      "adipose": false
+    },
+    "colors": {
+      "back": "#4a5a3a",
+      "flank": "#7a8a5a",
+      "belly": "#d8d4b0",
+      "fins": "#5a6644",
+      "eye": "#101010",
+      "mouth": "#c8a090"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#2e3a24",
+        "amount": 0.4,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.7
+      },
+      {
+        "type": "spots",
+        "color": "#e8e0b0",
+        "density": 0.12,
+        "size": 1,
+        "region": "upper_flank",
+        "alpha": 0.5
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 4,
+      "max": 25
+    },
+    "temperature_c": {
+      "min": 6,
+      "optimal": 14,
+      "max": 22
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "rocks": 1,
+      "weeds": 0.7,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 1.5,
+    "school": {
+      "min": 1,
+      "max": 5
+    },
+    "home_range_m": 20
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 6,
+    "turn_rate": 2.8,
+    "station_holding": 0,
+    "ambush": 0.1,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "wariness": 0.4,
+    "spook_m": 3,
+    "recover_s": 25,
+    "curiosity": 0.8,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "snails": 0.3,
+      "shrimp": 0.25,
+      "worms": 0.2,
+      "crayfish": 0.15,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.2,
+      "bottom": 0.8
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.25,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.3
+  }
+}

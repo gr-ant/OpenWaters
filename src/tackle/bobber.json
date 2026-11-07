@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "bobber",
+  "type": "float",
+  "name": "Round bobber",
+  "description": "The classic red and white ball. Clips on at a fixed depth; watch it dance.",
+  "kind": "fixed",
+  "buoyancy_g": 6,
+  "depth_m": 0.9,
+  "size_mm": 30,
+  "colors": {
+    "top": "#e8322a",
+    "bottom": "#f4f4f0"
+  }
+}

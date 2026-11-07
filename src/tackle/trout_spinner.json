@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "trout_spinner",
+  "type": "rig",
+  "name": "Trout spinner",
+  "description": "A small inline spinner on light line: cast across the current and reel steadily.",
+  "parts": {
+    "rod": "ultralight_spinning",
+    "reel": "spinning_1000",
+    "line": "mono_6",
+    "lure": "inline_spinner"
+  },
+  "drag": 0.3,
+  "waters": ["creek", "river", "lake"]
+}

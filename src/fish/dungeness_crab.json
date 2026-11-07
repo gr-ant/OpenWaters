@@ -1,0 +1,126 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "dungeness_crab",
+  "name": "Dungeness crab",
+  "scientific": "Metacarcinus magister",
+  "description": "Broad, purple-brown crab of cool Pacific sand and eelgrass beds, with white-tipped claws and a fan-shaped shell. Buries itself in the sand by day and forages for clams, shrimp and small fish. Length is carapace width.",
+  "size": {
+    "length_cm": {
+      "min": 12,
+      "typical": 18,
+      "max": 25,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.1,
+      "b": 3.0
+    },
+    "condition_sd": 0.12
+  },
+  "body": {
+    "plan": "crab",
+    "height": 0.2,
+    "width": 0.62,
+    "parts": {
+      "claws": 0.5,
+      "legs": 0.6,
+      "spines": 0.2,
+      "paddles": false,
+      "eyestalks": 0.4
+    },
+    "colors": {
+      "back": "#8a6a5a",
+      "flank": "#a88a78",
+      "belly": "#f0e4d4",
+      "fins": "#7a4a3a",
+      "eye": "#101010",
+      "mouth": "#e8dcc8"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#5a3a30",
+        "amount": 0.35,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.5
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0,
+      "preferred": 15,
+      "max": 180
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 12,
+      "max": 20
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1
+    },
+    "turbidity_max": 0.6,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 0.9,
+      "weeds": 0.8,
+      "rocks": 0.2
+    }
+  },
+  "population": {
+    "density": 1.5,
+    "school": {
+      "min": 1,
+      "max": 3
+    },
+    "home_range_m": 40
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 5,
+    "turn_rate": 3,
+    "station_holding": 0,
+    "ambush": 0.4,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.05,
+      "bottom": 0.95
+    },
+    "wariness": 0.4,
+    "spook_m": 3,
+    "recover_s": 20,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "snails": 0.3,
+      "shrimp": 0.25,
+      "fish": 0.2,
+      "worms": 0.15,
+      "plants": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.05,
+      "bottom": 0.95
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.2
+  }
+}

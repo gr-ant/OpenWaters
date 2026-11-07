@@ -1,0 +1,159 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "northern_pike",
+  "name": "Northern pike",
+  "scientific": "Esox lucius",
+  "description": "Long, toothy ambush predator. Hangs motionless at weed edges, then strikes in a burst. Few, big, solitary.",
+  "size": {
+    "length_cm": {
+      "min": 35,
+      "typical": 60,
+      "max": 130,
+      "spread": 0.32
+    },
+    "weight": {
+      "a": 0.0045,
+      "b": 3.1
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.35,
+      0.6,
+      0.8,
+      0.9,
+      0.95,
+      1,
+      0.9,
+      0.55
+    ],
+    "height": 0.14,
+    "width": 0.09,
+    "flex": 0.9,
+    "head": {
+      "length": 0.27,
+      "snout": 0.25,
+      "mouth": 0.9,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.15,
+      "fork": 0.25
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.78,
+          "length": 0.12,
+          "height": 0.08
+        }
+      ],
+      "anal": {
+        "at": 0.8,
+        "length": 0.1,
+        "height": 0.07
+      },
+      "pectoral": 0.08,
+      "pelvic": 0.06
+    },
+    "colors": {
+      "back": "#2f4026",
+      "flank": "#6a7a3a",
+      "belly": "#ece8cc",
+      "fins": "#6a6a30",
+      "mouth": "#e8e0d0"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#d8d6a0",
+        "density": 0.42,
+        "size": 1.4,
+        "region": "flank"
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "lake": 1,
+      "river": 0.5,
+      "pond": 0.4
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 2.5,
+      "max": 10
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 19,
+      "max": 28
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.6
+    },
+    "turbidity_max": 0.55,
+    "oxygen_min_mgL": 3.5,
+    "cover": {
+      "weeds": 1,
+      "reeds": 0.8,
+      "lilies": 0.7,
+      "rocks": 0.2,
+      "wood": 0.6,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 0.2,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 25
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 10,
+    "turn_rate": 1.8,
+    "station_holding": 0,
+    "ambush": 0.9,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.7,
+      "bottom": 0.2
+    },
+    "wariness": 0.5,
+    "spook_m": 5,
+    "recover_s": 50,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.8,
+      "frogs": 0.1,
+      "crayfish": 0.05,
+      "worms": 0.05
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.15,
+      "mid": 0.7,
+      "bottom": 0.15
+    },
+    "meals_per_day": 1
+  },
+  "fight": {
+    "strength": 0.9,
+    "stamina": 0.5,
+    "jumps": 0.3,
+    "runs": 0.8,
+    "teeth": 0.8
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "red_eared_slider",
+  "name": "Red-eared slider",
+  "scientific": "Trachemys scripta elegans",
+  "description": "Smooth-shelled pond turtle that basks in rows on logs and slides into the water at the first alarm. Omnivore. Length is carapace length.",
+  "size": {
+    "length_cm": {
+      "min": 10,
+      "typical": 22,
+      "max": 30,
+      "spread": 0.18
+    },
+    "weight": {
+      "a": 0.113,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "turtle",
+    "height": 0.32,
+    "width": 0.78,
+    "parts": {
+      "flippers": false,
+      "neck": 0.3,
+      "head": 0.2,
+      "tail": 0.15,
+      "ridges": 0,
+      "legs": 0.55
+    },
+    "colors": {
+      "back": "#4a5a2e",
+      "flank": "#5a6a34",
+      "belly": "#e0c860",
+      "fins": "#3e4a2a",
+      "eye": "#c8b040",
+      "mouth": "#d8c8a0"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#b8a840",
+        "count": 6,
+        "width": 0.1,
+        "wavy": 0.5,
+        "region": "all",
+        "alpha": 0.45
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "pond": 1,
+      "lake": 0.8,
+      "river": 0.5
+    },
+    "depth_m": {
+      "min": 0.2,
+      "preferred": 1,
+      "max": 5
+    },
+    "temperature_c": {
+      "min": 10,
+      "optimal": 27,
+      "max": 35
+    },
+    "current_ms": {
+      "preferred": 0,
+      "max": 0.4
+    },
+    "turbidity_max": 0.9,
+    "cover": {
+      "lilies": 0.9,
+      "weeds": 0.8,
+      "reeds": 0.6,
+      "rocks": 0.5,
+      "open": 0.2
+    }
+  },
+  "population": {
+    "density": 1.5,
+    "school": {
+      "min": 1,
+      "max": 6
+    },
+    "home_range_m": 20
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 3,
+    "turn_rate": 2,
+    "station_holding": 0,
+    "ambush": 0.1,
+    "depth_zone": {
+      "surface": 0.35,
+      "mid": 0.35,
+      "bottom": 0.3
+    },
+    "wariness": 0.75,
+    "spook_m": 6,
+    "recover_s": 60,
+    "curiosity": 0.4,
+    "rise_per_hour": 2,
+    "breath_hold_s": 240,
+    "surface_s": 30,
+    "haul_out": 0.7,
+    "leap_per_hour": 0,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 0.35,
+      "insects": 0.2,
+      "snails": 0.15,
+      "fish": 0.1,
+      "worms": 0.1,
+      "crayfish": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.3,
+      "mid": 0.4,
+      "bottom": 0.3
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.35,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.2
+  }
+}

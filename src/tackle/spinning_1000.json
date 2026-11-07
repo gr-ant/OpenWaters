@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "spinning_1000",
+  "type": "reel",
+  "name": "Small spinning reel (1000)",
+  "description": "A palm-sized reel for light line. Smooth light drag; not much line.",
+  "kind": "spinning",
+  "max_drag_kg": 3,
+  "gear_ratio": 5.2,
+  "retrieve_cm": 64,
+  "capacity": {
+    "line_lb": 4,
+    "m": 130
+  },
+  "colors": {
+    "body": "#2e3238",
+    "spool": "#c8ccd2",
+    "handle": "#16181c"
+  }
+}

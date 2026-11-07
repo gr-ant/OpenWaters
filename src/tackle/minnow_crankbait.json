@@ -1,0 +1,41 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "minnow_crankbait",
+  "type": "lure",
+  "name": "Minnow crankbait",
+  "description": "A floating, diving minnow with a lip and rattles: dives to about 1.8 m when you reel and floats up when you stop.",
+  "style": "crankbait",
+  "imitates": {
+    "fish": 1,
+    "crayfish": 0.5
+  },
+  "size_cm": 9,
+  "weight_g": 11,
+  "buoyant": true,
+  "sink_ms": 0,
+  "dive_m": 1.8,
+  "lift": 0,
+  "speed_ms": {
+    "min": 0.4,
+    "best": 0.9,
+    "max": 1.7
+  },
+  "action": 0.8,
+  "flash": 0.6,
+  "noise": 0.5,
+  "scent": 0,
+  "pause": 0.35,
+  "hooks": {
+    "kind": "treble",
+    "count": 2,
+    "strength_lb": 20,
+    "hold": 0.7
+  },
+  "colors": {
+    "body": "#c9d3b0",
+    "back": "#2c5d3a",
+    "belly": "#f2eedd",
+    "accent": "#d84a2a",
+    "blade": "#d8dde0"
+  }
+}

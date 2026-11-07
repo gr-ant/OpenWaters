@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "medium_spinning",
+  "type": "rod",
+  "name": "Medium spinning rod",
+  "description": "The all-rounder: 7 ft, enough backbone for bass, pike on a good day and light saltwater, still easy to cast.",
+  "length_m": 2.13,
+  "power": "medium",
+  "action": "fast",
+  "line_lb": {
+    "min": 6,
+    "max": 14
+  },
+  "lure_g": {
+    "min": 5,
+    "max": 21
+  },
+  "reel": "spinning",
+  "handle": "cork",
+  "guides": 7,
+  "colors": {
+    "blank": "#1f2a3a",
+    "handle": "#c9a46a",
+    "wraps": "#3a7ac0"
+  }
+}

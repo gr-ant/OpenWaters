@@ -1,0 +1,18 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "surf_shrimp",
+  "type": "rig",
+  "name": "Surf shrimp",
+  "description": "A pyramid sinker holds a shrimp on a circle hook out past the waves. Just reel when it bends.",
+  "parts": {
+    "rod": "surf_rod",
+    "reel": "surf_spinning",
+    "line": "braid_50",
+    "leader": "fluoro_leader_20",
+    "hook": "circle_3_0",
+    "sinker": "pyramid_sinker",
+    "bait": "shrimp"
+  },
+  "drag": 0.3,
+  "waters": ["sea"]
+}

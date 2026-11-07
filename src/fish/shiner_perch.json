@@ -1,0 +1,167 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "shiner_perch",
+  "name": "Shiner perch",
+  "scientific": "Cymatogaster aggregata",
+  "description": "Small, deep-bodied silver surfperch with dusky bars and a yellow wash. Shoals in eelgrass beds and around pilings, picking plankton and tiny crustaceans; females give birth to live young.",
+  "size": {
+    "length_cm": {
+      "min": 6,
+      "typical": 11,
+      "max": 18,
+      "spread": 0.18
+    },
+    "weight": {
+      "a": 0.02,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "profile": [
+      0.45,
+      0.8,
+      0.98,
+      1,
+      0.9,
+      0.7,
+      0.45,
+      0.3
+    ],
+    "height": 0.32,
+    "width": 0.11,
+    "flex": 1,
+    "swim": "auto",
+    "head": {
+      "length": 0.24,
+      "snout": 0.45,
+      "mouth": 0.3,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.18,
+      "fork": 0.4
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.45,
+          "height": 0.1,
+          "spiny": true
+        }
+      ],
+      "anal": {
+        "at": 0.62,
+        "length": 0.22,
+        "height": 0.08
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.08,
+      "adipose": false
+    },
+    "colors": {
+      "back": "#6a7a70",
+      "flank": "#b8c4b8",
+      "belly": "#f2f0e4",
+      "fins": "#a8aa90",
+      "eye": "#101010",
+      "mouth": "#d0c8b8"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#c8a850",
+        "count": 3,
+        "width": 0.12,
+        "region": "flank",
+        "from": 0.3,
+        "to": 0.75,
+        "alpha": 0.5
+      },
+      {
+        "type": "lateral_line",
+        "color": "#e8ece4",
+        "v": 0.1,
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.15
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 4,
+      "max": 18
+    },
+    "temperature_c": {
+      "min": 8,
+      "optimal": 14,
+      "max": 22
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 0.8
+    },
+    "turbidity_max": 0.7,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "weeds": 1,
+      "rocks": 0.3,
+      "open": 0.3
+    }
+  },
+  "population": {
+    "density": 5,
+    "school": {
+      "min": 8,
+      "max": 40
+    },
+    "home_range_m": 40
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.8,
+    "burst_bl_s": 7,
+    "turn_rate": 3,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.2,
+      "mid": 0.6,
+      "bottom": 0.2
+    },
+    "wariness": 0.7,
+    "spook_m": 5,
+    "recover_s": 20,
+    "curiosity": 0.4,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 0.5,
+      "shrimp": 0.3,
+      "worms": 0.1,
+      "snails": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.2,
+      "mid": 0.6,
+      "bottom": 0.2
+    },
+    "meals_per_day": 5
+  },
+  "fight": {
+    "strength": 0.1,
+    "stamina": 0.1,
+    "jumps": 0,
+    "runs": 0.15
+  }
+}

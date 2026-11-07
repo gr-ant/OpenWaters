@@ -1,0 +1,171 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "red_drum",
+  "name": "Red drum",
+  "scientific": "Sciaenops ocellatus",
+  "description": "Copper-bronze bottom feeder of surf, bays and marsh flats, with a black eyespot near the tail. Grunts in schools over oyster bars and grass flats, and runs hard when hooked.",
+  "size": {
+    "length_cm": {
+      "min": 30,
+      "typical": 70,
+      "max": 150,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.013,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.82,
+      0.98,
+      1,
+      0.92,
+      0.72,
+      0.48,
+      0.3
+    ],
+    "height": 0.22,
+    "width": 0.12,
+    "flex": 1,
+    "head": {
+      "length": 0.24,
+      "snout": 0.55,
+      "mouth": 0.45,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "square",
+      "size": 0.16
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.17,
+          "height": 0.09,
+          "spiny": true
+        },
+        {
+          "at": 0.5,
+          "length": 0.2,
+          "height": 0.06,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.72,
+        "length": 0.09,
+        "height": 0.06
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.07
+    },
+    "colors": {
+      "back": "#8a4a2a",
+      "flank": "#b8743c",
+      "belly": "#f0e4d0",
+      "fins": "#a85c34",
+      "eye": "#101010",
+      "mouth": "#d0b8a0"
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#6a3418",
+        "alpha": 0.3,
+        "region": "upper_flank"
+      },
+      {
+        "type": "spot",
+        "color": "#101010",
+        "from": 0.8,
+        "to": 0.88,
+        "v": 0.3,
+        "size": 1.2,
+        "alpha": 0.9
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1,
+      "river": 0.1
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 5,
+      "max": 60
+    },
+    "temperature_c": {
+      "min": 10,
+      "optimal": 22,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.5
+    },
+    "turbidity_max": 0.8,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "weeds": 0.7,
+      "rocks": 0.5,
+      "reeds": 0.4,
+      "open": 0.5
+    }
+  },
+  "population": {
+    "density": 0.4,
+    "school": {
+      "min": 2,
+      "max": 12
+    },
+    "home_range_m": 500
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.6,
+    "burst_bl_s": 6,
+    "turn_rate": 2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.05,
+      "mid": 0.35,
+      "bottom": 0.6
+    },
+    "wariness": 0.4,
+    "spook_m": 5,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "crayfish": 0.35,
+      "shrimp": 0.25,
+      "fish": 0.3,
+      "worms": 0.1
+    },
+    "piscivore_from_cm": 30,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.8,
+    "stamina": 0.8,
+    "jumps": 0,
+    "runs": 0.8
+  }
+}

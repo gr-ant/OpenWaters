@@ -1,0 +1,122 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "common_periwinkle",
+  "name": "Common periwinkle",
+  "scientific": "Littorina littorea",
+  "description": "Dark, ridged sea snail grazing algae in dense crowds on intertidal rocks and weed, clamping shut against the sun and the tide. Length is shell height.",
+  "size": {
+    "length_cm": {
+      "min": 1.5,
+      "typical": 2.5,
+      "max": 4,
+      "spread": 0.15
+    },
+    "weight": {
+      "a": 0.25,
+      "b": 3.0
+    },
+    "condition_sd": 0.08
+  },
+  "body": {
+    "plan": "snail",
+    "height": 0.6,
+    "width": 0.6,
+    "parts": {
+      "spire": 0.5,
+      "whorls": 4,
+      "aperture": 0.45,
+      "foot": 0.55,
+      "knobs": 0
+    },
+    "colors": {
+      "back": "#2a2622",
+      "flank": "#3a342e",
+      "belly": "#c8b8a0",
+      "fins": "#7a6a58",
+      "eye": "#101010",
+      "mouth": "#1a1a1a"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#1a1816",
+        "count": 8,
+        "width": 0.15,
+        "region": "all",
+        "alpha": 0.4
+      }
+    ]
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 1.5,
+      "max": 6
+    },
+    "temperature_c": {
+      "min": 4,
+      "optimal": 13,
+      "max": 24
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.6,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "rocks": 1,
+      "weeds": 0.6,
+      "open": 0.1
+    }
+  },
+  "population": {
+    "density": 2,
+    "school": {
+      "min": 10,
+      "max": 40
+    },
+    "home_range_m": 2
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.03,
+    "burst_bl_s": 0.2,
+    "turn_rate": 0.3,
+    "station_holding": 0.3,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "wariness": 0.2,
+    "spook_m": 1,
+    "recover_s": 20,
+    "curiosity": 0.1,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.02,
+    "stamina": 0.02,
+    "jumps": 0,
+    "runs": 0
+  }
+}

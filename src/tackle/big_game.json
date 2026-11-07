@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "big_game",
+  "type": "reel",
+  "name": "Big game lever-drag reel (50W)",
+  "description": "A two-speed lever-drag reel holding hundreds of metres of heavy line. Built for fish that weigh more than you.",
+  "kind": "conventional",
+  "max_drag_kg": 30,
+  "gear_ratio": 3.6,
+  "retrieve_cm": 117,
+  "capacity": {
+    "line_lb": 80,
+    "m": 600
+  },
+  "colors": {
+    "body": "#c8a030",
+    "spool": "#c0c4c8",
+    "handle": "#1a1a1a"
+  }
+}

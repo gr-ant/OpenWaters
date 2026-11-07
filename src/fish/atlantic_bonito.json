@@ -1,0 +1,178 @@
+{
+  "schema": "embercrown-fish/1",
+  "size": {
+    "length_cm": {
+      "spread": 0.2,
+      "min": 35,
+      "typical": 55,
+      "max": 91
+    },
+    "condition_sd": 0.08,
+    "weight": {
+      "a": 0.0078,
+      "b": 3.13
+    }
+  },
+  "body": {
+    "profile": [
+      0.4,
+      0.72,
+      0.92,
+      1,
+      0.95,
+      0.75,
+      0.42,
+      0.14
+    ],
+    "height": 0.2,
+    "width": 0.13,
+    "flex": 0.6,
+    "head": {
+      "length": 0.24,
+      "snout": 0.35,
+      "mouth": 0.6,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.24,
+      "fork": 0.6
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.24,
+          "height": 0.07,
+          "spiny": true
+        },
+        {
+          "at": 0.56,
+          "length": 0.06,
+          "height": 0.06,
+          "spiny": false
+        }
+      ],
+      "anal": {
+        "at": 0.55,
+        "length": 0.07,
+        "height": 0.09
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.05,
+      "adipose": false
+    },
+    "pattern": [
+      {
+        "type": "stripe",
+        "color": "#10202e",
+        "v": 0.4,
+        "width": 0.04,
+        "region": "upper",
+        "alpha": 0.9
+      },
+      {
+        "type": "stripe",
+        "color": "#10202e",
+        "v": 0.6,
+        "width": 0.04,
+        "region": "upper",
+        "alpha": 0.9
+      },
+      {
+        "type": "stripe",
+        "color": "#10202e",
+        "v": 0.8,
+        "width": 0.04,
+        "region": "upper",
+        "alpha": 0.9
+      }
+    ],
+    "swim": "thunniform",
+    "colors": {
+      "back": "#1c3a5a",
+      "flank": "#c0ccd4",
+      "belly": "#f2f4f4",
+      "fins": "#2a3a4a",
+      "eye": "#101010",
+      "mouth": "#e8e0d8"
+    }
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 3
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "open": 1
+    },
+    "temperature_c": {
+      "min": 12,
+      "optimal": 19,
+      "max": 27
+    },
+    "depth_m": {
+      "min": 1,
+      "preferred": 10,
+      "max": 100
+    }
+  },
+  "population": {
+    "school": {
+      "min": 4,
+      "max": 12
+    },
+    "home_range_m": 300,
+    "density": 0.15
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 1.4,
+    "burst_bl_s": 12,
+    "turn_rate": 1.6,
+    "station_holding": 0,
+    "ambush": 0,
+    "wariness": 0.6,
+    "spook_m": 8,
+    "recover_s": 40,
+    "curiosity": 0.4,
+    "rise_per_hour": 0,
+    "depth_zone": {
+      "surface": 0.3,
+      "mid": 0.7,
+      "bottom": 0
+    }
+  },
+  "diet": {
+    "piscivore_from_cm": 0,
+    "meals_per_day": 4,
+    "food": {
+      "fish": 0.8,
+      "shrimp": 0.1,
+      "plankton": 0.1
+    },
+    "feeding_zone": {
+      "surface": 0.4,
+      "mid": 0.6,
+      "bottom": 0
+    }
+  },
+  "fight": {
+    "strength": 0.7,
+    "stamina": 0.65,
+    "jumps": 0.1,
+    "runs": 0.85,
+    "teeth": 0.3
+  },
+  "id": "atlantic_bonito",
+  "name": "Atlantic bonito",
+  "scientific": "Sarda sarda",
+  "description": "Small tuna-like mackerel with slanting dark stripes on its blue back and a toothy mouth. Fast schools chase sand eels and herring along the coast in late summer."
+}

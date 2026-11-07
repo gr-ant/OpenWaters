@@ -1,0 +1,164 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "atlantic_pollock",
+  "name": "Atlantic pollock",
+  "scientific": "Pollachius virens",
+  "description": "Streamlined olive-green cod relative with a pale lateral line, a projecting lower jaw and a tiny chin barbel at most. Fast, schooling hunter of cold coastal waters and rocky reefs, chasing herring and sand eels.",
+  "size": {
+    "length_cm": {
+      "min": 35,
+      "typical": 70,
+      "max": 130,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0117,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.82,
+      0.97,
+      1,
+      0.92,
+      0.7,
+      0.46,
+      0.3
+    ],
+    "height": 0.2,
+    "width": 0.11,
+    "flex": 1,
+    "head": {
+      "length": 0.24,
+      "snout": 0.5,
+      "mouth": 0.6,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.17,
+      "fork": 0.2
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.3,
+          "length": 0.1,
+          "height": 0.07
+        },
+        {
+          "at": 0.45,
+          "length": 0.13,
+          "height": 0.06
+        },
+        {
+          "at": 0.66,
+          "length": 0.1,
+          "height": 0.05
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.5,
+        "length": 0.14,
+        "height": 0.05
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.06
+    },
+    "colors": {
+      "back": "#3e4a30",
+      "flank": "#7a8460",
+      "belly": "#e8e8dc",
+      "fins": "#464e38",
+      "eye": "#101010",
+      "mouth": "#d8d4c4"
+    },
+    "pattern": [
+      {
+        "type": "lateral_line",
+        "color": "#ece8d4",
+        "v": 0.1,
+        "alpha": 0.8
+      }
+    ],
+    "barbels": 1
+  },
+  "habitat": {
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 3,
+      "preferred": 60,
+      "max": 300
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 9,
+      "max": 17
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.5
+    },
+    "turbidity_max": 0.4,
+    "oxygen_min_mgL": 5,
+    "cover": {
+      "rocks": 0.9,
+      "weeds": 0.5,
+      "open": 0.7
+    }
+  },
+  "population": {
+    "density": 1.2,
+    "school": {
+      "min": 3,
+      "max": 15
+    },
+    "home_range_m": 200
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.9,
+    "burst_bl_s": 8,
+    "turn_rate": 2.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.6,
+      "bottom": 0.3
+    },
+    "wariness": 0.5,
+    "spook_m": 6,
+    "recover_s": 35,
+    "curiosity": 0.5,
+    "rise_per_hour": 1
+  },
+  "diet": {
+    "food": {
+      "fish": 0.7,
+      "shrimp": 0.2,
+      "crayfish": 0.1
+    },
+    "piscivore_from_cm": 30,
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.6,
+      "bottom": 0.3
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.7,
+    "stamina": 0.6,
+    "jumps": 0.1,
+    "runs": 0.6
+  }
+}
