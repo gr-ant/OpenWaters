@@ -1,0 +1,11 @@
+{
+  "format": "CSLT-1",
+  "version": "1.1",
+  "metadata": {
+    "title": "Across the Octaves",
+    "tempo_bpm": 100,
+    "time_signature": "4/4",
+    "instruments": { "P": "piano", "B": "bass", "F": "flute" }
+  },
+  "sequence": "A1B1@2w A1P1@3q A2P5@3q A3P8@3q A4P1@4q B1B6@2w B1P1@4q B2P5@4q B3P8@4q B4F1@5q C1B8@2w C1P8@3h C1P12@3h C1F3@5h C3F12@4h D1B1@2w D1P1@4w D1P5@4w D1P8@4w D1F1@5w"
+}

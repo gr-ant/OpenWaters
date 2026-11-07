@@ -33,7 +33,9 @@ src/
     game-api.js       the public Game API
     hud/              on-screen interface, icons, journal, menu keyboard navigation
     game.js           game-specific setup on top of the API
+    urchin.js         music synthesizer (see Music below)
     boot.js           reads the built-in data and starts the game
+  music/*.urchin      songs (CSLT-1 JSON)
   fish/*.json         one file per species   (schema "embercrown-fish/1")
   boats/*.json        one file per boat      (schema "embercrown-boat/1")
   tackle/*.json       one file per piece of gear or rig (schema "embercrown-tackle/1")
@@ -50,6 +52,25 @@ The scripts share one global scope and run in the order `src/index.html` lists t
    ```
    A rig must come after the parts it uses.
 3. Run `python3 build.py`. It warns you about any file in `src/` that `index.html` doesn't list.
+
+## Music
+
+`src/js/urchin.js` is Urchin, a small synthesizer that plays CSLT-1 songs with 20 built-in instruments and no audio files. It's a copy of urchin's `src/urchin.js` plus one block at the end that exposes it as the global `Urchin`. To update it, copy the new `urchin.js` over and keep that block.
+
+Songs live in `src/music/*.urchin` (CSLT-1 JSON). Each one is listed in `src/index.html` like this:
+
+```html
+<script type="application/json" data-song="my-song" src="music/my-song.urchin"></script>
+```
+
+Play a song from game code. Browsers only allow sound after a click or key press, so call this from an input handler:
+
+```js
+const player = await Urchin.playSong('my-song');   // also: Urchin.play(jsonOrObject), Urchin.instruments
+player.stop();
+```
+
+See urchin's README for the song format (`A1P5@4q` means measure A, beat 1, instrument P, E4, a quarter note).
 
 ## Playing options
 
