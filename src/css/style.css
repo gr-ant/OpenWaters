@@ -414,11 +414,6 @@ body.title-on #hud, body.title-on #tui, body.title-on #overlay { visibility: hid
 button.ti-item::before { content: '›'; position: absolute; left: 0; opacity: 0; color: var(--gold-hi); transition: opacity .15s; }
 button.ti-item:hover, button.ti-item:focus-visible { color: var(--gold-hi); transform: translateX(4px); outline: none; }
 button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1; }
-.ti-soon { cursor: not-allowed; color: rgba(255,248,232,.6); }
-.ti-word { position: relative; display: inline-block; }
-.ti-scrub { position: absolute; left: -8px; right: -8px; top: 50%; width: calc(100% + 16px); height: 32px; transform: translateY(-50%); overflow: visible; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
-.ti-scrub path { fill: none; stroke: #fff8e8; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; opacity: .9; }
-.ti-stamp { position: absolute; left: 50%; top: 50%; background: rgba(12,8,6,.72); padding: 5px 9px 4px; transform: translate(-50%, -50%) rotate(-9deg); font: 800 13px/1 var(--sans); letter-spacing: 2px; text-transform: uppercase; color: #ff5a46;
-  border: 3px double #ff5a46; border-radius: 4px; text-shadow: none; opacity: .9; filter: drop-shadow(0 1px 3px rgba(0,0,0,.6)); white-space: nowrap; }
+.ti-soon { cursor: not-allowed; color: rgba(255,248,232,.35); }
 .ti-foot { margin: 22px 0 0 18px; font: 11px var(--sans); color: rgba(242,230,196,.8); letter-spacing: .4px; }
 @media (max-width: 600px) { #title { justify-content: center; padding: 0; } #tiName { font-size: 48px; } }
