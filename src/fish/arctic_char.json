@@ -143,11 +143,12 @@
   },
   "diet": {
     "food": {
-      "insects": 0.25,
-      "nymphs": 0.3,
-      "fish": 0.25,
-      "shrimp": 0.1,
-      "snails": 0.1
+      "nymphs": 0.24,
+      "insects": 0.2,
+      "fish": 0.2,
+      "eggs": 0.2,
+      "shrimp": 0.08,
+      "snails": 0.08
     },
     "piscivore_from_cm": 35,
     "feeding_zone": {

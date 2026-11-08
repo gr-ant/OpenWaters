@@ -140,11 +140,12 @@
   },
   "diet": {
     "food": {
-      "insects": 0.4,
-      "nymphs": 0.3,
-      "eggs": 0.1,
-      "fish": 0.1,
-      "worms": 0.1
+      "insects": 0.289,
+      "eggs": 0.25,
+      "nymphs": 0.217,
+      "leeches": 0.1,
+      "fish": 0.072,
+      "worms": 0.072
     },
     "piscivore_from_cm": 45,
     "feeding_zone": {

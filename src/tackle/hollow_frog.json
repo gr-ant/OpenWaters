@@ -6,9 +6,7 @@
   "description": "A soft frog that floats over lily pads and slop. Twitch it and hold on.",
   "style": "soft_plastic",
   "imitates": {
-    "frogs": 1,
-    "fish": 0.5,
-    "insects": 0.4
+    "frogs": 1
   },
   "size_cm": 6,
   "weight_g": 14,

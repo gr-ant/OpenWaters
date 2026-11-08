@@ -151,11 +151,11 @@
     "piscivore_from_cm": 15,
     "meals_per_day": 2,
     "food": {
-      "fish": 0.7,
-      "crayfish": 0.1,
-      "leeches": 0.1,
-      "nymphs": 0.05,
-      "worms": 0.05
+      "fish": 0.622,
+      "leeches": 0.2,
+      "crayfish": 0.089,
+      "nymphs": 0.044,
+      "worms": 0.044
     },
     "feeding_zone": {
       "surface": 0.05,

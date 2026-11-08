@@ -138,8 +138,8 @@
     "piscivore_from_cm": 10,
     "meals_per_day": 1,
     "food": {
-      "fish": 0.88,
-      "frogs": 0.12
+      "fish": 0.9,
+      "frogs": 0.1
     },
     "feeding_zone": {
       "surface": 0.15,

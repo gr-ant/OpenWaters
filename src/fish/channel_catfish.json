@@ -137,13 +137,15 @@
   },
   "diet": {
     "food": {
-      "fish": 0.25,
-      "worms": 0.2,
-      "crayfish": 0.2,
-      "shrimp": 0.1,
-      "snails": 0.1,
-      "insects": 0.1,
-      "plants": 0.05
+      "fish": 0.2,
+      "worms": 0.16,
+      "crayfish": 0.16,
+      "leeches": 0.1,
+      "frogs": 0.1,
+      "shrimp": 0.08,
+      "snails": 0.08,
+      "insects": 0.08,
+      "plants": 0.04
     },
     "piscivore_from_cm": 40,
     "feeding_zone": {

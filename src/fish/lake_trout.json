@@ -133,10 +133,11 @@
     "piscivore_from_cm": 30,
     "meals_per_day": 2,
     "food": {
-      "fish": 0.75,
-      "shrimp": 0.1,
-      "nymphs": 0.1,
-      "crayfish": 0.05
+      "fish": 0.675,
+      "eggs": 0.1,
+      "shrimp": 0.09,
+      "nymphs": 0.09,
+      "crayfish": 0.045
     },
     "feeding_zone": {
       "surface": 0,

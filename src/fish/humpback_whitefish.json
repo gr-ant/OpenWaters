@@ -132,10 +132,11 @@
     "piscivore_from_cm": 0,
     "meals_per_day": 3,
     "food": {
-      "nymphs": 0.4,
-      "snails": 0.3,
-      "plankton": 0.15,
-      "shrimp": 0.15
+      "nymphs": 0.34,
+      "snails": 0.255,
+      "eggs": 0.15,
+      "plankton": 0.128,
+      "shrimp": 0.128
     },
     "feeding_zone": {
       "surface": 0.05,

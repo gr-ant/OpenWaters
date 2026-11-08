@@ -137,10 +137,11 @@
     "piscivore_from_cm": 18,
     "meals_per_day": 4,
     "food": {
-      "fish": 0.35,
-      "insects": 0.2,
-      "nymphs": 0.2,
-      "plankton": 0.25
+      "fish": 0.332,
+      "plankton": 0.237,
+      "insects": 0.19,
+      "nymphs": 0.19,
+      "leeches": 0.05
     },
     "feeding_zone": {
       "surface": 0.1,

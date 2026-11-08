@@ -140,10 +140,10 @@
     "piscivore_from_cm": 0,
     "meals_per_day": 6,
     "food": {
-      "insects": 0.5,
-      "nymphs": 0.35,
-      "fish": 0.05,
-      "eggs": 0.1
+      "insects": 0.444,
+      "nymphs": 0.311,
+      "eggs": 0.2,
+      "fish": 0.044
     },
     "feeding_zone": {
       "surface": 0.5,

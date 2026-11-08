@@ -6,7 +6,7 @@
   "description": "A ribbon leech that swims as it sinks. Perch, walleye and bass find it hard to ignore.",
   "food": {
     "leeches": 1,
-    "worms": 0.9
+    "worms": 0.5
   },
   "size_cm": 6,
   "scent": 0.5,

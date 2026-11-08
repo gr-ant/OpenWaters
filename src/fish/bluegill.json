@@ -143,10 +143,11 @@
   },
   "diet": {
     "food": {
-      "insects": 0.45,
-      "nymphs": 0.25,
-      "worms": 0.2,
-      "plankton": 0.1
+      "insects": 0.405,
+      "nymphs": 0.225,
+      "worms": 0.18,
+      "leeches": 0.1,
+      "plankton": 0.09
     },
     "piscivore_from_cm": 0,
     "feeding_zone": {

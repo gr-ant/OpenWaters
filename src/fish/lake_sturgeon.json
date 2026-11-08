@@ -134,11 +134,13 @@
   },
   "diet": {
     "food": {
-      "snails": 0.3,
-      "nymphs": 0.3,
-      "crayfish": 0.2,
-      "worms": 0.1,
-      "fish": 0.1
+      "snails": 0.24,
+      "nymphs": 0.24,
+      "crayfish": 0.16,
+      "eggs": 0.15,
+      "worms": 0.08,
+      "fish": 0.08,
+      "leeches": 0.05
     },
     "piscivore_from_cm": 0,
     "feeding_zone": {

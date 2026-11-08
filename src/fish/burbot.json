@@ -143,10 +143,11 @@
   },
   "diet": {
     "food": {
-      "fish": 0.6,
-      "crayfish": 0.2,
-      "snails": 0.1,
-      "eggs": 0.1
+      "fish": 0.5,
+      "crayfish": 0.167,
+      "eggs": 0.15,
+      "leeches": 0.1,
+      "snails": 0.083
     },
     "piscivore_from_cm": 25,
     "feeding_zone": {
