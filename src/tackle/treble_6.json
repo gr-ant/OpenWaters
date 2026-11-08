@@ -1,0 +1,13 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "treble_6",
+  "type": "hook",
+  "name": "#6 treble hook",
+  "description": "Three points to hold a soft dough bait together. Catfish swallow it whole.",
+  "style": "treble",
+  "size": "#6",
+  "gap_mm": 8,
+  "strength_lb": 25,
+  "hold": 0.85,
+  "weight_g": 0.5
+}

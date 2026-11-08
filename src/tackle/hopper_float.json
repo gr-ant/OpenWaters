@@ -1,0 +1,19 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "hopper_float",
+  "type": "rig",
+  "name": "Grasshopper, shallow float",
+  "description": "A hopper held just under the surface film. Summer trout and bluegill rise to it.",
+  "parts": {
+    "rod": "light_spinning",
+    "reel": "spinning_2000",
+    "line": "mono_4",
+    "hook": "hook_8",
+    "sinker": "split_shot_small",
+    "float": "pencil_float",
+    "bait": "grasshopper"
+  },
+  "drag": 0.25,
+  "waters": ["creek", "pond", "river"],
+  "float_depth_m": 0.3
+}

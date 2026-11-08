@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "spinning_4000",
+  "type": "reel",
+  "name": "Heavy spinning reel (4000)",
+  "description": "Big spool and a strong drag for catfish, pike and inshore saltwater.",
+  "kind": "spinning",
+  "max_drag_kg": 10,
+  "gear_ratio": 5.8,
+  "retrieve_cm": 92,
+  "capacity": {
+    "line_lb": 12,
+    "m": 230
+  },
+  "colors": {
+    "body": "#2e3238",
+    "spool": "#c04a2a",
+    "handle": "#1d1f24"
+  }
+}

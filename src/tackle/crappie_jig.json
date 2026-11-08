@@ -1,0 +1,42 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "crappie_jig",
+  "type": "lure",
+  "name": "Marabou crappie jig",
+  "description": "A tiny lead head with a fluffy marabou tail that breathes in the water. Crappie, perch and bluegill.",
+  "style": "jig",
+  "imitates": {
+    "fish": 0.8,
+    "insects": 0.7,
+    "nymphs": 0.7
+  },
+  "size_cm": 3,
+  "weight_g": 2,
+  "buoyant": false,
+  "sink_ms": 0.3,
+  "dive_m": 0,
+  "lift": 0.4,
+  "speed_ms": {
+    "min": 0.05,
+    "best": 0.25,
+    "max": 0.7
+  },
+  "action": 0.7,
+  "flash": 0.2,
+  "noise": 0,
+  "scent": 0,
+  "pause": 0.8,
+  "hooks": {
+    "kind": "single",
+    "count": 1,
+    "strength_lb": 10,
+    "hold": 0.8
+  },
+  "colors": {
+    "body": "#f4f0f0",
+    "back": "#f06aa0",
+    "belly": "#f4f0f0",
+    "accent": "#f4e040",
+    "blade": "#f4f0f0"
+  }
+}

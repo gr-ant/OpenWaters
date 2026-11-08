@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "carp_rod",
+  "type": "rod",
+  "name": "Carp rod",
+  "description": "12 ft of slow, forgiving rod: casts a heavy lead a long way and soaks up a big carp's runs.",
+  "length_m": 3.66,
+  "power": "medium",
+  "action": "moderate",
+  "line_lb": {
+    "min": 10,
+    "max": 20
+  },
+  "lure_g": {
+    "min": 40,
+    "max": 110
+  },
+  "reel": "spinning",
+  "handle": "eva",
+  "guides": 6,
+  "colors": {
+    "blank": "#2a2e26",
+    "handle": "#222222",
+    "wraps": "#6a7a3a"
+  }
+}

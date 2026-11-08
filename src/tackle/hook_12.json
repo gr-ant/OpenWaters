@@ -1,0 +1,13 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "hook_12",
+  "type": "hook",
+  "name": "#12 fine hook",
+  "description": "A tiny hook for single eggs, maggots and the smallest panfish.",
+  "style": "j",
+  "size": "#12",
+  "gap_mm": 4,
+  "strength_lb": 6,
+  "hold": 0.7,
+  "weight_g": 0.05
+}

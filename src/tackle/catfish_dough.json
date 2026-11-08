@@ -1,0 +1,17 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "catfish_dough",
+  "type": "rig",
+  "name": "Catfish stink bait",
+  "description": "Stink dough on a treble, held on the bottom by a sliding egg sinker. Let them run with it.",
+  "parts": {
+    "rod": "heavy_spinning",
+    "reel": "spinning_4000",
+    "line": "mono_20",
+    "hook": "treble_6",
+    "sinker": "egg_sinker",
+    "bait": "dough_bait"
+  },
+  "drag": 0.4,
+  "waters": ["river", "lake", "pond"]
+}

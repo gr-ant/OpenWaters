@@ -1,0 +1,23 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "salmon_eggs",
+  "type": "bait",
+  "name": "Salmon eggs",
+  "description": "A small cluster of cured eggs. Trout and salmon in rivers and creeks gulp them down.",
+  "food": {
+    "eggs": 1,
+    "nymphs": 0.6,
+    "insects": 0.5
+  },
+  "size_cm": 1,
+  "scent": 0.7,
+  "wiggle": 0,
+  "lasts": 1,
+  "floats": false,
+  "shape": "kernel",
+  "weight_g": 0.3,
+  "colors": {
+    "body": "#ff6a3a",
+    "accent": "#ffa060"
+  }
+}

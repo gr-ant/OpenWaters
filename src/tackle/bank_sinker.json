@@ -1,0 +1,10 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "bank_sinker",
+  "type": "sinker",
+  "name": "Bank sinker (56 g)",
+  "description": "A heavy teardrop that holds bottom in current and casts a long way.",
+  "shape": "bank",
+  "weight_g": 56,
+  "grip": 0.6
+}

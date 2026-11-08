@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "metal_jigging",
+  "type": "rig",
+  "name": "Metal jigging",
+  "description": "A chrome jig dropped to the bottom and ripped back up. Mackerel, cod and jacks hit it on the drop.",
+  "parts": {
+    "rod": "heavy_spinning",
+    "reel": "spinning_4000",
+    "line": "braid_30",
+    "leader": "mono_leader_40",
+    "lure": "metal_jig"
+  },
+  "drag": 0.4,
+  "waters": ["sea"]
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "round_baitcaster",
+  "type": "reel",
+  "name": "Round baitcaster",
+  "description": "A classic round casting reel: slower gears for cranking deep lures, and room for heavier line.",
+  "kind": "baitcaster",
+  "max_drag_kg": 11,
+  "gear_ratio": 5.3,
+  "retrieve_cm": 66,
+  "capacity": {
+    "line_lb": 17,
+    "m": 220
+  },
+  "colors": {
+    "body": "#b02a2a",
+    "spool": "#c8ccd2",
+    "handle": "#1d1f24"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "spinnerbait",
+  "type": "lure",
+  "name": "Spinnerbait",
+  "description": "A bent-wire lure with blades on top and a skirted jig below. Rolls through weed and timber without snagging.",
+  "style": "spinner",
+  "imitates": {
+    "fish": 1
+  },
+  "size_cm": 10,
+  "weight_g": 14,
+  "buoyant": false,
+  "sink_ms": 0.4,
+  "dive_m": 0,
+  "lift": 0.6,
+  "speed_ms": {
+    "min": 0.4,
+    "best": 0.8,
+    "max": 1.5
+  },
+  "action": 0.5,
+  "flash": 0.95,
+  "noise": 0.4,
+  "scent": 0,
+  "pause": 0.2,
+  "hooks": {
+    "kind": "single",
+    "count": 1,
+    "strength_lb": 40,
+    "hold": 0.8
+  },
+  "colors": {
+    "body": "#f0f0f0",
+    "back": "#d8d040",
+    "belly": "#f0f0f0",
+    "accent": "#40a060",
+    "blade": "#e8d070"
+  }
+}

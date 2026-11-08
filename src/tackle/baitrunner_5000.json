@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "baitrunner_5000",
+  "type": "reel",
+  "name": "Free-spool carp reel (5000)",
+  "description": "A big-pit reel with a free-spool lever: a fish can take line off the spool before you strike.",
+  "kind": "spinning",
+  "max_drag_kg": 12,
+  "gear_ratio": 4.8,
+  "retrieve_cm": 95,
+  "capacity": {
+    "line_lb": 12,
+    "m": 300
+  },
+  "colors": {
+    "body": "#26282c",
+    "spool": "#8a9098",
+    "handle": "#3a3a30"
+  }
+}

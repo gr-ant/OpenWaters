@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "lipless_rattle",
+  "type": "rig",
+  "name": "Lipless rattle bait",
+  "description": "Burn a rattle bait over shallow flats. The noise brings bass and pike from far off.",
+  "parts": {
+    "rod": "medium_casting",
+    "reel": "baitcaster",
+    "line": "fluoro_15",
+    "lure": "lipless_crankbait"
+  },
+  "drag": 0.35,
+  "waters": ["lake", "river"]
+}

@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "boat_rod",
+  "type": "rod",
+  "name": "Boat rod",
+  "description": "Short, stout rod for a conventional reel: drops heavy weights and baits straight down to the sea bed.",
+  "length_m": 2.0,
+  "power": "heavy",
+  "action": "moderate",
+  "line_lb": {
+    "min": 20,
+    "max": 50
+  },
+  "lure_g": {
+    "min": 50,
+    "max": 300
+  },
+  "reel": "conventional",
+  "handle": "eva",
+  "guides": 8,
+  "colors": {
+    "blank": "#e8e4da",
+    "handle": "#1e1e1e",
+    "wraps": "#1a3a8a"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "dough_bait",
+  "type": "bait",
+  "name": "Stink dough",
+  "description": "A ball of strong-smelling dough. Catfish and carp follow the scent across the bottom.",
+  "food": {
+    "plants": 0.6,
+    "fish": 0.5,
+    "eggs": 0.5
+  },
+  "size_cm": 2.5,
+  "scent": 1,
+  "wiggle": 0,
+  "lasts": 2,
+  "floats": false,
+  "shape": "dough",
+  "weight_g": 4,
+  "colors": {
+    "body": "#8a7a4a",
+    "accent": "#5a4a2a"
+  }
+}

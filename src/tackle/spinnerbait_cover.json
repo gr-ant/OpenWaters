@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "spinnerbait_cover",
+  "type": "rig",
+  "name": "Spinnerbait",
+  "description": "A spinnerbait rolled past cover on a casting rod. Covers a lot of water fast.",
+  "parts": {
+    "rod": "medium_casting",
+    "reel": "baitcaster",
+    "line": "fluoro_15",
+    "lure": "spinnerbait"
+  },
+  "drag": 0.35,
+  "waters": ["lake", "pond", "river"]
+}

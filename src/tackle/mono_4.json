@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "mono_4",
+  "type": "line",
+  "name": "4 lb monofilament",
+  "description": "Very fine line for ultralight rods and small, wary fish. Go easy on the drag.",
+  "material": "mono",
+  "strength_lb": 4,
+  "diameter_mm": 0.18,
+  "stretch": 0.27,
+  "visibility": 0.4,
+  "colors": {
+    "line": "#e2ece6"
+  }
+}

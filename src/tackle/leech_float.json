@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "leech_float",
+  "type": "rig",
+  "name": "Leech under a pencil float",
+  "description": "A leech hung just off the bottom under a sensitive float. Perch and walleye can't leave it alone.",
+  "parts": {
+    "rod": "light_spinning",
+    "reel": "spinning_2000",
+    "line": "mono_6",
+    "leader": "fluoro_leader_8",
+    "hook": "hook_8",
+    "sinker": "split_shot_small",
+    "float": "pencil_float",
+    "bait": "leech"
+  },
+  "drag": 0.3,
+  "waters": ["lake", "pond", "river"],
+  "float_depth_m": 1.2
+}

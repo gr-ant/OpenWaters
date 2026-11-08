@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "braid_10",
+  "type": "line",
+  "name": "10 lb braid",
+  "description": "Hair-thin braid for long casts with light lures. Tie on a leader in clear water.",
+  "material": "braid",
+  "strength_lb": 10,
+  "diameter_mm": 0.13,
+  "stretch": 0.03,
+  "visibility": 0.8,
+  "colors": {
+    "line": "#e8e4d0"
+  }
+}

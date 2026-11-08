@@ -1,0 +1,22 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "crayfish_tail",
+  "type": "bait",
+  "name": "Crayfish tail",
+  "description": "A peeled crayfish tail. Bass, catfish and big perch all eat crayfish off the bottom.",
+  "food": {
+    "crayfish": 1,
+    "shrimp": 0.5
+  },
+  "size_cm": 5,
+  "scent": 0.6,
+  "wiggle": 0.2,
+  "lasts": 3,
+  "floats": false,
+  "shape": "shrimp",
+  "weight_g": 3,
+  "colors": {
+    "body": "#c87a5a",
+    "accent": "#8a4a3a"
+  }
+}

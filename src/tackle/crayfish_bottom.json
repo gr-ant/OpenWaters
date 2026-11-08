@@ -1,0 +1,17 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "crayfish_bottom",
+  "type": "rig",
+  "name": "Crayfish on the bottom",
+  "description": "A crayfish tail dragged slowly across rocks on a weedless bullet sinker. Big bass and catfish.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "mono_12",
+    "hook": "hook_1_0",
+    "sinker": "bullet_sinker",
+    "bait": "crayfish_tail"
+  },
+  "drag": 0.3,
+  "waters": ["river", "lake"]
+}

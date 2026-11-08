@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "spinning_2000",
+  "type": "reel",
+  "name": "Light spinning reel (2000)",
+  "description": "A touch bigger than the 1000: still light, holds more line for trout and panfish.",
+  "kind": "spinning",
+  "max_drag_kg": 4,
+  "gear_ratio": 6.0,
+  "retrieve_cm": 78,
+  "capacity": {
+    "line_lb": 6,
+    "m": 150
+  },
+  "colors": {
+    "body": "#4a4e56",
+    "spool": "#7ab0d0",
+    "handle": "#1d1f24"
+  }
+}

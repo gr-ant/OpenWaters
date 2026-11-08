@@ -1,0 +1,10 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "bullet_sinker",
+  "type": "sinker",
+  "name": "Bullet sinker (7 g)",
+  "description": "A cone of lead that slides through weed and snags without hanging up.",
+  "shape": "bullet",
+  "weight_g": 7,
+  "grip": 0.25
+}

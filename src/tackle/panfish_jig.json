@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "panfish_jig",
+  "type": "rig",
+  "name": "Crappie jig",
+  "description": "A tiny jig swum slowly past weed and timber. Panfish school up and bite one after another.",
+  "parts": {
+    "rod": "ultralight_spinning",
+    "reel": "spinning_1000",
+    "line": "mono_4",
+    "lure": "crappie_jig"
+  },
+  "drag": 0.25,
+  "waters": ["pond", "lake"]
+}

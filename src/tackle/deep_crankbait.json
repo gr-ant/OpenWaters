@@ -1,0 +1,41 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "deep_crankbait",
+  "type": "lure",
+  "name": "Deep diving crankbait",
+  "description": "A big lip drives it down to about 4 m: reaches bass and walleye on deep ledges.",
+  "style": "crankbait",
+  "imitates": {
+    "fish": 1,
+    "crayfish": 0.6
+  },
+  "size_cm": 8,
+  "weight_g": 18,
+  "buoyant": true,
+  "sink_ms": 0,
+  "dive_m": 4,
+  "lift": 0,
+  "speed_ms": {
+    "min": 0.4,
+    "best": 0.8,
+    "max": 1.4
+  },
+  "action": 0.85,
+  "flash": 0.4,
+  "noise": 0.5,
+  "scent": 0,
+  "pause": 0.3,
+  "hooks": {
+    "kind": "treble",
+    "count": 2,
+    "strength_lb": 22,
+    "hold": 0.7
+  },
+  "colors": {
+    "body": "#8a6a3a",
+    "back": "#4a3a1a",
+    "belly": "#e8c890",
+    "accent": "#c03020",
+    "blade": "#d8dde0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "conventional_30",
+  "type": "reel",
+  "name": "Star-drag boat reel (30)",
+  "description": "A sturdy conventional reel for bottom fishing from a boat: lots of line and a star drag.",
+  "kind": "conventional",
+  "max_drag_kg": 15,
+  "gear_ratio": 4.2,
+  "retrieve_cm": 85,
+  "capacity": {
+    "line_lb": 30,
+    "m": 360
+  },
+  "colors": {
+    "body": "#c8a040",
+    "spool": "#d8dce0",
+    "handle": "#1d1f24"
+  }
+}

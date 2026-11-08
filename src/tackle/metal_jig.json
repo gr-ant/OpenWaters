@@ -1,0 +1,40 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "metal_jig",
+  "type": "lure",
+  "name": "Metal jig",
+  "description": "A slab of chrome that drops fast and flutters on the way down. Jig it off the bottom at sea.",
+  "style": "jig",
+  "imitates": {
+    "fish": 1
+  },
+  "size_cm": 9,
+  "weight_g": 40,
+  "buoyant": false,
+  "sink_ms": 1.4,
+  "dive_m": 0,
+  "lift": 0.9,
+  "speed_ms": {
+    "min": 0.2,
+    "best": 0.8,
+    "max": 2.5
+  },
+  "action": 0.6,
+  "flash": 0.95,
+  "noise": 0.1,
+  "scent": 0,
+  "pause": 0.6,
+  "hooks": {
+    "kind": "single",
+    "count": 1,
+    "strength_lb": 60,
+    "hold": 0.8
+  },
+  "colors": {
+    "body": "#d8dce0",
+    "back": "#3a7ab0",
+    "belly": "#f0f0f0",
+    "accent": "#e8e8f0",
+    "blade": "#d8dce0"
+  }
+}

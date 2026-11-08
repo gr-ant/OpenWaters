@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "big_slip_float",
+  "type": "float",
+  "name": "Big slip float",
+  "description": "Holds up a big live bait and a heavy weight, deep down, for pike and sea fish.",
+  "kind": "slip",
+  "buoyancy_g": 25,
+  "depth_m": 2,
+  "size_mm": 40,
+  "colors": {
+    "top": "#ff3a2a",
+    "bottom": "#f4f4f0"
+  }
+}

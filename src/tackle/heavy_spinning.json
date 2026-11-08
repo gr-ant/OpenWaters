@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "heavy_spinning",
+  "type": "rod",
+  "name": "Heavy spinning rod",
+  "description": "7½ ft of backbone on a spinning reel: catfish, pike, big jigs and inshore saltwater.",
+  "length_m": 2.29,
+  "power": "heavy",
+  "action": "fast",
+  "line_lb": {
+    "min": 15,
+    "max": 40
+  },
+  "lure_g": {
+    "min": 14,
+    "max": 56
+  },
+  "reel": "spinning",
+  "handle": "eva",
+  "guides": 8,
+  "colors": {
+    "blank": "#1a2228",
+    "handle": "#2a2a2a",
+    "wraps": "#3ab0a0"
+  }
+}

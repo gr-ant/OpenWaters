@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "mono_20",
+  "type": "line",
+  "name": "20 lb monofilament",
+  "description": "Tough, cheap and stretchy: a shock absorber for catfish and big fish near snags.",
+  "material": "mono",
+  "strength_lb": 20,
+  "diameter_mm": 0.4,
+  "stretch": 0.22,
+  "visibility": 0.55,
+  "colors": {
+    "line": "#cfe0d6"
+  }
+}

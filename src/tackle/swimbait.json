@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "swimbait",
+  "type": "rig",
+  "name": "Paddle-tail swimbait",
+  "description": "A soft swimbait on light braid and a leader. Bass and pike inland, sea bass on the coast.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "braid_10",
+    "leader": "fluoro_leader_20",
+    "lure": "paddle_tail"
+  },
+  "drag": 0.3,
+  "waters": ["lake", "river", "sea"]
+}

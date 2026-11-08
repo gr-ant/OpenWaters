@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "medium_casting",
+  "type": "rod",
+  "name": "Medium crankbait rod",
+  "description": "A softer casting rod for crankbaits and spinnerbaits: the moderate bend keeps treble hooks from tearing out.",
+  "length_m": 2.13,
+  "power": "medium",
+  "action": "moderate",
+  "line_lb": {
+    "min": 10,
+    "max": 20
+  },
+  "lure_g": {
+    "min": 7,
+    "max": 28
+  },
+  "reel": "casting",
+  "handle": "eva",
+  "guides": 9,
+  "colors": {
+    "blank": "#2a1f1a",
+    "handle": "#303030",
+    "wraps": "#d07a2a"
+  }
+}

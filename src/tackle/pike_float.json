@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "pike_float",
+  "type": "rig",
+  "name": "Pike float (live minnow)",
+  "description": "A live minnow hung deep under a big slip float, on wire. Watch for the float to slide away.",
+  "parts": {
+    "rod": "heavy_spinning",
+    "reel": "spinning_4000",
+    "line": "braid_30",
+    "leader": "wire_leader",
+    "hook": "hook_1_0",
+    "sinker": "bullet_sinker",
+    "float": "big_slip_float",
+    "bait": "live_minnow"
+  },
+  "drag": 0.4,
+  "waters": ["lake", "river"],
+  "float_depth_m": 2
+}

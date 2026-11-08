@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "pencil_float",
+  "type": "float",
+  "name": "Pencil float",
+  "description": "Thin and sensitive: the slightest nibble pulls it under.",
+  "kind": "fixed",
+  "buoyancy_g": 2,
+  "depth_m": 0.6,
+  "size_mm": 14,
+  "colors": {
+    "top": "#f4d020",
+    "bottom": "#2a2a2a"
+  }
+}

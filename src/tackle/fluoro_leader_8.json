@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "fluoro_leader_8",
+  "type": "leader",
+  "name": "8 lb fluorocarbon leader",
+  "description": "A light, near-invisible length for trout and perch in clear water.",
+  "material": "fluoro",
+  "strength_lb": 8,
+  "diameter_mm": 0.26,
+  "length_m": 1.2,
+  "visibility": 0.15,
+  "abrasion": 0.4,
+  "colors": {
+    "line": "#f0f6f6"
+  }
+}

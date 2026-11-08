@@ -1,0 +1,42 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "hollow_frog",
+  "type": "lure",
+  "name": "Hollow-body frog",
+  "description": "A soft frog that floats over lily pads and slop. Twitch it and hold on.",
+  "style": "soft_plastic",
+  "imitates": {
+    "frogs": 1,
+    "fish": 0.5,
+    "insects": 0.4
+  },
+  "size_cm": 6,
+  "weight_g": 14,
+  "buoyant": true,
+  "sink_ms": 0,
+  "dive_m": 0,
+  "lift": 0,
+  "speed_ms": {
+    "min": 0.05,
+    "best": 0.3,
+    "max": 0.8
+  },
+  "action": 0.5,
+  "flash": 0,
+  "noise": 0.3,
+  "scent": 0,
+  "pause": 0.8,
+  "hooks": {
+    "kind": "single",
+    "count": 2,
+    "strength_lb": 60,
+    "hold": 0.75
+  },
+  "colors": {
+    "body": "#4a7a2a",
+    "back": "#2a4a1a",
+    "belly": "#f0e8c0",
+    "accent": "#1a1a1a",
+    "blade": "#4a7a2a"
+  }
+}

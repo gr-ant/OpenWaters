@@ -1,0 +1,17 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "carp_dough",
+  "type": "rig",
+  "name": "Long-range carp",
+  "description": "Dough on a heavy lead, cast far out on a long carp rod. Set the free-spool and wait.",
+  "parts": {
+    "rod": "carp_rod",
+    "reel": "baitrunner_5000",
+    "line": "mono_12",
+    "hook": "hook_2",
+    "sinker": "bank_sinker",
+    "bait": "dough_bait"
+  },
+  "drag": 0.3,
+  "waters": ["lake", "pond", "river"]
+}

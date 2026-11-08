@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "fluoro_15",
+  "type": "line",
+  "name": "15 lb fluorocarbon",
+  "description": "The bass angler's casting line: low stretch, hard to see, tough against cover.",
+  "material": "fluoro",
+  "strength_lb": 15,
+  "diameter_mm": 0.33,
+  "stretch": 0.14,
+  "visibility": 0.22,
+  "colors": {
+    "line": "#e6eeee"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "cut_mackerel",
+  "type": "bait",
+  "name": "Cut mackerel",
+  "description": "An oily chunk of mackerel. The slick it leaves draws sharks, rays and big bottom fish.",
+  "food": {
+    "fish": 1
+  },
+  "size_cm": 10,
+  "scent": 1,
+  "wiggle": 0.2,
+  "lasts": 4,
+  "floats": false,
+  "shape": "strip",
+  "weight_g": 12,
+  "colors": {
+    "body": "#5a7a8a",
+    "accent": "#e8e0d8"
+  }
+}

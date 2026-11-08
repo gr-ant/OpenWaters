@@ -1,0 +1,41 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "lipless_crankbait",
+  "type": "lure",
+  "name": "Lipless rattle bait",
+  "description": "A flat, sinking crankbait full of rattles. Count it down, then rip it back fast.",
+  "style": "crankbait",
+  "imitates": {
+    "fish": 1,
+    "crayfish": 0.4
+  },
+  "size_cm": 7,
+  "weight_g": 14,
+  "buoyant": false,
+  "sink_ms": 0.6,
+  "dive_m": 0,
+  "lift": 0.3,
+  "speed_ms": {
+    "min": 0.5,
+    "best": 1.0,
+    "max": 1.8
+  },
+  "action": 0.7,
+  "flash": 0.7,
+  "noise": 0.95,
+  "scent": 0,
+  "pause": 0.2,
+  "hooks": {
+    "kind": "treble",
+    "count": 2,
+    "strength_lb": 20,
+    "hold": 0.68
+  },
+  "colors": {
+    "body": "#d06a2a",
+    "back": "#6a3a1a",
+    "belly": "#f0d080",
+    "accent": "#e03a2a",
+    "blade": "#d8dde0"
+  }
+}

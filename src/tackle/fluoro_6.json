@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "fluoro_6",
+  "type": "line",
+  "name": "6 lb fluorocarbon",
+  "description": "Near invisible and sinks: for trout and panfish in clear water.",
+  "material": "fluoro",
+  "strength_lb": 6,
+  "diameter_mm": 0.23,
+  "stretch": 0.15,
+  "visibility": 0.2,
+  "colors": {
+    "line": "#eaf2f2"
+  }
+}

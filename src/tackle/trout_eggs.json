@@ -1,0 +1,17 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "trout_eggs",
+  "type": "rig",
+  "name": "Drifted salmon eggs",
+  "description": "A cluster of eggs on a tiny hook, drifted along the bottom of a run. Deadly for river trout.",
+  "parts": {
+    "rod": "light_spinning",
+    "reel": "spinning_2000",
+    "line": "fluoro_6",
+    "hook": "hook_12",
+    "sinker": "split_shot",
+    "bait": "salmon_eggs"
+  },
+  "drag": 0.25,
+  "waters": ["creek", "river"]
+}

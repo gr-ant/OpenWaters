@@ -1,0 +1,10 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "split_shot_small",
+  "type": "sinker",
+  "name": "Small split shot",
+  "description": "Dust shot: just enough to cock a small float and sink a light bait slowly.",
+  "shape": "split_shot",
+  "weight_g": 0.4,
+  "grip": 0.02
+}

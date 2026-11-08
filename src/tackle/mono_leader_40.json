@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "mono_leader_40",
+  "type": "leader",
+  "name": "40 lb mono leader",
+  "description": "A rod-length of thick mono ahead of braid: takes the shock and the rough mouths of inshore fish.",
+  "material": "mono",
+  "strength_lb": 40,
+  "diameter_mm": 0.6,
+  "length_m": 1.5,
+  "visibility": 0.45,
+  "abrasion": 0.6,
+  "colors": {
+    "line": "#dfe8e4"
+  }
+}

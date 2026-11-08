@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "deep_crank",
+  "type": "rig",
+  "name": "Deep crankbait",
+  "description": "Crank a deep diver down to the drop-offs where big fish sit in summer.",
+  "parts": {
+    "rod": "medium_casting",
+    "reel": "round_baitcaster",
+    "line": "fluoro_15",
+    "lure": "deep_crankbait"
+  },
+  "drag": 0.35,
+  "waters": ["lake"]
+}

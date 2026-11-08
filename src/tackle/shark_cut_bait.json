@@ -1,0 +1,18 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "shark_cut_bait",
+  "type": "rig",
+  "name": "Shark cut bait",
+  "description": "A slab of mackerel on heavy wire, held on the bottom from a boat. Big things find it.",
+  "parts": {
+    "rod": "boat_rod",
+    "reel": "conventional_30",
+    "line": "braid_30",
+    "leader": "wire_leader_90",
+    "hook": "circle_3_0",
+    "sinker": "bank_sinker",
+    "bait": "cut_mackerel"
+  },
+  "drag": 0.45,
+  "waters": ["sea"]
+}

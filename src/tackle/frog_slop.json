@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "frog_slop",
+  "type": "rig",
+  "name": "Frog over the pads",
+  "description": "A hollow frog on heavy braid, walked over lily pads. Explosive strikes, then haul them out.",
+  "parts": {
+    "rod": "heavy_casting",
+    "reel": "baitcaster",
+    "line": "braid_50",
+    "lure": "hollow_frog"
+  },
+  "drag": 0.5,
+  "waters": ["pond", "lake"]
+}

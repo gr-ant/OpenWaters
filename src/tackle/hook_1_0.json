@@ -1,0 +1,13 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "hook_1_0",
+  "type": "hook",
+  "name": "1/0 bait hook",
+  "description": "A strong mid-size hook for crayfish, live minnows and catfish baits.",
+  "style": "j",
+  "size": "1/0",
+  "gap_mm": 14,
+  "strength_lb": 40,
+  "hold": 0.82,
+  "weight_g": 0.7
+}

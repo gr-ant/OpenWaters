@@ -1,0 +1,21 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "grasshopper",
+  "type": "bait",
+  "name": "Grasshopper",
+  "description": "A big summer hopper. Floats, kicks and brings trout and bass up to the surface.",
+  "food": {
+    "insects": 1
+  },
+  "size_cm": 4,
+  "scent": 0.3,
+  "wiggle": 0.5,
+  "lasts": 2,
+  "floats": true,
+  "shape": "cricket",
+  "weight_g": 0.6,
+  "colors": {
+    "body": "#7a8a2a",
+    "accent": "#a89a40"
+  }
+}

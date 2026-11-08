@@ -1,0 +1,22 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "leech",
+  "type": "bait",
+  "name": "Leech",
+  "description": "A ribbon leech that swims as it sinks. Perch, walleye and bass find it hard to ignore.",
+  "food": {
+    "leeches": 1,
+    "worms": 0.9
+  },
+  "size_cm": 6,
+  "scent": 0.5,
+  "wiggle": 0.8,
+  "lasts": 3,
+  "floats": false,
+  "shape": "worm",
+  "weight_g": 1.5,
+  "colors": {
+    "body": "#2a2420",
+    "accent": "#6a4a2a"
+  }
+}

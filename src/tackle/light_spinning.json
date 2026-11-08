@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "light_spinning",
+  "type": "rod",
+  "name": "Light spinning rod",
+  "description": "A 6½ ft light rod: trout, perch and crappie on light line, with enough tip to flick small baits and floats.",
+  "length_m": 1.98,
+  "power": "light",
+  "action": "fast",
+  "line_lb": {
+    "min": 4,
+    "max": 10
+  },
+  "lure_g": {
+    "min": 2,
+    "max": 10
+  },
+  "reel": "spinning",
+  "handle": "cork",
+  "guides": 7,
+  "colors": {
+    "blank": "#3a4a2a",
+    "handle": "#d0ab72",
+    "wraps": "#e0c050"
+  }
+}

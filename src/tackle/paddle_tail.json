@@ -1,0 +1,40 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "paddle_tail",
+  "type": "lure",
+  "name": "Paddle-tail swimbait",
+  "description": "A soft baitfish whose tail thumps as it swims. Bass, pike and sea bass all take it.",
+  "style": "soft_plastic",
+  "imitates": {
+    "fish": 1
+  },
+  "size_cm": 10,
+  "weight_g": 14,
+  "buoyant": false,
+  "sink_ms": 0.4,
+  "dive_m": 0,
+  "lift": 0.4,
+  "speed_ms": {
+    "min": 0.2,
+    "best": 0.5,
+    "max": 1.1
+  },
+  "action": 0.9,
+  "flash": 0.3,
+  "noise": 0.2,
+  "scent": 0.2,
+  "pause": 0.4,
+  "hooks": {
+    "kind": "single",
+    "count": 1,
+    "strength_lb": 40,
+    "hold": 0.8
+  },
+  "colors": {
+    "body": "#d8dee0",
+    "back": "#4a6a7a",
+    "belly": "#f4f4f0",
+    "accent": "#a0c0d0",
+    "blade": "#d8dee0"
+  }
+}
