@@ -2,6 +2,14 @@
 
 A first-person fishing and exploration game that runs in the browser. It's built with WebGL2 and plain JavaScript, with no dependencies. The whole game ships as one file: **`Open Waters.html`**. Open it in a browser to play.
 
+![Title screen over Frog Pond](Screenshots/title.png)
+
+| Fishing at Frog Pond | Out on the sea | The island map |
+| --- | --- | --- |
+| ![Casting from the reeds at Frog Pond](Screenshots/fishing.png) | ![Driving a boat along the coast](Screenshots/boat.png) | ![Map of the island with travel crosshair](Screenshots/map.png) |
+
+Every island is generated from a seed, with lakes, ponds, rivers and sea. It has seasons and weather, 119 fish species, boats, and tackle you build into rigs.
+
 ## Editing
 
 Edit the files in `src/`, then rebuild the single file:
