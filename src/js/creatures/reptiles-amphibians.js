@@ -239,9 +239,9 @@ const FishDB = {
     const m = fishMesh(d); let zmin = 0; for (let k = 2; k < m.length; k += VS) zmin = Math.min(zmin, m[k]);
     return (d.__mesh = { m, zmin });
   },
-  // species that can live in each kind of water, in list order (so cells come out the same as scoring every species)
+  // species that can live in each kind of water on this island's climate, in list order (so cells come out the same as scoring every species)
   byKind(kind) {
-    if (this._kindRev !== this.revision) { this._kindRev = this.revision; this._kind = WATER_KEYS.map(W => this.list.map((D, si) => [D, si]).filter(([D]) => (D.habitat.waters[W] || 0) > 0).sort((a, b) => (a[0]._shell ? 2 : a[0]._herp ? 1 : 0) - (b[0]._shell ? 2 : b[0]._herp ? 1 : 0))); }   // fish first: a cell fills in this order
+    if (this._kindRev !== this.revision) { this._kindRev = this.revision; this._kind = WATER_KEYS.map(W => this.list.map((D, si) => [D, si]).filter(([D]) => (D.habitat.waters[W] || 0) > 0 && (!D.habitat.climates || D.habitat.climates.includes(CLIMATE.key))).sort((a, b) => (a[0]._shell ? 2 : a[0]._herp ? 1 : 0) - (b[0]._shell ? 2 : b[0]._herp ? 1 : 0))); }   // fish first: a cell fills in this order
     return this._kind[kind] || [];
   },
   saved() { try { return JSON.parse(localStorage.getItem('embercrown-fish-defs') || '{}'); } catch (e) { return {}; } },

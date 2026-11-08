@@ -78,6 +78,7 @@
     "pattern": []
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1
     },

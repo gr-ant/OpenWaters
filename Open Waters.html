@@ -2222,6 +2222,7 @@ const FISH_DEFAULTS = {
     pattern: [],
   },
   habitat: {
+    climates: null,                     // island climates it lives in, e.g. ["temperate", "arctic"]; null = any (water temperature decides)
     waters: { lake: 0.5, pond: 0.5, river: 0.5, creek: 0.5 },
     depth_m: { min: 0.3, preferred: 2, max: 10 },
     temperature_c: { min: 4, optimal: 18, max: 28 },
@@ -2292,6 +2293,7 @@ function validateFish(raw) {
   const T = d.habitat.temperature_c; if (!(T.min < T.optimal && T.optimal < T.max)) errors.push('habitat.temperature_c needs min < optimal < max');
   const Dp = d.habitat.depth_m; if (!(Dp.min <= Dp.preferred && Dp.preferred <= Dp.max)) errors.push('habitat.depth_m needs min <= preferred <= max');
   for (const k of Object.keys(d.habitat.waters)) if (!WATER_KEYS.includes(k)) warnings.push(`habitat.waters.${k}: unknown water (use ${WATER_KEYS.join(', ')})`);
+  const Cl = d.habitat.climates; if (Cl != null && (!Array.isArray(Cl) || !Cl.length || Cl.some(c => !CLIMATES[c]))) errors.push(`habitat.climates: null or a list of ${Object.keys(CLIMATES).join(', ')}`);
   if (!WATER_KEYS.some(k => d.habitat.waters[k] > 0)) errors.push('habitat.waters must give at least one water a weight above 0');
   const A = d.activity.pattern;
   if (typeof A === 'string' ? !ACTIVITY_PRESETS[A] : !(Array.isArray(A) && A.length === 24 && A.every(v => typeof v === 'number')))
@@ -3140,9 +3142,9 @@ const FishDB = {
     const m = fishMesh(d); let zmin = 0; for (let k = 2; k < m.length; k += VS) zmin = Math.min(zmin, m[k]);
     return (d.__mesh = { m, zmin });
   },
-  // species that can live in each kind of water, in list order (so cells come out the same as scoring every species)
+  // species that can live in each kind of water on this island's climate, in list order (so cells come out the same as scoring every species)
   byKind(kind) {
-    if (this._kindRev !== this.revision) { this._kindRev = this.revision; this._kind = WATER_KEYS.map(W => this.list.map((D, si) => [D, si]).filter(([D]) => (D.habitat.waters[W] || 0) > 0).sort((a, b) => (a[0]._shell ? 2 : a[0]._herp ? 1 : 0) - (b[0]._shell ? 2 : b[0]._herp ? 1 : 0))); }   // fish first: a cell fills in this order
+    if (this._kindRev !== this.revision) { this._kindRev = this.revision; this._kind = WATER_KEYS.map(W => this.list.map((D, si) => [D, si]).filter(([D]) => (D.habitat.waters[W] || 0) > 0 && (!D.habitat.climates || D.habitat.climates.includes(CLIMATE.key))).sort((a, b) => (a[0]._shell ? 2 : a[0]._herp ? 1 : 0) - (b[0]._shell ? 2 : b[0]._herp ? 1 : 0))); }   // fish first: a cell fills in this order
     return this._kind[kind] || [];
   },
   saved() { try { return JSON.parse(localStorage.getItem('embercrown-fish-defs') || '{}'); } catch (e) { return {}; } },
@@ -8857,6 +8859,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -8985,6 +8988,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -9150,6 +9154,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -9324,6 +9329,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1,
       "river": 0.3
@@ -9493,6 +9499,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -9652,6 +9659,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -9775,6 +9783,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1,
       "river": 0.2
@@ -9941,6 +9950,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1,
       "river": 0.15
@@ -10117,6 +10127,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "barbels": 1
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -10285,6 +10296,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1,
       "river": 0.15
@@ -10452,6 +10464,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1
     },
@@ -10576,6 +10589,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -10743,6 +10757,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -10899,6 +10914,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -11024,6 +11040,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -11159,6 +11176,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -11321,6 +11339,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -11495,6 +11514,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -11675,6 +11695,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -11844,6 +11865,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -12021,6 +12043,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "barbels": 1
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -12180,6 +12203,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -12353,6 +12377,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -12477,6 +12502,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -12637,6 +12663,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "river": 1,
       "lake": 0.5,
@@ -12805,6 +12832,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -12985,6 +13013,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -13143,6 +13172,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -13307,6 +13337,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "lake": 1,
       "pond": 1,
@@ -13485,6 +13516,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1,
       "river": 0.1
@@ -13619,6 +13651,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1
     },
@@ -13783,6 +13816,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -13938,6 +13972,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1,
       "river": 0.15
@@ -14104,6 +14139,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "lake": 1,
       "river": 0.6,
@@ -14237,6 +14273,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -14401,6 +14438,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1,
       "river": 0.4
@@ -14537,6 +14575,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -14696,6 +14735,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -14859,6 +14899,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -15015,6 +15056,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "lake": 1,
       "river": 0.7
@@ -15190,6 +15232,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -15347,6 +15390,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": []
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1
     },
@@ -15511,6 +15555,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "barbels": 1
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -15677,6 +15722,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "lake": 0.8,
       "pond": 0.8,
@@ -15853,6 +15899,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "river": 1,
       "creek": 0.9,
@@ -16015,6 +16062,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": []
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -16139,6 +16187,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -16260,6 +16309,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": []
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "river": 1,
       "lake": 0.8,
@@ -16425,6 +16475,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": []
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -16587,6 +16638,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1,
       "river": 0.15
@@ -16759,6 +16811,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1,
       "river": 0.1
@@ -16934,6 +16987,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -17060,6 +17114,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -17189,6 +17244,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "pond": 1,
       "lake": 0.9,
@@ -17326,6 +17382,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "pond": 1,
       "lake": 0.8,
@@ -17483,6 +17540,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "river": 1,
       "creek": 0.7,
@@ -17618,6 +17676,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -17745,6 +17804,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "pond": 1,
       "creek": 0.3,
@@ -17910,6 +17970,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "lake": 1,
       "river": 0.6,
@@ -18073,6 +18134,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1,
       "river": 0.5,
@@ -18251,6 +18313,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "barbels": 1
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1
     },
@@ -18404,6 +18467,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1,
       "river": 0.3
@@ -18568,6 +18632,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "river": 1,
       "creek": 0.8,
@@ -18747,6 +18812,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -18926,6 +18992,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -19105,6 +19172,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "barbels": 1
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1
     },
@@ -19262,6 +19330,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1
     },
@@ -19420,6 +19489,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -19550,6 +19620,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "lake": 1,
       "pond": 0.6
@@ -19684,6 +19755,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -19827,6 +19899,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1
     },
@@ -19990,6 +20063,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -20148,6 +20222,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "lake": 1,
       "pond": 0.9,
@@ -20318,6 +20393,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -20481,6 +20557,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -20647,6 +20724,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -20807,6 +20885,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": []
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -20924,6 +21003,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": []
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1,
       "river": 0.3
@@ -21094,6 +21174,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -21216,6 +21297,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1
     },
@@ -21368,6 +21450,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": []
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1
     },
@@ -21524,6 +21607,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -21692,6 +21776,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -21857,6 +21942,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -22022,6 +22108,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "pond": 1,
       "lake": 0.8,
@@ -22188,6 +22275,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -22340,6 +22428,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1
     },
@@ -22493,6 +22582,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "river": 1,
       "lake": 0.8,
@@ -22665,6 +22755,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "creek": 1,
       "river": 0.35,
@@ -22792,6 +22883,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": []
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1,
       "river": 0.2
@@ -22956,6 +23048,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "creek": 1,
       "river": 0.85,
@@ -23150,6 +23243,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -23274,6 +23368,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": []
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -23433,6 +23528,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "river": 1,
       "pond": 0.7,
@@ -23596,6 +23692,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1,
       "river": 0.4
@@ -23758,6 +23855,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1,
       "river": 0.45
@@ -23970,6 +24068,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -24123,6 +24222,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1,
       "river": 0.4,
@@ -24281,6 +24381,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "pond": 1,
       "lake": 0.9,
@@ -24415,6 +24516,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -24548,6 +24650,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "sea": 1
     },
@@ -24705,6 +24808,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -24877,6 +24981,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -25041,6 +25146,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "river": 1,
       "creek": 0.6,
@@ -25189,6 +25295,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "pond": 1,
       "lake": 0.6,
@@ -25338,6 +25445,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -25500,6 +25608,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -25669,6 +25778,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -25802,6 +25912,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -25936,6 +26047,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1
     },
@@ -26065,6 +26177,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -26193,6 +26306,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "river": 1,
       "creek": 0.8
@@ -26354,6 +26468,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic", "tropical"],
     "waters": {
       "sea": 1
     },
@@ -26507,6 +26622,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "lake": 1,
       "river": 0.8,
@@ -26642,6 +26758,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -26794,6 +26911,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "lake": 1,
       "river": 0.2
@@ -26966,6 +27084,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "pond": 1,
       "lake": 0.8,
@@ -27125,6 +27244,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "lake": 1,
       "river": 0.6,
@@ -27260,6 +27380,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -27422,6 +27543,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "river": 1,
       "lake": 0.7,
@@ -27558,6 +27680,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -27716,6 +27839,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "lake": 1,
       "river": 0.5
@@ -27881,6 +28005,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1
     },
@@ -28037,6 +28162,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "lake": 1,
       "river": 0.5,
@@ -28170,6 +28296,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "river": 1,
       "pond": 0.9,
@@ -28351,6 +28478,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic", "tropical"],
     "waters": {
       "sea": 1
     },
@@ -28510,6 +28638,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1
     },
@@ -28664,6 +28793,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1,
       "river": 0.4,
@@ -28829,6 +28959,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "river": 1,
       "creek": 0.75,
@@ -28964,6 +29095,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "pond": 1,
       "lake": 0.8,
@@ -29103,6 +29235,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate", "tropical"],
     "waters": {
       "pond": 1,
       "river": 0.6,
@@ -29275,6 +29408,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -29453,6 +29587,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1,
       "river": 0.15
@@ -29613,6 +29748,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -29786,6 +29922,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -29922,6 +30059,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -30088,6 +30226,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -30265,6 +30404,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -30428,6 +30568,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "river": 1,
       "lake": 0.6,
@@ -30565,6 +30706,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "pond": 1,
       "lake": 0.8,
@@ -30702,6 +30844,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1
     },
@@ -30853,6 +30996,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1,
       "lake": 0.35,
@@ -30990,6 +31134,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -31154,6 +31299,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -31308,6 +31454,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1,
       "river": 0.35
@@ -31486,6 +31633,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -31665,6 +31813,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1,
       "river": 0.4
@@ -31833,6 +31982,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "lie": "right"
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -31986,6 +32136,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -32160,6 +32311,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "lake": 1,
       "river": 0.7,
@@ -32300,6 +32452,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1
     },
@@ -32465,6 +32618,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -32599,6 +32753,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1,
       "river": 0.4
@@ -32757,6 +32912,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -32887,6 +33043,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -33046,6 +33203,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "lake": 1,
       "pond": 0.5,
@@ -33213,6 +33371,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "sea": 1
     },
@@ -33378,6 +33537,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -33554,6 +33714,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },
@@ -33722,6 +33883,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },

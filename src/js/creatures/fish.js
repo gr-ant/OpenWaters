@@ -24,6 +24,7 @@ const FISH_DEFAULTS = {
     pattern: [],
   },
   habitat: {
+    climates: null,                     // island climates it lives in, e.g. ["temperate", "arctic"]; null = any (water temperature decides)
     waters: { lake: 0.5, pond: 0.5, river: 0.5, creek: 0.5 },
     depth_m: { min: 0.3, preferred: 2, max: 10 },
     temperature_c: { min: 4, optimal: 18, max: 28 },
@@ -94,6 +95,7 @@ function validateFish(raw) {
   const T = d.habitat.temperature_c; if (!(T.min < T.optimal && T.optimal < T.max)) errors.push('habitat.temperature_c needs min < optimal < max');
   const Dp = d.habitat.depth_m; if (!(Dp.min <= Dp.preferred && Dp.preferred <= Dp.max)) errors.push('habitat.depth_m needs min <= preferred <= max');
   for (const k of Object.keys(d.habitat.waters)) if (!WATER_KEYS.includes(k)) warnings.push(`habitat.waters.${k}: unknown water (use ${WATER_KEYS.join(', ')})`);
+  const Cl = d.habitat.climates; if (Cl != null && (!Array.isArray(Cl) || !Cl.length || Cl.some(c => !CLIMATES[c]))) errors.push(`habitat.climates: null or a list of ${Object.keys(CLIMATES).join(', ')}`);
   if (!WATER_KEYS.some(k => d.habitat.waters[k] > 0)) errors.push('habitat.waters must give at least one water a weight above 0');
   const A = d.activity.pattern;
   if (typeof A === 'string' ? !ACTIVITY_PRESETS[A] : !(Array.isArray(A) && A.length === 24 && A.every(v => typeof v === 'number')))

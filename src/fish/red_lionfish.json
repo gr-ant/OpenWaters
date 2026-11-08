@@ -97,6 +97,7 @@
     "barbels": 1
   },
   "habitat": {
+    "climates": ["tropical"],
     "waters": {
       "sea": 1
     },

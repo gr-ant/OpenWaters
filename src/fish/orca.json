@@ -94,6 +94,7 @@
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic", "tropical"],
     "waters": {
       "sea": 1
     },

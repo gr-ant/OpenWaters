@@ -46,6 +46,7 @@
     ]
   },
   "habitat": {
+    "climates": ["temperate", "arctic"],
     "waters": {
       "sea": 1
     },

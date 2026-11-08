@@ -59,6 +59,7 @@ The scripts share one global scope and run in the order `src/index.html` lists t
    <script type="application/json" data-builtin="fish" src="fish/my_fish.json"></script>
    ```
    A rig must come after the parts it uses.
+   For a fish, set `habitat.climates` to the island climates it lives in (`"temperate"`, `"arctic"`, `"tropical"`). Water temperature then decides where it lives within that climate. Leave it out and the species can show up in any climate.
 3. Run `python3 build.py`. It warns you about any file in `src/` that `index.html` doesn't list.
 
 ## Music

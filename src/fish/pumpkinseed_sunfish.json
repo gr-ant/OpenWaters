@@ -87,6 +87,7 @@
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "lake": 1,
       "pond": 1,

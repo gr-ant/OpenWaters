@@ -52,6 +52,7 @@
     ]
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1
     },

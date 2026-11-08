@@ -93,6 +93,7 @@
     "barbels": 1
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "sea": 1
     },

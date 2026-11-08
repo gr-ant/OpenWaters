@@ -73,6 +73,7 @@
     }
   },
   "habitat": {
+    "climates": ["arctic"],
     "waters": {
       "river": 1,
       "lake": 0.8,

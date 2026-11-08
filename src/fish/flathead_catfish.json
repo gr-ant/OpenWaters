@@ -80,6 +80,7 @@
     ]
   },
   "habitat": {
+    "climates": ["temperate"],
     "waters": {
       "river": 1,
       "lake": 0.5,
