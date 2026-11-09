@@ -264,6 +264,7 @@ Object.assign(Engine, {
     // Current and sinking happen after the horizontal retrieve solver. Enforce
     // paid-out length here too, so they cannot silently create extra line (unless the bail is open: then they do).
     if (A.bail) A.lineOut = Math.max(A.lineOut, Math.hypot(Q.x - T[0], Q.y - T[1], Q.z - T[2]) + 0.2);
+    else A.lineOut = Math.min(A.lineOut, Math.hypot(Q.x - T[0], Q.y - T[1], Q.z - T[2]) + 0.3);   // bail shut: a float the wind blows (or you walk) toward you leaves no pile of slack
     this.limitLineReach(Q);
     // a popper spits, a skirt smokes, a spinner thumps: surface commotion now and then
     if (lu && L.surface && L.spd > 0.12 && lu.noise > 0.3 && (L.popT = (L.popT || 0) - dt) <= 0) {

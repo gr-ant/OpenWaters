@@ -49,7 +49,7 @@ Object.assign(Engine, {
     if (f.leader && !f.leader.dead && f.leader.stress < 0.5) { f.state = 'school'; f.tNext = 1 + rnd() * 2; return; }
     if (rnd() < f.act * f.hunger * 0.9) { // feed: hunt something alive, or work the spot with the most of what it eats
       if (f.hunger > 0.35 && rnd() < 0.75) { const prey = this.findPrey(f); if (prey) { f.state = 'hunt'; f.prey = prey; f.zone = 'mid'; f.tNext = 5 + rnd() * 6; return; } }
-      const e = this.fishSpot(f, f.x, f.y, B.ambush > 0.5 ? 4 : 9, 4, (x, y, v) => { v.cover = coverAt(x, y, 2.5); const fs = foodScore(D, v, f.temp); v.fq = fs.q; v.fz = fs.zone; return 0.05 + fs.q; });
+      const e = B.burst_bl_s <= 0 ? null : this.fishSpot(f, f.x, f.y, B.ambush > 0.5 ? 4 : 9, 4, (x, y, v) => { v.cover = coverAt(x, y, 2.5); const fs = foodScore(D, v, f.temp); v.fq = fs.q; v.fz = fs.zone; return 0.05 + fs.q; });
       f.mealQ = e ? e.fq : 0.3; f.tries = (f.tries || 0) + 1;
       return go('forage', e || { x: f.x, y: f.y, level: f.wl, ground: f.ground }, e ? e.fz : D._benthic ? 'bottom' : this.pickZone(D.diet.feeding_zone), 8);
     }
@@ -154,6 +154,7 @@ Object.assign(Engine, {
       default: want = 0.5;
     }
     let desired = Math.atan2(ty - f.y, tx - f.x);
+    if (B.burst_bl_s <= 0) { want = 0; desired = f.a; }   // sessile (burst_bl_s 0, e.g. giant clam): never moves or turns
     if (dist < Math.max(0.35, f.len * 0.8) && Math.abs(tz - f.z) < 0.4) { // arrived
       if (f.state !== 'school') { want = 0.04; desired = f.a; }
       if (f.state === 'forage') { // did it find anything? richer spots pay off more often
@@ -186,6 +187,7 @@ Object.assign(Engine, {
     // mouth: slow breathing (faster when frightened), wide open closing on food, a snap when it eats
     f.gulp = Math.max(0, (f.gulp || 0) - dt * 3); f.bph = ((f.bph ?? f.tint * 9) + dt * (1.6 + 3 * f.stress)) % 6.2832;
     f.open = typeof f.mouthOpen === 'number' ? clamp(f.mouthOpen, 0, 1)
+      : B.burst_bl_s <= 0 ? (f.open ?? 0.8) + ((f.stress > 0.3 ? 0.05 : 0.8) - (f.open ?? 0.8)) * Math.min(1, dt * 0.4)   // sessile: gapes wide, slowly shuts when disturbed
       : Math.max(0.06 + 0.07 * (0.5 + 0.5 * Math.sin(f.bph)), f.state === 'forage' && dist < Math.max(1, f.len * 3) ? 0.75 : 0, Math.sin(Math.min(1, f.gulp) * 3.1416) * 0.9);
   },
   // air breathers: when the breath runs out, swim up and breathe at the surface (whales and dolphins blow), now and

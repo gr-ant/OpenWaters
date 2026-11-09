@@ -9,6 +9,7 @@ const Engine = {
 
   // one press of a game key (its original code), from the keyboard, a bound mouse button or wheel, or a touch button
   keyPress(code, e, card) {
+    if (card) { if ((code === 'KeyE' || code === 'KeyX') && !e.repeat) this.finishCatch(code === 'KeyE'); return; }   // the catch card is modal: keep or release first
     this.keys[code] = true;
     if (code === 'KeyV' && !e.repeat && this.boat) this.toggleBoatMode();                       // take the helm / leave it to move about the boat
     if (code === 'KeyC' && !e.repeat && this.boat && this.boatMode === 'deck') this.toggleBoatSit();   // sit down / stand up
@@ -18,12 +19,11 @@ const Engine = {
     if ((code === 'Enter' || code === 'NumpadEnter') && !e.repeat && this.showMap) { this.menu = null; this.say('Travelling…', 1); setTimeout(() => this.travel(this.mapCX, this.mapCY, CONFIG.travelSymbol), 30); }   // to the crosshair
     if (code === 'KeyI' && !e.repeat) this.toggleTackle();                                       // the tackle box
     if (code === 'KeyJ' && !e.repeat) this.openJournal();                                        // the catch journal
-    if (code === 'KeyB' && !e.repeat && !card) this.openSpawn('boats');   // (not while the catch card is up: Pike binds X to both)boats
+    if (code === 'KeyB' && !e.repeat) this.openSpawn('boats');
     if (code === 'Digit1' && !e.repeat) this.openSpawn('spawn');                                  // (secret) spawn fish and wildlife
     if (code === 'Slash' && !e.repeat) this.toggleHelp();                                         // controls card
     if (code === 'KeyQ' && !e.repeat) this.toggleRod();                                          // rod out / away
     if ((code === 'Digit4' || code === 'Numpad4') && !e.repeat) this.toggleLureView();             // live lure camera
-    if ((code === 'KeyE' || code === 'KeyX') && !e.repeat && card) this.finishCatch(code === 'KeyE');   // keep / release
     if ((code === 'BracketLeft' || code === 'BracketRight') && this.ang && this.ang.S) this.setDrag(this.ang.dragKg * (code === 'BracketRight' ? 1.15 : 1 / 1.15));
     if (code === 'KeyF' && !e.repeat) this.action();
     if (code === 'KeyL' && !e.repeat) this.toggleTorch();                                        // the dive light, when you're deep

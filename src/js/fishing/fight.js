@@ -101,7 +101,7 @@ Object.assign(Engine, {
   },
   landFish() {
     const A = this.ang, f = A.fish, P = this.P;
-    A.phase = 'card'; f.hooked = 'card'; f.land = true; A.landed = { x: f.x, y: f.y, kd: f.kd };
+    A.phase = 'card'; f.hooked = 'card'; f.land = true; this.keys = {}; this.joy = this.tlook = null; this.resetMouseLook(); A.landed = { x: f.x, y: f.y, kd: f.kd };
     A.lure = null; A.float = null; A.lineOut = 0; A.tension = 0; this.buzz([50, 50, 50]);
     if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock();
     const best = this.catchLog().filter(c => c.species === f.species).reduce((m, c) => Math.max(m, c.kg), 0);

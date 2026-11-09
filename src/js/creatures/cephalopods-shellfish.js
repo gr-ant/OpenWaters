@@ -10,7 +10,7 @@ const PLAN_INFO = {
   crab:       { height: 0.2,  width: 0.68, wave: 0,    parts: { claws: 0.5, legs: 0.7, spines: 0, paddles: false, eyestalks: 0.5 } },
   lobster:    { height: 0.21, width: 0.21, wave: 0.12, parts: { carapace: 0.42, rostrum: 0.05, claws: 0.7, antennae: 1, curl: 0, fan: 0.14, legs: 0.5 } },
   shrimp:     { height: 0.15, width: 0.1,  wave: 0.3,  parts: { carapace: 0.38, rostrum: 0.1, claws: 0, antennae: 1.5, curl: 0.3, fan: 0.16, legs: 0.5 } },
-  bivalve:    { height: 0.8,  width: 0.45, wave: 0,    parts: { shell: 'clam', ribs: 0, gape: 0.5 } },
+  bivalve:    { height: 0.8,  width: 0.45, wave: 0,    parts: { shell: 'clam', ribs: 0, gape: 0.5, flip: 0 } },
   snail:      { height: 0.6,  width: 0.6,  wave: 0,    parts: { spire: 0.5, whorls: 4, aperture: 0.5, foot: 0.6, knobs: 0 } },
   pinniped:   { height: 0.2,  width: 0.22, wave: 0.6,  parts: { snout: 0.5, neck: 0.15, fore: 0.5, rear: 'flippers', tail: 0.3, whiskers: 1, ears: 0, eye: 0.6, tusks: 0 } },
   turtle:     { height: 0.18, width: 0.4,  wave: 1,    parts: { shell: 0.72, dome: 0.5, flippers: 1, head: 0.5, scutes: 1, eye: 0.5 } },
@@ -283,7 +283,7 @@ const PLAN_BUILD = {
   shrimp(D, B, Pp, M, C, paint) { decapod(D, B, Pp, M, C, paint); },
   bivalve(D, B, Pp, M, C, paint) {
     const kind = SHELL_SHAPES[Pp.shell] ? Pp.shell : 'clam', H = clamp(B.height, 0.2, 1.3), Ry = clamp(B.width, 0.05, 1) / 2, ribs = Math.round(clamp(Pp.ribs, 0, 40));
-    const nz = makeNoise(77);
+    const nz = makeNoise(77), v0 = M.v.length;
     // margin outline m(phi) in the x-z plane, umbo U at the top
     const outline = {
       clam: ph => { const s = Math.sin(ph), c = Math.cos(ph); return [0.5 * c * (1 - 0.18 * Math.max(0, s) ** 3) + 0.04 * Math.max(0, s) ** 3, H / 2 * s]; },
@@ -311,6 +311,10 @@ const PLAN_BUILD = {
       surf(M, (t, a) => { const x0 = U[0] + s * 0.02, x1 = U[0] + s * 0.3, xe = x0 + (x1 - x0) * t; return [xe, sg * 0.004, hz - a * (0.13 - 0.07 * t)]; }, 6, 2, () => C.fins, () => (sg > 0 ? 15 : 16), { wrap: false });
     }
     ellip(M, [U[0] * 0.3, 0, (hz + Math.min(...[0, 0.25, 0.5, 0.75].map(f => outline(f * TAU)[1]))) / 2 - 0.02], null, [0.36, Ry * 0.55, H * 0.3], 10, 14, () => C.belly, () => MT.CLOTH);
+    if (Pp.flip) {   // hinge down, gape up (giant clam): turn it over about the length axis; the shader's valve swing still opens outward
+      for (let i = v0; i < M.v.length; i += VS) { M.v[i + 1] *= -1; M.v[i + 2] *= -1; M.v[i + 4] *= -1; M.v[i + 5] *= -1; }
+      D._jaw[1] = -hz;
+    }
   },
   snail(D, B, Pp, M, C, paint) {
     const spire = clamp(Pp.spire, 0, 1.5), nw = clamp(Pp.whorls, 1.5, 9), Th = nw * TAU, Wg = 1.9, k = Math.log(Wg) / TAU, ap = clamp(Pp.aperture, 0, 1.5), kn = clamp(Pp.knobs, 0, 1.5);

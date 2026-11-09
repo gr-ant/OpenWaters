@@ -46,7 +46,9 @@
     ]
   },
   "habitat": {
-    "climates": ["temperate"],
+    "climates": [
+      "temperate"
+    ],
     "waters": {
       "sea": 1
     },
@@ -72,7 +74,7 @@
     }
   },
   "population": {
-    "density": 8,
+    "density": 1.5,
     "school": {
       "min": 1,
       "max": 1
@@ -83,8 +85,8 @@
     "pattern": "cathemeral"
   },
   "behavior": {
-    "cruise_bl_s": 0.01,
-    "burst_bl_s": 0.3,
+    "cruise_bl_s": 0,
+    "burst_bl_s": 0,
     "turn_rate": 0.2,
     "station_holding": 1,
     "ambush": 0,

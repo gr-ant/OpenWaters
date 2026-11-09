@@ -23,30 +23,33 @@
     "width": 0.4,
     "parts": {
       "shell": "clam",
-      "ribs": 0.8,
-      "gape": 0.5
+      "ribs": 5,
+      "gape": 0.5,
+      "flip": 1
     },
     "colors": {
       "back": "#b8b0a0",
       "flank": "#d0c8b8",
-      "belly": "#2a8a9a",
+      "belly": "#5a7a3a",
       "fins": "#c8c0b0",
       "eye": "#000000",
-      "mouth": "#3a6ac0"
+      "mouth": "#2a7ab8"
     },
     "pattern": [
       {
         "type": "mottled",
-        "color": "#6a9a70",
+        "color": "#e8e4d8",
         "amount": 0.3,
         "scale": 5,
         "region": "all",
-        "alpha": 0.45
+        "alpha": 0.35
       }
     ]
   },
   "habitat": {
-    "climates": ["tropical"],
+    "climates": [
+      "tropical"
+    ],
     "waters": {
       "sea": 1
     },
@@ -74,7 +77,7 @@
     "cover_required": 0.6
   },
   "population": {
-    "density": 1.0,
+    "density": 0.15,
     "school": {
       "min": 1,
       "max": 3
@@ -85,10 +88,10 @@
     "pattern": "diurnal"
   },
   "behavior": {
-    "cruise_bl_s": 0.01,
-    "burst_bl_s": 0.2,
-    "turn_rate": 0.2,
-    "station_holding": 1,
+    "cruise_bl_s": 0,
+    "burst_bl_s": 0,
+    "turn_rate": 0,
+    "station_holding": 0,
     "ambush": 0,
     "depth_zone": {
       "surface": 0,

@@ -134,9 +134,11 @@ function boatMesh(D) {
     if (dbl) { blade([x, -len / 2, z], true); blade([x, len / 2, z], true); } else blade([x + len / 2, 0.12, z], false); }
   if (F.cabin) { const t0 = F.cabin.from ?? 0.45, t1 = F.cabin.to ?? 0.8, h = F.cabin.height ?? 1.1; M.mat = MT.GEN;   // a small wheelhouse
     const x0 = S.x(t0), x1 = S.x(t1), w = Math.min(S.hb(t0), S.hb(t1)) * 0.85, z0 = fz, z1 = fz + h;
-    for (const [p, q, n] of [[[x0, -w], [x1, -w], [0, -1]], [[x1, w], [x0, w], [0, 1]], [[x1, -w], [x1, w], [1, 0]], [[x0, w], [x0, -w], [-1, 0]]]) {
-      M.quad([p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1], C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
-      M.mat = MT.GLASS; M.quad([p[0] + (q[0] - p[0]) * 0.1 + n[0] * 0.005, p[1] + (q[1] - p[1]) * 0.1 + n[1] * 0.005, z1 - 0.45], [p[0] + (q[0] - p[0]) * 0.9 + n[0] * 0.005, p[1] + (q[1] - p[1]) * 0.9 + n[1] * 0.005, z1 - 0.45], [p[0] + (q[0] - p[0]) * 0.9 + n[0] * 0.005, p[1] + (q[1] - p[1]) * 0.9 + n[1] * 0.005, z1 - 0.12], [p[0] + (q[0] - p[0]) * 0.1 + n[0] * 0.005, p[1] + (q[1] - p[1]) * 0.1 + n[1] * 0.005, z1 - 0.12], [0.45, 0.6, 0.7], [(x0 + x1) / 2, 0, (z0 + z1) / 2]); M.mat = MT.GEN; }
+    // each wall is a sill, a header and two posts round an open window, so you can see out from the helm inside
+    const zs = z1 - 0.95, zt = z1 - 0.15, L = (p, q, u, z) => [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u, z];
+    for (const [p, q] of [[[x0, -w], [x1, -w]], [[x1, w], [x0, w]], [[x1, -w], [x1, w]], [[x0, w], [x0, -w]]])
+      for (const [u0, u1, za, zb] of [[0, 1, z0, zs], [0, 1, zt, z1], [0, 0.1, zs, zt], [0.9, 1, zs, zt]])
+        M.quad(L(p, q, u0, za), L(p, q, u1, za), L(p, q, u1, zb), L(p, q, u0, zb), C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
     M.quad([x0 - 0.05, -w - 0.05, z1], [x1 + 0.05, -w - 0.05, z1], [x1 + 0.05, w + 0.05, z1], [x0 - 0.05, w + 0.05, z1], C.trim, [x0, 0, 0]); }
   return new Float32Array(M.v);
 }

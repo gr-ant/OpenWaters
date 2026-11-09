@@ -22,6 +22,8 @@
   #tui .a-helm { right:22px; bottom:112px; width:66px; }
   #tui .a-drdn { right:96px; bottom:160px; width:66px; }
   #tui .a-drup { right:22px; bottom:160px; width:66px; }
+  #tui .a-bail { right:170px; bottom:160px; width:66px; }
+  #tui .a-fast { right:170px; bottom:112px; width:66px; }
   #tui .act[hidden], .tui-rail button[hidden] { display:none; }
   body.map-open #tui .act, body.map-open .tui-rail button:not([data-k="KeyM"]) { display:none; }   /* the map up: only the Map button stays, to close it */
   @media (orientation: landscape) and (max-height: 540px) {   /* a phone on its side: the rail runs along the top */

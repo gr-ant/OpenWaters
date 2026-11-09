@@ -23,7 +23,7 @@ Object.assign(Engine, {
     }
     const look = (dx, dy, k) => { k *= this.mouseSensitivity || 1; P.a += dx * k; P.pitch = clamp(P.pitch - dy * k, -1.4, 1.4); };   // the Settings slider scales touch look too
     ov.addEventListener('pointerdown', e => {
-      if (this.pauseOpen) return;
+      if (this.pauseOpen || (this.ang && this.ang.phase === 'card')) return;
       const x = e.clientX, y = e.clientY;
       if (e.pointerType === 'mouse') {
         if (e.button === 0 && this.showMap && !this.menu) { this.mapDrag = { x, y, moved: 0 }; return; }   // drag the big map

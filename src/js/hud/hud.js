@@ -14,7 +14,7 @@ Object.assign(Engine, {
     this.hud = { root: $('hud'), map: $('hMap'), memo: {} };
     for (const id of ['hLocName', 'hLocSub', 'hTime', 'hSky', 'hTemp', 'hWindArrow', 'hWindV', 'hMapName', 'hScale', 'hMsg', 'hStatus', 'hStIcon', 'hStTitle', 'hStSub', 'hStBar', 'hStKey', 'hStAct', 'hHelp', 'hDebug', 'hKeys', 'hSeedInfo']) this.hud[id] = $(id);
     for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = uiIcon(el.dataset.icon);
-    for (const b of document.querySelectorAll('#hDock [data-dock]')) b.onclick = () => ({ tackle: () => this.toggleTackle(), journal: () => this.openJournal(), boats: () => this.openSpawn('boats'), rod: () => this.toggleRod(), map: () => this.toggleBigMap(), torch: () => this.toggleTorch() })[b.dataset.dock]();
+    for (const b of document.querySelectorAll('#hDock [data-dock]')) b.onclick = () => this.ang && this.ang.phase === 'card' ? null : ({ tackle: () => this.toggleTackle(), journal: () => this.openJournal(), boats: () => this.openSpawn('boats'), rod: () => this.toggleRod(), map: () => this.toggleBigMap(), torch: () => this.toggleTorch() })[b.dataset.dock]();
     document.querySelector('[data-help-close]').onclick = () => this.toggleHelp(false);
     document.getElementById('hHint').onclick = () => this.toggleHelp();
     document.getElementById('jnClose').onclick = () => this.toggleJournal(false);

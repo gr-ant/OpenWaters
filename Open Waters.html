@@ -29,6 +29,8 @@
   #tui .a-helm { right:22px; bottom:112px; width:66px; }
   #tui .a-drdn { right:96px; bottom:160px; width:66px; }
   #tui .a-drup { right:22px; bottom:160px; width:66px; }
+  #tui .a-bail { right:170px; bottom:160px; width:66px; }
+  #tui .a-fast { right:170px; bottom:112px; width:66px; }
   #tui .act[hidden], .tui-rail button[hidden] { display:none; }
   body.map-open #tui .act, body.map-open .tui-rail button:not([data-k="KeyM"]) { display:none; }   /* the map up: only the Map button stays, to close it */
   @media (orientation: landscape) and (max-height: 540px) {   /* a phone on its side: the rail runs along the top */
@@ -555,6 +557,8 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
   <button id="bHelm" class="act a-pill a-helm" data-k="KeyV" hidden>Stand</button>
   <button id="bDrDn" class="act a-pill a-drdn" data-k="BracketLeft" hidden>Drag −</button>
   <button id="bDrUp" class="act a-pill a-drup" data-k="BracketRight" hidden>Drag +</button>
+  <button id="bBail" class="act a-pill a-bail" data-k="KeyG" hidden>Bail</button>
+  <button id="bFast" class="act a-pill a-fast" data-k="KeyT" data-hold="1" hidden>Fast ⏩</button>
 </div>
 <script>
 'use strict';
@@ -2521,7 +2525,7 @@ const PLAN_INFO = {
   crab:       { height: 0.2,  width: 0.68, wave: 0,    parts: { claws: 0.5, legs: 0.7, spines: 0, paddles: false, eyestalks: 0.5 } },
   lobster:    { height: 0.21, width: 0.21, wave: 0.12, parts: { carapace: 0.42, rostrum: 0.05, claws: 0.7, antennae: 1, curl: 0, fan: 0.14, legs: 0.5 } },
   shrimp:     { height: 0.15, width: 0.1,  wave: 0.3,  parts: { carapace: 0.38, rostrum: 0.1, claws: 0, antennae: 1.5, curl: 0.3, fan: 0.16, legs: 0.5 } },
-  bivalve:    { height: 0.8,  width: 0.45, wave: 0,    parts: { shell: 'clam', ribs: 0, gape: 0.5 } },
+  bivalve:    { height: 0.8,  width: 0.45, wave: 0,    parts: { shell: 'clam', ribs: 0, gape: 0.5, flip: 0 } },
   snail:      { height: 0.6,  width: 0.6,  wave: 0,    parts: { spire: 0.5, whorls: 4, aperture: 0.5, foot: 0.6, knobs: 0 } },
   pinniped:   { height: 0.2,  width: 0.22, wave: 0.6,  parts: { snout: 0.5, neck: 0.15, fore: 0.5, rear: 'flippers', tail: 0.3, whiskers: 1, ears: 0, eye: 0.6, tusks: 0 } },
   turtle:     { height: 0.18, width: 0.4,  wave: 1,    parts: { shell: 0.72, dome: 0.5, flippers: 1, head: 0.5, scutes: 1, eye: 0.5 } },
@@ -2794,7 +2798,7 @@ const PLAN_BUILD = {
   shrimp(D, B, Pp, M, C, paint) { decapod(D, B, Pp, M, C, paint); },
   bivalve(D, B, Pp, M, C, paint) {
     const kind = SHELL_SHAPES[Pp.shell] ? Pp.shell : 'clam', H = clamp(B.height, 0.2, 1.3), Ry = clamp(B.width, 0.05, 1) / 2, ribs = Math.round(clamp(Pp.ribs, 0, 40));
-    const nz = makeNoise(77);
+    const nz = makeNoise(77), v0 = M.v.length;
     // margin outline m(phi) in the x-z plane, umbo U at the top
     const outline = {
       clam: ph => { const s = Math.sin(ph), c = Math.cos(ph); return [0.5 * c * (1 - 0.18 * Math.max(0, s) ** 3) + 0.04 * Math.max(0, s) ** 3, H / 2 * s]; },
@@ -2822,6 +2826,10 @@ const PLAN_BUILD = {
       surf(M, (t, a) => { const x0 = U[0] + s * 0.02, x1 = U[0] + s * 0.3, xe = x0 + (x1 - x0) * t; return [xe, sg * 0.004, hz - a * (0.13 - 0.07 * t)]; }, 6, 2, () => C.fins, () => (sg > 0 ? 15 : 16), { wrap: false });
     }
     ellip(M, [U[0] * 0.3, 0, (hz + Math.min(...[0, 0.25, 0.5, 0.75].map(f => outline(f * TAU)[1]))) / 2 - 0.02], null, [0.36, Ry * 0.55, H * 0.3], 10, 14, () => C.belly, () => MT.CLOTH);
+    if (Pp.flip) {   // hinge down, gape up (giant clam): turn it over about the length axis; the shader's valve swing still opens outward
+      for (let i = v0; i < M.v.length; i += VS) { M.v[i + 1] *= -1; M.v[i + 2] *= -1; M.v[i + 4] *= -1; M.v[i + 5] *= -1; }
+      D._jaw[1] = -hz;
+    }
   },
   snail(D, B, Pp, M, C, paint) {
     const spire = clamp(Pp.spire, 0, 1.5), nw = clamp(Pp.whorls, 1.5, 9), Th = nw * TAU, Wg = 1.9, k = Math.log(Wg) / TAU, ap = clamp(Pp.aperture, 0, 1.5), kn = clamp(Pp.knobs, 0, 1.5);
@@ -3641,9 +3649,11 @@ function boatMesh(D) {
     if (dbl) { blade([x, -len / 2, z], true); blade([x, len / 2, z], true); } else blade([x + len / 2, 0.12, z], false); }
   if (F.cabin) { const t0 = F.cabin.from ?? 0.45, t1 = F.cabin.to ?? 0.8, h = F.cabin.height ?? 1.1; M.mat = MT.GEN;   // a small wheelhouse
     const x0 = S.x(t0), x1 = S.x(t1), w = Math.min(S.hb(t0), S.hb(t1)) * 0.85, z0 = fz, z1 = fz + h;
-    for (const [p, q, n] of [[[x0, -w], [x1, -w], [0, -1]], [[x1, w], [x0, w], [0, 1]], [[x1, -w], [x1, w], [1, 0]], [[x0, w], [x0, -w], [-1, 0]]]) {
-      M.quad([p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1], C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
-      M.mat = MT.GLASS; M.quad([p[0] + (q[0] - p[0]) * 0.1 + n[0] * 0.005, p[1] + (q[1] - p[1]) * 0.1 + n[1] * 0.005, z1 - 0.45], [p[0] + (q[0] - p[0]) * 0.9 + n[0] * 0.005, p[1] + (q[1] - p[1]) * 0.9 + n[1] * 0.005, z1 - 0.45], [p[0] + (q[0] - p[0]) * 0.9 + n[0] * 0.005, p[1] + (q[1] - p[1]) * 0.9 + n[1] * 0.005, z1 - 0.12], [p[0] + (q[0] - p[0]) * 0.1 + n[0] * 0.005, p[1] + (q[1] - p[1]) * 0.1 + n[1] * 0.005, z1 - 0.12], [0.45, 0.6, 0.7], [(x0 + x1) / 2, 0, (z0 + z1) / 2]); M.mat = MT.GEN; }
+    // each wall is a sill, a header and two posts round an open window, so you can see out from the helm inside
+    const zs = z1 - 0.95, zt = z1 - 0.15, L = (p, q, u, z) => [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u, z];
+    for (const [p, q] of [[[x0, -w], [x1, -w]], [[x1, w], [x0, w]], [[x1, -w], [x1, w]], [[x0, w], [x0, -w]]])
+      for (const [u0, u1, za, zb] of [[0, 1, z0, zs], [0, 1, zt, z1], [0, 0.1, zs, zt], [0.9, 1, zs, zt]])
+        M.quad(L(p, q, u0, za), L(p, q, u1, za), L(p, q, u1, zb), L(p, q, u0, zb), C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
     M.quad([x0 - 0.05, -w - 0.05, z1], [x1 + 0.05, -w - 0.05, z1], [x1 + 0.05, w + 0.05, z1], [x0 - 0.05, w + 0.05, z1], C.trim, [x0, 0, 0]); }
   return new Float32Array(M.v);
 }
@@ -3670,6 +3680,7 @@ const Engine = {
 
   // one press of a game key (its original code), from the keyboard, a bound mouse button or wheel, or a touch button
   keyPress(code, e, card) {
+    if (card) { if ((code === 'KeyE' || code === 'KeyX') && !e.repeat) this.finishCatch(code === 'KeyE'); return; }   // the catch card is modal: keep or release first
     this.keys[code] = true;
     if (code === 'KeyV' && !e.repeat && this.boat) this.toggleBoatMode();                       // take the helm / leave it to move about the boat
     if (code === 'KeyC' && !e.repeat && this.boat && this.boatMode === 'deck') this.toggleBoatSit();   // sit down / stand up
@@ -3679,12 +3690,11 @@ const Engine = {
     if ((code === 'Enter' || code === 'NumpadEnter') && !e.repeat && this.showMap) { this.menu = null; this.say('Travelling…', 1); setTimeout(() => this.travel(this.mapCX, this.mapCY, CONFIG.travelSymbol), 30); }   // to the crosshair
     if (code === 'KeyI' && !e.repeat) this.toggleTackle();                                       // the tackle box
     if (code === 'KeyJ' && !e.repeat) this.openJournal();                                        // the catch journal
-    if (code === 'KeyB' && !e.repeat && !card) this.openSpawn('boats');   // (not while the catch card is up: Pike binds X to both)boats
+    if (code === 'KeyB' && !e.repeat) this.openSpawn('boats');
     if (code === 'Digit1' && !e.repeat) this.openSpawn('spawn');                                  // (secret) spawn fish and wildlife
     if (code === 'Slash' && !e.repeat) this.toggleHelp();                                         // controls card
     if (code === 'KeyQ' && !e.repeat) this.toggleRod();                                          // rod out / away
     if ((code === 'Digit4' || code === 'Numpad4') && !e.repeat) this.toggleLureView();             // live lure camera
-    if ((code === 'KeyE' || code === 'KeyX') && !e.repeat && card) this.finishCatch(code === 'KeyE');   // keep / release
     if ((code === 'BracketLeft' || code === 'BracketRight') && this.ang && this.ang.S) this.setDrag(this.ang.dragKg * (code === 'BracketRight' ? 1.15 : 1 / 1.15));
     if (code === 'KeyF' && !e.repeat) this.action();
     if (code === 'KeyL' && !e.repeat) this.toggleTorch();                                        // the dive light, when you're deep
@@ -4362,7 +4372,7 @@ Object.assign(Engine, {
     if (f.leader && !f.leader.dead && f.leader.stress < 0.5) { f.state = 'school'; f.tNext = 1 + rnd() * 2; return; }
     if (rnd() < f.act * f.hunger * 0.9) { // feed: hunt something alive, or work the spot with the most of what it eats
       if (f.hunger > 0.35 && rnd() < 0.75) { const prey = this.findPrey(f); if (prey) { f.state = 'hunt'; f.prey = prey; f.zone = 'mid'; f.tNext = 5 + rnd() * 6; return; } }
-      const e = this.fishSpot(f, f.x, f.y, B.ambush > 0.5 ? 4 : 9, 4, (x, y, v) => { v.cover = coverAt(x, y, 2.5); const fs = foodScore(D, v, f.temp); v.fq = fs.q; v.fz = fs.zone; return 0.05 + fs.q; });
+      const e = B.burst_bl_s <= 0 ? null : this.fishSpot(f, f.x, f.y, B.ambush > 0.5 ? 4 : 9, 4, (x, y, v) => { v.cover = coverAt(x, y, 2.5); const fs = foodScore(D, v, f.temp); v.fq = fs.q; v.fz = fs.zone; return 0.05 + fs.q; });
       f.mealQ = e ? e.fq : 0.3; f.tries = (f.tries || 0) + 1;
       return go('forage', e || { x: f.x, y: f.y, level: f.wl, ground: f.ground }, e ? e.fz : D._benthic ? 'bottom' : this.pickZone(D.diet.feeding_zone), 8);
     }
@@ -4467,6 +4477,7 @@ Object.assign(Engine, {
       default: want = 0.5;
     }
     let desired = Math.atan2(ty - f.y, tx - f.x);
+    if (B.burst_bl_s <= 0) { want = 0; desired = f.a; }   // sessile (burst_bl_s 0, e.g. giant clam): never moves or turns
     if (dist < Math.max(0.35, f.len * 0.8) && Math.abs(tz - f.z) < 0.4) { // arrived
       if (f.state !== 'school') { want = 0.04; desired = f.a; }
       if (f.state === 'forage') { // did it find anything? richer spots pay off more often
@@ -4499,6 +4510,7 @@ Object.assign(Engine, {
     // mouth: slow breathing (faster when frightened), wide open closing on food, a snap when it eats
     f.gulp = Math.max(0, (f.gulp || 0) - dt * 3); f.bph = ((f.bph ?? f.tint * 9) + dt * (1.6 + 3 * f.stress)) % 6.2832;
     f.open = typeof f.mouthOpen === 'number' ? clamp(f.mouthOpen, 0, 1)
+      : B.burst_bl_s <= 0 ? (f.open ?? 0.8) + ((f.stress > 0.3 ? 0.05 : 0.8) - (f.open ?? 0.8)) * Math.min(1, dt * 0.4)   // sessile: gapes wide, slowly shuts when disturbed
       : Math.max(0.06 + 0.07 * (0.5 + 0.5 * Math.sin(f.bph)), f.state === 'forage' && dist < Math.max(1, f.len * 3) ? 0.75 : 0, Math.sin(Math.min(1, f.gulp) * 3.1416) * 0.9);
   },
   // air breathers: when the breath runs out, swim up and breathe at the surface (whales and dolphins blow), now and
@@ -4677,7 +4689,9 @@ Object.assign(Engine, {
       if (rb) { rb.querySelector('b').textContent = out ? 'Stow' : 'Rod'; rb.hidden = ph === 'card'; }
       const ub = document.getElementById('bUse'); if (ub) ub.hidden = !!out;   // with the rod out, the big button casts and reels
       if (cb) { cb.hidden = !out || ph === 'card'; cb.textContent = ph === 'water' ? 'Reel' : ph === 'fight' ? 'Reel' : ph === 'bite' ? (A.took ? 'Strike!' : '…') : ph === 'flight' ? 'Stop' : 'Cast'; cb.classList.toggle('lit', ph === 'bite' && !!A.took); }
-      for (const id of ['bDrDn', 'bDrUp']) { const b = document.getElementById(id); if (b) b.hidden = ph !== 'fight'; } } const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');
+      for (const id of ['bDrDn', 'bDrUp']) { const b = document.getElementById(id); if (b) b.hidden = ph !== 'fight'; }
+      { const b = document.getElementById('bBail'); if (b) b.hidden = !out || ph === 'card'; }
+      { const b = document.getElementById('bFast'); if (b) b.hidden = ph !== 'water' && ph !== 'bite'; } }   // hold to speed time while waiting for a bite const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');
     if (h) { h.hidden = !this.boat; h.textContent = this.boatMode === 'deck' ? 'Helm' : (this.boat && !this.boatCanStand(this.boat.def) ? 'Fish' : 'Stand'); }
     if (dv) dv.textContent = this.boat && this.boatMode === 'deck' ? (this.boatSit ? 'Stand' : 'Sit') : 'Dive';
   },
@@ -5191,7 +5205,7 @@ Object.assign(Engine, {
     }
     const look = (dx, dy, k) => { k *= this.mouseSensitivity || 1; P.a += dx * k; P.pitch = clamp(P.pitch - dy * k, -1.4, 1.4); };   // the Settings slider scales touch look too
     ov.addEventListener('pointerdown', e => {
-      if (this.pauseOpen) return;
+      if (this.pauseOpen || (this.ang && this.ang.phase === 'card')) return;
       const x = e.clientX, y = e.clientY;
       if (e.pointerType === 'mouse') {
         if (e.button === 0 && this.showMap && !this.menu) { this.mapDrag = { x, y, moved: 0 }; return; }   // drag the big map
@@ -6806,6 +6820,7 @@ Object.assign(Engine, {
     // Current and sinking happen after the horizontal retrieve solver. Enforce
     // paid-out length here too, so they cannot silently create extra line (unless the bail is open: then they do).
     if (A.bail) A.lineOut = Math.max(A.lineOut, Math.hypot(Q.x - T[0], Q.y - T[1], Q.z - T[2]) + 0.2);
+    else A.lineOut = Math.min(A.lineOut, Math.hypot(Q.x - T[0], Q.y - T[1], Q.z - T[2]) + 0.3);   // bail shut: a float the wind blows (or you walk) toward you leaves no pile of slack
     this.limitLineReach(Q);
     // a popper spits, a skirt smokes, a spinner thumps: surface commotion now and then
     if (lu && L.surface && L.spd > 0.12 && lu.noise > 0.3 && (L.popT = (L.popT || 0) - dt) <= 0) {
@@ -7044,7 +7059,7 @@ Object.assign(Engine, {
   },
   landFish() {
     const A = this.ang, f = A.fish, P = this.P;
-    A.phase = 'card'; f.hooked = 'card'; f.land = true; A.landed = { x: f.x, y: f.y, kd: f.kd };
+    A.phase = 'card'; f.hooked = 'card'; f.land = true; this.keys = {}; this.joy = this.tlook = null; this.resetMouseLook(); A.landed = { x: f.x, y: f.y, kd: f.kd };
     A.lure = null; A.float = null; A.lineOut = 0; A.tension = 0; this.buzz([50, 50, 50]);
     if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock();
     const best = this.catchLog().filter(c => c.species === f.species).reduce((m, c) => Math.max(m, c.kg), 0);
@@ -8086,7 +8101,7 @@ Object.assign(Engine, {
     this.hud = { root: $('hud'), map: $('hMap'), memo: {} };
     for (const id of ['hLocName', 'hLocSub', 'hTime', 'hSky', 'hTemp', 'hWindArrow', 'hWindV', 'hMapName', 'hScale', 'hMsg', 'hStatus', 'hStIcon', 'hStTitle', 'hStSub', 'hStBar', 'hStKey', 'hStAct', 'hHelp', 'hDebug', 'hKeys', 'hSeedInfo']) this.hud[id] = $(id);
     for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = uiIcon(el.dataset.icon);
-    for (const b of document.querySelectorAll('#hDock [data-dock]')) b.onclick = () => ({ tackle: () => this.toggleTackle(), journal: () => this.openJournal(), boats: () => this.openSpawn('boats'), rod: () => this.toggleRod(), map: () => this.toggleBigMap(), torch: () => this.toggleTorch() })[b.dataset.dock]();
+    for (const b of document.querySelectorAll('#hDock [data-dock]')) b.onclick = () => this.ang && this.ang.phase === 'card' ? null : ({ tackle: () => this.toggleTackle(), journal: () => this.openJournal(), boats: () => this.openSpawn('boats'), rod: () => this.toggleRod(), map: () => this.toggleBigMap(), torch: () => this.toggleTorch() })[b.dataset.dock]();
     document.querySelector('[data-help-close]').onclick = () => this.toggleHelp(false);
     document.getElementById('hHint').onclick = () => this.toggleHelp();
     document.getElementById('jnClose').onclick = () => this.toggleJournal(false);
@@ -10797,7 +10812,9 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
-    "climates": ["temperate"],
+    "climates": [
+      "temperate"
+    ],
     "waters": {
       "sea": 1,
       "river": 0.2
@@ -10836,8 +10853,8 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": "cathemeral"
   },
   "behavior": {
-    "cruise_bl_s": 0.01,
-    "burst_bl_s": 0.2,
+    "cruise_bl_s": 0,
+    "burst_bl_s": 0,
     "turn_rate": 0.2,
     "station_holding": 1,
     "ambush": 0,
@@ -12031,30 +12048,33 @@ window.addEventListener('DOMContentLoaded', () => {
     "width": 0.4,
     "parts": {
       "shell": "clam",
-      "ribs": 0.8,
-      "gape": 0.5
+      "ribs": 5,
+      "gape": 0.5,
+      "flip": 1
     },
     "colors": {
       "back": "#b8b0a0",
       "flank": "#d0c8b8",
-      "belly": "#2a8a9a",
+      "belly": "#5a7a3a",
       "fins": "#c8c0b0",
       "eye": "#000000",
-      "mouth": "#3a6ac0"
+      "mouth": "#2a7ab8"
     },
     "pattern": [
       {
         "type": "mottled",
-        "color": "#6a9a70",
+        "color": "#e8e4d8",
         "amount": 0.3,
         "scale": 5,
         "region": "all",
-        "alpha": 0.45
+        "alpha": 0.35
       }
     ]
   },
   "habitat": {
-    "climates": ["tropical"],
+    "climates": [
+      "tropical"
+    ],
     "waters": {
       "sea": 1
     },
@@ -12082,7 +12102,7 @@ window.addEventListener('DOMContentLoaded', () => {
     "cover_required": 0.6
   },
   "population": {
-    "density": 1.0,
+    "density": 0.15,
     "school": {
       "min": 1,
       "max": 3
@@ -12093,10 +12113,10 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": "diurnal"
   },
   "behavior": {
-    "cruise_bl_s": 0.01,
-    "burst_bl_s": 0.2,
-    "turn_rate": 0.2,
-    "station_holding": 1,
+    "cruise_bl_s": 0,
+    "burst_bl_s": 0,
+    "turn_rate": 0,
+    "station_holding": 0,
     "ambush": 0,
     "depth_zone": {
       "surface": 0,
@@ -22339,7 +22359,10 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
-    "climates": ["temperate", "arctic"],
+    "climates": [
+      "temperate",
+      "arctic"
+    ],
     "waters": {
       "sea": 1
     },
@@ -22377,8 +22400,8 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": "cathemeral"
   },
   "behavior": {
-    "cruise_bl_s": 0.01,
-    "burst_bl_s": 0.3,
+    "cruise_bl_s": 0,
+    "burst_bl_s": 0,
     "turn_rate": 0.2,
     "station_holding": 1,
     "ambush": 0,
@@ -27219,7 +27242,9 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   },
   "habitat": {
-    "climates": ["temperate"],
+    "climates": [
+      "temperate"
+    ],
     "waters": {
       "sea": 1
     },
@@ -27245,7 +27270,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   },
   "population": {
-    "density": 8,
+    "density": 1.5,
     "school": {
       "min": 1,
       "max": 1
@@ -27256,8 +27281,8 @@ window.addEventListener('DOMContentLoaded', () => {
     "pattern": "cathemeral"
   },
   "behavior": {
-    "cruise_bl_s": 0.01,
-    "burst_bl_s": 0.3,
+    "cruise_bl_s": 0,
+    "burst_bl_s": 0,
     "turn_rate": 0.2,
     "station_holding": 1,
     "ambush": 0,
