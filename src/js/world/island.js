@@ -400,8 +400,42 @@ function buildIsland(diagnostics = false) {
 const bil = (A, x, y) => { const I = ISL, gx = (x - I.ox) / I.C, gy = (y - I.oy) / I.C, i = Math.floor(gx), j = Math.floor(gy), fx = gx - i, fy = gy - j, k = j * I.N + i;
   return (A[k] * (1 - fx) + A[k + 1] * fx) * (1 - fy) + (A[k + I.N] * (1 - fx) + A[k + I.N + 1] * fx) * fy; };
 const inGrid = (x, y) => { const I = ISL, gx = (x - I.ox) / I.C, gy = (y - I.oy) / I.C; return gx >= 0 && gy >= 0 && gx < I.N - 1 && gy < I.N - 1; };
-// terrain before channels and ponds: the grid plus fine bumps kept off the shores
-function landH(x, y) {
+// ---- map features defined in src/features/*.json; the "type" picks the shape code, the file sets where, how often and how big ----
+// stacks: clusters of sheer rock pillars offshore with a grassy top. Laid out once per seed from the base terrain.
+let STACKS = null, STK_T = 0;   // STK_T: top height of the stack found by the last stackS()
+function seaStacks() {
+  if (STACKS) return STACKS; STACKS = [];
+  const R = CONFIG.islandSize / 2, rng = mulberry32((SEED ^ 0x5eac5) >>> 0), pick = ([a, b]) => a + (b - a) * rng();
+  for (const F of BUILTIN.feature.filter(f => f.type === 'stacks')) {
+    if (rng() >= (F.chance[CLIMATE.key] ?? 0)) continue;
+    const nc = Math.round(pick(F.clusters));
+    for (let c = 0, tries = 0; c < nc && tries < 40; tries++) {
+      const a = rng() * 6.2832, ux = Math.cos(a), uy = Math.sin(a); let d = 0.3 * R;
+      while (d < 2 * R && islandBase(ux * d, uy * d) > WLW) d += 20;   // out to the coast on this bearing
+      d += pick(F.offshore_m); const cx = ux * d, cy = uy * d;
+      if (islandBase(cx, cy) > WLW - F.min_depth_m) continue;   // open water round it
+      for (let k = 0, n = Math.round(pick(F.stacks)); k < n; k++) {
+        const r = pick(F.radius_m), q = rng() * 6.2832, o = k ? F.spread_m * Math.sqrt(rng()) : 0;
+        STACKS.push({ x: cx + Math.cos(q) * o, y: cy + Math.sin(q) * o, r, top: WLW + pick(F.height_m) * (0.6 + 0.4 * r / F.radius_m[1]), ph: rng() * 100 });
+      }
+      c++;
+    }
+  }
+  return STACKS;
+}
+// how much a stack stands at (x, y): 1 on its top, 0 off it, the cliff in between (sets STK_T)
+function stackS(x, y) {
+  let best = 0;
+  for (const k of STACKS || seaStacks()) {
+    const dx = x - k.x, dy = y - k.y; if (Math.abs(dx) > k.r * 1.4 || Math.abs(dy) > k.r * 1.4) continue;
+    const dd = Math.hypot(dx, dy) + 1e-6, rr = k.r * (1 + 0.25 * nM(dx / dd * 1.5 + k.ph, dy / dd * 1.5) + 0.06 * nM(x / 5, y / 5)), s = 1 - sstep(0.9, 1.02, dd / rr);   // ragged outline, near-sheer sides
+    if (s > best) { best = s; STK_T = k.top + 1.5 * nM(x / 9 + k.ph, y / 9) - 3 * (dd / rr) ** 2; }   // a gently domed, lumpy top
+  }
+  return best;
+}
+// terrain before channels and ponds: the grid plus fine bumps kept off the shores, then any sea stack standing on it
+function landH(x, y) { const g = landH0(x, y), s = stackS(x, y); return s > 0 ? g + Math.max(0, STK_T - g) * s : g; }
+function landH0(x, y) {
   if (!ISL) buildIsland();
   if (!inGrid(x, y)) return islandBase(x, y);
   const h = bil(ISL.H, x, y), wet = bil(ISL.wet, x, y);
@@ -548,6 +582,7 @@ const MATS = [
 ];
 if (CLIMATE.mats) for (const k in CLIMATE.mats) MATS[k].col = CLIMATE.mats[k];   // the climate recolours the land
 function material(e, m, x, y) {
+  if (e >= WL) { const s = stackS(x, y); if (s > 0.02) return s > 0.97 ? PLAIN : ROCK; }   // sea stacks: rock faces, grass on top
   if (e >= WL && glacierAt(x, y) > 0.3) return GLACIER;
   if (e < 0.2) return DEEP;
   if (e < WL) return SHALLOW;

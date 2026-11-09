@@ -1235,8 +1235,42 @@ function buildIsland(diagnostics = false) {
 const bil = (A, x, y) => { const I = ISL, gx = (x - I.ox) / I.C, gy = (y - I.oy) / I.C, i = Math.floor(gx), j = Math.floor(gy), fx = gx - i, fy = gy - j, k = j * I.N + i;
   return (A[k] * (1 - fx) + A[k + 1] * fx) * (1 - fy) + (A[k + I.N] * (1 - fx) + A[k + I.N + 1] * fx) * fy; };
 const inGrid = (x, y) => { const I = ISL, gx = (x - I.ox) / I.C, gy = (y - I.oy) / I.C; return gx >= 0 && gy >= 0 && gx < I.N - 1 && gy < I.N - 1; };
-// terrain before channels and ponds: the grid plus fine bumps kept off the shores
-function landH(x, y) {
+// ---- map features defined in src/features/*.json; the "type" picks the shape code, the file sets where, how often and how big ----
+// stacks: clusters of sheer rock pillars offshore with a grassy top. Laid out once per seed from the base terrain.
+let STACKS = null, STK_T = 0;   // STK_T: top height of the stack found by the last stackS()
+function seaStacks() {
+  if (STACKS) return STACKS; STACKS = [];
+  const R = CONFIG.islandSize / 2, rng = mulberry32((SEED ^ 0x5eac5) >>> 0), pick = ([a, b]) => a + (b - a) * rng();
+  for (const F of BUILTIN.feature.filter(f => f.type === 'stacks')) {
+    if (rng() >= (F.chance[CLIMATE.key] ?? 0)) continue;
+    const nc = Math.round(pick(F.clusters));
+    for (let c = 0, tries = 0; c < nc && tries < 40; tries++) {
+      const a = rng() * 6.2832, ux = Math.cos(a), uy = Math.sin(a); let d = 0.3 * R;
+      while (d < 2 * R && islandBase(ux * d, uy * d) > WLW) d += 20;   // out to the coast on this bearing
+      d += pick(F.offshore_m); const cx = ux * d, cy = uy * d;
+      if (islandBase(cx, cy) > WLW - F.min_depth_m) continue;   // open water round it
+      for (let k = 0, n = Math.round(pick(F.stacks)); k < n; k++) {
+        const r = pick(F.radius_m), q = rng() * 6.2832, o = k ? F.spread_m * Math.sqrt(rng()) : 0;
+        STACKS.push({ x: cx + Math.cos(q) * o, y: cy + Math.sin(q) * o, r, top: WLW + pick(F.height_m) * (0.6 + 0.4 * r / F.radius_m[1]), ph: rng() * 100 });
+      }
+      c++;
+    }
+  }
+  return STACKS;
+}
+// how much a stack stands at (x, y): 1 on its top, 0 off it, the cliff in between (sets STK_T)
+function stackS(x, y) {
+  let best = 0;
+  for (const k of STACKS || seaStacks()) {
+    const dx = x - k.x, dy = y - k.y; if (Math.abs(dx) > k.r * 1.4 || Math.abs(dy) > k.r * 1.4) continue;
+    const dd = Math.hypot(dx, dy) + 1e-6, rr = k.r * (1 + 0.25 * nM(dx / dd * 1.5 + k.ph, dy / dd * 1.5) + 0.06 * nM(x / 5, y / 5)), s = 1 - sstep(0.9, 1.02, dd / rr);   // ragged outline, near-sheer sides
+    if (s > best) { best = s; STK_T = k.top + 1.5 * nM(x / 9 + k.ph, y / 9) - 3 * (dd / rr) ** 2; }   // a gently domed, lumpy top
+  }
+  return best;
+}
+// terrain before channels and ponds: the grid plus fine bumps kept off the shores, then any sea stack standing on it
+function landH(x, y) { const g = landH0(x, y), s = stackS(x, y); return s > 0 ? g + Math.max(0, STK_T - g) * s : g; }
+function landH0(x, y) {
   if (!ISL) buildIsland();
   if (!inGrid(x, y)) return islandBase(x, y);
   const h = bil(ISL.H, x, y), wet = bil(ISL.wet, x, y);
@@ -1383,6 +1417,7 @@ const MATS = [
 ];
 if (CLIMATE.mats) for (const k in CLIMATE.mats) MATS[k].col = CLIMATE.mats[k];   // the climate recolours the land
 function material(e, m, x, y) {
+  if (e >= WL) { const s = stackS(x, y); if (s > 0.02) return s > 0.97 ? PLAIN : ROCK; }   // sea stacks: rock faces, grass on top
   if (e >= WL && glacierAt(x, y) > 0.3) return GLACIER;
   if (e < 0.2) return DEEP;
   if (e < WL) return SHALLOW;
@@ -5606,7 +5641,7 @@ Object.assign(Engine, {
       const owned = gx >= Math.ceil(x0 / TREE_GRID) && gy >= Math.ceil(y0 / TREE_GRID) && gx * TREE_GRID < x0 + CHW && gy * TREE_GRID < y0 + CHW;
       if (hash2(gx, gy, SEED) >= 0.35 * CLIMATE.trees || (!owned && (x < x0 - 3.5 || y < y0 - 3.5 || x > x0 + CHW + 3.5 || y > y0 + CHW + 3.5))) continue;
       sample(x, y);
-      const mat = material(SE, SM, x, y), dens = (mat === FOREST ? 0.35 : mat === ALPINE ? 0.3 : mat === PLAIN ? 0.04 : mat === SAND && CLIMATE.palms && SE < 0.42 ? 0.06 : 0) * CLIMATE.trees;
+      const mat = material(SE, SM, x, y), dens = (mat === FOREST ? 0.35 : mat === ALPINE ? 0.3 : mat === PLAIN && !stackS(x, y) ? 0.04 : mat === SAND && CLIMATE.palms && SE < 0.42 ? 0.06 : 0) * CLIMATE.trees;
       if (hash2(gx, gy, SEED) >= dens || hW(SE) < SW + 0.7 || Game.noTreesAt(x, y)) continue;
       shadeTreeBase(x, y, hW(SE));
       // Include neighbouring trees in the bake, but keep the original cell ownership.
@@ -8699,6 +8734,11 @@ const Birds = globalThis.Birds = (() => {
           const s = { kind: 'tree', x: px, y: py, z: d[i + 2] + t[2] * sc, pose: 'stand', high: true, key: `t:${d[i].toFixed(1)}:${d[i + 1].toFixed(1)}`, tree: { bx: d[i], by: d[i + 1], sc, rot: ro, h: t[2] } };
           s.at = T => { const p = treeSway(s, T); return { x: p[0], y: p[1], z: s.z }; }; out.push(s); } }
       return out; },
+    cliff(x, y, R) { const out = [];   // the grassy rims of sea stacks, a few steps in from the drop
+      for (const k of seaStacks()) { if (Math.hypot(k.x - x, k.y - y) > R + k.r) continue;
+        for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + k.ph, px = k.x + Math.cos(a) * k.r * 0.72, py = k.y + Math.sin(a) * k.r * 0.72, z = Game.groundAt(px, py);
+          if (z > WLW + 5) out.push({ kind: 'cliff', x: px, y: py, z, pose: 'stand', high: true, key: `c:${px | 0}:${py | 0}` }); } }
+      return out; },
     boat(x, y, R) { const out = [];   // slow boats only; birds ride along until the boat really gets going
       for (const b of Engine.boats || []) { if (Math.abs(b.speed || 0) > 3 || Math.hypot(b.x - x, b.y - y) > R) continue;
         boatPerches(b).forEach((p, i) => { const s = { kind: 'boat', boat: b, x: b.x, y: b.y, z: b.z, pose: 'stand', bold: true, flushSpeed: 6.5, mine: Engine.boat === b, key: `b:${boatId(b)}:${i}` };
@@ -8735,6 +8775,7 @@ const Birds = globalThis.Birds = (() => {
     habitat: {},                    // flock size near each kind of water: { sea, lake, river, creek, pond, any }
     night: 'roost',                 // 'roost': settle at dusk and stay till dawn · 'active'
     climates: null,                 // null = any island; or e.g. ['temperate', 'tropical']
+    colony: 0,                      // > 0: nests on sea stacks; within 500 m of one the flock is this big and stays round them
     flight: { speed: 9, flapHz: 3, stroke: 0.52, flapTime: [1, 3], glideTime: [2, 6], turn: 0.85, alt: [8, 25], radius: [15, 45], soar: true, followBoats: false,
       clear: 5 },                   // least height over water while circling (low for wave-skimmers)
     // fishing on the wing: one strike behaviour, shaped entirely by these numbers (null = never)
@@ -8810,10 +8851,13 @@ const Birds = globalThis.Birds = (() => {
       for (const r of [0, 20, 50, 120, 300]) for (let k = 0; k < (r ? 8 : 1); k++) { const a = k / 8 * TAU, w = Game.waterAt(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); if (w.depth > 0.3) seen.add(w.kind); }
       if (sp.climates && !sp.climates.includes(CLIMATE.key)) return 0;
       let n = sp.habitat.any || 0; for (const k of seen) n = Math.max(n, sp.habitat[k] || 0);
+      if (sp.colony && this.colonyNear(P)) n = Math.max(n, sp.colony);
       return Math.round(n * [0, 0.5, 1, 1.6][clamp(CONFIG.wildlife | 0, 0, 3)]);
     },
-    anchor(sp) {   // where a flock hangs about: over water near you; in your wake when you're under way (if it follows boats)
-      const P = Engine.P, fl = sp.flock, bt = Engine.boat;
+    colonyNear(P) { let best = null, bd = 500; for (const k of seaStacks()) { const d = Math.hypot(k.x - P.x, k.y - P.y); if (d < bd) { bd = d; best = k; } } return best; },
+    anchor(sp) {   // where a flock hangs about: over water near you (round the stacks, for colony birds); in your wake when you're under way (if it follows boats)
+      const P = Engine.P, fl = sp.flock, bt = Engine.boat, home = sp.colony && this.colonyNear(P);
+      if (home) { const a = rnd() * TAU, r = home.r + 10 + rnd() * 60; fl.ax = home.x + Math.cos(a) * r; fl.ay = home.y + Math.sin(a) * r; fl.lev = WLW; return; }
       if (sp.flight.followBoats && bt && Math.abs(bt.speed || 0) > 1.5) { const d = 18 + rnd() * 20; fl.ax = bt.x - Math.cos(bt.a) * d; fl.ay = bt.y - Math.sin(bt.a) * d; return; }
       for (let k = 0; k < 12; k++) { const r = 25 + rnd() * 70, a = rnd() * TAU, x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r, w = Game.waterAt(x, y);
         if (w.depth > 0.5) { fl.ax = x; fl.ay = y; fl.lev = w.level; return; } }
@@ -9084,6 +9128,29 @@ Birds.register({
     colors: { mantle: [0.52, 0.5, 0.46], body: [0.33, 0.32, 0.3], head: [0.96, 0.93, 0.76], neck: [0.93, 0.91, 0.86], eye: [0.85, 0.85, 0.8], tail: [0.4, 0.38, 0.35],
       bill: [0.62, 0.56, 0.5], billTip: [0.86, 0.42, 0.22], pouch: [0.24, 0.25, 0.23], legs: [0.16, 0.16, 0.16],
       wingTop: [0.5, 0.48, 0.44], wingEdge: [0.34, 0.32, 0.3], wingTip: [0.1, 0.09, 0.09], wingUnder: [0.3, 0.29, 0.27], wingUnderTip: [0.12, 0.11, 0.11] },
+  },
+});
+
+// ---------------- species: the Atlantic puffin ----------------
+// Cold northern seas: whirring low and fast over the waves on short wings, rafts on the water, dives from the surface and
+// swims down after small fish for 20 s or more, nests in burrows on the grassy tops of sea stacks (colony).
+Birds.register({
+  id: 'atlantic_puffin', name: 'Atlantic puffin', scale: [0.94, 1.06],
+  climates: ['arctic', 'temperate'],
+  habitat: { sea: 3 }, colony: 14,
+  night: 'roost',
+  flight: { speed: 14, flapHz: 7, stroke: 0.55, flapTime: [4, 10], glideTime: [0.2, 0.5], turn: 1.1, alt: [1.5, 9], radius: [18, 55], soar: false, followBoats: false, clear: 1 },
+  lands: { water: 0.6, cliff: 0.9, ground: 0.03, prop: 0.12, tree: 0, boat: 0 },
+  landEvery: 30, stay: [30, 140], shy: 7, floatZ: 0.03, space: 0.45, wary: 5,
+  flocking: { every: 40, size: [3, 10], time: [15, 40], formation: { line: 2, cluster: 2 }, spacing: 1.3, landTogether: 0.8 },
+  forage: { every: 25, from: [0.4, 2.5], minDepth: 2, lead: 0.4, target: -1.2, speed: [3, 6], accel: 6, tuck: true, twist: 0, splash: 6, ripple: 0.5, scare: 2, under: 20, after: [6, 20] },   // a surface dive and a long swim down
+  voice: null,   // quiet at sea
+  look: {
+    body: [0.1, 0.055, 0.06], head: 0.038, bill: { len: 0.034, base: 0.021, hook: 0.004 },   // stout, big-headed; the deep triangular bill
+    tail: { len: 0.04, root: 0.025, end: 0.03 }, wing: { span: 0.27, chord: 0.85, tipFrom: 0.5 }, legs: { len: 0.07 },
+    colors: { mantle: [0.06, 0.06, 0.07], body: [0.95, 0.95, 0.93], head: [0.88, 0.88, 0.86], eye: [0.05, 0.05, 0.05], tail: [0.06, 0.06, 0.07],
+      bill: [0.95, 0.45, 0.14], billTip: [0.86, 0.2, 0.1], legs: [0.98, 0.5, 0.15],
+      wingTop: [0.07, 0.07, 0.08], wingEdge: [0.1, 0.1, 0.11], wingTip: [0.05, 0.05, 0.06], wingUnder: [0.3, 0.3, 0.32], wingUnderTip: [0.12, 0.12, 0.13] },
   },
 });
 
@@ -9822,7 +9889,7 @@ globalThis.Urchin = {
 // built-in fish, boats and tackle: <script type="application/json" data-builtin="fish|boat|tackle"> blocks at the end of this
 // file, one per definition; they're parsed at boot, after the loading screen has painted (parsing hundreds of KB of JSON is quick,
 // but parsing it as JavaScript object literals before the page could draw was not)
-const BUILTIN = { fish: [], boat: [], tackle: [] };
+const BUILTIN = { fish: [], boat: [], tackle: [], feature: [] };   // feature: map features (src/features/*.json)
 function readBuiltins() {
   for (const el of document.querySelectorAll('script[data-builtin]')) {
     try { BUILTIN[el.dataset.builtin].push(JSON.parse(el.textContent)); } catch (e) { console.error('Bad built-in', el.dataset.builtin, 'JSON:', e.message); }
@@ -9881,6 +9948,22 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <!-- built-in fish species, boats and tackle: one JSON block each, the same format as files you drop onto the game -->
+<script type="application/json" data-builtin="feature">
+{
+  "id": "sea_stacks",
+  "type": "stacks",
+  "name": "Sea stacks",
+  "about": "A cluster of sheer rock pillars standing off the coast, grass on top. Puffins nest on them.",
+  "chance": { "temperate": 0.7, "arctic": 0.7, "tropical": 0.3 },
+  "clusters": [1, 2],
+  "stacks": [2, 5],
+  "spread_m": 110,
+  "offshore_m": [120, 400],
+  "min_depth_m": 8,
+  "radius_m": [10, 32],
+  "height_m": [18, 60]
+}
+</script>
 <script type="application/json" data-builtin="fish">
 {
   "schema": "embercrown-fish/1",

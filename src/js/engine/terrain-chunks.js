@@ -240,7 +240,7 @@ Object.assign(Engine, {
       const owned = gx >= Math.ceil(x0 / TREE_GRID) && gy >= Math.ceil(y0 / TREE_GRID) && gx * TREE_GRID < x0 + CHW && gy * TREE_GRID < y0 + CHW;
       if (hash2(gx, gy, SEED) >= 0.35 * CLIMATE.trees || (!owned && (x < x0 - 3.5 || y < y0 - 3.5 || x > x0 + CHW + 3.5 || y > y0 + CHW + 3.5))) continue;
       sample(x, y);
-      const mat = material(SE, SM, x, y), dens = (mat === FOREST ? 0.35 : mat === ALPINE ? 0.3 : mat === PLAIN ? 0.04 : mat === SAND && CLIMATE.palms && SE < 0.42 ? 0.06 : 0) * CLIMATE.trees;
+      const mat = material(SE, SM, x, y), dens = (mat === FOREST ? 0.35 : mat === ALPINE ? 0.3 : mat === PLAIN && !stackS(x, y) ? 0.04 : mat === SAND && CLIMATE.palms && SE < 0.42 ? 0.06 : 0) * CLIMATE.trees;
       if (hash2(gx, gy, SEED) >= dens || hW(SE) < SW + 0.7 || Game.noTreesAt(x, y)) continue;
       shadeTreeBase(x, y, hW(SE));
       // Include neighbouring trees in the bake, but keep the original cell ownership.

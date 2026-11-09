@@ -194,6 +194,11 @@ const Birds = globalThis.Birds = (() => {
           const s = { kind: 'tree', x: px, y: py, z: d[i + 2] + t[2] * sc, pose: 'stand', high: true, key: `t:${d[i].toFixed(1)}:${d[i + 1].toFixed(1)}`, tree: { bx: d[i], by: d[i + 1], sc, rot: ro, h: t[2] } };
           s.at = T => { const p = treeSway(s, T); return { x: p[0], y: p[1], z: s.z }; }; out.push(s); } }
       return out; },
+    cliff(x, y, R) { const out = [];   // the grassy rims of sea stacks, a few steps in from the drop
+      for (const k of seaStacks()) { if (Math.hypot(k.x - x, k.y - y) > R + k.r) continue;
+        for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + k.ph, px = k.x + Math.cos(a) * k.r * 0.72, py = k.y + Math.sin(a) * k.r * 0.72, z = Game.groundAt(px, py);
+          if (z > WLW + 5) out.push({ kind: 'cliff', x: px, y: py, z, pose: 'stand', high: true, key: `c:${px | 0}:${py | 0}` }); } }
+      return out; },
     boat(x, y, R) { const out = [];   // slow boats only; birds ride along until the boat really gets going
       for (const b of Engine.boats || []) { if (Math.abs(b.speed || 0) > 3 || Math.hypot(b.x - x, b.y - y) > R) continue;
         boatPerches(b).forEach((p, i) => { const s = { kind: 'boat', boat: b, x: b.x, y: b.y, z: b.z, pose: 'stand', bold: true, flushSpeed: 6.5, mine: Engine.boat === b, key: `b:${boatId(b)}:${i}` };
@@ -230,6 +235,7 @@ const Birds = globalThis.Birds = (() => {
     habitat: {},                    // flock size near each kind of water: { sea, lake, river, creek, pond, any }
     night: 'roost',                 // 'roost': settle at dusk and stay till dawn · 'active'
     climates: null,                 // null = any island; or e.g. ['temperate', 'tropical']
+    colony: 0,                      // > 0: nests on sea stacks; within 500 m of one the flock is this big and stays round them
     flight: { speed: 9, flapHz: 3, stroke: 0.52, flapTime: [1, 3], glideTime: [2, 6], turn: 0.85, alt: [8, 25], radius: [15, 45], soar: true, followBoats: false,
       clear: 5 },                   // least height over water while circling (low for wave-skimmers)
     // fishing on the wing: one strike behaviour, shaped entirely by these numbers (null = never)
@@ -305,10 +311,13 @@ const Birds = globalThis.Birds = (() => {
       for (const r of [0, 20, 50, 120, 300]) for (let k = 0; k < (r ? 8 : 1); k++) { const a = k / 8 * TAU, w = Game.waterAt(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); if (w.depth > 0.3) seen.add(w.kind); }
       if (sp.climates && !sp.climates.includes(CLIMATE.key)) return 0;
       let n = sp.habitat.any || 0; for (const k of seen) n = Math.max(n, sp.habitat[k] || 0);
+      if (sp.colony && this.colonyNear(P)) n = Math.max(n, sp.colony);
       return Math.round(n * [0, 0.5, 1, 1.6][clamp(CONFIG.wildlife | 0, 0, 3)]);
     },
-    anchor(sp) {   // where a flock hangs about: over water near you; in your wake when you're under way (if it follows boats)
-      const P = Engine.P, fl = sp.flock, bt = Engine.boat;
+    colonyNear(P) { let best = null, bd = 500; for (const k of seaStacks()) { const d = Math.hypot(k.x - P.x, k.y - P.y); if (d < bd) { bd = d; best = k; } } return best; },
+    anchor(sp) {   // where a flock hangs about: over water near you (round the stacks, for colony birds); in your wake when you're under way (if it follows boats)
+      const P = Engine.P, fl = sp.flock, bt = Engine.boat, home = sp.colony && this.colonyNear(P);
+      if (home) { const a = rnd() * TAU, r = home.r + 10 + rnd() * 60; fl.ax = home.x + Math.cos(a) * r; fl.ay = home.y + Math.sin(a) * r; fl.lev = WLW; return; }
       if (sp.flight.followBoats && bt && Math.abs(bt.speed || 0) > 1.5) { const d = 18 + rnd() * 20; fl.ax = bt.x - Math.cos(bt.a) * d; fl.ay = bt.y - Math.sin(bt.a) * d; return; }
       for (let k = 0; k < 12; k++) { const r = 25 + rnd() * 70, a = rnd() * TAU, x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r, w = Game.waterAt(x, y);
         if (w.depth > 0.5) { fl.ax = x; fl.ay = y; fl.lev = w.level; return; } }
@@ -579,6 +588,29 @@ Birds.register({
     colors: { mantle: [0.52, 0.5, 0.46], body: [0.33, 0.32, 0.3], head: [0.96, 0.93, 0.76], neck: [0.93, 0.91, 0.86], eye: [0.85, 0.85, 0.8], tail: [0.4, 0.38, 0.35],
       bill: [0.62, 0.56, 0.5], billTip: [0.86, 0.42, 0.22], pouch: [0.24, 0.25, 0.23], legs: [0.16, 0.16, 0.16],
       wingTop: [0.5, 0.48, 0.44], wingEdge: [0.34, 0.32, 0.3], wingTip: [0.1, 0.09, 0.09], wingUnder: [0.3, 0.29, 0.27], wingUnderTip: [0.12, 0.11, 0.11] },
+  },
+});
+
+// ---------------- species: the Atlantic puffin ----------------
+// Cold northern seas: whirring low and fast over the waves on short wings, rafts on the water, dives from the surface and
+// swims down after small fish for 20 s or more, nests in burrows on the grassy tops of sea stacks (colony).
+Birds.register({
+  id: 'atlantic_puffin', name: 'Atlantic puffin', scale: [0.94, 1.06],
+  climates: ['arctic', 'temperate'],
+  habitat: { sea: 3 }, colony: 14,
+  night: 'roost',
+  flight: { speed: 14, flapHz: 7, stroke: 0.55, flapTime: [4, 10], glideTime: [0.2, 0.5], turn: 1.1, alt: [1.5, 9], radius: [18, 55], soar: false, followBoats: false, clear: 1 },
+  lands: { water: 0.6, cliff: 0.9, ground: 0.03, prop: 0.12, tree: 0, boat: 0 },
+  landEvery: 30, stay: [30, 140], shy: 7, floatZ: 0.03, space: 0.45, wary: 5,
+  flocking: { every: 40, size: [3, 10], time: [15, 40], formation: { line: 2, cluster: 2 }, spacing: 1.3, landTogether: 0.8 },
+  forage: { every: 25, from: [0.4, 2.5], minDepth: 2, lead: 0.4, target: -1.2, speed: [3, 6], accel: 6, tuck: true, twist: 0, splash: 6, ripple: 0.5, scare: 2, under: 20, after: [6, 20] },   // a surface dive and a long swim down
+  voice: null,   // quiet at sea
+  look: {
+    body: [0.1, 0.055, 0.06], head: 0.038, bill: { len: 0.034, base: 0.021, hook: 0.004 },   // stout, big-headed; the deep triangular bill
+    tail: { len: 0.04, root: 0.025, end: 0.03 }, wing: { span: 0.27, chord: 0.85, tipFrom: 0.5 }, legs: { len: 0.07 },
+    colors: { mantle: [0.06, 0.06, 0.07], body: [0.95, 0.95, 0.93], head: [0.88, 0.88, 0.86], eye: [0.05, 0.05, 0.05], tail: [0.06, 0.06, 0.07],
+      bill: [0.95, 0.45, 0.14], billTip: [0.86, 0.2, 0.1], legs: [0.98, 0.5, 0.15],
+      wingTop: [0.07, 0.07, 0.08], wingEdge: [0.1, 0.1, 0.11], wingTip: [0.05, 0.05, 0.06], wingUnder: [0.3, 0.3, 0.32], wingUnderTip: [0.12, 0.12, 0.13] },
   },
 });
 
