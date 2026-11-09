@@ -104,6 +104,10 @@ const Engine = {
       if (document.pointerLockElement === ov || this.recentTouch()) return;
       this.openMenu(e.clientX, e.clientY);
     });
+    ov.addEventListener('dblclick', e => { // double-click the map: the same travel menu
+      if (e.button !== 0 || this.pauseOpen || document.pointerLockElement === ov || this.recentTouch()) return;
+      this.openMenu(e.clientX, e.clientY);
+    });
     ov.addEventListener('click', e => {
       if (this.pauseOpen || this.recentTouch()) return; // touches are handled in setupTouch
       if (this.invClick(e.clientX, e.clientY)) return;

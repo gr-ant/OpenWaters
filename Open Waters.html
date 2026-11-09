@@ -3807,6 +3807,10 @@ const Engine = {
       if (document.pointerLockElement === ov || this.recentTouch()) return;
       this.openMenu(e.clientX, e.clientY);
     });
+    ov.addEventListener('dblclick', e => { // double-click the map: the same travel menu
+      if (e.button !== 0 || this.pauseOpen || document.pointerLockElement === ov || this.recentTouch()) return;
+      this.openMenu(e.clientX, e.clientY);
+    });
     ov.addEventListener('click', e => {
       if (this.pauseOpen || this.recentTouch()) return; // touches are handled in setupTouch
       if (this.invClick(e.clientX, e.clientY)) return;
@@ -5204,7 +5208,7 @@ Object.assign(Engine, {
 </script>
 <script>
 'use strict';
-// Engine: the map travel menu (right-click / tap) and the new-island button.
+// Engine: the map travel menu (right-click / double-click / tap) and the new-island button.
 Object.assign(Engine, {
   // ---- map travel menu (shared by right-click, and taps on touch screens) ----
   recentTouch() { return performance.now() - (this.touchT || -1e9) < 800; },

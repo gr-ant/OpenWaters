@@ -1,5 +1,5 @@
 'use strict';
-// Engine: the map travel menu (right-click / tap) and the new-island button.
+// Engine: the map travel menu (right-click / double-click / tap) and the new-island button.
 Object.assign(Engine, {
   // ---- map travel menu (shared by right-click, and taps on touch screens) ----
   recentTouch() { return performance.now() - (this.touchT || -1e9) < 800; },
