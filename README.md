@@ -10,6 +10,18 @@ A first-person fishing and exploration game that runs in the browser. It's built
 
 Every island is generated from a seed, with lakes, ponds, rivers and sea. It has seasons and weather, 119 fish species, boats, and tackle you build into rigs.
 
+## Download
+
+Play in the browser on **[itch.io](https://gra-nt.itch.io/open-waters)**, or get the desktop app:
+
+| System | Download |
+| --- | --- |
+| Windows | [Installer](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-win-x64.exe) · [Portable, no install](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-win-portable.exe) |
+| macOS | [Apple silicon (M1 and later)](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-mac-arm64.dmg) · [Intel](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-mac-x64.dmg) |
+| Linux | [AppImage](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-linux-x86_64.AppImage) · [.deb (Ubuntu, Debian)](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-linux-amd64.deb) |
+
+All versions are on the [Releases page](https://github.com/gr-ant/OpenWaters/releases). The apps aren't code-signed yet. On Windows, click **More info → Run anyway**. On macOS, right-click the app and choose **Open**. If macOS says it's damaged, run `xattr -cr "/Applications/Open Waters.app"` once.
+
 ## Editing
 
 Edit the files in `src/`, then rebuild the single file:

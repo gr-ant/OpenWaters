@@ -21,7 +21,7 @@
   "build": {
     "appId": "io.itch.gra-nt.openwaters",
     "productName": "Open Waters",
-    "artifactName": "Open-Waters-${version}-${os}-${arch}.${ext}",
+    "artifactName": "Open-Waters-${os}-${arch}.${ext}",
     "files": [
       "main.js",
       "game/**",
@@ -47,7 +47,7 @@
       "allowToChangeInstallationDirectory": true
     },
     "portable": {
-      "artifactName": "Open-Waters-${version}-win-portable.${ext}"
+      "artifactName": "Open-Waters-win-portable.${ext}"
     },
     "mac": {
       "target": [
