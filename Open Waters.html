@@ -6601,7 +6601,7 @@ Object.assign(Engine, {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
       tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1);
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
-    if (!helm && A.phase !== 'charge') { const aim = this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points into the middle of the view (the wind-up swings it back)
+    if (!helm && A.phase !== 'charge') { const aim = this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
     const k = 1 - Math.exp(-dt * (A.phase === 'flight' && A.t - A.castAt < 0.25 ? 18 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;
@@ -6619,10 +6619,10 @@ Object.assign(Engine, {
     const F = [ca * cp, sa * cp, sp], R = [-sa, ca, 0], U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
     // low on the right, well below the bottom of the view and close in, so you never see the end of the grip
     const W = this.canvas ? this.canvas.width : 16, H = this.canvas ? this.canvas.height : 9, tx = Math.tan(FOV / 2), ty = tx * H / W, d = 0.42, sx = 0.85, sy = -1.35;
-    return { butt: [0, 1, 2].map(k => eye[k] + F[k] * d + R[k] * sx * tx * d + U[k] * sy * ty * d), F };
+    return { butt: [0, 1, 2].map(k => eye[k] + F[k] * d + R[k] * sx * tx * d + U[k] * sy * ty * d), F, U, ty };
   },
   rodAim(eye) {
-    const { butt, F } = this.rodButt(eye), D = 3, v = [0, 1, 2].map(k => eye[k] + F[k] * D - butt[k]);
+    const { butt, F, U, ty } = this.rodButt(eye), D = 3, up = 0.5 * ty * D, v = [0, 1, 2].map(k => eye[k] + F[k] * D + U[k] * up - butt[k]);   // aim 75% of the way up the screen (halfway from centre to top)
     return [Math.atan2(v[1], v[0]), Math.atan2(v[2], Math.hypot(v[0], v[1]))];
   },
   handForReel(A, eye) {
