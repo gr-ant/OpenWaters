@@ -140,7 +140,8 @@ Object.assign(Engine, {
         const key = f.sp * 2 + (low ? 1 : 0);
         (per[key].length ? per[key] : (act.push(key), per[key])).push(f.x, f.y, f.z, f.len, f.a, f.tint, f.land ? -1e4 : f.wl, WATER[f.kd].murk, f.ph + 8 * Math.round(clamp(f.open || 0, 0, 1) * 12), f.pitch || 0);
       }
-      for (const key of act) { const si = key >> 1, arr = per[key], m = this.fishGpu(si, !!(key & 1)), D = FishDB.list[si]; gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, D.body.flex * (D._wave ?? 1)); gl.uniform1f(L.u.swm, D._swim || 0); gl.uniform3fv(L.u.jawP, D._jaw); this.upInst(m, arr); this.drawMesh(m, arr.length / 10); }
+      const jel = this._jelAct || (this._jelAct = []); jel.length = 0;
+      for (const key of act) { const si = key >> 1, arr = per[key], m = this.fishGpu(si, !!(key & 1)), D = FishDB.list[si]; if (D._jelly) { jel.push(key); continue; } gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, D.body.flex * (D._wave ?? 1)); gl.uniform1f(L.u.swm, D._swim || 0); gl.uniform3fv(L.u.jawP, D._jaw); this.upInst(m, arr); this.drawMesh(m, arr.length / 10); }
       gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (this.boats.length) { // boats: one draw each (they pitch and heel on their own)
@@ -175,6 +176,12 @@ Object.assign(Engine, {
     }
     for (const [m, arr] of groups) drawInst(m, arr);
     this.drawCaves(gl, drawInst, E);   // cave cenotes' roofs
+    if (this._jelAct && this._jelAct.length && this.fish.length) {   // jellies: see-through, after everything solid and before the water surface
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false); gl.uniform1f(L.u.fsh, 1);
+      for (const key of this._jelAct) { const si = key >> 1, arr = this._fishArr[key], m = this.fishGpu(si, !!(key & 1)), D = FishDB.list[si];
+        gl.uniform1f(L.u.wig, D.body.flex * (D._wave ?? 1)); gl.uniform1f(L.u.swm, D._swim || 0); gl.uniform3fv(L.u.jawP, D._jaw); gl.uniform1f(L.u.clr, D.body.parts.clear); this.upInst(m, arr); this.drawMesh(m, arr.length / 10); }
+      gl.uniform1f(L.u.clr, 0); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0); gl.depthMask(true); gl.disable(gl.BLEND); this._jelAct.length = 0;
+    }
     // water surfaces (blended, no depth write), with the 8 nearest live ripples
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
     this.drawParticles(vp, Hh, ty, E, 0);   // particles beyond the surface (droplets under it, seen from above) go before it

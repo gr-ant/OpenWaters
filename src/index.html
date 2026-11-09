@@ -99,6 +99,7 @@
   <div id="hMap"><b id="hMapName"></b><span class="north" data-icon="ui.compass"></span><span id="hScale"><i></i><b></b></span></div>
   <div id="hMsg"></div>
   <div id="hReelKeys" hidden></div>
+  <div id="hDepth" hidden><small>surface</small><div class="dg-track"><i class="dg-line" id="hDepthLine"></i><b class="dg-mark" id="hDepthMark"><span id="hDepthV"></span></b></div><small>bottom <span id="hDepthB"></span></small></div>
   <div id="hStatus" hidden><span id="hStIcon"></span><div class="st-text"><b id="hStTitle"></b><small id="hStSub"></small><div id="hStBar"><i></i></div></div><span class="st-act"><kbd id="hStKey">R</kbd><span id="hStAct"></span></span></div>
   <div id="hDock">
     <button data-dock="tackle" title="Tackle"><span data-icon="dock.tackleBox"></span><kbd>I</kbd></button>
@@ -126,7 +127,7 @@
   <button id="hSettings" title="Pause and settings (Esc)" aria-label="Pause and settings">Esc</button>
   <button id="hHint" title="Controls (?)">?</button>
 </div>
-<div id="catch" hidden><b id="ccName"></b><i id="ccSci"></i><div id="ccSize"></div><div id="ccNote"></div><button id="ccKeep">Keep (E)</button><button id="ccRel">Release (X)</button></div>
+<div id="catch" hidden><b id="ccName"></b><i id="ccSci"></i><div id="ccSize"></div><div id="ccNote"></div><button id="ccKeep">Keep (E)</button><button id="ccRel">Release (X)</button><small id="ccTurn">W A S D to turn it over</small></div>
 <div id="tui" hidden>
   <nav class="tui-rail" aria-label="Touch shortcuts">
     <button data-k="KeyM"><span class="ic" data-icon="dock.map"></span><b>Map</b></button>
@@ -161,6 +162,7 @@
 <script src="js/mat4.js"></script>
 <script src="js/creatures/fish.js"></script>
 <script src="js/creatures/cephalopods-shellfish.js"></script>
+<script src="js/creatures/jellies.js"></script>
 <script src="js/creatures/reptiles-amphibians.js"></script>
 <script src="js/world/seasons-weather.js"></script>
 <script src="js/world/water-temp.js"></script>
@@ -383,6 +385,13 @@
 <script type="application/json" data-builtin="fish" src="fish/yellowfin_goatfish.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/yellowfin_tuna.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/yellowtail_snapper.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/moon_jelly.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/lions_mane_jellyfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/atlantic_sea_nettle.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/portuguese_man_o_war.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/box_jellyfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/upside_down_jellyfish.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/comb_jelly.json"></script>
 <script type="application/json" data-builtin="boat" src="boats/bass_boat.json"></script>
 <script type="application/json" data-builtin="boat" src="boats/canoe.json"></script>
 <script type="application/json" data-builtin="boat" src="boats/center_console.json"></script>

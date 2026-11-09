@@ -225,7 +225,8 @@ const FishDB = {
     d._air = d.behavior.breath_hold_s > 0;   // breathes air: surfaces to blow, may leap, may haul out
     d._hid = [...d.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261) & 0xffff;   // stable per-species seed
     d._needCover = (d.habitat.cover_required || 0) >= 0.5 ? Object.keys(d.habitat.cover).filter(k => k !== 'open').sort((a, b) => d.habitat.cover[b] - d.habitat.cover[a])[0] : null;   // e.g. a clownfish's anemone
-    d._benthic = ['bivalve', 'snail', 'crab', 'lobster', 'octopus'].includes(d.body.plan) || (d.body.plan === 'ray' && d.body.parts.bottom >= 0.5);   // crawlers, sessile animals and stingrays live on the bed
+    d._jelly = d.body.plan === 'jelly';   // drawn see-through in their own pass; may sting
+    d._benthic = ['bivalve', 'snail', 'crab', 'lobster', 'octopus'].includes(d.body.plan) || (['ray', 'jelly'].includes(d.body.plan) && d.body.parts.bottom >= 0.5);   // crawlers, sessile animals and stingrays live on the bed
     const L = d.size.length_cm; d._mu = Math.log(L.typical); d._sig = L.spread;
     const old = this.byId[d.id];
     if (old) { const i = this.list.indexOf(old); this.list[i] = d; if (this.gpu[i]) this.gpu[i].stale = true; } else this.list.push(d);

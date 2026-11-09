@@ -1,0 +1,116 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "portuguese_man_o_war",
+  "name": "Portuguese man o' war",
+  "scientific": "Physalia physalis",
+  "description": "Not one animal but a colony: a blue-violet gas float riding the surface with a pink crest for a sail, and blue tentacles trailing metres below. The sting is fierce.",
+  "size": {
+    "length_cm": {
+      "min": 10,
+      "typical": 20,
+      "max": 30,
+      "spread": 0.3
+    },
+    "weight": {
+      "a": 0.02,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "jelly",
+    "flex": 0.25,
+    "parts": {
+      "shape": "float",
+      "tentacles": 30,
+      "tentacle_len": 5,
+      "arms": 0.25,
+      "arm_count": 10,
+      "frill": 0.6,
+      "clear": 0.25,
+      "sting": 0.95
+    },
+    "colors": {
+      "back": "#8a6ad8",
+      "flank": "#5a8ee0",
+      "belly": "#7aaee8",
+      "fins": "#3a62c8",
+      "eye": "#e870b0",
+      "mouth": "#4a7ad0"
+    }
+  },
+  "habitat": {
+    "climates": [
+      "tropical"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0,
+      "preferred": 0.5,
+      "max": 10
+    },
+    "temperature_c": {
+      "min": 18,
+      "optimal": 26,
+      "max": 32
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.2
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.08,
+    "school": {
+      "min": 1,
+      "max": 4
+    },
+    "home_range_m": 60
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.15,
+    "burst_bl_s": 0.4,
+    "turn_rate": 0.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 1,
+      "mid": 0,
+      "bottom": 0
+    },
+    "wariness": 0,
+    "spook_m": 0,
+    "recover_s": 5,
+    "curiosity": 0,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.8,
+      "shrimp": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 1,
+      "mid": 0,
+      "bottom": 0
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0,
+    "stamina": 0,
+    "jumps": 0,
+    "runs": 0
+  }
+}

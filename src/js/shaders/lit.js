@@ -3,7 +3,7 @@
 // ---- shaders ----
 // how the body moves when swimming (the vertex shader's modes): side-to-side tail beats; a wave down the whole body (eels);
 // a stiff body with a sweeping tail (tuna, marlin); flapping wings (rays); up-and-down ripples (flatfish on their side)
-const SWIM_MODES = { auto: -1, carangiform: 0, anguilliform: 1, thunniform: 2, ray: 3, flat: 4, cetacean: 5, turtle: 6 };
+const SWIM_MODES = { auto: -1, carangiform: 0, anguilliform: 1, thunniform: 2, ray: 3, flat: 4, cetacean: 5, turtle: 6, pulse: 7 };
 const SWIM_GLSL = `float tl = max(-p.x, 0.);
     if (swm < .5) pp.y += wig * sin(ph + p.x * 5.) * (.025 + .3 * tl * tl);
     else if (swm < 1.5) pp.y += wig * sin(ph + p.x * 12.) * (.012 + .07 * (.5 - p.x));
@@ -11,7 +11,9 @@ const SWIM_GLSL = `float tl = max(-p.x, 0.);
     else if (swm < 3.5) { float sy = abs(p.y); pp.z += wig * sin(ph * .45 - sy * 2.5) * .55 * sy * sy; }
     else if (swm < 4.5) pp.z += wig * sin(ph + p.x * 8.) * (.006 + .05 * (.5 - p.x));
     else if (swm < 5.5) pp.z += wig * sin(ph + p.x * 4.) * (.004 + .7 * tl * tl * tl);
-    else { float e = max(abs(p.y) - .2, 0.); pp.z += wig * sin(ph * .45 + p.x * 1.5) * e * 1.8; }`;   // turtles: only the flippers beat   // whales, dolphins, manatees: flukes beat up and down
+    else if (swm < 6.5) { float e = max(abs(p.y) - .2, 0.); pp.z += wig * sin(ph * .45 + p.x * 1.5) * e * 1.8; }
+    else if (mat < 19.5) { float k = pow(.5 + .5 * sin(ph), 3.), up = smoothstep(-.03, .2, p.z); pp.xy *= 1. - wig * .13 * k * (1. - .5 * up); pp.z += wig * .05 * k * p.z; }   // jellies: the bell squeezes (rim most), then relaxes
+    else { float w = mat - 20., dz = max(-p.z, 0.); pp.xy += vec2(sin(ph * .5 + dz * 3.5 + p.x * 7.), cos(ph * .43 + dz * 3. + p.y * 7.)) * .05 * w * min(dz, 1.5); pp.x -= .1 * w * dz; }`;   // their tentacles sway and trail   // turtles: only the flippers beat   // whales, dolphins, manatees: flukes beat up and down
 const LIT_VS = `#version 300 es
 layout(location=0) in vec3 p; layout(location=1) in vec3 n; layout(location=2) in vec3 c;
 layout(location=3) in vec4 io; layout(location=4) in vec2 ir;   // per-instance: xyz+scale, rotation+tint
@@ -107,6 +109,7 @@ precision highp float;
 in vec3 wp; in vec3 wn; in vec3 col; in vec2 tuv; in float mt; in vec3 tp; in vec3 wv; out vec4 o;
 uniform float night, emk, time; uniform vec4 fl[8]; uniform int nfl; uniform vec3 lcol, amb;
 uniform vec4 seasA, seasB; // seasB: snow cover, wetness, lightning flash
+uniform float clr;   // > 0: see-through (jellies), more solid where seen edge-on; 0 (unset) is opaque
 ${FOG_GLSL}
 ${NOISE_GLSL}
 ${CAUSTIC_GLSL}
@@ -195,5 +198,5 @@ void main(){
     c = c * mix(vec3(1.), tint, clamp(.2 + wd * .2, 0., .9)) * exp(-wd * (.03 + .15 * mk));
     c += lcol * cs * (bc * .9 + .06) * (.35 + .65 * max(N.z, 0.)) * .9;
   } else if (wv.z > .5 && wd > -.45) c *= mix(.62, 1., -wd / .45); // wet band just above the waterline
-  o = vec4(fog(mix(c, bc, em * emk), wp), 1.);
+  o = vec4(fog(mix(c, bc, em * emk), wp), clr < .01 ? 1. : mix(1. - clr, 1., pow(1. - abs(dot(N, normalize(cam - wp))), 2.) * .7));
 }`;

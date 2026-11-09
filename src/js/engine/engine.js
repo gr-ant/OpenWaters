@@ -9,7 +9,8 @@ const Engine = {
 
   // one press of a game key (its original code), from the keyboard, a bound mouse button or wheel, or a touch button
   keyPress(code, e, card) {
-    if (card) { if ((code === 'KeyE' || code === 'KeyX') && !e.repeat) this.finishCatch(code === 'KeyE'); return; }   // the catch card is modal: keep or release first
+    if (card) { if ((code === 'KeyE' || code === 'KeyX') && !e.repeat) this.finishCatch(code === 'KeyE');   // the catch card is modal: keep or release first
+      if (/^(Key[WASD]|Arrow(Up|Down|Left|Right))$/.test(code)) (this.cardKeys || (this.cardKeys = {}))[code] = true; return; }   // WASD turns the fish over (cardStep), without walking you off
     this.keys[code] = true;
     if (code === 'KeyV' && !e.repeat && this.boat) this.toggleBoatMode();                       // take the helm / leave it to move about the boat
     if (code === 'KeyC' && !e.repeat && this.boat && this.boatMode === 'deck') this.toggleBoatSit();   // sit down / stand up
@@ -84,7 +85,7 @@ const Engine = {
       if (e.isTrusted && Controls.bound(e.code)) e.preventDefault();   // Tab, / … belong to the game when bound
       for (const code of codes) this.keyPress(code, e, card);
     });
-    addEventListener('keyup', e => { for (const code of e.isTrusted ? Controls.codesFor(e.code) : [e.code]) this.keys[code] = false; });
+    addEventListener('keyup', e => { for (const code of e.isTrusted ? Controls.codesFor(e.code) : [e.code]) { this.keys[code] = false; if (this.cardKeys) this.cardKeys[code] = false; } });
     // side mouse buttons and the wheel can be bound too (the browser's back / forward is held off while they are)
     const mouseCode = b => ['Mouse0', 'Mouse1', 'Mouse2', 'Mouse3', 'Mouse4'][b];
     addEventListener('mousedown', e => { const c = mouseCode(e.button); if (e.button === 0 || e.button === 2 || !Controls.bound(c)) return; e.preventDefault();

@@ -234,7 +234,7 @@ Object.assign(Engine, {
     if (F) { const k = Math.min(1, dt * 3.5); L.x += (F.x - L.x) * k; L.y += (F.y - L.y) * k; }   // the bait swings along under the float
     if (!wet) { // on land or in the shallows at your feet: comes straight back
       if (Math.hypot(Q.x - T[0], Q.y - T[1]) < Math.max(1.5, S.rodLen * 0.7) || A.lineOut < S.rodLen * 0.5 + 1) { this.lureHome(); return; }
-      L.z = Math.max(g + 0.01, Math.min(L.z, wl)); L.kd = SK; L.wl = wl; L.land = !(wl > g + 0.03); if (F) { F.z = Math.max(L.z, wl); } return;
+      L.z = Math.max(g + 0.01, Math.min(L.z, wl)); L.kd = SK; L.wl = wl; L.ground = g; L.land = !(wl > g + 0.03); if (F) { F.z = Math.max(L.z, wl); } return;
     }
     const spd = Math.hypot(L.x - ox, L.y - oy) / Math.max(dt, 1e-3); L.spd += (spd - L.spd) * Math.min(1, dt * 4); if (spd > 0.02) L.dir = Math.atan2(L.y - oy, L.x - ox);
     sample(L.x, L.y); g = hW(SE); wl = SW; L.wl = wl; L.ground = g;

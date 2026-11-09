@@ -165,7 +165,7 @@ function gearSummary(d) {
   return '';
 }
 // can this animal be caught on hook and line? Mammals and turtles aren't fished for; shellfish don't bite.
-const fishCatchable = D => !D._air && !D._herp && !['turtle', 'bivalve', 'snail', 'crab', 'lobster', 'shrimp'].includes(D.body.plan);
+const fishCatchable = D => !D._air && !D._herp && !['turtle', 'bivalve', 'snail', 'crab', 'lobster', 'shrimp', 'jelly'].includes(D.body.plan);
 const baitThief = D => ['crab', 'lobster', 'shrimp', 'snail'].includes(D.body.plan);   // they pick a hook clean
 
 // ---- tackle meshes (model units are metres; x points along the rod / the way the lure faces) ----

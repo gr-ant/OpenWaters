@@ -105,7 +105,7 @@ Object.assign(Engine, {
     A.lure = null; A.float = null; A.lineOut = 0; A.tension = 0; this.buzz([50, 50, 50]);
     if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock();
     const best = this.catchLog().filter(c => c.species === f.species).reduce((m, c) => Math.max(m, c.kg), 0);
-    A.card = { pb: f.weightKg > best, first: best === 0 };
+    A.card = { pb: f.weightKg > best, first: best === 0 }; A.cardYaw = A.cardTilt = 0; this.cardKeys = {};
     const el = document.getElementById('catch');
     if (el) { el.hidden = false; document.getElementById('ccName').textContent = f.name; document.getElementById('ccSci').textContent = f.def.scientific || '';
       const kg = f.weightKg, wt = kg < 1 ? `${(kg * 1000).toFixed(0)} g` : `${kg.toFixed(2)} kg`, lb = kg / LB;
@@ -113,10 +113,14 @@ Object.assign(Engine, {
       document.getElementById('ccNote').textContent = (A.card.first ? 'First of its kind! ' : A.card.pb ? 'Personal best! ' : '') + `On the ${A.rig.name.toLowerCase()} · ${((this.time - A.hookedAt)).toFixed(0)} s fight`; }
     Game.emit('landed', f);
   },
-  cardStep(dt) { // hold the fish up in front of you while you decide
+  cardStep(dt) { // hold the fish up in the middle of the view while you decide; A/D (or ←/→) spin it, W/S (↑/↓) tilt it
     const A = this.ang, f = A.fish, P = this.P; if (!f) { A.phase = 'ready'; return; }
-    const d = 0.32 + f.len * 0.75, cp = Math.cos(P.pitch * 0.5);
-    f.x = P.x + Math.cos(P.a) * d * cp; f.y = P.y + Math.sin(P.a) * d * cp; f.z = P.z + EYE - 0.12 - f.len * 0.12 + Math.sin(P.pitch * 0.5) * d; f.a = P.a + Math.PI / 2; f.pitch = 0;
+    const K = this.cardKeys || {}, tx = this.tanX || Math.tan(FOV / 2), ty = this.tanY || tx * 0.56;
+    const d = Math.max(0.3, f.len / (0.9 * tx), f.len / (1.3 * ty)), cp = Math.cos(P.pitch);   // far enough that it fits, whichever way it's turned
+    A.cardYaw = (A.cardYaw || 0) + ((K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0)) * dt * 2.4;
+    A.cardTilt = clamp((A.cardTilt || 0) + ((K.KeyW || K.ArrowUp ? 1 : 0) - (K.KeyS || K.ArrowDown ? 1 : 0)) * dt * 1.8, -1.4, 1.4);
+    f.x = P.x + Math.cos(P.a) * cp * d; f.y = P.y + Math.sin(P.a) * cp * d; f.z = P.z + EYE + Math.sin(P.pitch) * d;   // dead centre, on the line of sight
+    f.a = P.a + Math.PI / 2 + A.cardYaw; f.pitch = A.cardTilt;
     f.ph = (f.ph + dt * (2 + 3 * Math.max(0, Math.sin(this.time * 1.7)))) % 6.2832; f.open = 0.25 + 0.2 * Math.sin(this.time * 3);
   },
   catchKey() { return 'embercrown-catches'; },

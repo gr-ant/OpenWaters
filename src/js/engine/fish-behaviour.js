@@ -4,7 +4,7 @@ Object.assign(Engine, {
   pickZone(w) { const t = (w.surface || 0) + (w.mid || 0) + (w.bottom || 0); let r = Math.random() * (t || 1); if ((r -= w.surface || 0) < 0) return 'surface'; if ((r -= w.mid || 0) < 0) return 'mid'; return 'bottom'; },
   zoneZ(f, zone, wl, g, kind) { // a depth for this zone; in stratified water the fish looks for its preferred temperature
     g = fishFloor(f.def, wl, g);
-    const lo = g + Math.max(0.01, -f.def._zmin * f.len) + 0.01, hi = Math.max(lo, wl - 0.12), dep = wl - g;
+    const lo = g + (f.def._jelly && !f.def._benthic ? f.len * 0.2 : Math.max(0.01, -f.def._zmin * f.len)) + 0.01, hi = Math.max(lo, wl - 0.12), dep = wl - g;
     if (f.def._benthic) return lo;
     let z = zone === 'surface' ? hi - 0.1 : zone === 'bottom' ? lo + 0.05 : g + dep * (0.3 + 0.4 * Math.random());
     if (((dep > 3 && (kind === LAKE || kind === OCEAN)) || (dep > 1.2 && kind === POND)) && zone !== 'surface') {   // the layer with the right temperature and enough oxygen
@@ -176,11 +176,11 @@ Object.assign(Engine, {
     if (!ok) { f.a += (Math.random() < 0.5 ? 1 : -1) * 1.2; f.spd *= 0.3; if (f.state !== 'school') f.tNext = Math.min(f.tNext, 0.3); }
     else { f.x = nx; f.y = ny; f.wl = SW; f.ground = SW - dep;
       if (B.haul_out > 0) { const ic = ENV.iced(SK, dep, nx, ny); f.land = dep < f.len * 0.3 || ic; if (ic) f.ground = SW; } }   // on an ice floe the 'ground' is the ice
-    const lo = f.ground + Math.max(0.01, -f.def._zmin * f.len) + 0.01, hi = Math.max(lo, f.wl - (f.state === 'breathe' ? f.len * 0.035 : 0.08));   // a breathing whale's back breaks the surface
+    const lo = f.ground + (D._jelly && !D._benthic ? f.len * 0.2 : Math.max(0.01, -f.def._zmin * f.len)) + 0.01, hi = Math.max(lo, f.wl - (f.state === 'breathe' ? f.len * 0.035 : 0.08));   // a breathing whale's back breaks the surface
     const vz = Math.min(0.6, Math.max(0.02, B.burst_bl_s * f.len * 0.5)) * dt, z0 = f.z;   // a clam doesn't bob up and down like a trout
     f.z = D._benthic ? lo : clamp(f.z + clamp(clamp(tz, lo, hi) - f.z, -vz, vz), lo, hi);
     // pitch: nose up when climbing, down when diving (not for things lying on the bottom or ashore)
-    const ptg = D._benthic || f.land || D.body.lie ? 0 : clamp(Math.atan2((f.z - z0) / Math.max(dt, 1e-3), Math.max(0.15, v)), -0.6, 0.6);
+    const ptg = D._benthic || D._jelly || f.land || D.body.lie ? 0 : clamp(Math.atan2((f.z - z0) / Math.max(dt, 1e-3), Math.max(0.15, v)), -0.6, 0.6);
     f.pitch = (f.pitch || 0) + (ptg - (f.pitch || 0)) * Math.min(1, dt * 3);
     const beat = 1.6 + 2.2 * Math.min(6, f.state === 'hold' ? f.cur / f.len * 0.6 + 0.4 : f.spd);   // tail beats faster when working
     f.ph = (f.ph + dt * beat * 3.1416) % 6.2832;

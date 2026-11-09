@@ -12,7 +12,7 @@ Object.assign(Engine, {
   setupHud() {
     const $ = id => document.getElementById(id);
     this.hud = { root: $('hud'), map: $('hMap'), memo: {} };
-    for (const id of ['hLocName', 'hLocSub', 'hTime', 'hSky', 'hTemp', 'hWindArrow', 'hWindV', 'hMapName', 'hScale', 'hMsg', 'hStatus', 'hStIcon', 'hStTitle', 'hStSub', 'hStBar', 'hStKey', 'hStAct', 'hHelp', 'hDebug', 'hKeys', 'hSeedInfo']) this.hud[id] = $(id);
+    for (const id of ['hLocName', 'hLocSub', 'hTime', 'hSky', 'hTemp', 'hWindArrow', 'hWindV', 'hMapName', 'hScale', 'hMsg', 'hStatus', 'hDepth', 'hDepthLine', 'hDepthMark', 'hDepthV', 'hDepthB', 'hStIcon', 'hStTitle', 'hStSub', 'hStBar', 'hStKey', 'hStAct', 'hHelp', 'hDebug', 'hKeys', 'hSeedInfo']) this.hud[id] = $(id);
     for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = uiIcon(el.dataset.icon);
     for (const b of document.querySelectorAll('#hDock [data-dock]')) b.onclick = () => this.ang && this.ang.phase === 'card' ? null : ({ tackle: () => this.toggleTackle(), journal: () => this.openJournal(), boats: () => this.openSpawn('boats'), rod: () => this.toggleRod(), map: () => this.toggleBigMap(), torch: () => this.toggleTorch() })[b.dataset.dock]();
     document.querySelector('[data-help-close]').onclick = () => this.toggleHelp(false);
@@ -85,6 +85,12 @@ Object.assign(Engine, {
     // messages from say()
     set('hMsg', this.msgT > 0 ? this.msg : ''); const op = this.msgT > 0 ? Math.min(1, this.msgT / 0.5).toFixed(2) : '0';
     if (memo.mop !== op) { memo.mop = op; H.hMsg.style.opacity = op; }
+    // the depth gauge: where the hook or lure hangs between the surface and the bottom, while it's in the water
+    { const A = this.ang, L = A && A.out && A.lure, on = !!(L && ['water', 'bite', 'fight'].includes(A.phase) && !L.land && L.kd >= 0 && L.wl - L.ground > 0.05);
+      if (H.hDepth.hidden === on) H.hDepth.hidden = !on;
+      if (on) { const dep = L.wl - L.ground, d = clamp(L.wl - L.z, 0, dep), k = (d / dep * 100).toFixed(1) + '%';
+        if (memo.dgk !== k) { memo.dgk = k; H.hDepthMark.style.top = k; H.hDepthLine.style.height = k; }
+        set('hDepthV', `${d.toFixed(1)} m`); set('hDepthB', `${dep.toFixed(1)} m`); } }
     // fishing status
     const st = this.fishingStatus();
     H.hStatus.hidden = !st;

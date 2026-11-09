@@ -1,7 +1,7 @@
 'use strict';
 // Engine: the spawn picker panel (B boats, 1 animals).
 // the kinds of wildlife (chips under the Wildlife tab)
-const WILD_KINDS = [['all', 'All'], ['shell', 'Shellfish'], ['mammal', 'Mammals'], ['herp', 'Reptiles & amphibians'], ['bird', 'Birds']];
+const WILD_KINDS = [['all', 'All'], ['shell', 'Shellfish'], ['jelly', 'Jellies'], ['mammal', 'Mammals'], ['herp', 'Reptiles & amphibians'], ['bird', 'Birds']];
 Object.assign(Engine, {
   // ---- spawn picker (K, or the Spawn button) ----
   // B: boats; 1 (a secret): fish and wildlife. Both open on the water you're nearest.
@@ -36,7 +36,7 @@ Object.assign(Engine, {
     const bio = this.spawnBiome, inBiome = C => bio === 'all' || !C || C.includes(bio);
     const match = (W, txt) => (sub === 'all' || W[sub] > 0) && (!q || (txt + ' ' + Object.keys(W).filter(w => W[w] > 0).join(' ')).toLowerCase().includes(q));
     const byName = (a, b) => a.name.localeCompare(b.name);
-    const kindOf = D => D._herp ? 'herp' : D._air ? 'mammal' : D._shell ? 'shell' : 'fish', kind = t === 'fish' ? 'fish' : this.spawnKind, want = k => kind === 'all' ? k !== 'fish' : k === kind;
+    const kindOf = D => D._jelly ? 'jelly' : D._herp ? 'herp' : D._air ? 'mammal' : D._shell ? 'shell' : 'fish', kind = t === 'fish' ? 'fish' : this.spawnKind, want = k => kind === 'all' ? k !== 'fish' : k === kind;
     const birds = want('bird') ? Object.values(Birds.species).filter(B => inBiome(B.climates) && match(B.habitat.any ? { sea: 1, lake: 1, pond: 1, river: 1, creek: 1 } : B.habitat, B.name)) : [];
     return FishDB.list.filter(D => want(kindOf(D)) && inBiome(D.habitat.climates) && match(D.habitat.waters, D.name + ' ' + D.scientific)).concat(birds).sort(byName);
   },

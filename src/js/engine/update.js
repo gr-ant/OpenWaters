@@ -96,6 +96,12 @@ Object.assign(Engine, {
     const moving = !this.boat && Math.abs(f) + Math.abs(s) > 0.1;
     if (swim && !this.swim && P.vz < -3) { this.splash(P.x, P.y, wl0, 45); this.addRipple(P.x, P.y, 1.2); }
     this.swim = swim; this.under = under; this.wade = wade; this.moving = moving;
+    if ((swim || wade > 0) && (this.stingT = (this.stingT || 0) - dt) < 0) { this.stingT = 0.25;   // brushing a jelly's tentacles stings
+      for (const f of this.fish) { const D = f.def, Pp = D.body.parts; if (!D._jelly || f.dead || Pp.sting < 0.05) continue;
+        const r = f.len * (Pp.shape === 'float' ? 0.5 : 0.45) + 0.35, top = f.z + (D._benthic ? 0.5 : Pp.bell) * f.len, bot = D._benthic ? f.z - 0.2 : f.z - Pp.tentacle_len * f.len * 0.8;
+        if (Math.abs(f.x - P.x) > r + 0.5 || Math.abs(f.y - P.y) > r + 0.5 || Math.hypot(f.x - P.x, f.y - P.y) > r || P.z > top || P.z + 1.6 < bot) continue;
+        this.stingT = 4; this.buzz(Pp.sting > 0.7 ? [80, 40, 120] : [40]);
+        this.say(Pp.sting > 0.7 ? `Stung by a ${D.name.toLowerCase()}! That really burns` : Pp.sting > 0.35 ? `Stung by a ${D.name.toLowerCase()}` : `A ${D.name.toLowerCase()} brushes past: a faint tingle`, 3); break; } }
     this.dtH = dt / CONFIG.dayLengthSeconds * 24 * (this.keys.KeyT ? CONFIG.fastTimeMultiplier : 1); // game hours this frame
     if (!CONFIG.weather && ENV.kind !== 'fair') ENV.setWeather('fair');
     ENV.update(this.dtH, dt);

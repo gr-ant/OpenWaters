@@ -8,7 +8,8 @@ function caveRoofAt(x, y) {
     if (!c.roof) continue; const dx = x - c.cx, dy = y - c.cy, d = Math.hypot(dx, dy) + 1e-6; if (d > c.R + 1.5) continue;
     const ro = c.ro * (1 + 0.22 * nM(dx / d * 1.3 + c.ph + 5, dy / d * 1.3)); if (d < ro) return null;   // the opening
     if (caveGap(c, dx, dy)) return null;   // the roof has fallen in over the ramp
-    const top = landH(x, y) + 0.04, lip = top - 1.2, u = clamp((d - ro) / (c.R - ro), 0, 1);
+    const a = dx * c.rux + dy * c.ruy, gb = Math.abs(dx * c.ruy - dy * c.rux) - (c.rw + 2), gap = a > 0 ? gb : Math.hypot(a, Math.max(0, gb));   // distance to the gap's edge
+    const top = landH(x, y) + 0.04, lip = top - 1.2, u = clamp(Math.min(d - ro, gap) / (c.R - ro), 0, 1);   // the ceiling arches up to a thin lip at the opening and along the gap
     return { c, top, under: lip + (c.lev + 1 - lip) * u ** 1.7 };
   }
   return null;

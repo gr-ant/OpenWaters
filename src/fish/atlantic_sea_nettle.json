@@ -1,0 +1,118 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "atlantic_sea_nettle",
+  "name": "Atlantic sea nettle",
+  "scientific": "Chrysaora quinquecirrha",
+  "description": "A milky bell striped in rust red, with long fiery tentacles and frilled mouth arms. Summer swarms in warm bays sting swimmers.",
+  "size": {
+    "length_cm": {
+      "min": 8,
+      "typical": 18,
+      "max": 30,
+      "spread": 0.3
+    },
+    "weight": {
+      "a": 0.02,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "jelly",
+    "flex": 1,
+    "parts": {
+      "shape": "dome",
+      "bell": 0.42,
+      "tentacles": 24,
+      "tentacle_len": 1.8,
+      "arms": 1.3,
+      "frill": 0.8,
+      "stripes": 16,
+      "clear": 0.45,
+      "sting": 0.5
+    },
+    "colors": {
+      "back": "#f0e6dc",
+      "flank": "#e8d0c0",
+      "belly": "#f4ece4",
+      "fins": "#c0503a",
+      "eye": "#a8442c",
+      "mouth": "#e8c8b8"
+    }
+  },
+  "habitat": {
+    "climates": [
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 0.5,
+      "preferred": 3,
+      "max": 15
+    },
+    "temperature_c": {
+      "min": 14,
+      "optimal": 24,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.2
+    },
+    "turbidity_max": 0.8,
+    "oxygen_min_mgL": 3,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.3,
+    "school": {
+      "min": 2,
+      "max": 8
+    },
+    "home_range_m": 60
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.15,
+    "burst_bl_s": 0.4,
+    "turn_rate": 0.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.3,
+      "mid": 0.6,
+      "bottom": 0.1
+    },
+    "wariness": 0,
+    "spook_m": 0,
+    "recover_s": 5,
+    "curiosity": 0,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 0.7,
+      "fish": 0.2,
+      "shrimp": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.3,
+      "mid": 0.6,
+      "bottom": 0.1
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0,
+    "stamina": 0,
+    "jumps": 0,
+    "runs": 0
+  }
+}

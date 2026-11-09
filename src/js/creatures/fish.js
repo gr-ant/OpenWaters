@@ -89,6 +89,7 @@ function validateFish(raw) {
     if (plan === 'ray' && !['front', 'under'].includes(d.body.parts.mouth)) errors.push('body.parts.mouth: front (mantas) or under (stingrays, skates)');
     if (plan === 'pinniped' && !['flippers', 'paddle', 'tail'].includes(d.body.parts.rear)) errors.push('body.parts.rear: flippers (seals, sea lions), paddle (manatees) or tail (otters)');
     if (plan === 'frog' && !['sit', 'swim'].includes(d.body.parts.pose)) errors.push('body.parts.pose: sit or swim');
+    if (plan === 'jelly' && !JELLY_SHAPES.includes(d.body.parts.shape)) errors.push(`body.parts.shape: ${JELLY_SHAPES.join(', ')}`);
     for (const [k, v] of Object.entries(d.body.parts)) if (typeof PI_.parts[k] === 'boolean' && typeof v !== 'boolean') errors.push(`body.parts.${k} must be true or false`);
   } else d.body.parts = {};
   num(d.size.weight.a, 'size.weight.a', (PI_ && PI_.amin) || 0.0005, (PI_ && PI_.amax) || (['bivalve', 'snail'].includes(plan) ? 0.6 : 0.1)); num(d.size.weight.b, 'size.weight.b', 2.5, 3.6);
