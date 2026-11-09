@@ -20,11 +20,11 @@ const CONTROL_ACTIONS = [   // [id, canonical code, group, label]
   ['map', 'KeyM', 'Map', 'Big map'], ['zoomIn', 'Equal', 'Map', 'Zoom in'], ['zoomOut', 'Minus', 'Map', 'Zoom out'],
   ['tackle', 'KeyI', 'Menus', 'Tackle box'], ['journal', 'KeyJ', 'Menus', 'Catch journal'], ['help', 'Slash', 'Menus', 'Controls card'],
   ['fastTime', 'KeyT', 'Time & weather', 'Fast time (hold)'], ['season', 'KeyY', 'Time & weather', 'Next season'], ['weather', 'KeyU', 'Time & weather', 'Next weather'],
-  ['spawn', 'Digit1', 'Extras (admin)', 'Spawn fish and wildlife'], ['radar', 'Digit2', 'Extras (admin)', 'Fish radar'], ['lureCam', 'Digit4', 'Extras (admin)', 'Live lure camera'],
+  ['spawn', 'Digit1', 'Extras (admin)', 'Spawn fish and wildlife'], ['radar', 'Digit2', 'Extras (admin)', 'Fish radar'],
 ].map(([id, canon, group, label]) => ({ id, canon, group, label }));
 const CONTROL_FIXED = new Set(['Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'NumpadEnter', 'Tab', 'KeyN', 'KeyP']);
 const GUPPY = Object.fromEntries(CONTROL_ACTIONS.map(a => [a.id, [a.canon]]));
-Object.assign(GUPPY, { run: ['ShiftLeft', 'ShiftRight'], lureCam: ['Digit4', 'Numpad4'], zoomIn: ['Equal', 'NumpadAdd'], zoomOut: ['Minus', 'NumpadSubtract'] });
+Object.assign(GUPPY, { run: ['ShiftLeft', 'ShiftRight'], zoomIn: ['Equal', 'NumpadAdd'], zoomOut: ['Minus', 'NumpadSubtract'] });
 const CONTROL_PRESETS = {
   guppy: { name: 'Guppy', binds: GUPPY },
   pike: { name: 'Pike', binds: { ...GUPPY, water: ['KeyZ'], bail: ['KeyG', 'Mouse3'], dragDown: ['BracketLeft', 'WheelDown'], dragUp: ['BracketRight', 'WheelUp'],

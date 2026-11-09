@@ -98,7 +98,7 @@ Object.assign(Engine, {
       [Controls.keys('map'), `map · arrows move · ${K('forward')}/${K('back')} zoom · Enter travels to the crosshair`],
       [Controls.keys('fastTime'), `hold for fast time · ${K('season')} season · ${K('weather')} weather`],
       ['Esc', 'pause · settings · change controls'],
-      [`${Controls.keys('spawn')} · ${Controls.keys('radar')} · ${Controls.keys('lureCam')}`, 'extras: spawn menu · fish radar · live lure camera'], [Controls.keys('help'), 'this card'],
+      [`${Controls.keys('spawn')} · ${Controls.keys('radar')}`, 'extras: spawn menu · fish radar'], [Controls.keys('help'), 'this card'],
     ];
     dl.innerHTML = rows.map(([k, v]) => `<dt>${k.replace(/</g, '&lt;')}</dt><dd>${v}</dd>`).join('');
   },

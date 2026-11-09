@@ -76,13 +76,12 @@ Object.assign(Engine, {
     if (open === !!this.pauseOpen) return;
     this.pauseOpen = open;
     this.resetMouseLook(); this.keys = {}; this.joy = this.tlook = this.tapStart = null;
-    this.mapPtrs.clear(); this.releaseLureControls(); this.keySettingsCancel();
+    this.mapPtrs.clear(); this.keySettingsCancel();
     const A = this.ang;
     if (A) { A.btnWas = false; A.reeling = false; if (A.phase === 'charge') { A.phase = 'ready'; A.charge = 0; } }
     if (open) {
       this.menu = null; this.showMap = false;
       this.toggleInventory(false); this.toggleSpawn(false); this.toggleTackle(false); this.toggleJournal(false); this.toggleHelp(false);
-      if (this.lureView) this.lureView.root.hidden = true;
       if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
       { const D = this.pauseDialog; try { D.showModal(); } catch (e) { D.setAttribute('open', ''); D.classList.add('fallback'); } }   // older mobile browsers: no modal dialogs, so open it plainly
       this.pauseShow('main');

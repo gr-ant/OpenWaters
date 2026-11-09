@@ -101,16 +101,14 @@ Object.assign(Engine, {
     return out.length && out.length < mesh.length ? new Float32Array(out) : mesh;
   },
   fishGpu(si, low = false) {
-    const gl = this.gl; let g = FishDB.gpu[si];
+    let g = FishDB.gpu[si];
     if (!g || g.stale) {
-      if (g) for (const old of [g, g.low]) if (old) { gl.deleteVertexArray(old.vao); gl.deleteBuffer(old.ib); gl.deleteBuffer(old.vb); }
-      const D = FishDB.list[si], ib = gl.createBuffer(), vb = this.vbo(D._mesh);
-      g = FishDB.gpu[si] = { vao: this.litVao(vb, VB, ib, 40), ib, vb, n: D._mesh.length / VS };
+      if (g) for (const old of [g, g.low]) if (old) this.deleteAnimalMesh(old);
+      g = FishDB.gpu[si] = this.animalMesh(FishDB.list[si]._mesh);
     }
     if (low) {
       if (!g.low) {
-        const mesh = this.fishLodMesh(FishDB.list[si]._mesh), ib = gl.createBuffer(), vb = this.vbo(mesh);
-        g.low = { vao: this.litVao(vb, VB, ib, 40), ib, vb, n: mesh.length / VS };
+        g.low = this.animalMesh(this.fishLodMesh(FishDB.list[si]._mesh));
       }
       return g.low;
     }

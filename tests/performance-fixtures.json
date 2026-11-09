@@ -1,0 +1,20 @@
+[
+  {
+    "climate": "temperate",
+    "digest": "4a92e53295ca4c576828c4cc1878481c542aa445b445c64c1c5a86e7f60e8cdf",
+    "cells": 525,
+    "animals": 2232
+  },
+  {
+    "climate": "tropical",
+    "digest": "907b4a378acdb27f0f2c1e05e93a684e164e7359e41cea927a17951a43ee1c64",
+    "cells": 525,
+    "animals": 1340
+  },
+  {
+    "climate": "arctic",
+    "digest": "069d507b20c858ffdf2e24a17167dea90aca0c02e1535d09781f0d472ac9cabd",
+    "cells": 525,
+    "animals": 1353
+  }
+]

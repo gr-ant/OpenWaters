@@ -21,8 +21,7 @@ Object.assign(Engine, {
     };
     const A = this._pAlp || (this._pAlp = mk()), B = this._pAdd || (this._pAdd = mk()); A.a.length = 0; B.a.length = 0;
     for (const q of this.parts) {
-      // The two water passes and the lure camera share the same classification
-      // and appearance for this simulation frame. Distant particles need no work.
+      // The two water passes share the same classification and appearance for this simulation frame. Distant particles need no work.
       const dx = q.x - E[0], dy = q.y - E[1], dz = q.z - E[2];
       if (dx * dx + dy * dy + dz * dz > Math.min(FAR, uw ? 80 : 250) ** 2) continue;
       if (q.renderTime !== T) {

@@ -312,30 +312,6 @@
     #hCond { top: 64px; }   /* under the place name, not beside it */
   }
 
-/* Quiet circular camera, with controls around the rim. */
-#lureView { position: fixed; z-index: 3; right: 20px; top: 45%; transform: translateY(-50%); width: 240px; height: 292px; color: #eee8d5; font: 12px var(--sans); pointer-events: none; }
-#lureView[hidden] { display: none; }
-#lureView canvas { position: absolute; left: 28px; top: 38px; width: 184px; height: 184px; border-radius: 50%; opacity: 1; border: 1px solid #e6dcb842; box-shadow: 0 0 24px #071b1733; mask-image: radial-gradient(circle, #000 65%, #000e 68%, transparent 72%); }
-#lureView .lure-caption { position: absolute; top: 6px; width: 100%; text-align: center; letter-spacing: .12em; text-shadow: 0 1px 4px #000; }
-#lureView .lure-caption small { display: block; margin-top: 5px; letter-spacing: .02em; color: #ddd6c0; }
-#lureView button { position: absolute; pointer-events: auto; touch-action: none; border: 1px solid #d7c99566; border-radius: 18px; min-width: 48px; min-height: 44px; padding: 7px 10px; color: #f0e8cf; background: #14251ed4; font: 600 13px var(--sans); cursor: pointer; }
-#lureView button small { display: block; font: 10px var(--sans); color: #c5c8b6; margin-top: 3px; }
-#lureView button:hover, #lureView button:focus-visible, #lureView button.held { background: #405344ef; border-color: #eed697; outline: 2px solid #eed69766; }
-#lureView .lure-drag-less { left: 0; top: 111px; }
-#lureView .lure-drag-more { right: 0; top: 111px; }
-#lureView .lure-reel { left: 34px; top: 216px; min-width: 80px; }
-#lureView .lure-fast { right: 34px; top: 216px; min-width: 80px; }
-#lureView .lure-drag-value { position: absolute; top: 274px; width: 100%; text-align: center; color: #dbd9c7; text-shadow: 0 1px 3px #000; }
-#lureView.bite .lure-reel { border-color: #f1cf74; box-shadow: 0 0 12px #f1cf7455; }
-@media (max-width: 700px), (max-height: 600px) {
-  #lureView { right: 6px; top: 44%; width: 194px; height: 248px; }
-  #lureView canvas { width: 144px; height: 144px; left: 25px; top: 34px; }
-  #lureView .lure-drag-less, #lureView .lure-drag-more { top: 86px; }
-  #lureView .lure-reel { left: 12px; top: 176px; }
-  #lureView .lure-fast { right: 12px; top: 176px; }
-  #lureView .lure-drag-value { top: 230px; }
-}
-
 /* Pause/settings use the browser's modal focus handling above every game panel. */
 #pauseMenu { width: min(380px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; overflow: hidden; box-sizing: border-box; }
 #pauseMenu[data-page="settings"] { width: min(480px, calc(100vw - 32px)); }
@@ -563,7 +539,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
   <div id="hHelp" class="panel" hidden><header><h2>Controls</h2><button class="round-x" data-icon="ui.close" data-help-close></button></header>
     <dl><dt>WASD</dt><dd>move · Shift run · Space jump · C dive</dd><dt>Q</dt><dd>rod out / away</dd><dt>R / mouse</dt><dd>cast (hold, let go) · reel (Shift: faster) · strike</dd><dt>[ ]</dt><dd>drag</dd><dt>G</dt><dd>open / close the bail: line pays out so the lure sinks straight down (reeling closes it)</dd>
     <dt>E / X</dt><dd>keep / release a catch</dd><dt>I · J · B</dt><dd>tackle box · journal · boats</dd><dt>↑ ↓ · ← → · Tab</dt><dd>in a menu: move · category · tab · Enter chooses</dd><dt>F</dt><dd>use · get in a boat · V helm</dd><dt>3</dt><dd>walk to the nearest water (again for the next kind)</dd>
-    <dt>2</dt><dd>fish radar</dd><dt>4</dt><dd>toggle live lure camera</dd><dt>M</dt><dd>map · arrows move · W/S zoom · Enter travels to the crosshair</dd><dt>T</dt><dd>hold for fast time · Y season · U weather</dd><dt>Esc</dt><dd>pause · mouse sensitivity</dd><dt>? /</dt><dd>this card</dd></dl><small id="hDebug"></small></div>
+    <dt>2</dt><dd>fish radar</dd><dt>M</dt><dd>map · arrows move · W/S zoom · Enter travels to the crosshair</dd><dt>T</dt><dd>hold for fast time · Y season · U weather</dd><dt>Esc</dt><dd>pause · mouse sensitivity</dd><dt>? /</dt><dd>this card</dd></dl><small id="hDebug"></small></div>
   <button id="hSettings" title="Pause and settings (Esc)" aria-label="Pause and settings">Esc</button>
   <button id="hHint" title="Controls (?)">?</button>
 </div>
@@ -727,11 +703,11 @@ const CONTROL_ACTIONS = [   // [id, canonical code, group, label]
   ['map', 'KeyM', 'Map', 'Big map'], ['zoomIn', 'Equal', 'Map', 'Zoom in'], ['zoomOut', 'Minus', 'Map', 'Zoom out'],
   ['tackle', 'KeyI', 'Menus', 'Tackle box'], ['journal', 'KeyJ', 'Menus', 'Catch journal'], ['help', 'Slash', 'Menus', 'Controls card'],
   ['fastTime', 'KeyT', 'Time & weather', 'Fast time (hold)'], ['season', 'KeyY', 'Time & weather', 'Next season'], ['weather', 'KeyU', 'Time & weather', 'Next weather'],
-  ['spawn', 'Digit1', 'Extras (admin)', 'Spawn fish and wildlife'], ['radar', 'Digit2', 'Extras (admin)', 'Fish radar'], ['lureCam', 'Digit4', 'Extras (admin)', 'Live lure camera'],
+  ['spawn', 'Digit1', 'Extras (admin)', 'Spawn fish and wildlife'], ['radar', 'Digit2', 'Extras (admin)', 'Fish radar'],
 ].map(([id, canon, group, label]) => ({ id, canon, group, label }));
 const CONTROL_FIXED = new Set(['Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'NumpadEnter', 'Tab', 'KeyN', 'KeyP']);
 const GUPPY = Object.fromEntries(CONTROL_ACTIONS.map(a => [a.id, [a.canon]]));
-Object.assign(GUPPY, { run: ['ShiftLeft', 'ShiftRight'], lureCam: ['Digit4', 'Numpad4'], zoomIn: ['Equal', 'NumpadAdd'], zoomOut: ['Minus', 'NumpadSubtract'] });
+Object.assign(GUPPY, { run: ['ShiftLeft', 'ShiftRight'], zoomIn: ['Equal', 'NumpadAdd'], zoomOut: ['Minus', 'NumpadSubtract'] });
 const CONTROL_PRESETS = {
   guppy: { name: 'Guppy', binds: GUPPY },
   pike: { name: 'Pike', binds: { ...GUPPY, water: ['KeyZ'], bail: ['KeyG', 'Mouse3'], dragDown: ['BracketLeft', 'WheelDown'], dragUp: ['BracketRight', 'WheelUp'],
@@ -1436,35 +1412,63 @@ function evictFar(cx, cy) { // drop cached lattices far from (cx, cy) instead of
   lastKey = -1;
 }
 function fillPoint(c, k, x, y) { c[k] = world(x, y); c[k + 2] = WLEV; c[k + 3] = WK; c[k + 4] = WRAP; c[k + 1] = Math.min(1, moist(x, y) + (ISL && inGrid(x, y) ? 0.35 * bil(ISL.wet, x, y) : 0)); }   // wetter by the water
-function* latticeGen(cx, cy) { // same as getChunk's fill, but yields every few rows
+// Sampling an unseen area needs four lattice points, not a synchronous 4,225-point build.
+// Only complete lattices enter cache: mesh normals and ground generation can keep reading it directly.
+const partialLattices = new Map();
+function partialLattice(cx, cy, key) {
+  let p = partialLattices.get(key);
+  if (!p) {
+    if (partialLattices.size >= 64) partialLattices.delete(partialLattices.keys().next().value);
+    p = { data: new Float32Array((CHK + 1) * (CHK + 1) * LS), ready: new Uint8Array((CHK + 1) * (CHK + 1)) };
+    partialLattices.set(key, p);
+  }
+  return p;
+}
+function latticePoint(p, i, cx, cy) {
+  if (p.ready[i]) return;
+  fillPoint(p.data, i * LS, (cx * CHK + i % (CHK + 1)) * SP, (cy * CHK + Math.floor(i / (CHK + 1))) * SP);
+  p.ready[i] = 1;
+}
+function finishLattice(cx, cy, key, p) {
+  if (cache.size > 900) evictFar(cx, cy);
+  cache.set(key, p.data); partialLattices.delete(key);
+}
+function* latticeGen(cx, cy) {
   const key = (cx + 1e6) * 2e6 + (cy + 1e6);
   if (cache.has(key)) return;
-  const c = new Float32Array((CHK + 1) * (CHK + 1) * LS), x0 = cx * CHK * SP, y0 = cy * CHK * SP;
+  const p = partialLattice(cx, cy, key);
   for (let j = 0; j <= CHK; j++) {
-    for (let i = 0; i <= CHK; i++) fillPoint(c, (j * (CHK + 1) + i) * LS, x0 + i * SP, y0 + j * SP);
-    if (j % 4 === 3) { yield; if (cache.has(key)) return; }   // someone else (getChunk) finished it meanwhile
+    for (let i = 0; i <= CHK; i++) latticePoint(p, j * (CHK + 1) + i, cx, cy);
+    if (j % 4 === 3) { yield; if (cache.has(key)) return; }
   }
-  if (cache.size > 900) evictFar(cx, cy);
-  if (!cache.has(key)) cache.set(key, c);
+  finishLattice(cx, cy, key, p);
 }
 function getChunk(cx, cy) {
   const key = (cx + 1e6) * 2e6 + (cy + 1e6);
   if (key === lastKey) return lastChunk;
   let c = cache.get(key);
   if (!c) {
-    if (cache.size > 900) evictFar(cx, cy);
-    c = new Float32Array((CHK + 1) * (CHK + 1) * LS);
-    const x0 = cx * CHK * SP, y0 = cy * CHK * SP;
-    for (let j = 0; j <= CHK; j++) for (let i = 0; i <= CHK; i++) fillPoint(c, (j * (CHK + 1) + i) * LS, x0 + i * SP, y0 + j * SP);
-    cache.set(key, c);
+    const p = partialLattice(cx, cy, key);
+    for (let i = 0; i < p.ready.length; i++) latticePoint(p, i, cx, cy);
+    finishLattice(cx, cy, key, p); c = p.data;
   }
   lastKey = key; lastChunk = c; return c;
+}
+function sampleChunk(cx, cy, i) {
+  const key = (cx + 1e6) * 2e6 + (cy + 1e6);
+  if (key === lastKey) return lastChunk;
+  const c = cache.get(key);
+  if (c) { lastKey = key; lastChunk = c; return c; }
+  const p = partialLattice(cx, cy, key);
+  latticePoint(p, i, cx, cy); latticePoint(p, i + 1, cx, cy);
+  latticePoint(p, i + CHK + 1, cx, cy); latticePoint(p, i + CHK + 2, cx, cy);
+  return p.data;
 }
 let SE = 0, SM = 0, SW = WLW, SK = 0, SR = 0; // sample() outputs (no allocation): elevation, moisture, water level, water kind, rapids
 function sample(x, y) {
   const gx = x / SP, gy = y / SP, ix = Math.floor(gx), iy = Math.floor(gy), fx = gx - ix, fy = gy - iy;
   const cx = Math.floor(ix / CHK), cy = Math.floor(iy / CHK), lx = ix - cx * CHK, ly = iy - cy * CHK;
-  const c = getChunk(cx, cy), k = (ly * (CHK + 1) + lx) * LS, k2 = k + (CHK + 1) * LS;
+  const i = ly * (CHK + 1) + lx, c = sampleChunk(cx, cy, i), k = i * LS, k2 = k + (CHK + 1) * LS;
   let a = c[k] + (c[k + LS] - c[k]) * fx, b = c[k2] + (c[k2 + LS] - c[k2]) * fx; SE = a + (b - a) * fy;
   a = c[k + 1] + (c[k + LS + 1] - c[k + 1]) * fx; b = c[k2 + 1] + (c[k2 + LS + 1] - c[k2 + 1]) * fx; SM = a + (b - a) * fy;
   a = c[k + 2] + (c[k + LS + 2] - c[k + 2]) * fx; b = c[k2 + 2] + (c[k2 + LS + 2] - c[k2 + 2]) * fx; SW = a + (b - a) * fy;
@@ -1506,6 +1510,7 @@ layout(location=0) in vec3 p; layout(location=1) in vec3 n; layout(location=2) i
 layout(location=3) in vec4 io; layout(location=4) in vec2 ir;   // per-instance: xyz+scale, rotation+tint
 layout(location=5) in vec2 uv; layout(location=6) in float mat;
 layout(location=7) in float twl; layout(location=8) in float tmk; layout(location=9) in vec2 iwm; layout(location=10) in float iph; // water level + murk: terrain / per instance; fish swim phase
+layout(location=12) in float irl; // bird roll; disabled (zero) for other meshes
 layout(location=11) in float ipt; // fish pitch (nose up +)
 uniform mat4 vp; uniform float inst, sway, time, wig, fsh, pscale, dry, swm, roll; uniform vec3 jawP; // fish jaw hinge (x, z) and widest gape angle
 uniform vec4 seasA; // leaves on (0..1), autumn colour, fresh spring green, grass dormancy
@@ -1546,7 +1551,8 @@ void main(){
         pp.z += sin(ph * 1.6 + p.x * 42.) * .012 * (mat - 30.);
       }
       ${SWIM_GLSL}   // the body wave: style per species (SWIM_MODES)
-      if (roll != 0.) { float cr = cos(roll), sr = sin(roll); pp.yz = vec2(pp.y * cr - pp.z * sr, pp.y * sr + pp.z * cr); nn.yz = vec2(nn.y * cr - nn.z * sr, nn.y * sr + nn.z * cr); }   // boats heel
+      float bodyRoll = roll + irl;
+      if (bodyRoll != 0.) { float cr = cos(bodyRoll), sr = sin(bodyRoll); pp.yz = vec2(pp.y * cr - pp.z * sr, pp.y * sr + pp.z * cr); nn.yz = vec2(nn.y * cr - nn.z * sr, nn.y * sr + nn.z * cr); }   // boats heel
       if (ipt != 0.) { float cp = cos(ipt), sp = sin(ipt); pp.xz = vec2(pp.x * cp - pp.z * sp, pp.x * sp + pp.z * cp); nn.xz = vec2(nn.x * cp - nn.z * sp, nn.x * sp + nn.z * cp); }
     }
     q = vec3(k*pp.x - s*pp.y, s*pp.x + k*pp.y, pp.z) * io.w * pscale + io.xyz;
@@ -1626,7 +1632,6 @@ vec3 fireLight(vec3 N){ // up to 8 flickering warm lights (xyz, intensity)
   for (int i = 0; i < 8; i++) { if (i >= nfl) break; vec3 L = fl[i].xyz - wp; float d = length(L) + .001; a += fl[i].w * max(dot(N, L/d)*.7 + .3, 0.) / (1. + d*d*.6); }
   return min(a, 1.6) * vec3(1., .6, .3);
 }
-uniform float lureCam;
 void main(){
   vec3 N = normalize(wn); float spec = 0., em = 0.;
   vec3 bc = surface(col, N, int(mt + .5), spec, em);
@@ -1634,7 +1639,8 @@ void main(){
     float above = (wv.z < .5 && wv.x == 0.) || wv.x - wp.z < -.04 ? 1. : 0., id = mt + .5;
     if (wv.z > .5 && above > 0.) { float gr = clamp((bc.g - max(bc.r, bc.b)) * 7., 0., 1.); bc = mix(bc, vec3(dot(bc, vec3(.5, .4, .1))) * vec3(1.18, 1., .62), gr * seasA.w * .8); }
     float up = wv.z > .5 ? smoothstep(.5, .85, N.z) : (id > 5.5 && id < 7.5 ? smoothstep(.1, .55, N.z) : 0.);
-    float sn = seasB.x * up * smoothstep(.15, .45, vn(wp.xy * .4) * .55 + vn(wp.xy * 2.1) * .25 + seasB.x * .55) * above;
+    float sn = 0.;
+    if (seasB.x > 0.) sn = seasB.x * up * smoothstep(.15, .45, vn(wp.xy * .4) * .55 + vn(wp.xy * 2.1) * .25 + seasB.x * .55) * above;
     bc = mix(bc * (1. - .22 * seasB.y * above), vec3(.9, .93, .97), sn);
   }
   float d = max(dot(N, sun), 0.);
@@ -1651,10 +1657,6 @@ void main(){
     c = c * mix(vec3(1.), tint, clamp(.2 + wd * .2, 0., .9)) * exp(-wd * (.03 + .15 * mk));
     c += lcol * cs * (bc * .9 + .06) * (.35 + .65 * max(N.z, 0.)) * .9;
   } else if (wv.z > .5 && wd > -.45) c *= mix(.62, 1., -wd / .45); // wet band just above the waterline
-  // Soft close-range camera illumination keeps bait and approaching mouths
-  // readable in deep/murky water, only in the lure inset.
-  float fill = lureCam * (1. - smoothstep(.3, 3., length(wp - cam)));
-  c = mix(c, max(c, bc * .9), fill);
   o = vec4(fog(mix(c, bc, em * emk), wp), 1.);
 }`;
 </script>
@@ -1713,12 +1715,16 @@ void main(){
   WV(.35, .29, .07) WV(1.2, .47, .05) WV(-.55, .71, .04) WV(.95, 1.13, .03) WV(-.2, 1.9, .02)
   g += (.03 + .06 * sw) * aa(4.3) * vec2(sin(q.x*4.1 + q.y*1.3 + t*4.), cos(q.y*3.7 - q.x*1.1 + t*3.6));
   // irregular wind ripples: two noise layers drifting different ways, so the pattern keeps changing
-  g += (grd(q * .9 + t * vec2(.35, .22)) * aa(5.7) + grd(q * 1.7 - t * vec2(.18, .41) + 11.) * .6 * aa(10.7)) * (.05 + .16 * wav);
+  float windFade0 = aa(5.7), windFade1 = aa(10.7);
+  vec2 wind0 = vec2(0.), wind1 = vec2(0.);
+  if (windFade0 > 0.) wind0 = grd(q * .9 + t * vec2(.35, .22)) * windFade0;
+  if (windFade1 > 0.) wind1 = grd(q * 1.7 - t * vec2(.18, .41) + 11.) * .6 * windFade1;
+  g += (wind0 + wind1) * (.05 + .16 * wav);
   // flowing water: ripple noise carried along the current in two staggered phases, cross-faded so it never stretches
   float sp = length(flw), ph0 = fract(t * .3), ph1 = fract(t * .3 + .5), bl = abs(1. - 2. * ph0);
   vec2 a0 = q - flw * ph0 * 3.33, a1 = q - flw * ph1 * 3.33 + vec2(3.7, 1.9);
   float moving = smoothstep(.02, .3, sp);
-  if (moving > 0.) g += mix(grd(a0 * 1.9), grd(a1 * 1.9), bl) * (.07 + .12 * min(sp, 2.)) * moving * aa(12.);   // one scale of ripples is plenty
+  if (moving > 0. && aa(12.) > 0.) g += mix(grd(a0 * 1.9), grd(a1 * 1.9), bl) * (.07 + .12 * min(sp, 2.)) * moving * aa(12.);   // one scale of ripples is plenty
   if (wx.x > .01) for (int k = 0; k < 2; k++) { // raindrops: rings popping up all over
     vec2 cq = q * 1.8 + float(k) * vec2(.37, .71), id = floor(cq), fq = fract(cq) - .5;
     float h = h21(id + float(k) * 7.3); if (h > wx.x) continue;
@@ -1842,6 +1848,32 @@ void main(){
 // Surface materials (drawn procedurally in the fragment shader)
 const MT = { GEN: 0, PLASTER: 1, WOOD: 2, TILE: 3, STONE: 4, ROCK: 5, LEAF: 6, BARK: 7, CLOTH: 8, GLOW: 9, GLASS: 10, LAMP: 11, METAL: 12, JAW: 13 }; // JAW: fish lower jaw (hinged in the vertex shader)
 const VS = 10, VB = 40; // floats / bytes per lit vertex: pos3 nrm3 col3 material1
+// Share only bit-identical vertex records. Triangle order, flat normals, material
+// boundaries and animation inputs survive unchanged. Hash collisions are compared in full.
+function indexMesh(mesh) {
+  const words = new Uint32Array(mesh.buffer, mesh.byteOffset, mesh.length), count = mesh.length / VS;
+  const heads = new Map(), next = new Int32Array(count), offsets = new Uint32Array(count), ids = new Uint32Array(count);
+  let unique = 0;
+  for (let i = 0; i < count; i++) {
+    const o = i * VS; let h = 2166136261;
+    for (let q = 0; q < VS; q++) h = Math.imul(h ^ words[o + q], 16777619);
+    const head = heads.get(h) ?? -1; let id = head;
+    while (id >= 0) {
+      const at = offsets[id]; let q = 0;
+      while (q < VS && words[at + q] === words[o + q]) q++;
+      if (q === VS) break;
+      id = next[id];
+    }
+    if (id < 0) { id = unique++; offsets[id] = o; next[id] = head; heads.set(h, id); }
+    ids[i] = id;
+  }
+  // WebGL2 reserves the largest index for primitive restart (65535 for Uint16).
+  const Index = unique < 65536 ? Uint16Array : Uint32Array;
+  if (unique * VB + count * Index.BYTES_PER_ELEMENT >= mesh.byteLength * 0.95) return { vertices: mesh, indices: null };
+  const packed = new Uint32Array(unique * VS);
+  for (let i = 0; i < unique; i++) packed.set(words.subarray(offsets[i], offsets[i] + VS), i * VS);
+  return { vertices: new Float32Array(packed.buffer), indices: new Index(ids) };
+}
 function meshBuilder(smooth = false) { // smooth: round, smooth-shaded blobs (fish and shellfish); trees keep the faceted look
   const v = [], B = { v, mat: 0 };
   const tri = (a, b, c, col, ctr) => {
@@ -3419,7 +3451,25 @@ const oxyFit = (D, mg) => D._air || D.habitat.oxygen_min_mgL <= 0 ? 1 : sstep(D.
 // The same hashed grid the chunk builder plants on: plantAt(gx, gy) -> 0 none, 1 reeds, 2 lily, 3 flowering lily, 4 weed, 5 kelp,
 // 6 rock, 7 fallen log, 8 drowned stump, 9 coral, 10 sea anemone, 11 iceberg (details in PL)
 const PL = { x: 0, y: 0, h: 0, wl: 0, kd: 0, dep: 0, r1: 0, rap: 0 };
+// Fixed-size direct-mapped cache: no growth while travelling. Float64 retains the exact
+// placement and interpolated sample outputs; season-dependent cover is still evaluated live.
+const plantCache = { x: new Int32Array(16384), y: new Int32Array(16384), type: new Uint8Array(16384), data: new Float64Array(16384 * 10) };
 function plantAt(gx, gy) {
+  const C = plantCache, slot = (Math.imul(gx, 73856093) ^ Math.imul(gy, 19349663)) & 16383, o = slot * 10, d = C.data;
+  if (C.type[slot] && C.x[slot] === gx && C.y[slot] === gy) {
+    PL.x = d[o]; PL.y = d[o + 1]; PL.h = d[o + 2]; PL.wl = SW = d[o + 3]; PL.kd = SK = d[o + 4]; PL.dep = d[o + 5];
+    // The original dry-land return leaves r1 untouched; callers may still inspect PL.
+    if (PL.dep >= -0.8) PL.r1 = d[o + 6];
+    PL.rap = SR = d[o + 7]; SE = d[o + 8]; SM = d[o + 9];
+    return C.type[slot] - 1;
+  }
+  const t = plantAtRaw(gx, gy);
+  C.x[slot] = gx; C.y[slot] = gy; C.type[slot] = t + 1;
+  d[o] = PL.x; d[o + 1] = PL.y; d[o + 2] = PL.h; d[o + 3] = SW; d[o + 4] = SK; d[o + 5] = PL.dep;
+  d[o + 6] = PL.r1; d[o + 7] = SR; d[o + 8] = SE; d[o + 9] = SM;
+  return t;
+}
+function plantAtRaw(gx, gy) {
   const G = 2.5, x = (gx + 0.1 + 0.8 * hash2(gx, gy, SEED + 302)) * G, y = (gy + 0.1 + 0.8 * hash2(gx, gy, SEED + 303)) * G;
   sample(x, y); const h = hW(SE), wl = SW, kd = SK, dep = wl - h;
   PL.x = x; PL.y = y; PL.h = h; PL.wl = wl; PL.kd = kd; PL.dep = dep; PL.rap = SR;
@@ -3556,6 +3606,7 @@ function cellFish(cx, cy) {
   for (const kind of new Set(pts.map(p => p[2]))) { // a cell can hold two waters (a creek mouth, say): each gets its own fish
     const here = pts.filter(p => p[2] === kind), area = FISH_CELL * FISH_CELL * here.length / 6, env = envAt(here[0][0], here[0][1], true, false);
     for (const [D, si] of FishDB.byKind(kind)) {   // only species that live in this kind of water
+      if (out.length >= CONFIG.cellMaxAnimals) break;   // later species cannot add a group
       const Ck = D._needCover, req = !!Ck;
       const s = habitatScore(D, req ? Object.assign({}, env, { cover: { [Ck]: 1 } }) : env, undefined, false); if (s < 0.02) continue;   // laid out for midsummer: in other seasons fish move rather than vanish
       const Sc = D.population.school, mean = (Sc.min + Sc.max) / 2;
@@ -3564,6 +3615,7 @@ function cellFish(cx, cy) {
       const rs = mulberry32((hash2(cx * 7 + kind, cy, SEED + D._hid) * 4294967296) >>> 0);
       let groups = poisson(D.population.density * s * area / 100 * WILDLIFE_SCALE[CONFIG.wildlife] * (D._shell ? CONFIG.shellfishAbundance : D._herp ? CONFIG.herpAbundance : CONFIG.fishAbundance) / mean, rs);
       if (D._herp) groups = Math.min(groups, 2);   // reptiles and amphibians: two at most per cell
+      if (!groups) continue;
       let homes = null;
       if (req) { // e.g. clownfish: each group lives on one anemone
         const want = COVER_PLANT[Ck] || [];
@@ -3761,7 +3813,6 @@ const Engine = {
     if (code === 'Digit1' && !e.repeat) this.openSpawn('spawn');                                  // (secret) spawn fish and wildlife
     if (code === 'Slash' && !e.repeat) this.toggleHelp();                                         // controls card
     if (code === 'KeyQ' && !e.repeat) this.toggleRod();                                          // rod out / away
-    if ((code === 'Digit4' || code === 'Numpad4') && !e.repeat) this.toggleLureView();             // live lure camera
     if ((code === 'BracketLeft' || code === 'BracketRight') && this.ang && this.ang.S) this.setDrag(this.ang.dragKg * (code === 'BracketRight' ? 1.15 : 1 / 1.15));
     if (code === 'KeyF' && !e.repeat) this.action();
     if (code === 'KeyL' && !e.repeat) this.toggleTorch();                                        // the dive light, when you're deep
@@ -3800,9 +3851,10 @@ const Engine = {
       gl.bindVertexArray(this.precipVao); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 16, 0); gl.bindVertexArray(null);
     }
     const tm = treeMeshes();
-    this.treeKinds = TREE_KINDS.map(k => ({ hi: this.vbo(tm[k]), hiN: tm[k].length / VS, lo: this.vbo(tm[k + 'L']), loN: tm[k + 'L'].length / VS }));
+    this.treeKinds = TREE_KINDS.map(k => ({ hi: this.meshBuffers(tm[k]), lo: this.meshBuffers(tm[k + 'L']) }));
     const wm = waterMeshes(); this.plantKinds = {};
     for (const k in wm) this.plantKinds[k] = { vbo: this.vbo(wm[k]), n: wm[k].length / VS };
+    gl.vertexAttrib1f(12, 0); // per-instance bird roll is disabled on other meshes
     gl.vertexAttrib1f(6, 0); // terrain has no material attribute: generic surface
     gl.vertexAttrib1f(7, -1e4); gl.vertexAttrib1f(8, 0); gl.vertexAttrib2f(9, -1e4, 0); gl.vertexAttrib1f(10, 0); // not underwater unless a mesh says so
     this.partVbo = gl.createBuffer(); this.partVao = gl.createVertexArray(); gl.bindVertexArray(this.partVao); gl.bindBuffer(gl.ARRAY_BUFFER, this.partVbo);
@@ -3987,13 +4039,12 @@ Object.assign(Engine, {
     if (open === !!this.pauseOpen) return;
     this.pauseOpen = open;
     this.resetMouseLook(); this.keys = {}; this.joy = this.tlook = this.tapStart = null;
-    this.mapPtrs.clear(); this.releaseLureControls(); this.keySettingsCancel();
+    this.mapPtrs.clear(); this.keySettingsCancel();
     const A = this.ang;
     if (A) { A.btnWas = false; A.reeling = false; if (A.phase === 'charge') { A.phase = 'ready'; A.charge = 0; } }
     if (open) {
       this.menu = null; this.showMap = false;
       this.toggleInventory(false); this.toggleSpawn(false); this.toggleTackle(false); this.toggleJournal(false); this.toggleHelp(false);
-      if (this.lureView) this.lureView.root.hidden = true;
       if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
       { const D = this.pauseDialog; try { D.showModal(); } catch (e) { D.setAttribute('open', ''); D.classList.add('fallback'); } }   // older mobile browsers: no modal dialogs, so open it plainly
       this.pauseShow('main');
@@ -4106,7 +4157,7 @@ Object.assign(Engine, {
       [Controls.keys('map'), `map · arrows move · ${K('forward')}/${K('back')} zoom · Enter travels to the crosshair`],
       [Controls.keys('fastTime'), `hold for fast time · ${K('season')} season · ${K('weather')} weather`],
       ['Esc', 'pause · settings · change controls'],
-      [`${Controls.keys('spawn')} · ${Controls.keys('radar')} · ${Controls.keys('lureCam')}`, 'extras: spawn menu · fish radar · live lure camera'], [Controls.keys('help'), 'this card'],
+      [`${Controls.keys('spawn')} · ${Controls.keys('radar')}`, 'extras: spawn menu · fish radar'], [Controls.keys('help'), 'this card'],
     ];
     dl.innerHTML = rows.map(([k, v]) => `<dt>${k.replace(/</g, '&lt;')}</dt><dd>${v}</dd>`).join('');
   },
@@ -4222,8 +4273,7 @@ Object.assign(Engine, {
     };
     const A = this._pAlp || (this._pAlp = mk()), B = this._pAdd || (this._pAdd = mk()); A.a.length = 0; B.a.length = 0;
     for (const q of this.parts) {
-      // The two water passes and the lure camera share the same classification
-      // and appearance for this simulation frame. Distant particles need no work.
+      // The two water passes share the same classification and appearance for this simulation frame. Distant particles need no work.
       const dx = q.x - E[0], dy = q.y - E[1], dz = q.z - E[2];
       if (dx * dx + dy * dy + dz * dz > Math.min(FAR, uw ? 80 : 250) ** 2) continue;
       if (q.renderTime !== T) {
@@ -4254,7 +4304,7 @@ Object.assign(Engine, {
   batches: {},
   batch(key, mesh, istride) { // mesh: { vbo, n }
     let b = this.batches[key];
-    if (!b) { const ib = this.gl.createBuffer(); b = this.batches[key] = { ib, vao: this.litVao(mesh.vbo, VB, ib, istride), verts: mesh.n, stride: istride / 4, data: new Float32Array(4096), n: 0, cap: 0 }; }
+    if (!b) { const ib = this.gl.createBuffer(); b = this.batches[key] = { ib, vao: this.litVao(mesh.vbo, VB, ib, istride, mesh.ebo), verts: mesh.n, indexType: mesh.indexType || 0, stride: istride / 4, data: new Float32Array(4096), n: 0, cap: 0 }; }
     return b;
   },
   bAppend(b, arr) { // arr: typed or plain array of floats
@@ -4273,9 +4323,12 @@ Object.assign(Engine, {
     gl.bindBuffer(gl.ARRAY_BUFFER, b.ib);
     if (b.cap < b.data.length) { gl.bufferData(gl.ARRAY_BUFFER, b.data.byteLength, gl.DYNAMIC_DRAW); b.cap = b.data.length; }
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data, 0, b.n);
-    gl.bindVertexArray(b.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.verts, b.n / b.stride); b.last = b.n; b.n = 0;
+    b.last = b.n; b.n = 0; this.bRedraw(b);
   },
-  bRedraw(b) { if (b.last) { const gl = this.gl; gl.bindVertexArray(b.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.verts, b.last / b.stride); } },  // same data as last frame
+  bRedraw(b) { if (b.last) { const gl = this.gl; gl.bindVertexArray(b.vao);
+    if (b.indexType) gl.drawElementsInstanced(gl.TRIANGLES, b.verts, b.indexType, 0, b.last / b.stride);
+    else gl.drawArraysInstanced(gl.TRIANGLES, 0, b.verts, b.last / b.stride);
+  } },  // same data as last frame
 });
 </script>
 <script>
@@ -5015,16 +5068,14 @@ Object.assign(Engine, {
     return out.length && out.length < mesh.length ? new Float32Array(out) : mesh;
   },
   fishGpu(si, low = false) {
-    const gl = this.gl; let g = FishDB.gpu[si];
+    let g = FishDB.gpu[si];
     if (!g || g.stale) {
-      if (g) for (const old of [g, g.low]) if (old) { gl.deleteVertexArray(old.vao); gl.deleteBuffer(old.ib); gl.deleteBuffer(old.vb); }
-      const D = FishDB.list[si], ib = gl.createBuffer(), vb = this.vbo(D._mesh);
-      g = FishDB.gpu[si] = { vao: this.litVao(vb, VB, ib, 40), ib, vb, n: D._mesh.length / VS };
+      if (g) for (const old of [g, g.low]) if (old) this.deleteAnimalMesh(old);
+      g = FishDB.gpu[si] = this.animalMesh(FishDB.list[si]._mesh);
     }
     if (low) {
       if (!g.low) {
-        const mesh = this.fishLodMesh(FishDB.list[si]._mesh), ib = gl.createBuffer(), vb = this.vbo(mesh);
-        g.low = { vao: this.litVao(vb, VB, ib, 40), ib, vb, n: mesh.length / VS };
+        g.low = this.animalMesh(this.fishLodMesh(FishDB.list[si]._mesh));
       }
       return g.low;
     }
@@ -5378,10 +5429,32 @@ Object.assign(Engine, {
 // Engine: GPU buffer and vertex-array helpers (vbo, vao2d, litVao).
 Object.assign(Engine, {
   vbo(data) { const gl = this.gl, b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); return b; },
+  meshBuffers(data) {
+    const gl = this.gl, m = indexMesh(data), vbo = this.vbo(m.vertices);
+    let ebo = null, indexType = 0;
+    if (m.indices) {
+      ebo = gl.createBuffer(); gl.bindVertexArray(null); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.indices, gl.STATIC_DRAW); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+      indexType = m.indices.BYTES_PER_ELEMENT === 2 ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT;
+    }
+    return { vbo, ebo, indexType, n: data.length / VS };
+  },
+  animalMesh(data, istride = 40) {
+    const m = this.meshBuffers(data), ib = this.gl.createBuffer();
+    return { ...m, ib, vao: this.litVao(m.vbo, VB, ib, istride, m.ebo) };
+  },
+  drawMesh(m, count) {
+    const gl = this.gl; gl.bindVertexArray(m.vao);
+    if (m.indexType) gl.drawElementsInstanced(gl.TRIANGLES, m.n, m.indexType, 0, count);
+    else gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, count);
+  },
+  deleteAnimalMesh(m) {
+    const gl = this.gl; gl.deleteVertexArray(m.vao); gl.deleteBuffer(m.ib); gl.deleteBuffer(m.vbo); if (m.ebo) gl.deleteBuffer(m.ebo);
+  },
   vao2d(data) { const gl = this.gl, v = gl.createVertexArray(); gl.bindVertexArray(v); this.vbo(data); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0); gl.bindVertexArray(null); return v; },
   // VAO for pos3/nrm3/col3 float meshes; optional per-instance buffer (6 floats: x,y,z,scale,rot,tint;
   // with istride 32, two more: water level and murk, for things that live underwater)
-  litVao(vbo, stride, inst, istride = 24) {
+  litVao(vbo, stride, inst, istride = 24, ebo = null) {
     const gl = this.gl, v = gl.createVertexArray(); gl.bindVertexArray(v);
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     for (let i = 0; i < 3; i++) { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, 3, gl.FLOAT, false, stride, i * 12); }
@@ -5393,7 +5466,9 @@ Object.assign(Engine, {
       if (istride >= 32) { gl.enableVertexAttribArray(9); gl.vertexAttribPointer(9, 2, gl.FLOAT, false, istride, 24); gl.vertexAttribDivisor(9, 1); }
       if (istride >= 36) { gl.enableVertexAttribArray(10); gl.vertexAttribPointer(10, 1, gl.FLOAT, false, istride, 32); gl.vertexAttribDivisor(10, 1); } // fish swim phase
       if (istride >= 40) { gl.enableVertexAttribArray(11); gl.vertexAttribPointer(11, 1, gl.FLOAT, false, istride, 36); gl.vertexAttribDivisor(11, 1); } // fish pitch
+      if (istride >= 44) { gl.enableVertexAttribArray(12); gl.vertexAttribPointer(12, 1, gl.FLOAT, false, istride, 40); gl.vertexAttribDivisor(12, 1); } // bird roll
     }
+    if (ebo) gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
     gl.bindVertexArray(null); return v;
   },
 });
@@ -5820,22 +5895,20 @@ Object.assign(Engine, {
 'use strict';
 // Engine: render(): one frame of the 3D scene.
 Object.assign(Engine, {
-  render(camera = null, size = 0) {
+  render() {
     if (this.pauseOpen && !this.pauseRedraw) return;
     this.pauseRedraw = false;
-    if (!camera && this.updateLureView) this.updateLureView();
     // The full-screen map covers the scene. Keep its UI live without drawing
     // the entire terrain, wildlife and water underneath it.
-    if (!camera && this.showMap) { this.drawOverlay(); return; }
-    const viewKey = camera ? 'lure:' : '';
-    const gl = this.gl, P = camera || this.P, W = size || this.canvas.width, Hh = size || this.canvas.height;
+    if (this.showMap) { this.drawOverlay(); return; }
+    const gl = this.gl, P = this.P, W = this.canvas.width, Hh = this.canvas.height;
     gl.viewport(0, 0, W, Hh);
     // camera basis; right = (-sin a, cos a) keeps the 3D view consistent with the north-up map (y down)
     const cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)];
     const R = [-Math.sin(P.a), Math.cos(P.a), 0];
     const U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
     const E = [P.x, P.y, P.z + EYE], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    const tx = Math.tan(FOV / 2), ty = tx * Hh / W, near = camera ? 0.005 : 0.1; this.tanX = tx; this.tanY = ty;
+    const tx = Math.tan(FOV / 2), ty = tx * Hh / W, near = 0.1; this.tanX = tx; this.tanY = ty;
     const view = new Float32Array([R[0], U[0], -F[0], 0, R[1], U[1], -F[1], 0, R[2], U[2], -F[2], 0, -dot(R, E), -dot(U, E), dot(F, E), 1]);
     const proj = new Float32Array([1 / tx, 0, 0, 0, 0, 1 / ty, 0, 0, 0, 0, (FAR + near) / (near - FAR), -1, 0, 0, 2 * FAR * near / (near - FAR), 0]);
     const vp = this.vp = mul4(proj, view);
@@ -5871,7 +5944,6 @@ Object.assign(Engine, {
     const L = this.lit; gl.useProgram(L.p);
     gl.uniformMatrix4fv(L.u.vp, false, vp); gl.uniform3fv(L.u.cam, E); gl.uniform3fv(L.u.sun, SUN); gl.uniform3fv(L.u.fogc, HORZ); gl.uniform1f(L.u.far, FOGD); gl.uniform1f(L.u.uwf, uw ? 1 : 0);
     gl.uniform3fv(L.u.lcol, S.lcol); gl.uniform3fv(L.u.amb, S.amb); gl.uniform1f(L.u.night, S.night); gl.uniform1f(L.u.emk, 1);
-    gl.uniform1f(L.u.lureCam, camera ? 1 : 0);
     gl.uniform1f(L.u.time, this.time); gl.uniform1f(L.u.sway, 0); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     gl.uniform1f(L.u.inst, 0); gl.uniform1f(L.u.pscale, 1); gl.uniform1f(L.u.dry, 0);
     gl.uniform4f(L.u.seasA, ENV.leaf, ENV.autumn, ENV.young, ENV.dormant); gl.uniform4f(L.u.seasB, ENV.snowCover, ENV.wet, ENV.flash * 0.8, 0);
@@ -5889,8 +5961,8 @@ Object.assign(Engine, {
     const fx = Math.cos(P.a), fy = Math.sin(P.a), visible = this._visible || (this._visible = []); visible.length = 0;
     for (const ch of this.chunks.values()) {
       const rx = (ch.cx + 0.5) * CHW - P.x, ry = (ch.cy + 0.5) * CHW - P.y, d = Math.hypot(rx, ry);
-      if (ch.ground && d > 600 && !camera) ch.ground = null;   // ground cover is only kept near the player
-      if (d > (camera ? CHW * 1.5 : FAR + CHW) || (d > CHW && (rx * fx + ry * fy) / d < Math.cos(FOV / 2 + 0.35) - 0.3)) continue; // rough frustum cull
+      if (ch.ground && d > 600) ch.ground = null;   // ground cover is only kept near the player
+      if (d > FAR + CHW || (d > CHW && (rx * fx + ry * fy) / d < Math.cos(FOV / 2 + 0.35) - 0.3)) continue; // rough frustum cull
       visible.push(ch, d);
       gl.bindVertexArray(ch.vao); gl.drawElements(gl.TRIANGLES, ch.count, gl.UNSIGNED_SHORT, 0);
     }
@@ -5899,13 +5971,12 @@ Object.assign(Engine, {
     gl.uniform1f(L.u.sway, CONFIG.windSway * (0.45 + 1.4 * ENV.wind));
     // trees: every visible chunk's instances merged into one draw per kind and detail level (closed meshes, so back faces are culled)
     gl.enable(gl.CULL_FACE); gl.cullFace(CULL_SIDE);
-    const TB = this.treeKinds.map((K, ki) => [this.batch(viewKey + 'tree' + ki, { vbo: K.hi, n: K.hiN }, 24), this.batch(viewKey + 'treeL' + ki, { vbo: K.lo, n: K.loN }, 24)]);
+    const TB = this.treeKinds.map((K, ki) => [this.batch('tree' + ki, K.hi, 24), this.batch('treeL' + ki, K.lo, 24)]);
     // refill the batches only when the set of chunks (or their detail level) changed since last frame
     let sig = 17;
     for (let i = 0; i < visible.length; i += 2) if (visible[i + 1] < TREE_VIEW * CHW) { const ch = visible[i]; sig = Math.imul(sig ^ (ch.cx * 73856093 ^ ch.cy * 19349663 ^ (visible[i + 1] < CONFIG.treeDetailDistance ? 1 : 2)), 16777619); }
-    const signatures = this.treeSignatures || (this.treeSignatures = {});
-    if (sig !== signatures[viewKey]) {
-      signatures[viewKey] = sig;
+    if (sig !== this.treeSig) {
+      this.treeSig = sig;
       for (let i = 0; i < visible.length; i += 2) if (visible[i + 1] < TREE_VIEW * CHW) {
         const lod = visible[i + 1] < CONFIG.treeDetailDistance ? 0 : 1, td = visible[i].treeData;
         for (let ki = 0; ki < TB.length; ki++) if (td[ki]) this.bAppend(TB[ki][lod], td[ki]);
@@ -5920,7 +5991,7 @@ Object.assign(Engine, {
     const DRY = { reed: 0.85, grass: 0.85, flowerA: 0.85, flowerB: 0.85, fern: 0.7, bush: 0.3, heath: 0.25 };   // straw-brown when dormant
     // land cover: made for chunks near the player (two a frame at most), then every 16 m tile within reach and roughly in view
     const GT = this._gTiles || (this._gTiles = []), TN = CHW / GROUND_TILE; GT.length = 0;
-    if (!camera && CONFIG.groundCover) { const g0 = performance.now(); let made = 0;
+    if (CONFIG.groundCover) { const g0 = performance.now(); let made = 0;
       for (let i = 0; i < visible.length; i += 2) { const ch = visible[i]; if (visible[i + 1] > 161 + CHW * 0.71) continue;
         if ((!ch.ground || ch.groundLv !== CONFIG.groundCover) && (!made || performance.now() - g0 < 0.7)) { made++; ch.ground = this.groundGen(ch); }
         if (!ch.ground) continue;
@@ -5931,9 +6002,9 @@ Object.assign(Engine, {
     for (const [name, istride, sway, maxD] of PLANT_DRAW) {
       const ps = pscale[name] ?? 1; if (ps < 0.03) continue;   // lilies are gone in winter, flowers only bloom in summer
       gl.uniform1f(L.u.pscale, ps); gl.uniform1f(L.u.dry, (DRY[name] || 0) * ENV.dormant);
-      const b = this.batch(viewKey + 'plant_' + name, this.plantKinds[name], istride);
+      const b = this.batch('plant_' + name, this.plantKinds[name], istride);
       if (GROUND_SET.has(name)) { // per tile: all of it near, thinned to 3/4 then 1/2 toward the edge of its range
-        if (camera) continue; let sg = 17; span.length = 0;
+        let sg = 17; span.length = 0;
         for (let i = 0; i < GT.length; i += 3) { const ch = GT[i], g = ch.ground[name], t = GT[i + 1], dt = GT[i + 2]; if (!g || dt > maxD + 11) continue;
           const n = g.o[t + 1] - g.o[t]; if (!n) continue; const q = dt < maxD * 0.4 ? 4 : Math.max(2, Math.ceil(4 - 4 * (dt - maxD * 0.4) / maxD));
           sg = Math.imul(sg ^ (ch.cx * 73856093 ^ ch.cy * 19349663 ^ (t * 4 + q) * 83492791 ^ ch.groundLv), 16777619); span.push(g.d, g.o[t] * 6, (g.o[t] + Math.ceil(n * q / 4)) * 6); }
@@ -5958,11 +6029,11 @@ Object.assign(Engine, {
         return z < 2 || f.len / z * pxK > 0.6; };
       for (const f of this.fish) if (!f.dead && Math.abs(f.x - E[0]) < (uw ? Math.min(75, FOGD * 1.7 + f.len) : 75) && Math.abs(f.y - E[1]) < (uw ? Math.min(75, FOGD * 1.7 + f.len) : 75) && inView(f)) {
         const distance = Math.hypot(f.x - E[0], f.y - E[1], f.z - E[2]);
-        const low = !camera && !f.hooked && f.state !== 'lure' && f.len * pxK / Math.max(0.1, distance) < 18;
+        const low = !f.hooked && f.state !== 'lure' && f.len * pxK / Math.max(0.1, distance) < 18;
         const key = f.sp * 2 + (low ? 1 : 0);
         (per[key].length ? per[key] : (act.push(key), per[key])).push(f.x, f.y, f.z, f.len, f.a, f.tint, f.land ? -1e4 : f.wl, WATER[f.kd].murk, f.ph + 8 * Math.round(clamp(f.open || 0, 0, 1) * 12), f.pitch || 0);
       }
-      for (const key of act) { const si = key >> 1, arr = per[key], m = this.fishGpu(si, !!(key & 1)), D = FishDB.list[si]; gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, D.body.flex * (D._wave ?? 1)); gl.uniform1f(L.u.swm, D._swim || 0); gl.uniform3fv(L.u.jawP, D._jaw); this.upInst(m, arr); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, arr.length / 10); }
+      for (const key of act) { const si = key >> 1, arr = per[key], m = this.fishGpu(si, !!(key & 1)), D = FishDB.list[si]; gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, D.body.flex * (D._wave ?? 1)); gl.uniform1f(L.u.swm, D._swim || 0); gl.uniform3fv(L.u.jawP, D._jaw); this.upInst(m, arr); this.drawMesh(m, arr.length / 10); }
       gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (this.boats.length) { // boats: one draw each (they pitch and heel on their own)
@@ -5977,17 +6048,17 @@ Object.assign(Engine, {
       gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (globalThis.Birds) Birds.draw(this, gl, L, E);   // birds: in the air, on the water, on perches and boats
-    if (this.ang && this.ang.out) { this.drawTackle(gl, L, E, !!camera); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
+    if (this.ang && this.ang.out) { this.drawTackle(gl, L, E); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
     // props (static decorations) and pickups, instanced per mesh; the pickup you'd collect pulses
     const drawInst = (m, arr) => { if (!arr.length) return; this.upInst(m, arr); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, arr.length / 6); };
     { // props are static: their instance buffers are rebuilt only when the set changes or you've moved a good way
-      const pk = this.props.length + ':' + Math.round(P.x / 150) + ':' + Math.round(P.y / 150), PK = this.propKeys || (this.propKeys = {}), PU = this.propUsed || (this.propUsed = {});
-      if (PK[viewKey] !== pk) {
-        PK[viewKey] = pk; const used = new Set();
-        for (const pr of this.props) if (Math.abs(pr.x - P.x) < FAR + 150 && Math.abs(pr.y - P.y) < FAR + 150) { const m = this.propMesh(pr.mesh); if (!m) continue; const b = this.batch(viewKey + 'prop:' + pr.mesh, m, 24); used.add(b); this.bAppend(b, [pr.x, pr.y, pr.z, pr.scale, pr.rot, 0.5]); }
-        for (const b of PU[viewKey] || []) if (!used.has(b)) b.last = 0;
-        PU[viewKey] = [...used]; for (const b of used) this.bDraw(b);
-      } else for (const b of PU[viewKey] || []) this.bRedraw(b);
+      const pk = this.props.length + ':' + Math.round(P.x / 150) + ':' + Math.round(P.y / 150);
+      if (this.propKey !== pk) {
+        this.propKey = pk; const used = new Set();
+        for (const pr of this.props) if (Math.abs(pr.x - P.x) < FAR + 150 && Math.abs(pr.y - P.y) < FAR + 150) { const m = this.propMesh(pr.mesh); if (!m) continue; const b = this.batch('prop:' + pr.mesh, m, 24); used.add(b); this.bAppend(b, [pr.x, pr.y, pr.z, pr.scale, pr.rot, 0.5]); }
+        for (const b of this.propUsed || []) if (!used.has(b)) b.last = 0;
+        this.propUsed = [...used]; for (const b of used) this.bDraw(b);
+      } else for (const b of this.propUsed || []) this.bRedraw(b);
     }
     const groups = new Map(), add = (m, ...v) => { let a = groups.get(m); if (!a) groups.set(m, a = []); a.push(...v); };
     const tgt = this.tgt;
@@ -6033,7 +6104,7 @@ Object.assign(Engine, {
     }
     gl.depthMask(true); gl.bindVertexArray(null);
 
-    if (!camera) this.drawOverlay();
+    this.drawOverlay();
   },
 
 });
@@ -6656,8 +6727,8 @@ Object.assign(Engine, {
     if (A.out && (this.swim || (helm && !this.boatTrolls(bt.def)))) this.toggleRod(false);
     if (!A.out || !A.S) return;
     const K = this.keys, P = this.P, S = A.S, ca = Math.cos(P.a), sa = Math.sin(P.a);
-    const btn = !!(K.KeyR || K.Mouse0 || this.lureReel || this.lureFast) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
-    const fast = K.ShiftLeft || K.ShiftRight || this.lureFast;
+    const btn = !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
+    const fast = K.ShiftLeft || K.ShiftRight;
     const eye = [P.x, P.y, P.z + EYE]; A.hand = this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
     if (helm) { const cb = Math.cos(bt.a), sb = Math.sin(bt.a), Lh = bt.def.hull.length_m; A.hand = [bt.x - cb * Lh * 0.4 - sb * 0.35, bt.y - sb * Lh * 0.4 + cb * 0.35, bt.z + bt.def.hull.depth_m * 0.75]; }   // at the helm the rod sits in a holder at the stern
     A.t = (A.t || 0) + dt; A.reeling = false;
@@ -7197,16 +7268,16 @@ Object.assign(Engine, {
       if (M.size > 80) { const [k0, g0] = M.entries().next().value; gl.deleteVertexArray(g0.vao); gl.deleteBuffer(g0.ib); gl.deleteBuffer(g0.vb); M.delete(k0); } }
     return g;
   },
-  drawTackle(gl, Lp, E, closeup = false) {
+  drawTackle(gl, Lp, E) {
     const A = this.ang; if (!A || !A.out || !A.S || this.showMap) return;
     const S = A.S, rv = TackleDB.revision;
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
     const one = (g, x, y, z, s, rot, wl, mk, pitch) => { this.upInst(g, [x, y, z, s, rot, 0.5, wl, mk, 0, pitch]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); };
     const lvl = rodBendLevel(A.bend), rk = `rod:${A.rigId}:${rv}:${lvl}`;
-    if (!closeup) { one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv); }
+    one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
     if (A.phase === 'card') return;
     const endKey = S.lure ? `lure:${S.lure.id}:${rv}` : `bait:${S.bait.id}:${S.hook.id}:${rv}`, endMesh = () => S.lure ? lureMesh(S.lure) : baitMesh(S);
-    const sc = (x, y, z, k = 6) => closeup ? 1 : clamp(Math.hypot(x - E[0], y - E[1], z - E[2]) / k, 1, 9);   // a touch bigger far away, so you can follow it
+    const sc = (x, y, z, k = 6) => clamp(Math.hypot(x - E[0], y - E[1], z - E[2]) / k, 1, 9);   // a touch bigger far away, so you can follow it
     const L = A.lure, T = A.tip;
     if (!L) { // dangling under the rod tip, swinging
       const D = A.dangle || { x: T[0], y: T[1], z: T[2] - 0.3 }, u = k => [T[0] + (D.x - T[0]) * k, T[1] + (D.y - T[1]) * k, T[2] + (D.z - T[2]) * k];
@@ -7261,100 +7332,6 @@ Object.assign(Engine, {
     if (A.phase === 'card') return;
     const S = A.S, k = this.touchUI ? 0.92 : 1;   // the status panel itself is HTML now (fishingStatus in js/hud/status-keys.js)
     if (A.phase === 'bite' && A.took && S.hookKind !== 'circle') { const a = 0.6 + 0.4 * Math.sin(this.time * 20); c.font = `bold ${30 * k}px Georgia, serif`; c.textAlign = 'center'; c.fillStyle = `rgba(255,208,64,${a})`; c.fillText('STRIKE!', Wd / 2, Ht / 2 - 60); c.textAlign = 'left'; }
-  },
-});
-</script>
-<script>
-'use strict';
-// A small second camera follows the real end tackle; it never moves the player.
-Object.assign(Engine, {
-  lureViewEnabled: false,
-  toggleLureView() {
-    this.lureViewEnabled = !this.lureViewEnabled;
-    if (!this.lureViewEnabled) {
-      this.releaseLureControls();
-      if (this.lureView) this.lureView.root.hidden = true;
-    }
-    if (this.lureView) this.lureView.next = 0;
-    this.say(`Lure camera ${this.lureViewEnabled ? 'on' : 'off'}`, 1.5);
-  },
-  setupLureView() {
-    const root = document.createElement('section');
-    root.id = 'lureView'; root.hidden = true; root.setAttribute('aria-label', 'Live lure view and fishing controls');
-    root.innerHTML = `<div class="lure-caption"><span>LIVE · LURE</span><small></small></div>
-      <canvas width="384" height="384" aria-label="Live view of the hook or lure"></canvas>
-      <button class="lure-drag-less" aria-label="Decrease reel drag" title="Decrease drag ([)">−<small>Drag [</small></button>
-      <button class="lure-drag-more" aria-label="Increase reel drag" title="Increase drag (])">+<small>Drag ]</small></button>
-      <button class="lure-reel" title="Hold to reel; press to strike (R)"><b>Reel</b><small>Hold · R</small></button>
-      <button class="lure-fast" title="Hold for faster retrieve (Shift + R)">Faster<small>Hold · ⇧ R</small></button>
-      <div class="lure-drag-value"></div>`;
-    document.body.appendChild(root);
-    const canvas = root.querySelector('canvas'), buttons = [...root.querySelectorAll('button')];
-    this.lureView = { root, canvas, ctx: canvas.getContext('2d'), caption: root.querySelector('.lure-caption small'), drag: root.querySelector('.lure-drag-value'), reel: root.querySelector('.lure-reel b'), next: 0, buttons };
-    for (const type of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'wheel', 'touchstart']) root.addEventListener(type, e => e.stopPropagation());
-    root.addEventListener('contextmenu', e => e.preventDefault());
-    const hold = (selector, field) => {
-      const button = root.querySelector(selector);
-      const release = () => { this[field] = false; button.classList.remove('held'); };
-      button.addEventListener('pointerdown', e => {
-        if (e.button !== 0) return;
-        e.preventDefault(); button.setPointerCapture(e.pointerId); this[field] = true; button.classList.add('held');
-      });
-      for (const type of ['pointerup', 'pointercancel', 'lostpointercapture', 'blur']) button.addEventListener(type, release);
-      button.addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); e.stopPropagation(); this[field] = true; button.classList.add('held'); } });
-      button.addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); e.stopPropagation(); release(); } });
-    };
-    hold('.lure-reel', 'lureReel'); hold('.lure-fast', 'lureFast');
-    root.querySelector('.lure-drag-less').onclick = () => this.setDrag(this.ang.dragKg / 1.15);
-    root.querySelector('.lure-drag-more').onclick = () => this.setDrag(this.ang.dragKg * 1.15);
-    addEventListener('blur', () => this.releaseLureControls());
-  },
-  releaseLureControls() {
-    this.lureReel = this.lureFast = false;
-    if (this.lureView) for (const button of this.lureView.buttons) button.classList.remove('held');
-  },
-  updateLureView() {
-    if (!this.lureView) this.setupLureView();
-    const V = this.lureView, A = this.ang, L = A && A.lure;
-    const active = this.lureViewEnabled && A && A.out && L && ['flight', 'water', 'bite', 'fight'].includes(A.phase) &&
-      !this.pauseOpen && !this.showMap && !this.tackleOpen && !this.journalOpen && !this.spawnOpen && !this.invOpen && !(this.hud && !this.hud.hHelp.hidden);
-    if (V.root.hidden !== !active) V.root.hidden = !active;
-    if (!active) { this.releaseLureControls(); V.next = 0; V.cast = null; return; }
-    const now = performance.now();
-    if (now < V.next) return;
-    V.next = now + 1000 / 30; // modest resolution and refresh rate keep the main view responsive
-    { // the labels, only when they change (a DOM write a frame is not free)
-      const M = V.memo || (V.memo = {}), set = (k, v) => { if (M[k] !== v) { M[k] = v; V[k].textContent = v; } };
-      set('caption', L.kd >= 0 && !L.land ? `${Math.max(0, L.wl - L.z).toFixed(1)} m deep` : A.phase === 'flight' ? 'Casting' : 'On shore');
-      set('drag', `Drag ${A.dragKg.toFixed(1)} kg`);
-      set('reel', A.phase === 'bite' && A.took && A.S.hookKind !== 'circle' ? 'Strike' : A.phase === 'flight' ? 'Stop' : 'Reel');
-      const bite = A.phase === 'bite' && A.took; if (M.bite !== bite) { M.bite = bite; V.root.classList.toggle('bite', bite); } }
-    if (V.cast !== L) { V.cast = L; V.bearing = Math.atan2(L.y - this.P.y, L.x - this.P.x) + Math.PI / 2; }
-    // Stay six inches from the hook, including during a bite or fight. Look at
-    // the mouth from the front quarter so the fish's body doesn't hide the take.
-    let visitor = A.fish, nearest = 2;
-    if (!visitor) for (const fish of this.fish) {
-      if (fish.dead || fish.state !== 'lure') continue;
-      const d = Math.hypot(fish.x - L.x, fish.y - L.y, fish.z - L.z);
-      if (d < nearest) { visitor = fish; nearest = d; }
-    }
-    if (visitor) {
-      const desired = visitor.a - Math.PI * 2 / 3;
-      V.bearing += Math.atan2(Math.sin(desired - V.bearing), Math.cos(desired - V.bearing)) * 0.18;
-    }
-    const range = 0.1524;
-    const x = L.x - Math.cos(V.bearing) * range, y = L.y - Math.sin(V.bearing) * range;
-    // Keep the camera above the bed, and underwater when the lure is submerged.
-    const ground = hW(world(x, y));
-    let z = L.z + range * 0.22;
-    if (L.kd >= 0 && !L.land && L.z < L.wl - 0.03) z = Math.min(z, L.wl - 0.015);
-    z = Math.max(ground + 0.015, z);
-    const camera = { x, y, z: z - EYE, a: V.bearing, pitch: Math.atan2(L.z - z, range) };
-    const size = Math.min(V.canvas.width, this.canvas.width, this.canvas.height);
-    // Render into the lower-left corner and copy it before the normal scene overwrites it.
-    this.render(camera, size);
-    V.ctx.clearRect(0, 0, V.canvas.width, V.canvas.height);
-    V.ctx.drawImage(this.canvas, 0, this.canvas.height - size, size, size, 0, 0, V.canvas.width, V.canvas.height);
   },
 });
 </script>
@@ -9065,15 +9042,19 @@ const Birds = globalThis.Birds = (() => {
     draw(R, gl, L, E) {
       if (!this.list.length) return;
       gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]);
+      gl.uniform1f(L.u.roll, 0);
+      const groups = this.drawGroups || (this.drawGroups = []);
+      for (const m of groups) m.instances.length = 0;
+      groups.length = 0;
       for (const b of this.list) {
         if (Math.abs(b.x - E[0]) > 700 || Math.abs(b.y - E[1]) > 700) continue;
         const sp = b.sp; let m = sp.gpu[b.frame];
-        if (!m) { const ib = gl.createBuffer(), vb = R.vbo(sp.meshes[b.frame]); m = sp.gpu[b.frame] = { vao: R.litVao(vb, VB, ib, 40), ib, vb, n: sp.meshes[b.frame].length / VS }; }
+        if (!m) { m = sp.gpu[b.frame] = R.animalMesh(sp.meshes[b.frame], 44); m.instances = []; }
+        if (!m.instances.length) groups.push(m);
         const W = b.st === 'float' ? b.spot.water : b.st === 'under' && b.fo ? { kd: b.fo.kd, lev: b.fo.lev } : null;
-        gl.uniform1f(L.u.roll, b.roll || 0);
-        R.upInst(m, [b.x, b.y, b.z, b.sc, b.a, b.tint, W ? W.lev + Engine.swellAt(b.x, b.y, W.kd) : -1e4, W ? WATER[W.kd].murk : 0, 0, b.pitch || 0]);
-        gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, 1);
+        m.instances.push(b.x, b.y, b.z, b.sc, b.a, b.tint, W ? W.lev + Engine.swellAt(b.x, b.y, W.kd) : -1e4, W ? WATER[W.kd].murk : 0, 0, b.pitch || 0, b.roll || 0);
       }
+      for (const m of groups) { R.upInst(m, m.instances); R.drawMesh(m, m.instances.length / 11); }
       gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0);
     },
   };

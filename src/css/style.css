@@ -305,30 +305,6 @@
     #hCond { top: 64px; }   /* under the place name, not beside it */
   }
 
-/* Quiet circular camera, with controls around the rim. */
-#lureView { position: fixed; z-index: 3; right: 20px; top: 45%; transform: translateY(-50%); width: 240px; height: 292px; color: #eee8d5; font: 12px var(--sans); pointer-events: none; }
-#lureView[hidden] { display: none; }
-#lureView canvas { position: absolute; left: 28px; top: 38px; width: 184px; height: 184px; border-radius: 50%; opacity: 1; border: 1px solid #e6dcb842; box-shadow: 0 0 24px #071b1733; mask-image: radial-gradient(circle, #000 65%, #000e 68%, transparent 72%); }
-#lureView .lure-caption { position: absolute; top: 6px; width: 100%; text-align: center; letter-spacing: .12em; text-shadow: 0 1px 4px #000; }
-#lureView .lure-caption small { display: block; margin-top: 5px; letter-spacing: .02em; color: #ddd6c0; }
-#lureView button { position: absolute; pointer-events: auto; touch-action: none; border: 1px solid #d7c99566; border-radius: 18px; min-width: 48px; min-height: 44px; padding: 7px 10px; color: #f0e8cf; background: #14251ed4; font: 600 13px var(--sans); cursor: pointer; }
-#lureView button small { display: block; font: 10px var(--sans); color: #c5c8b6; margin-top: 3px; }
-#lureView button:hover, #lureView button:focus-visible, #lureView button.held { background: #405344ef; border-color: #eed697; outline: 2px solid #eed69766; }
-#lureView .lure-drag-less { left: 0; top: 111px; }
-#lureView .lure-drag-more { right: 0; top: 111px; }
-#lureView .lure-reel { left: 34px; top: 216px; min-width: 80px; }
-#lureView .lure-fast { right: 34px; top: 216px; min-width: 80px; }
-#lureView .lure-drag-value { position: absolute; top: 274px; width: 100%; text-align: center; color: #dbd9c7; text-shadow: 0 1px 3px #000; }
-#lureView.bite .lure-reel { border-color: #f1cf74; box-shadow: 0 0 12px #f1cf7455; }
-@media (max-width: 700px), (max-height: 600px) {
-  #lureView { right: 6px; top: 44%; width: 194px; height: 248px; }
-  #lureView canvas { width: 144px; height: 144px; left: 25px; top: 34px; }
-  #lureView .lure-drag-less, #lureView .lure-drag-more { top: 86px; }
-  #lureView .lure-reel { left: 12px; top: 176px; }
-  #lureView .lure-fast { right: 12px; top: 176px; }
-  #lureView .lure-drag-value { top: 230px; }
-}
-
 /* Pause/settings use the browser's modal focus handling above every game panel. */
 #pauseMenu { width: min(380px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; overflow: hidden; box-sizing: border-box; }
 #pauseMenu[data-page="settings"] { width: min(480px, calc(100vw - 32px)); }

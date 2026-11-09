@@ -61,7 +61,7 @@ src/
     engine/           the Engine object: loop, rendering, chunks, map, inventory, boats, fish behaviour, touch
     boats.js          boat definitions to hull meshes
     tackle.js         rods, reels, lines, lures, rigs
-    fishing/          casting, bites, the fight, tackle box, lure camera
+    fishing/          casting, bites, the fight, tackle box
     game-api.js       the public Game API
     hud/              on-screen interface, icons, journal, menu keyboard navigation, tutorial
     sounds.js         sound effects synthesized with Web Audio, defined as data
