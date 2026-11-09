@@ -21,6 +21,11 @@ Object.assign(Engine, {
       b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
       b.addEventListener('contextmenu', e => e.preventDefault());
     }
+    { const rb = document.getElementById('bCast'); let y0 = null;   // press Reel and pull down to wind faster (this.reelPull 0..1, read by angStep)
+      rb.addEventListener('pointerdown', e => { y0 = e.clientY; this.reelPull = 0; });
+      rb.addEventListener('pointermove', e => { if (y0 === null) return; this.reelPull = clamp((e.clientY - y0) / 80, 0, 1); rb.style.setProperty('--pull', this.reelPull.toFixed(2)); });
+      const end = () => { y0 = null; this.reelPull = 0; rb.style.setProperty('--pull', '0'); };
+      rb.addEventListener('pointerup', end); rb.addEventListener('pointercancel', end); rb.addEventListener('lostpointercapture', end); }
     const look = (dx, dy, k) => { k *= this.mouseSensitivity || 1; P.a += dx * k; P.pitch = clamp(P.pitch - dy * k, -1.4, 1.4); };   // the Settings slider scales touch look too
     ov.addEventListener('pointerdown', e => {
       if (this.pauseOpen || (this.ang && this.ang.phase === 'card')) return;

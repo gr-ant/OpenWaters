@@ -8,7 +8,7 @@ Object.assign(Engine, {
     if (!A.out || !A.S) return;
     const K = this.keys, P = this.P, S = A.S, ca = Math.cos(P.a), sa = Math.sin(P.a);
     const btn = !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
-    const fast = K.ShiftLeft || K.ShiftRight;
+    const fast = K.ShiftLeft || K.ShiftRight ? 1 : this.reelPull || 0;   // 0..1: Shift is flat out; on touch, how far the Reel button is pulled down
     const eye = [P.x, P.y, P.z + EYE]; A.hand = this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
     if (helm) { const cb = Math.cos(bt.a), sb = Math.sin(bt.a), Lh = bt.def.hull.length_m; A.hand = [bt.x - cb * Lh * 0.4 - sb * 0.35, bt.y - sb * Lh * 0.4 + cb * 0.35, bt.z + bt.def.hull.depth_m * 0.75]; }   // at the helm the rod sits in a holder at the stern
     A.t = (A.t || 0) + dt; A.reeling = false;
@@ -209,10 +209,10 @@ Object.assign(Engine, {
   // The lure (or bait) in the water: reeled, sinking, floating, diving, drifting in the current and the wind.
   // With a float the line is tied to the float: that's what the line pulls and the current carries; the bait hangs
   // under it and trails along behind.
-  lureWater(dt, btn, fast) {   // fast (Shift): wind in at 4x
+  lureWater(dt, btn, fast) {   // fast 0..1: wind in up to 4x
     const A = this.ang, S = A.S, L = A.lure, T = A.tip, F = A.float, Q = F || L, ox = L.x, oy = L.y;
     if (A.phase === 'bite' && A.fish) return;
-    if (btn) { const v = S.reelMs * (fast ? 2 : 0.5); A.lineOut = Math.max(0, A.lineOut - v * dt); A.reeling = true; }
+    if (btn) { const v = S.reelMs * (0.5 + 1.5 * fast); A.lineOut = Math.max(0, A.lineOut - v * dt); A.reeling = true; }
     if (A.bail) A.lineOut = Math.max(A.lineOut, Math.hypot(Q.x - T[0], Q.y - T[1], Q.z - T[2]) + 0.2);   // bail open: line peels off the spool, nothing holds the lure back
     sample(L.x, L.y); let g = hW(SE), wl = SW; const wet = !L.land && SK === L.kd && wl > g + 0.03;
     // A tight line pulls toward the rod tip; the water (or the ground) resists, so it comes with a lag and keeps a

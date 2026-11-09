@@ -12,7 +12,7 @@ Object.assign(Engine, {
     const A = this.ang, S = A.S, R = this.reelW || (this.reelW = { crank: 0, last: A.lineOut || 0, tm: this.time, free: 0 });
     const dt = clamp(this.time - R.tm, 0, 0.1); R.tm = this.time;
     const dl = (A.lineOut || 0) - R.last; R.last = A.lineOut || 0;
-    if (A.reeling) R.crank += dt * 9.4; else if (dl < 0) R.crank += -dl * 0.7;   // radians: about 1.5 turns a second wound, or with the line
+    if (A.reeling) R.crank += dt * 9.4 * (1 + 0.8 * (this.reelPull || 0)); else if (dl < 0) R.crank += -dl * 0.7;   // radians: about 1.5 turns a second wound, or with the line
     R.free += ((A.bail ? 1 : 0) - R.free) * Math.min(1, dt * 14);   // the bail / bar / lever moves over, not jumps
     return R;
   },

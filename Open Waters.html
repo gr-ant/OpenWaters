@@ -27,11 +27,18 @@
   #tui .a-dive { right:96px; bottom:92px; width:54px; height:54px; }
   #tui .a-pill { border-radius:12px; height:38px; font-size:12px; }
   #tui .a-helm { right:22px; bottom:112px; width:66px; }
-  #tui .a-drdn { right:96px; bottom:160px; width:66px; }
-  #tui .a-drup { right:22px; bottom:160px; width:66px; }
-  #tui .a-bail { right:170px; bottom:160px; width:66px; }
   #tui .a-fast { right:170px; bottom:112px; width:66px; }
   #tui .act[hidden], .tui-rail button[hidden] { display:none; }
+  /* fishing: Reel in the corner (pull it down to wind faster), Bail beside it, Drag − / + in a row above the pair */
+  #bCast { transform:translateY(calc(var(--pull, 0) * 14px)); }
+  #bCast.reel::after { content:'⌄'; display:block; line-height:.6; color:var(--gold-hi); }   /* pull me down */
+  #tui .a-bail { right:108px; bottom:34px; width:54px; height:54px; }
+  #tui .a-bail.open { border-color:var(--gold-hi); color:var(--gold-hi); }
+  #tui .a-drdn { right:94px; bottom:112px; width:68px; }
+  #tui .a-drup { right:18px; bottom:112px; width:68px; }
+  #tui.rod-out .a-helm { right:94px; bottom:160px; width:68px; }   /* aboard with the rod out: Helm and Sit / Stand go above the drag */
+  #tui.rod-out.aboard .a-dive { right:25px; bottom:152px; }
+  #tui.rod-out .a-jump, #tui.rod-out:not(.aboard) .a-dive { display: none; }   /* with the rod out: no jumping, and no diving from the bank (on a deck it's Sit / Stand) */
   body.map-open #tui .act, body.map-open .tui-rail button:not([data-k="KeyM"]) { display:none; }   /* the map up: only the Map button stays, to close it */
   @media (orientation: landscape) and (max-height: 540px) {   /* a phone on its side: the rail runs along the top */
     .tui-rail { top:10px; right:58px; transform:none; flex-direction:row; gap:6px; }
@@ -161,7 +168,7 @@
   #hStatus { position: absolute; right: 12px; bottom: 20px; display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px 5px; max-width: calc(100vw - 24px); box-sizing: border-box;
     border-radius: 12px; background: rgba(20,26,20,.78); border: 1px solid #c4a86c88; font: 600 14px var(--serif); color: var(--cream); white-space: nowrap; }   /* a chip, like the key hints */
   #hStatus[hidden] { display: none; }
-  /* where the hook or lure hangs, between the surface and the bottom */
+  /* where the hook or lure hangs: a slim water column, surface to seabed, with fish nearby marked at their depths */
   #hDepth { position: absolute; right: 12px; bottom: 80px;   /* just above the fishing status chip */
     display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 12px;
     background: rgba(20,26,20,.78); border: 1px solid #c4a86c88; font: 600 11px var(--serif); color: var(--cream); white-space: nowrap; }
@@ -579,13 +586,13 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
     <button id="bTorch" data-k="KeyL" hidden><span class="ic" data-icon="dock.torch"></span><b>Light</b></button>
   </nav>
   <button id="bUse" class="act a-main" data-k="KeyF">Use</button>
-  <button id="bCast" class="act a-main" data-k="KeyR" data-hold="1" hidden>Cast</button>
   <button class="act a-jump" data-k="Space" data-hold="1">Jump</button>
   <button class="act a-dive" data-k="KeyC" data-hold="1">Dive</button>
   <button id="bHelm" class="act a-pill a-helm" data-k="KeyV" hidden>Stand</button>
+  <button id="bCast" class="act a-main" data-k="KeyR" data-hold="1" hidden>Cast</button>
+  <button id="bBail" class="act a-bail" data-k="KeyG" hidden>Bail</button>
   <button id="bDrDn" class="act a-pill a-drdn" data-k="BracketLeft" hidden>Drag −</button>
   <button id="bDrUp" class="act a-pill a-drup" data-k="BracketRight" hidden>Drag +</button>
-  <button id="bBail" class="act a-pill a-bail" data-k="KeyG" hidden>Bail</button>
   <button id="bFast" class="act a-pill a-fast" data-k="KeyT" data-hold="1" hidden>Fast ⏩</button>
 </div>
 <script>
@@ -5017,15 +5024,16 @@ Object.assign(Engine, {
     l.x = eye[0] + f[0] * 2.4; l.y = eye[1] + f[1] * 2.4; l.z = eye[2] + f[2] * 2.4; l.intensity = 4.5;
   },
   updateTui() { // touch buttons follow what you're doing: Helm/Stand appears in a boat, Dive becomes Sit/Stand on deck, Cast/Reel/Strike while fishing
-    if (!this.touchUI) return; const A = this.ang, fp = A && A.out ? A.phase + (A.took ? 't' : '') : 'x', st = (this.boat ? this.boatMode + (this.boatSit ? 's' : 'u') : '') + fp;
+    if (!this.touchUI) return; const A = this.ang, fp = A && A.out ? A.phase + (A.took ? 't' : '') + (A.bail ? 'b' : '') : 'x', st = (this.boat ? this.boatMode + (this.boatSit ? 's' : 'u') : '') + fp;
     if (st === this.tuiState) return; this.tuiState = st;
     { const rb = document.getElementById('bRod'), cb = document.getElementById('bCast'), out = A && A.out, ph = out ? A.phase : '';
       if (rb) { rb.querySelector('b').textContent = out ? 'Stow' : 'Rod'; rb.hidden = ph === 'card'; }
       const ub = document.getElementById('bUse'); if (ub) ub.hidden = !!out;   // with the rod out, the big button casts and reels
-      if (cb) { cb.hidden = !out || ph === 'card'; cb.textContent = ph === 'water' ? 'Reel' : ph === 'fight' ? 'Reel' : ph === 'bite' ? (A.took ? 'Strike!' : '…') : ph === 'flight' ? 'Stop' : 'Cast'; cb.classList.toggle('lit', ph === 'bite' && !!A.took); }
-      for (const id of ['bDrDn', 'bDrUp']) { const b = document.getElementById(id); if (b) b.hidden = ph !== 'fight'; }
-      { const b = document.getElementById('bBail'); if (b) b.hidden = !out || ph === 'card'; }
-      { const b = document.getElementById('bFast'); if (b) b.hidden = ph !== 'water' && ph !== 'bite'; } }   // hold to speed time while waiting for a bite
+      if (cb) { cb.hidden = !out || ph === 'card'; cb.textContent = ph === 'water' ? 'Reel' : ph === 'fight' ? 'Reel' : ph === 'bite' ? (A.took ? 'Strike!' : '…') : ph === 'flight' ? 'Stop' : 'Cast'; cb.classList.toggle('lit', ph === 'bite' && !!A.took); cb.classList.toggle('reel', ph === 'water' || ph === 'fight'); }
+      for (const id of ['bDrDn', 'bDrUp', 'bBail']) { const b = document.getElementById(id); if (b) b.hidden = !out || ph === 'card'; }
+      { const b = document.getElementById('bBail'); if (b) b.classList.toggle('open', !!(out && A.bail)); }
+      { const b = document.getElementById('bFast'); if (b) b.hidden = true; } }   // the Reel button pulls down to wind faster instead
+    { const tui = document.getElementById('tui'); if (tui) { tui.classList.toggle('rod-out', !!(A && A.out)); tui.classList.toggle('aboard', !!this.boat); } }   // fishing: no Jump, and no Dive ashore (CSS)
     const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');
     if (h) { h.hidden = !this.boat; h.textContent = this.boatMode === 'deck' ? 'Helm' : (this.boat && !this.boatCanStand(this.boat.def) ? 'Fish' : 'Stand'); }
     if (dv) dv.textContent = this.boat && this.boatMode === 'deck' ? (this.boatSit ? 'Stand' : 'Sit') : 'Dive';
@@ -5557,6 +5565,11 @@ Object.assign(Engine, {
       b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
       b.addEventListener('contextmenu', e => e.preventDefault());
     }
+    { const rb = document.getElementById('bCast'); let y0 = null;   // press Reel and pull down to wind faster (this.reelPull 0..1, read by angStep)
+      rb.addEventListener('pointerdown', e => { y0 = e.clientY; this.reelPull = 0; });
+      rb.addEventListener('pointermove', e => { if (y0 === null) return; this.reelPull = clamp((e.clientY - y0) / 80, 0, 1); rb.style.setProperty('--pull', this.reelPull.toFixed(2)); });
+      const end = () => { y0 = null; this.reelPull = 0; rb.style.setProperty('--pull', '0'); };
+      rb.addEventListener('pointerup', end); rb.addEventListener('pointercancel', end); rb.addEventListener('lostpointercapture', end); }
     const look = (dx, dy, k) => { k *= this.mouseSensitivity || 1; P.a += dx * k; P.pitch = clamp(P.pitch - dy * k, -1.4, 1.4); };   // the Settings slider scales touch look too
     ov.addEventListener('pointerdown', e => {
       if (this.pauseOpen || (this.ang && this.ang.phase === 'card')) return;
@@ -7056,7 +7069,7 @@ Object.assign(Engine, {
     if (!A.out || !A.S) return;
     const K = this.keys, P = this.P, S = A.S, ca = Math.cos(P.a), sa = Math.sin(P.a);
     const btn = !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
-    const fast = K.ShiftLeft || K.ShiftRight;
+    const fast = K.ShiftLeft || K.ShiftRight ? 1 : this.reelPull || 0;   // 0..1: Shift is flat out; on touch, how far the Reel button is pulled down
     const eye = [P.x, P.y, P.z + EYE]; A.hand = this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
     if (helm) { const cb = Math.cos(bt.a), sb = Math.sin(bt.a), Lh = bt.def.hull.length_m; A.hand = [bt.x - cb * Lh * 0.4 - sb * 0.35, bt.y - sb * Lh * 0.4 + cb * 0.35, bt.z + bt.def.hull.depth_m * 0.75]; }   // at the helm the rod sits in a holder at the stern
     A.t = (A.t || 0) + dt; A.reeling = false;
@@ -7257,10 +7270,10 @@ Object.assign(Engine, {
   // The lure (or bait) in the water: reeled, sinking, floating, diving, drifting in the current and the wind.
   // With a float the line is tied to the float: that's what the line pulls and the current carries; the bait hangs
   // under it and trails along behind.
-  lureWater(dt, btn, fast) {   // fast (Shift): wind in at 4x
+  lureWater(dt, btn, fast) {   // fast 0..1: wind in up to 4x
     const A = this.ang, S = A.S, L = A.lure, T = A.tip, F = A.float, Q = F || L, ox = L.x, oy = L.y;
     if (A.phase === 'bite' && A.fish) return;
-    if (btn) { const v = S.reelMs * (fast ? 2 : 0.5); A.lineOut = Math.max(0, A.lineOut - v * dt); A.reeling = true; }
+    if (btn) { const v = S.reelMs * (0.5 + 1.5 * fast); A.lineOut = Math.max(0, A.lineOut - v * dt); A.reeling = true; }
     if (A.bail) A.lineOut = Math.max(A.lineOut, Math.hypot(Q.x - T[0], Q.y - T[1], Q.z - T[2]) + 0.2);   // bail open: line peels off the spool, nothing holds the lure back
     sample(L.x, L.y); let g = hW(SE), wl = SW; const wet = !L.land && SK === L.kd && wl > g + 0.03;
     // A tight line pulls toward the rod tip; the water (or the ground) resists, so it comes with a lag and keeps a
@@ -7473,7 +7486,7 @@ Object.assign(Engine, {
     { // a moving boat (or you walking off) tows the fish: that loads the line too
       const lt = A.lastTip || T, vx = (T[0] - lt[0]) / Math.max(dt, 1e-3), vy = (T[1] - lt[1]) / Math.max(dt, 1e-3), dx = T[0] - f.x, dy = T[1] - f.y, dl = Math.hypot(dx, dy) || 1;
       A.lastTip = T.slice(); const away = Math.max(0, (vx * dx + vy * dy) / dl); A.away = A.away == null ? away : A.away + (away - A.away) * Math.min(1, dt * 6); if (away > 0.15) { pull += A.Fmax * 0.4 * Math.min(3, away) + 0.05 * away; A.chargeT = 0; } }
-    const vr = S.reelMs * (fast ? 1.25 : 0.85), reel = btn, swimV = (A.runT > 0 ? B.burst_bl_s * 0.45 : B.cruise_bl_s * 1.5) * f.len + 0.2;
+    const vr = S.reelMs * (0.85 + 0.4 * fast), reel = btn, swimV = (A.runT > 0 ? B.burst_bl_s * 0.45 : B.cruise_bl_s * 1.5) * f.len + 0.2;
     let Tn, slipping = false;
     const lag = Math.max(0, Math.hypot(f.x - T[0], f.y - T[1], f.z - T[2]) - A.lineOut - 0.25);   // the rod pulled faster than the fish can be moved
     if (A.chargeT > 0) { // swimming at you: the line goes slack unless you reel it in
@@ -8632,7 +8645,7 @@ Object.assign(Engine, {
     const A = this.ang, S = A.S, R = this.reelW || (this.reelW = { crank: 0, last: A.lineOut || 0, tm: this.time, free: 0 });
     const dt = clamp(this.time - R.tm, 0, 0.1); R.tm = this.time;
     const dl = (A.lineOut || 0) - R.last; R.last = A.lineOut || 0;
-    if (A.reeling) R.crank += dt * 9.4; else if (dl < 0) R.crank += -dl * 0.7;   // radians: about 1.5 turns a second wound, or with the line
+    if (A.reeling) R.crank += dt * 9.4 * (1 + 0.8 * (this.reelPull || 0)); else if (dl < 0) R.crank += -dl * 0.7;   // radians: about 1.5 turns a second wound, or with the line
     R.free += ((A.bail ? 1 : 0) - R.free) * Math.min(1, dt * 14);   // the bail / bar / lever moves over, not jumps
     return R;
   },

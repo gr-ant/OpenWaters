@@ -20,11 +20,18 @@
   #tui .a-dive { right:96px; bottom:92px; width:54px; height:54px; }
   #tui .a-pill { border-radius:12px; height:38px; font-size:12px; }
   #tui .a-helm { right:22px; bottom:112px; width:66px; }
-  #tui .a-drdn { right:96px; bottom:160px; width:66px; }
-  #tui .a-drup { right:22px; bottom:160px; width:66px; }
-  #tui .a-bail { right:170px; bottom:160px; width:66px; }
   #tui .a-fast { right:170px; bottom:112px; width:66px; }
   #tui .act[hidden], .tui-rail button[hidden] { display:none; }
+  /* fishing: Reel in the corner (pull it down to wind faster), Bail beside it, Drag − / + in a row above the pair */
+  #bCast { transform:translateY(calc(var(--pull, 0) * 14px)); }
+  #bCast.reel::after { content:'⌄'; display:block; line-height:.6; color:var(--gold-hi); }   /* pull me down */
+  #tui .a-bail { right:108px; bottom:34px; width:54px; height:54px; }
+  #tui .a-bail.open { border-color:var(--gold-hi); color:var(--gold-hi); }
+  #tui .a-drdn { right:94px; bottom:112px; width:68px; }
+  #tui .a-drup { right:18px; bottom:112px; width:68px; }
+  #tui.rod-out .a-helm { right:94px; bottom:160px; width:68px; }   /* aboard with the rod out: Helm and Sit / Stand go above the drag */
+  #tui.rod-out.aboard .a-dive { right:25px; bottom:152px; }
+  #tui.rod-out .a-jump, #tui.rod-out:not(.aboard) .a-dive { display: none; }   /* with the rod out: no jumping, and no diving from the bank (on a deck it's Sit / Stand) */
   body.map-open #tui .act, body.map-open .tui-rail button:not([data-k="KeyM"]) { display:none; }   /* the map up: only the Map button stays, to close it */
   @media (orientation: landscape) and (max-height: 540px) {   /* a phone on its side: the rail runs along the top */
     .tui-rail { top:10px; right:58px; transform:none; flex-direction:row; gap:6px; }
@@ -154,7 +161,7 @@
   #hStatus { position: absolute; right: 12px; bottom: 20px; display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px 5px; max-width: calc(100vw - 24px); box-sizing: border-box;
     border-radius: 12px; background: rgba(20,26,20,.78); border: 1px solid #c4a86c88; font: 600 14px var(--serif); color: var(--cream); white-space: nowrap; }   /* a chip, like the key hints */
   #hStatus[hidden] { display: none; }
-  /* where the hook or lure hangs, between the surface and the bottom */
+  /* where the hook or lure hangs: a slim water column, surface to seabed, with fish nearby marked at their depths */
   #hDepth { position: absolute; right: 12px; bottom: 80px;   /* just above the fishing status chip */
     display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 12px;
     background: rgba(20,26,20,.78); border: 1px solid #c4a86c88; font: 600 11px var(--serif); color: var(--cream); white-space: nowrap; }

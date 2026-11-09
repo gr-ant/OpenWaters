@@ -23,7 +23,7 @@ Object.assign(Engine, {
     { // a moving boat (or you walking off) tows the fish: that loads the line too
       const lt = A.lastTip || T, vx = (T[0] - lt[0]) / Math.max(dt, 1e-3), vy = (T[1] - lt[1]) / Math.max(dt, 1e-3), dx = T[0] - f.x, dy = T[1] - f.y, dl = Math.hypot(dx, dy) || 1;
       A.lastTip = T.slice(); const away = Math.max(0, (vx * dx + vy * dy) / dl); A.away = A.away == null ? away : A.away + (away - A.away) * Math.min(1, dt * 6); if (away > 0.15) { pull += A.Fmax * 0.4 * Math.min(3, away) + 0.05 * away; A.chargeT = 0; } }
-    const vr = S.reelMs * (fast ? 1.25 : 0.85), reel = btn, swimV = (A.runT > 0 ? B.burst_bl_s * 0.45 : B.cruise_bl_s * 1.5) * f.len + 0.2;
+    const vr = S.reelMs * (0.85 + 0.4 * fast), reel = btn, swimV = (A.runT > 0 ? B.burst_bl_s * 0.45 : B.cruise_bl_s * 1.5) * f.len + 0.2;
     let Tn, slipping = false;
     const lag = Math.max(0, Math.hypot(f.x - T[0], f.y - T[1], f.z - T[2]) - A.lineOut - 0.25);   // the rod pulled faster than the fish can be moved
     if (A.chargeT > 0) { // swimming at you: the line goes slack unless you reel it in
