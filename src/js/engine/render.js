@@ -1,22 +1,20 @@
 'use strict';
 // Engine: render(): one frame of the 3D scene.
 Object.assign(Engine, {
-  render(camera = null, size = 0) {
+  render() {
     if (this.pauseOpen && !this.pauseRedraw) return;
     this.pauseRedraw = false;
-    if (!camera && this.updateLureView) this.updateLureView();
     // The full-screen map covers the scene. Keep its UI live without drawing
     // the entire terrain, wildlife and water underneath it.
-    if (!camera && this.showMap) { this.drawOverlay(); return; }
-    const viewKey = camera ? 'lure:' : '';
-    const gl = this.gl, P = camera || this.P, W = size || this.canvas.width, Hh = size || this.canvas.height;
+    if (this.showMap) { this.drawOverlay(); return; }
+    const gl = this.gl, P = this.P, W = this.canvas.width, Hh = this.canvas.height;
     gl.viewport(0, 0, W, Hh);
     // camera basis; right = (-sin a, cos a) keeps the 3D view consistent with the north-up map (y down)
     const cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)];
     const R = [-Math.sin(P.a), Math.cos(P.a), 0];
     const U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
     const E = [P.x, P.y, P.z + EYE], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    const tx = Math.tan(FOV / 2), ty = tx * Hh / W, near = camera ? 0.005 : 0.1; this.tanX = tx; this.tanY = ty;
+    const tx = Math.tan(FOV / 2), ty = tx * Hh / W, near = 0.1; this.tanX = tx; this.tanY = ty;
     const view = new Float32Array([R[0], U[0], -F[0], 0, R[1], U[1], -F[1], 0, R[2], U[2], -F[2], 0, -dot(R, E), -dot(U, E), dot(F, E), 1]);
     const proj = new Float32Array([1 / tx, 0, 0, 0, 0, 1 / ty, 0, 0, 0, 0, (FAR + near) / (near - FAR), -1, 0, 0, 2 * FAR * near / (near - FAR), 0]);
     const vp = this.vp = mul4(proj, view);
@@ -52,7 +50,6 @@ Object.assign(Engine, {
     const L = this.lit; gl.useProgram(L.p);
     gl.uniformMatrix4fv(L.u.vp, false, vp); gl.uniform3fv(L.u.cam, E); gl.uniform3fv(L.u.sun, SUN); gl.uniform3fv(L.u.fogc, HORZ); gl.uniform1f(L.u.far, FOGD); gl.uniform1f(L.u.uwf, uw ? 1 : 0);
     gl.uniform3fv(L.u.lcol, S.lcol); gl.uniform3fv(L.u.amb, S.amb); gl.uniform1f(L.u.night, S.night); gl.uniform1f(L.u.emk, 1);
-    gl.uniform1f(L.u.lureCam, camera ? 1 : 0);
     gl.uniform1f(L.u.time, this.time); gl.uniform1f(L.u.sway, 0); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     gl.uniform1f(L.u.inst, 0); gl.uniform1f(L.u.pscale, 1); gl.uniform1f(L.u.dry, 0);
     gl.uniform4f(L.u.seasA, ENV.leaf, ENV.autumn, ENV.young, ENV.dormant); gl.uniform4f(L.u.seasB, ENV.snowCover, ENV.wet, ENV.flash * 0.8, 0);
@@ -70,8 +67,8 @@ Object.assign(Engine, {
     const fx = Math.cos(P.a), fy = Math.sin(P.a), visible = this._visible || (this._visible = []); visible.length = 0;
     for (const ch of this.chunks.values()) {
       const rx = (ch.cx + 0.5) * CHW - P.x, ry = (ch.cy + 0.5) * CHW - P.y, d = Math.hypot(rx, ry);
-      if (ch.ground && d > 600 && !camera) ch.ground = null;   // ground cover is only kept near the player
-      if (d > (camera ? CHW * 1.5 : FAR + CHW) || (d > CHW && (rx * fx + ry * fy) / d < Math.cos(FOV / 2 + 0.35) - 0.3)) continue; // rough frustum cull
+      if (ch.ground && d > 600) ch.ground = null;   // ground cover is only kept near the player
+      if (d > FAR + CHW || (d > CHW && (rx * fx + ry * fy) / d < Math.cos(FOV / 2 + 0.35) - 0.3)) continue; // rough frustum cull
       visible.push(ch, d);
       gl.bindVertexArray(ch.vao); gl.drawElements(gl.TRIANGLES, ch.count, gl.UNSIGNED_SHORT, 0);
     }
@@ -80,13 +77,12 @@ Object.assign(Engine, {
     gl.uniform1f(L.u.sway, CONFIG.windSway * (0.45 + 1.4 * ENV.wind));
     // trees: every visible chunk's instances merged into one draw per kind and detail level (closed meshes, so back faces are culled)
     gl.enable(gl.CULL_FACE); gl.cullFace(CULL_SIDE);
-    const TB = this.treeKinds.map((K, ki) => [this.batch(viewKey + 'tree' + ki, { vbo: K.hi, n: K.hiN }, 24), this.batch(viewKey + 'treeL' + ki, { vbo: K.lo, n: K.loN }, 24)]);
+    const TB = this.treeKinds.map((K, ki) => [this.batch('tree' + ki, K.hi, 24), this.batch('treeL' + ki, K.lo, 24)]);
     // refill the batches only when the set of chunks (or their detail level) changed since last frame
     let sig = 17;
     for (let i = 0; i < visible.length; i += 2) if (visible[i + 1] < TREE_VIEW * CHW) { const ch = visible[i]; sig = Math.imul(sig ^ (ch.cx * 73856093 ^ ch.cy * 19349663 ^ (visible[i + 1] < CONFIG.treeDetailDistance ? 1 : 2)), 16777619); }
-    const signatures = this.treeSignatures || (this.treeSignatures = {});
-    if (sig !== signatures[viewKey]) {
-      signatures[viewKey] = sig;
+    if (sig !== this.treeSig) {
+      this.treeSig = sig;
       for (let i = 0; i < visible.length; i += 2) if (visible[i + 1] < TREE_VIEW * CHW) {
         const lod = visible[i + 1] < CONFIG.treeDetailDistance ? 0 : 1, td = visible[i].treeData;
         for (let ki = 0; ki < TB.length; ki++) if (td[ki]) this.bAppend(TB[ki][lod], td[ki]);
@@ -101,7 +97,7 @@ Object.assign(Engine, {
     const DRY = { reed: 0.85, grass: 0.85, flowerA: 0.85, flowerB: 0.85, fern: 0.7, bush: 0.3, heath: 0.25 };   // straw-brown when dormant
     // land cover: made for chunks near the player (two a frame at most), then every 16 m tile within reach and roughly in view
     const GT = this._gTiles || (this._gTiles = []), TN = CHW / GROUND_TILE; GT.length = 0;
-    if (!camera && CONFIG.groundCover) { const g0 = performance.now(); let made = 0;
+    if (CONFIG.groundCover) { const g0 = performance.now(); let made = 0;
       for (let i = 0; i < visible.length; i += 2) { const ch = visible[i]; if (visible[i + 1] > 161 + CHW * 0.71) continue;
         if ((!ch.ground || ch.groundLv !== CONFIG.groundCover) && (!made || performance.now() - g0 < 0.7)) { made++; ch.ground = this.groundGen(ch); }
         if (!ch.ground) continue;
@@ -112,9 +108,9 @@ Object.assign(Engine, {
     for (const [name, istride, sway, maxD] of PLANT_DRAW) {
       const ps = pscale[name] ?? 1; if (ps < 0.03) continue;   // lilies are gone in winter, flowers only bloom in summer
       gl.uniform1f(L.u.pscale, ps); gl.uniform1f(L.u.dry, (DRY[name] || 0) * ENV.dormant);
-      const b = this.batch(viewKey + 'plant_' + name, this.plantKinds[name], istride);
+      const b = this.batch('plant_' + name, this.plantKinds[name], istride);
       if (GROUND_SET.has(name)) { // per tile: all of it near, thinned to 3/4 then 1/2 toward the edge of its range
-        if (camera) continue; let sg = 17; span.length = 0;
+        let sg = 17; span.length = 0;
         for (let i = 0; i < GT.length; i += 3) { const ch = GT[i], g = ch.ground[name], t = GT[i + 1], dt = GT[i + 2]; if (!g || dt > maxD + 11) continue;
           const n = g.o[t + 1] - g.o[t]; if (!n) continue; const q = dt < maxD * 0.4 ? 4 : Math.max(2, Math.ceil(4 - 4 * (dt - maxD * 0.4) / maxD));
           sg = Math.imul(sg ^ (ch.cx * 73856093 ^ ch.cy * 19349663 ^ (t * 4 + q) * 83492791 ^ ch.groundLv), 16777619); span.push(g.d, g.o[t] * 6, (g.o[t] + Math.ceil(n * q / 4)) * 6); }
@@ -139,11 +135,11 @@ Object.assign(Engine, {
         return z < 2 || f.len / z * pxK > 0.6; };
       for (const f of this.fish) if (!f.dead && Math.abs(f.x - E[0]) < (uw ? Math.min(75, FOGD * 1.7 + f.len) : 75) && Math.abs(f.y - E[1]) < (uw ? Math.min(75, FOGD * 1.7 + f.len) : 75) && inView(f)) {
         const distance = Math.hypot(f.x - E[0], f.y - E[1], f.z - E[2]);
-        const low = !camera && !f.hooked && f.state !== 'lure' && f.len * pxK / Math.max(0.1, distance) < 18;
+        const low = !f.hooked && f.state !== 'lure' && f.len * pxK / Math.max(0.1, distance) < 18;
         const key = f.sp * 2 + (low ? 1 : 0);
         (per[key].length ? per[key] : (act.push(key), per[key])).push(f.x, f.y, f.z, f.len, f.a, f.tint, f.land ? -1e4 : f.wl, WATER[f.kd].murk, f.ph + 8 * Math.round(clamp(f.open || 0, 0, 1) * 12), f.pitch || 0);
       }
-      for (const key of act) { const si = key >> 1, arr = per[key], m = this.fishGpu(si, !!(key & 1)), D = FishDB.list[si]; gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, D.body.flex * (D._wave ?? 1)); gl.uniform1f(L.u.swm, D._swim || 0); gl.uniform3fv(L.u.jawP, D._jaw); this.upInst(m, arr); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, arr.length / 10); }
+      for (const key of act) { const si = key >> 1, arr = per[key], m = this.fishGpu(si, !!(key & 1)), D = FishDB.list[si]; gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, D.body.flex * (D._wave ?? 1)); gl.uniform1f(L.u.swm, D._swim || 0); gl.uniform3fv(L.u.jawP, D._jaw); this.upInst(m, arr); this.drawMesh(m, arr.length / 10); }
       gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (this.boats.length) { // boats: one draw each (they pitch and heel on their own)
@@ -158,17 +154,17 @@ Object.assign(Engine, {
       gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (globalThis.Birds) Birds.draw(this, gl, L, E);   // birds: in the air, on the water, on perches and boats
-    if (this.ang && this.ang.out) { this.drawTackle(gl, L, E, !!camera); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
+    if (this.ang && this.ang.out) { this.drawTackle(gl, L, E); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
     // props (static decorations) and pickups, instanced per mesh; the pickup you'd collect pulses
     const drawInst = (m, arr) => { if (!arr.length) return; this.upInst(m, arr); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, arr.length / 6); };
     { // props are static: their instance buffers are rebuilt only when the set changes or you've moved a good way
-      const pk = this.props.length + ':' + Math.round(P.x / 150) + ':' + Math.round(P.y / 150), PK = this.propKeys || (this.propKeys = {}), PU = this.propUsed || (this.propUsed = {});
-      if (PK[viewKey] !== pk) {
-        PK[viewKey] = pk; const used = new Set();
-        for (const pr of this.props) if (Math.abs(pr.x - P.x) < FAR + 150 && Math.abs(pr.y - P.y) < FAR + 150) { const m = this.propMesh(pr.mesh); if (!m) continue; const b = this.batch(viewKey + 'prop:' + pr.mesh, m, 24); used.add(b); this.bAppend(b, [pr.x, pr.y, pr.z, pr.scale, pr.rot, 0.5]); }
-        for (const b of PU[viewKey] || []) if (!used.has(b)) b.last = 0;
-        PU[viewKey] = [...used]; for (const b of used) this.bDraw(b);
-      } else for (const b of PU[viewKey] || []) this.bRedraw(b);
+      const pk = this.props.length + ':' + Math.round(P.x / 150) + ':' + Math.round(P.y / 150);
+      if (this.propKey !== pk) {
+        this.propKey = pk; const used = new Set();
+        for (const pr of this.props) if (Math.abs(pr.x - P.x) < FAR + 150 && Math.abs(pr.y - P.y) < FAR + 150) { const m = this.propMesh(pr.mesh); if (!m) continue; const b = this.batch('prop:' + pr.mesh, m, 24); used.add(b); this.bAppend(b, [pr.x, pr.y, pr.z, pr.scale, pr.rot, 0.5]); }
+        for (const b of this.propUsed || []) if (!used.has(b)) b.last = 0;
+        this.propUsed = [...used]; for (const b of used) this.bDraw(b);
+      } else for (const b of this.propUsed || []) this.bRedraw(b);
     }
     const groups = new Map(), add = (m, ...v) => { let a = groups.get(m); if (!a) groups.set(m, a = []); a.push(...v); };
     const tgt = this.tgt;
@@ -214,7 +210,7 @@ Object.assign(Engine, {
     }
     gl.depthMask(true); gl.bindVertexArray(null);
 
-    if (!camera) this.drawOverlay();
+    this.drawOverlay();
   },
 
 });

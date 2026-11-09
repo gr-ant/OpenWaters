@@ -19,6 +19,7 @@ function cellFish(cx, cy) {
   for (const kind of new Set(pts.map(p => p[2]))) { // a cell can hold two waters (a creek mouth, say): each gets its own fish
     const here = pts.filter(p => p[2] === kind), area = FISH_CELL * FISH_CELL * here.length / 6, env = envAt(here[0][0], here[0][1], true, false);
     for (const [D, si] of FishDB.byKind(kind)) {   // only species that live in this kind of water
+      if (out.length >= CONFIG.cellMaxAnimals) break;   // later species cannot add a group
       const Ck = D._needCover, req = !!Ck;
       const s = habitatScore(D, req ? Object.assign({}, env, { cover: { [Ck]: 1 } }) : env, undefined, false); if (s < 0.02) continue;   // laid out for midsummer: in other seasons fish move rather than vanish
       const Sc = D.population.school, mean = (Sc.min + Sc.max) / 2;
@@ -27,6 +28,7 @@ function cellFish(cx, cy) {
       const rs = mulberry32((hash2(cx * 7 + kind, cy, SEED + D._hid) * 4294967296) >>> 0);
       let groups = poisson(D.population.density * s * area / 100 * WILDLIFE_SCALE[CONFIG.wildlife] * (D._shell ? CONFIG.shellfishAbundance : D._herp ? CONFIG.herpAbundance : CONFIG.fishAbundance) / mean, rs);
       if (D._herp) groups = Math.min(groups, 2);   // reptiles and amphibians: two at most per cell
+      if (!groups) continue;
       let homes = null;
       if (req) { // e.g. clownfish: each group lives on one anemone
         const want = COVER_PLANT[Ck] || [];

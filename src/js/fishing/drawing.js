@@ -8,16 +8,16 @@ Object.assign(Engine, {
       if (M.size > 80) { const [k0, g0] = M.entries().next().value; gl.deleteVertexArray(g0.vao); gl.deleteBuffer(g0.ib); gl.deleteBuffer(g0.vb); M.delete(k0); } }
     return g;
   },
-  drawTackle(gl, Lp, E, closeup = false) {
+  drawTackle(gl, Lp, E) {
     const A = this.ang; if (!A || !A.out || !A.S || this.showMap) return;
     const S = A.S, rv = TackleDB.revision;
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
     const one = (g, x, y, z, s, rot, wl, mk, pitch) => { this.upInst(g, [x, y, z, s, rot, 0.5, wl, mk, 0, pitch]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); };
     const lvl = rodBendLevel(A.bend), rk = `rod:${A.rigId}:${rv}:${lvl}`;
-    if (!closeup) { one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv); }
+    one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
     if (A.phase === 'card') return;
     const endKey = S.lure ? `lure:${S.lure.id}:${rv}` : `bait:${S.bait.id}:${S.hook.id}:${rv}`, endMesh = () => S.lure ? lureMesh(S.lure) : baitMesh(S);
-    const sc = (x, y, z, k = 6) => closeup ? 1 : clamp(Math.hypot(x - E[0], y - E[1], z - E[2]) / k, 1, 9);   // a touch bigger far away, so you can follow it
+    const sc = (x, y, z, k = 6) => clamp(Math.hypot(x - E[0], y - E[1], z - E[2]) / k, 1, 9);   // a touch bigger far away, so you can follow it
     const L = A.lure, T = A.tip;
     if (!L) { // dangling under the rod tip, swinging
       const D = A.dangle || { x: T[0], y: T[1], z: T[2] - 0.3 }, u = k => [T[0] + (D.x - T[0]) * k, T[1] + (D.y - T[1]) * k, T[2] + (D.z - T[2]) * k];

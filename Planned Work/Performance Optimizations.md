@@ -4,7 +4,22 @@ Audit date: November 9, 2026
 
 Goal: improve frame rate and reduce stutter while preserving the game's current visuals, animal populations, and gameplay behavior.
 
-These are proposed changes, not implemented optimizations. Measurements came from code inspection and isolated browser workloads using software rendering. They identify opportunities but do not predict FPS gains on a hardware GPU.
+Implementation branch: `codex/performance-optimizations`.
+
+Implemented: bounded incremental terrain sampling, indexed animal/tree meshes, zero-contribution shader guards, a bounded plant cache, spawn early-outs, and bird batching with independent tilt. The lure camera (item 5) was removed outright at the user's request instead of being rewritten. No draw distances, population settings, AI update intervals, or effect resolutions were reduced.
+
+Validation and reproduction commands are in [tests/README.md](../tests/README.md). The original findings below remain as context. Measurements use isolated CPU workloads and a software-rendered browser; they do not predict FPS gains on a hardware GPU.
+
+### Implementation results
+
+- A cold terrain sample evaluates four lattice points instead of 4,225. Complete grids are still available to mesh builders; unfinished grids are bounded to 64 entries and can be completed by the existing yielding streamer.
+- Terrain outputs match direct full-grid Float32 calculations, including negative coordinates and chunk boundaries. Interleaved sampling/building and eviction of a partially built grid are covered.
+- Baseline checks match terrain, plant outputs, seasonal cover, and 4,925 animal records across 1,575 cell evaluations in three climates and three wildlife settings. Species load order matches the game.
+- Exact vertex-stream reconstruction passes for 160 animal meshes and 10 tree meshes. Their combined vertex/index payload falls from 47,360,640 to 12,060,480 bytes (about 74.5%). This is mesh-buffer storage, not total application memory or an FPS percentage. Meshes with less than 5% storage savings keep their original layout.
+- Index tests cover the 16-bit primitive-restart boundary; meshes needing index 65,535 use 32-bit indices.
+- A synthetic 12-bird flock with two animation poses takes two draw calls, retaining individual roll and pitch.
+- Frozen-scene browser comparisons check the original shaders and unindexed geometry against the new paths, including weather, underwater fish, birds, and cached batches. See the test output for pixel differences on the tested renderer.
+- The full-grid fallback remains available to explicit `getChunk()` callers. The change specifically removes it from ordinary terrain sampling, including animal decisions; it does not eliminate startup island generation or all possible loading stalls.
 
 ## 1. Keep full terrain generation out of animal updates
 
@@ -68,15 +83,9 @@ An additional spawn candidate is skipping cover searches when a species has zero
 
 Relevant code: [plant and cover queries](../src/js/world/water-plants-grid.js), [population generation](../src/js/world/fish-populations.js), [cell synchronization](../src/js/engine/fish-cells.js).
 
-## 5. Investigate the lure-camera canvas copy
+## 5. Lure-camera canvas copy — removed
 
-**Priority: conditional — relevant when the lure camera is enabled.**
-
-The lure camera renders a second scene into the main WebGL canvas, then copies it into a 2D canvas at up to 30 Hz. Rendering into a texture and compositing within WebGL could avoid that cross-canvas copy.
-
-Preserve the inset's resolution, refresh rate, framing, lighting, controls, and placement. This would remove a potential transfer cost; it would not eliminate the second scene render. Profile the copy first to establish whether it is significant on target hardware.
-
-Relevant code: [lure camera](../src/js/fishing/lure-camera.js), [rendering](../src/js/engine/render.js).
+**Resolved by removing the feature.** The inset rendered the whole scene a second time at 384 × 384 up to 30 Hz and copied it into a DOM canvas. Profiled in headless Chrome on an Intel UHD 620 (Vulkan), the copy added roughly 0.6 ms to a lure refresh that already cost about 1 ms of GPU-complete render time, so the second scene render dominated, and compositing the inset inside WebGL would have put it beneath the 2D overlay (vignette, line, minimap) and the HUD. The user chose to drop the feature: the inset, its rim controls, the `4` key, the `lureCam` fill light in the lit shader and the `camera` parameter of `Engine.render()` are gone. Saved key bindings that still name `lureCam` are ignored on load.
 
 ## 6. Batch bird rendering
 

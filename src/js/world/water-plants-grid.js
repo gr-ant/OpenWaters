@@ -3,7 +3,25 @@
 // The same hashed grid the chunk builder plants on: plantAt(gx, gy) -> 0 none, 1 reeds, 2 lily, 3 flowering lily, 4 weed, 5 kelp,
 // 6 rock, 7 fallen log, 8 drowned stump, 9 coral, 10 sea anemone, 11 iceberg (details in PL)
 const PL = { x: 0, y: 0, h: 0, wl: 0, kd: 0, dep: 0, r1: 0, rap: 0 };
+// Fixed-size direct-mapped cache: no growth while travelling. Float64 retains the exact
+// placement and interpolated sample outputs; season-dependent cover is still evaluated live.
+const plantCache = { x: new Int32Array(16384), y: new Int32Array(16384), type: new Uint8Array(16384), data: new Float64Array(16384 * 10) };
 function plantAt(gx, gy) {
+  const C = plantCache, slot = (Math.imul(gx, 73856093) ^ Math.imul(gy, 19349663)) & 16383, o = slot * 10, d = C.data;
+  if (C.type[slot] && C.x[slot] === gx && C.y[slot] === gy) {
+    PL.x = d[o]; PL.y = d[o + 1]; PL.h = d[o + 2]; PL.wl = SW = d[o + 3]; PL.kd = SK = d[o + 4]; PL.dep = d[o + 5];
+    // The original dry-land return leaves r1 untouched; callers may still inspect PL.
+    if (PL.dep >= -0.8) PL.r1 = d[o + 6];
+    PL.rap = SR = d[o + 7]; SE = d[o + 8]; SM = d[o + 9];
+    return C.type[slot] - 1;
+  }
+  const t = plantAtRaw(gx, gy);
+  C.x[slot] = gx; C.y[slot] = gy; C.type[slot] = t + 1;
+  d[o] = PL.x; d[o + 1] = PL.y; d[o + 2] = PL.h; d[o + 3] = SW; d[o + 4] = SK; d[o + 5] = PL.dep;
+  d[o + 6] = PL.r1; d[o + 7] = SR; d[o + 8] = SE; d[o + 9] = SM;
+  return t;
+}
+function plantAtRaw(gx, gy) {
   const G = 2.5, x = (gx + 0.1 + 0.8 * hash2(gx, gy, SEED + 302)) * G, y = (gy + 0.1 + 0.8 * hash2(gx, gy, SEED + 303)) * G;
   sample(x, y); const h = hW(SE), wl = SW, kd = SK, dep = wl - h;
   PL.x = x; PL.y = y; PL.h = h; PL.wl = wl; PL.kd = kd; PL.dep = dep; PL.rap = SR;

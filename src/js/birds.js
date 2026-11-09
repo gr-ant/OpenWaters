@@ -516,15 +516,19 @@ const Birds = globalThis.Birds = (() => {
     draw(R, gl, L, E) {
       if (!this.list.length) return;
       gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]);
+      gl.uniform1f(L.u.roll, 0);
+      const groups = this.drawGroups || (this.drawGroups = []);
+      for (const m of groups) m.instances.length = 0;
+      groups.length = 0;
       for (const b of this.list) {
         if (Math.abs(b.x - E[0]) > 700 || Math.abs(b.y - E[1]) > 700) continue;
         const sp = b.sp; let m = sp.gpu[b.frame];
-        if (!m) { const ib = gl.createBuffer(), vb = R.vbo(sp.meshes[b.frame]); m = sp.gpu[b.frame] = { vao: R.litVao(vb, VB, ib, 40), ib, vb, n: sp.meshes[b.frame].length / VS }; }
+        if (!m) { m = sp.gpu[b.frame] = R.animalMesh(sp.meshes[b.frame], 44); m.instances = []; }
+        if (!m.instances.length) groups.push(m);
         const W = b.st === 'float' ? b.spot.water : b.st === 'under' && b.fo ? { kd: b.fo.kd, lev: b.fo.lev } : null;
-        gl.uniform1f(L.u.roll, b.roll || 0);
-        R.upInst(m, [b.x, b.y, b.z, b.sc, b.a, b.tint, W ? W.lev + Engine.swellAt(b.x, b.y, W.kd) : -1e4, W ? WATER[W.kd].murk : 0, 0, b.pitch || 0]);
-        gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, 1);
+        m.instances.push(b.x, b.y, b.z, b.sc, b.a, b.tint, W ? W.lev + Engine.swellAt(b.x, b.y, W.kd) : -1e4, W ? WATER[W.kd].murk : 0, 0, b.pitch || 0, b.roll || 0);
       }
+      for (const m of groups) { R.upInst(m, m.instances); R.drawMesh(m, m.instances.length / 11); }
       gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0);
     },
   };

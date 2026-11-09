@@ -52,12 +52,16 @@ void main(){
   WV(.35, .29, .07) WV(1.2, .47, .05) WV(-.55, .71, .04) WV(.95, 1.13, .03) WV(-.2, 1.9, .02)
   g += (.03 + .06 * sw) * aa(4.3) * vec2(sin(q.x*4.1 + q.y*1.3 + t*4.), cos(q.y*3.7 - q.x*1.1 + t*3.6));
   // irregular wind ripples: two noise layers drifting different ways, so the pattern keeps changing
-  g += (grd(q * .9 + t * vec2(.35, .22)) * aa(5.7) + grd(q * 1.7 - t * vec2(.18, .41) + 11.) * .6 * aa(10.7)) * (.05 + .16 * wav);
+  float windFade0 = aa(5.7), windFade1 = aa(10.7);
+  vec2 wind0 = vec2(0.), wind1 = vec2(0.);
+  if (windFade0 > 0.) wind0 = grd(q * .9 + t * vec2(.35, .22)) * windFade0;
+  if (windFade1 > 0.) wind1 = grd(q * 1.7 - t * vec2(.18, .41) + 11.) * .6 * windFade1;
+  g += (wind0 + wind1) * (.05 + .16 * wav);
   // flowing water: ripple noise carried along the current in two staggered phases, cross-faded so it never stretches
   float sp = length(flw), ph0 = fract(t * .3), ph1 = fract(t * .3 + .5), bl = abs(1. - 2. * ph0);
   vec2 a0 = q - flw * ph0 * 3.33, a1 = q - flw * ph1 * 3.33 + vec2(3.7, 1.9);
   float moving = smoothstep(.02, .3, sp);
-  if (moving > 0.) g += mix(grd(a0 * 1.9), grd(a1 * 1.9), bl) * (.07 + .12 * min(sp, 2.)) * moving * aa(12.);   // one scale of ripples is plenty
+  if (moving > 0. && aa(12.) > 0.) g += mix(grd(a0 * 1.9), grd(a1 * 1.9), bl) * (.07 + .12 * min(sp, 2.)) * moving * aa(12.);   // one scale of ripples is plenty
   if (wx.x > .01) for (int k = 0; k < 2; k++) { // raindrops: rings popping up all over
     vec2 cq = q * 1.8 + float(k) * vec2(.37, .71), id = floor(cq), fq = fract(cq) - .5;
     float h = h21(id + float(k) * 7.3); if (h > wx.x) continue;

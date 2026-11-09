@@ -17,6 +17,7 @@ layout(location=0) in vec3 p; layout(location=1) in vec3 n; layout(location=2) i
 layout(location=3) in vec4 io; layout(location=4) in vec2 ir;   // per-instance: xyz+scale, rotation+tint
 layout(location=5) in vec2 uv; layout(location=6) in float mat;
 layout(location=7) in float twl; layout(location=8) in float tmk; layout(location=9) in vec2 iwm; layout(location=10) in float iph; // water level + murk: terrain / per instance; fish swim phase
+layout(location=12) in float irl; // bird roll; disabled (zero) for other meshes
 layout(location=11) in float ipt; // fish pitch (nose up +)
 uniform mat4 vp; uniform float inst, sway, time, wig, fsh, pscale, dry, swm, roll; uniform vec3 jawP; // fish jaw hinge (x, z) and widest gape angle
 uniform vec4 seasA; // leaves on (0..1), autumn colour, fresh spring green, grass dormancy
@@ -57,7 +58,8 @@ void main(){
         pp.z += sin(ph * 1.6 + p.x * 42.) * .012 * (mat - 30.);
       }
       ${SWIM_GLSL}   // the body wave: style per species (SWIM_MODES)
-      if (roll != 0.) { float cr = cos(roll), sr = sin(roll); pp.yz = vec2(pp.y * cr - pp.z * sr, pp.y * sr + pp.z * cr); nn.yz = vec2(nn.y * cr - nn.z * sr, nn.y * sr + nn.z * cr); }   // boats heel
+      float bodyRoll = roll + irl;
+      if (bodyRoll != 0.) { float cr = cos(bodyRoll), sr = sin(bodyRoll); pp.yz = vec2(pp.y * cr - pp.z * sr, pp.y * sr + pp.z * cr); nn.yz = vec2(nn.y * cr - nn.z * sr, nn.y * sr + nn.z * cr); }   // boats heel
       if (ipt != 0.) { float cp = cos(ipt), sp = sin(ipt); pp.xz = vec2(pp.x * cp - pp.z * sp, pp.x * sp + pp.z * cp); nn.xz = vec2(nn.x * cp - nn.z * sp, nn.x * sp + nn.z * cp); }
     }
     q = vec3(k*pp.x - s*pp.y, s*pp.x + k*pp.y, pp.z) * io.w * pscale + io.xyz;
@@ -137,7 +139,6 @@ vec3 fireLight(vec3 N){ // up to 8 flickering warm lights (xyz, intensity)
   for (int i = 0; i < 8; i++) { if (i >= nfl) break; vec3 L = fl[i].xyz - wp; float d = length(L) + .001; a += fl[i].w * max(dot(N, L/d)*.7 + .3, 0.) / (1. + d*d*.6); }
   return min(a, 1.6) * vec3(1., .6, .3);
 }
-uniform float lureCam;
 void main(){
   vec3 N = normalize(wn); float spec = 0., em = 0.;
   vec3 bc = surface(col, N, int(mt + .5), spec, em);
@@ -145,7 +146,8 @@ void main(){
     float above = (wv.z < .5 && wv.x == 0.) || wv.x - wp.z < -.04 ? 1. : 0., id = mt + .5;
     if (wv.z > .5 && above > 0.) { float gr = clamp((bc.g - max(bc.r, bc.b)) * 7., 0., 1.); bc = mix(bc, vec3(dot(bc, vec3(.5, .4, .1))) * vec3(1.18, 1., .62), gr * seasA.w * .8); }
     float up = wv.z > .5 ? smoothstep(.5, .85, N.z) : (id > 5.5 && id < 7.5 ? smoothstep(.1, .55, N.z) : 0.);
-    float sn = seasB.x * up * smoothstep(.15, .45, vn(wp.xy * .4) * .55 + vn(wp.xy * 2.1) * .25 + seasB.x * .55) * above;
+    float sn = 0.;
+    if (seasB.x > 0.) sn = seasB.x * up * smoothstep(.15, .45, vn(wp.xy * .4) * .55 + vn(wp.xy * 2.1) * .25 + seasB.x * .55) * above;
     bc = mix(bc * (1. - .22 * seasB.y * above), vec3(.9, .93, .97), sn);
   }
   float d = max(dot(N, sun), 0.);
@@ -162,9 +164,5 @@ void main(){
     c = c * mix(vec3(1.), tint, clamp(.2 + wd * .2, 0., .9)) * exp(-wd * (.03 + .15 * mk));
     c += lcol * cs * (bc * .9 + .06) * (.35 + .65 * max(N.z, 0.)) * .9;
   } else if (wv.z > .5 && wd > -.45) c *= mix(.62, 1., -wd / .45); // wet band just above the waterline
-  // Soft close-range camera illumination keeps bait and approaching mouths
-  // readable in deep/murky water, only in the lure inset.
-  float fill = lureCam * (1. - smoothstep(.3, 3., length(wp - cam)));
-  c = mix(c, max(c, bc * .9), fill);
   o = vec4(fog(mix(c, bc, em * emk), wp), 1.);
 }`;

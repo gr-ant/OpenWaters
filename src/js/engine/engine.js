@@ -23,7 +23,6 @@ const Engine = {
     if (code === 'Digit1' && !e.repeat) this.openSpawn('spawn');                                  // (secret) spawn fish and wildlife
     if (code === 'Slash' && !e.repeat) this.toggleHelp();                                         // controls card
     if (code === 'KeyQ' && !e.repeat) this.toggleRod();                                          // rod out / away
-    if ((code === 'Digit4' || code === 'Numpad4') && !e.repeat) this.toggleLureView();             // live lure camera
     if ((code === 'BracketLeft' || code === 'BracketRight') && this.ang && this.ang.S) this.setDrag(this.ang.dragKg * (code === 'BracketRight' ? 1.15 : 1 / 1.15));
     if (code === 'KeyF' && !e.repeat) this.action();
     if (code === 'KeyL' && !e.repeat) this.toggleTorch();                                        // the dive light, when you're deep
@@ -62,9 +61,10 @@ const Engine = {
       gl.bindVertexArray(this.precipVao); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 16, 0); gl.bindVertexArray(null);
     }
     const tm = treeMeshes();
-    this.treeKinds = TREE_KINDS.map(k => ({ hi: this.vbo(tm[k]), hiN: tm[k].length / VS, lo: this.vbo(tm[k + 'L']), loN: tm[k + 'L'].length / VS }));
+    this.treeKinds = TREE_KINDS.map(k => ({ hi: this.meshBuffers(tm[k]), lo: this.meshBuffers(tm[k + 'L']) }));
     const wm = waterMeshes(); this.plantKinds = {};
     for (const k in wm) this.plantKinds[k] = { vbo: this.vbo(wm[k]), n: wm[k].length / VS };
+    gl.vertexAttrib1f(12, 0); // per-instance bird roll is disabled on other meshes
     gl.vertexAttrib1f(6, 0); // terrain has no material attribute: generic surface
     gl.vertexAttrib1f(7, -1e4); gl.vertexAttrib1f(8, 0); gl.vertexAttrib2f(9, -1e4, 0); gl.vertexAttrib1f(10, 0); // not underwater unless a mesh says so
     this.partVbo = gl.createBuffer(); this.partVao = gl.createVertexArray(); gl.bindVertexArray(this.partVao); gl.bindBuffer(gl.ARRAY_BUFFER, this.partVbo);

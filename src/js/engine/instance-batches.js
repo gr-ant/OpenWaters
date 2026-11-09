@@ -6,7 +6,7 @@ Object.assign(Engine, {
   batches: {},
   batch(key, mesh, istride) { // mesh: { vbo, n }
     let b = this.batches[key];
-    if (!b) { const ib = this.gl.createBuffer(); b = this.batches[key] = { ib, vao: this.litVao(mesh.vbo, VB, ib, istride), verts: mesh.n, stride: istride / 4, data: new Float32Array(4096), n: 0, cap: 0 }; }
+    if (!b) { const ib = this.gl.createBuffer(); b = this.batches[key] = { ib, vao: this.litVao(mesh.vbo, VB, ib, istride, mesh.ebo), verts: mesh.n, indexType: mesh.indexType || 0, stride: istride / 4, data: new Float32Array(4096), n: 0, cap: 0 }; }
     return b;
   },
   bAppend(b, arr) { // arr: typed or plain array of floats
@@ -25,7 +25,10 @@ Object.assign(Engine, {
     gl.bindBuffer(gl.ARRAY_BUFFER, b.ib);
     if (b.cap < b.data.length) { gl.bufferData(gl.ARRAY_BUFFER, b.data.byteLength, gl.DYNAMIC_DRAW); b.cap = b.data.length; }
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data, 0, b.n);
-    gl.bindVertexArray(b.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.verts, b.n / b.stride); b.last = b.n; b.n = 0;
+    b.last = b.n; b.n = 0; this.bRedraw(b);
   },
-  bRedraw(b) { if (b.last) { const gl = this.gl; gl.bindVertexArray(b.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.verts, b.last / b.stride); } },  // same data as last frame
+  bRedraw(b) { if (b.last) { const gl = this.gl; gl.bindVertexArray(b.vao);
+    if (b.indexType) gl.drawElementsInstanced(gl.TRIANGLES, b.verts, b.indexType, 0, b.last / b.stride);
+    else gl.drawArraysInstanced(gl.TRIANGLES, 0, b.verts, b.last / b.stride);
+  } },  // same data as last frame
 });

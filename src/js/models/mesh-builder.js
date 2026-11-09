@@ -4,6 +4,32 @@
 // Surface materials (drawn procedurally in the fragment shader)
 const MT = { GEN: 0, PLASTER: 1, WOOD: 2, TILE: 3, STONE: 4, ROCK: 5, LEAF: 6, BARK: 7, CLOTH: 8, GLOW: 9, GLASS: 10, LAMP: 11, METAL: 12, JAW: 13 }; // JAW: fish lower jaw (hinged in the vertex shader)
 const VS = 10, VB = 40; // floats / bytes per lit vertex: pos3 nrm3 col3 material1
+// Share only bit-identical vertex records. Triangle order, flat normals, material
+// boundaries and animation inputs survive unchanged. Hash collisions are compared in full.
+function indexMesh(mesh) {
+  const words = new Uint32Array(mesh.buffer, mesh.byteOffset, mesh.length), count = mesh.length / VS;
+  const heads = new Map(), next = new Int32Array(count), offsets = new Uint32Array(count), ids = new Uint32Array(count);
+  let unique = 0;
+  for (let i = 0; i < count; i++) {
+    const o = i * VS; let h = 2166136261;
+    for (let q = 0; q < VS; q++) h = Math.imul(h ^ words[o + q], 16777619);
+    const head = heads.get(h) ?? -1; let id = head;
+    while (id >= 0) {
+      const at = offsets[id]; let q = 0;
+      while (q < VS && words[at + q] === words[o + q]) q++;
+      if (q === VS) break;
+      id = next[id];
+    }
+    if (id < 0) { id = unique++; offsets[id] = o; next[id] = head; heads.set(h, id); }
+    ids[i] = id;
+  }
+  // WebGL2 reserves the largest index for primitive restart (65535 for Uint16).
+  const Index = unique < 65536 ? Uint16Array : Uint32Array;
+  if (unique * VB + count * Index.BYTES_PER_ELEMENT >= mesh.byteLength * 0.95) return { vertices: mesh, indices: null };
+  const packed = new Uint32Array(unique * VS);
+  for (let i = 0; i < unique; i++) packed.set(words.subarray(offsets[i], offsets[i] + VS), i * VS);
+  return { vertices: new Float32Array(packed.buffer), indices: new Index(ids) };
+}
 function meshBuilder(smooth = false) { // smooth: round, smooth-shaded blobs (fish and shellfish); trees keep the faceted look
   const v = [], B = { v, mat: 0 };
   const tri = (a, b, c, col, ctr) => {
