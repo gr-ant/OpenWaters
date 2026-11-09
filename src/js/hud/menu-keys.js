@@ -11,7 +11,7 @@ Object.assign(Engine, {
     const step = k === 'ArrowDown' ? 1 : k === 'ArrowUp' ? -1 : 0, side = k === 'ArrowRight' ? 1 : k === 'ArrowLeft' ? -1 : 0;
     if (panel === 'spawn') {
       if (side) { const C = ['all', ...WATER_CATS.map(c => c[0])]; this.spawnSub = C[(C.indexOf(this.spawnSub) + side + C.length) % C.length]; this.spawnSel = null; this.buildSpawnList(); }
-      else if (k === 'Tab') { if (this.spawnMode === 'spawn') { const T = SPAWN_TYPES.map(c => c[0]); this.spawnTab = T[(T.indexOf(this.spawnTab) + (e.shiftKey ? -1 : 1) + T.length) % T.length]; this.spawnSel = null; this.buildSpawnList(); } }
+      else if (k === 'Tab') { if (this.spawnMode === 'spawn') { this.spawnTab = this.spawnTab === 'fish' ? 'wild' : 'fish'; this.spawnSel = null; this.buildSpawnList(); } }
       else if (step) { const L = [...document.querySelectorAll('#spList [data-id]')]; if (!L.length) return true;
         const i = clamp((this.spawnNav ? L.findIndex(li => li.dataset.id === this.spawnSel) : step > 0 ? -1 : 1) + step, 0, L.length - 1); this.spawnSelect(L[i].dataset.id); L[i].scrollIntoView({ block: 'nearest' }); }
       else if (this.spawnNav || (typing && this.spawnSel)) this.spawnPlace();   // from the search box, Enter takes the top match

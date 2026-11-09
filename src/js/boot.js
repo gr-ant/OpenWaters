@@ -41,7 +41,9 @@ window.addEventListener('DOMContentLoaded', () => {
     Game.emit('ready');
     const ld = document.getElementById('loading'); if (ld) ld.remove();
     // menus are tinted with the average colour on screen, darkened so cream text stays readable
-    const tc = document.createElement('canvas'); tc.width = 16; tc.height = 9; const tx = tc.getContext('2d', { willReadFrequently: true }); tx.imageSmoothingQuality = 'high'; let tintT = -1e9;
+    const tc = document.createElement('canvas'); tc.width = 16; tc.height = 9; const tx = tc.getContext('2d');   // GPU canvas: the full frame is shrunk on the GPU, only 16×9 pixels come back
+    tx.imageSmoothingQuality = 'high'; let tintT = -1e9;
+    const menuUp = () => document.querySelector('.panel:not([hidden]):not(dialog), dialog.panel[open], #catch:not([hidden])');
     function sceneTint() {
       try { tx.drawImage(Engine.canvas, 0, 0, 16, 9); } catch (e) { return; }
       const d = tx.getImageData(0, 0, 16, 9).data; let r = 0, g = 0, b = 0;
@@ -51,7 +53,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     function frame(timestamp) { // also measures what a frame costs without background work, to size the next budget
       const t0 = performance.now(); Engine.update(timestamp); Engine.render();
-      if (timestamp - tintT > 500) { tintT = timestamp; sceneTint(); }   // read right after drawing, while the frame is still in the buffer
+      if (timestamp - tintT > 500 && menuUp()) { tintT = timestamp; sceneTint(); }   // only while a menu shows; read right after drawing, while the frame is still in the buffer
       const w = performance.now() - t0 - (Engine.bgSpent || 0); Engine.workMs = Engine.workMs == null ? w : Engine.workMs + (w - Engine.workMs) * 0.1;
       requestAnimationFrame(frame); }
     requestAnimationFrame(frame);

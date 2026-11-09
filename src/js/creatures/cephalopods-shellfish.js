@@ -201,7 +201,7 @@ const PLAN_BUILD = {
     // the back end
     const xr = X(0.985);
     if (rear === 'paddle') ellip(M, [xr - tailL * 0.48, 0, 0], null, [tailL * 0.55, Rw * 1.25, 0.012 + R * 0.08], 12, 14, () => V3.lerp(C.fins, C.back, 0.3));
-    else if (rear === 'tail') { tube(M, t => [xr - t * tailL, 0, R * 0.05 * (1 - t)], t => R * 0.17 * (1 - 0.55 * t) + 0.004, null, 10, 8, (t, a) => sk(1, Math.cos(a * TAU), a));
+    else if (rear === 'tail') { tube(M, t => [xr + 0.06 - t * (tailL + 0.06), 0, R * 0.05 * (1 - t)], t => R * (0.4 * (1 - t) ** 1.5 + 0.06) + 0.004, null, 10, 8, (t, a) => sk(1, Math.cos(a * TAU), a));
       for (const sd of [1, -1]) ellip(M, [X(0.9) - 0.03, sd * Rw * 0.55, -R * 0.25], null, [0.05, 0.028, 0.008], 8, 8, () => C.fins); }
     else for (const sd of [1, -1]) ellip(M, [xr - tailL * 0.5, sd * Rw * 0.22, -R * 0.05], [norm3([1, sd * 0.25, 0]), norm3([-sd * 0.25, 1, 0]), [0, 0, 1]], [tailL * 0.55, Rw * 0.42, 0.008 + R * 0.05], 10, 10, () => C.fins);
   },

@@ -447,8 +447,9 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 .pm-foot-note { margin: 0 30px; padding: 16px 0 22px; border-top: 1px solid #ffffff2a; color: var(--muted); font-size: 13px; letter-spacing: 1.5px; }
 .pm-bar, .pm-foot { border-color: #ffffff2a; }
 #pauseMenu[data-page="main"] { width: min(420px, calc(100vw - 32px)); }
-#spawn .tabs { flex-wrap: wrap; } #spawn .tabs button { flex: 1 1 auto; padding: 8px 12px; font-size: 15px; } #spawn .tabs button svg { width: 22px; height: 22px; }
-#spBiome[hidden] { display: none; }
+#spBiome[hidden], #spKind[hidden] { display: none; }
+#pauseMenu .pm-item:focus-visible::before { content: none; }   /* the lit border shows focus; the arrow overlapped the label */
+#pauseMenu .pm-primary kbd { background: #1d2c2c1a; color: #1d2c2c; opacity: .75; }
 </style>
 </head>
 <body>
@@ -522,6 +523,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
   <header><span class="sp-art" data-icon="dock.spawn"></span><div class="tk-title"><h2>Spawn</h2><i>A little company on the water.</i></div><button id="spClose" class="round-x" title="Close" data-icon="ui.close"></button></header>
   <label class="search"><span data-icon="ui.search"></span><input id="spSearch" type="search" placeholder="Find a boat or creature…" autocomplete="off"></label>
   <div class="tabs" id="spTabs"></div>
+  <div class="subtabs" id="spKind"></div>
   <div class="subtabs" id="spBiome"></div>
   <div class="subtabs" id="spSub"></div>
   <ul id="spList"></ul>
@@ -1669,9 +1671,11 @@ void main(){
     o = vec4(fog(c, wp), 1.); return;
   }
   // standing waves: big swell on the sea, wind chop on lakes, near-glass on ponds
-  float sw = wav * wav; // long regular swell only really belongs to the sea
-  vec2 g = sw * vec2(.18*cos(q.x*.35 + t*1.3) + .08*aa(1.3)*cos((q.x+q.y)*.9 - t*2.1) + .05*aa(2.3)*cos(q.y*2.3 + t*3.),
-                     .18*sin(q.y*.3 - t*.9) + .08*aa(1.3)*sin((q.x-q.y)*.8 + t*1.7) + .05*aa(2.1)*sin(q.x*2.1 - t*2.7));
+  float sw = min(wav * wav, 2.); // long swell only really belongs to the sea
+  // swell: waves of different lengths from different (never square-on) directions, so they don't line up into a grid; deep-water speeds
+  vec2 g = vec2(0.);
+  #define WV(an, k, s) { vec2 d = vec2(cos(an), sin(an)); g += d * (sw * (s) * aa(k) * cos(dot(d, q) * (k) + t * sqrt(9.8 * (k)))); }
+  WV(.35, .29, .07) WV(1.2, .47, .05) WV(-.55, .71, .04) WV(.95, 1.13, .03) WV(-.2, 1.9, .02)
   g += (.03 + .06 * sw) * aa(4.3) * vec2(sin(q.x*4.1 + q.y*1.3 + t*4.), cos(q.y*3.7 - q.x*1.1 + t*3.6));
   // irregular wind ripples: two noise layers drifting different ways, so the pattern keeps changing
   g += (grd(q * .9 + t * vec2(.35, .22)) * aa(5.7) + grd(q * 1.7 - t * vec2(.18, .41) + 11.) * .6 * aa(10.7)) * (.05 + .16 * wav);
@@ -2744,7 +2748,7 @@ const PLAN_BUILD = {
     // the back end
     const xr = X(0.985);
     if (rear === 'paddle') ellip(M, [xr - tailL * 0.48, 0, 0], null, [tailL * 0.55, Rw * 1.25, 0.012 + R * 0.08], 12, 14, () => V3.lerp(C.fins, C.back, 0.3));
-    else if (rear === 'tail') { tube(M, t => [xr - t * tailL, 0, R * 0.05 * (1 - t)], t => R * 0.17 * (1 - 0.55 * t) + 0.004, null, 10, 8, (t, a) => sk(1, Math.cos(a * TAU), a));
+    else if (rear === 'tail') { tube(M, t => [xr + 0.06 - t * (tailL + 0.06), 0, R * 0.05 * (1 - t)], t => R * (0.4 * (1 - t) ** 1.5 + 0.06) + 0.004, null, 10, 8, (t, a) => sk(1, Math.cos(a * TAU), a));
       for (const sd of [1, -1]) ellip(M, [X(0.9) - 0.03, sd * Rw * 0.55, -R * 0.25], null, [0.05, 0.028, 0.008], 8, 8, () => C.fins); }
     else for (const sd of [1, -1]) ellip(M, [xr - tailL * 0.5, sd * Rw * 0.22, -R * 0.05], [norm3([1, sd * 0.25, 0]), norm3([-sd * 0.25, 1, 0]), [0, 0, 1]], [tailL * 0.55, Rw * 0.42, 0.008 + R * 0.05], 10, 10, () => C.fins);
   },
@@ -4785,14 +4789,14 @@ Object.assign(Engine, {
 <script>
 'use strict';
 // Engine: the spawn picker panel (B boats, 1 animals).
-// spawn tabs: [key, label, icon or '']
-const SPAWN_TYPES = [['fish', 'Fish', 'fish'], ['shell', 'Shellfish', ''], ['mammal', 'Mammals', ''], ['herp', 'Reptiles & amphibians', ''], ['bird', 'Birds', 'heron']];
+// the kinds of wildlife (chips under the Wildlife tab)
+const WILD_KINDS = [['all', 'All'], ['shell', 'Shellfish'], ['mammal', 'Mammals'], ['herp', 'Reptiles & amphibians'], ['bird', 'Birds']];
 Object.assign(Engine, {
   // ---- spawn picker (K, or the Spawn button) ----
   // B: boats; 1 (a secret): fish and wildlife. Both open on the water you're nearest.
   openSpawn(mode) {
     if (this.spawnOpen && this.spawnMode === mode) return this.toggleSpawn(false);
-    this.spawnMode = mode; this.spawnTab = mode === 'boats' ? 'boats' : 'fish'; this.spawnSub = this.contextKind(); this.spawnBiome = CLIMATE.key; this.spawnSel = null;
+    this.spawnMode = mode; this.spawnTab = mode === 'boats' ? 'boats' : 'fish'; this.spawnSub = this.contextKind(); this.spawnBiome = CLIMATE.key; this.spawnKind = 'all'; this.spawnSel = null;
     if (this.spawnOpen) this.buildSpawnList(); else this.toggleSpawn(true);
   },
   toggleSpawn(open = !this.spawnOpen) {
@@ -4807,10 +4811,11 @@ Object.assign(Engine, {
     document.getElementById('spClose').onclick = () => this.toggleSpawn(false);
     document.getElementById('spSearch').oninput = () => this.buildSpawnList();
     document.getElementById('spTabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { this.spawnTab = b.dataset.tab; this.spawnSel = null; this.buildSpawnList(); } };
+    document.getElementById('spKind').onclick = e => { const b = e.target.closest('[data-kind]'); if (b) { this.spawnKind = b.dataset.kind; this.buildSpawnList(); } };
     document.getElementById('spBiome').onclick = e => { const b = e.target.closest('[data-biome]'); if (b) { this.spawnBiome = b.dataset.biome; this.buildSpawnList(); } };
     document.getElementById('spSub').onclick = e => { const b = e.target.closest('[data-sub]'); if (b) { this.spawnSub = b.dataset.sub; this.buildSpawnList(); } };
     document.getElementById('spList').onclick = e => { const li = e.target.closest('[data-id]'); if (li) { this.spawnSelect(li.dataset.id); this.spawnPlace(); } };   // a click places it
-    this.spawnMode = 'boats'; this.spawnTab = 'boats'; this.spawnSub = 'all'; this.spawnBiome = 'all';
+    this.spawnMode = 'boats'; this.spawnTab = 'boats'; this.spawnSub = 'all'; this.spawnBiome = 'all'; this.spawnKind = 'all';
   },
   // what's in the list for the current tab, filter chip and search
   spawnItems() {
@@ -4820,9 +4825,9 @@ Object.assign(Engine, {
     const bio = this.spawnBiome, inBiome = C => bio === 'all' || !C || C.includes(bio);
     const match = (W, txt) => (sub === 'all' || W[sub] > 0) && (!q || (txt + ' ' + Object.keys(W).filter(w => W[w] > 0).join(' ')).toLowerCase().includes(q));
     const byName = (a, b) => a.name.localeCompare(b.name);
-    if (t === 'bird') return Object.values(Birds.species).filter(B => inBiome(B.climates) && match(B.habitat.any ? { sea: 1, lake: 1, pond: 1, river: 1, creek: 1 } : B.habitat, B.name)).sort(byName);
-    const kindOf = D => D._herp ? 'herp' : D._air ? 'mammal' : D._shell ? 'shell' : 'fish';
-    return FishDB.list.filter(D => kindOf(D) === t && inBiome(D.habitat.climates) && match(D.habitat.waters, D.name + ' ' + D.scientific)).sort(byName);
+    const kindOf = D => D._herp ? 'herp' : D._air ? 'mammal' : D._shell ? 'shell' : 'fish', kind = t === 'fish' ? 'fish' : this.spawnKind, want = k => kind === 'all' ? k !== 'fish' : k === kind;
+    const birds = want('bird') ? Object.values(Birds.species).filter(B => inBiome(B.climates) && match(B.habitat.any ? { sea: 1, lake: 1, pond: 1, river: 1, creek: 1 } : B.habitat, B.name)) : [];
+    return FishDB.list.filter(D => want(kindOf(D)) && inBiome(D.habitat.climates) && match(D.habitat.waters, D.name + ' ' + D.scientific)).concat(birds).sort(byName);
   },
   buildSpawnList() {
     const ul = document.getElementById('spList'), esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -4835,7 +4840,9 @@ Object.assign(Engine, {
       document.getElementById('spSearch').placeholder = boatsMode ? 'Find a boat…' : 'Find a creature…';
     }
     tabs.hidden = boatsMode;
-    tabs.innerHTML = boatsMode ? '' : SPAWN_TYPES.map(([k, l, ic]) => `<button data-tab="${k}" class="${k === this.spawnTab ? 'on' : ''}">${ic ? uiIcon('ui.' + ic) : ''}${l}</button>`).join('');
+    tabs.innerHTML = boatsMode ? '' : [['fish', 'Fish', 'fish'], ['wild', 'Wildlife', 'heron']].map(([k, l, ic]) => `<button data-tab="${k}" class="${k === this.spawnTab ? 'on' : ''}">${uiIcon('ui.' + ic)}${l}</button>`).join('');
+    const kinds = document.getElementById('spKind'); kinds.hidden = this.spawnTab !== 'wild';
+    kinds.innerHTML = kinds.hidden ? '' : WILD_KINDS.map(([k, l]) => `<button data-kind="${k}" class="${k === this.spawnKind ? 'on' : ''}">${l}</button>`).join('');
     const bio = document.getElementById('spBiome'); bio.hidden = boatsMode;
     bio.innerHTML = boatsMode ? '' : [['all', 'All biomes'], ...Object.entries(CLIMATES).map(([k, C]) => [k, C.name])].map(([k, l]) => `<button data-biome="${k}" class="${k === this.spawnBiome ? 'on' : ''}">${l}</button>`).join('');
     document.getElementById('spSub').innerHTML = catChips(this.spawnSub, 'data-sub');
@@ -4844,7 +4851,7 @@ Object.assign(Engine, {
     ul.classList.toggle('grid', boats);   // boats: picture tiles, the name on hover
     ul.innerHTML = items.map(D => boats
       ? `<li data-id="${esc(D.id)}" class="tile${D.id === this.spawnSel && this.spawnNav ? ' nav' : ''}" title="${esc(D.name)} · ${D.hull.length_m} m">${boatPicHTML(D)}</li>`
-      : `<li data-id="${esc(D.id)}" class="card${D.id === this.spawnSel && this.spawnNav ? ' nav' : ''}"><span class="ri wide">${D.size ? animalPicHTML(D) : uiIcon('ui.heron')}</span>`
+      : `<li data-id="${esc(D.id)}" class="card${D.id === this.spawnSel && this.spawnNav ? ' nav' : ''}"><span class="ri wide">${D.size ? animalPicHTML(D) : birdPicHTML(D)}</span>`
       + `<span class="tx"><b>${esc(D.name)}</b><small>${D.size ? D.size.length_cm.typical + ' cm' : Math.round(D.look.wing.span * 100) + ' cm wingspan'}</small></span><span class="chev">${uiIcon('ui.chevron')}</span></li>`).join('') || '<li class="none">Nothing matches</li>';
   },
   // the card the keyboard is on (outlined); Enter places it
@@ -4861,7 +4868,7 @@ Object.assign(Engine, {
   },
   spawnPlace() {
     if (!this.spawnSel || performance.now() - this.spawnOpenT < 450) return;   // ignore the tap that opened the panel
-    if (this.spawnTab === 'boats') { if (this.spawnBoat(this.spawnSel)) this.toggleSpawn(false); } else if (this.spawnTab === 'bird') this.spawnBird(this.spawnSel); else this.spawnAnimal(this.spawnSel);
+    if (this.spawnTab === 'boats') { if (this.spawnBoat(this.spawnSel)) this.toggleSpawn(false); } else if (Birds.species[this.spawnSel] && !FishDB.byId[this.spawnSel]) this.spawnBird(this.spawnSel); else this.spawnAnimal(this.spawnSel);
   },
 });
 </script>
@@ -8066,6 +8073,7 @@ function gearIconHTML(g) {
 }
 const boatKey = D => `boat:${D.id}:${stamp(D)}`, animalKey = D => `fish:${D.id}:${stamp(D)}`;
 const boatPicHTML = D => snapHTML(boatKey(D), () => D._mesh), animalPicHTML = D => snapHTML(animalKey(D), () => D._mesh);
+const birdPicHTML = sp => snapHTML(`bird:${sp.id}`, () => sp.meshes[sp.meshes.length - 5], '', { dir: [0.35, -0.7, 0.9] });   // meshes end: glide, soar, dive, sit, stand
 // all pictures are made while the loading screen is up (later imports are picked up by snapPump)
 Game.on('ready', () => { Engine.snapAll(); Engine.snapPump(1e9); const pf = Engine.mapPrefetchList(); Engine.mapWork(pf.filter(t => t[0] >= 6), 1e9); Engine.mapPrefetch = pf.filter(t => t[0] < 6); });
 
@@ -8375,7 +8383,7 @@ Object.assign(Engine, {
     const step = k === 'ArrowDown' ? 1 : k === 'ArrowUp' ? -1 : 0, side = k === 'ArrowRight' ? 1 : k === 'ArrowLeft' ? -1 : 0;
     if (panel === 'spawn') {
       if (side) { const C = ['all', ...WATER_CATS.map(c => c[0])]; this.spawnSub = C[(C.indexOf(this.spawnSub) + side + C.length) % C.length]; this.spawnSel = null; this.buildSpawnList(); }
-      else if (k === 'Tab') { if (this.spawnMode === 'spawn') { const T = SPAWN_TYPES.map(c => c[0]); this.spawnTab = T[(T.indexOf(this.spawnTab) + (e.shiftKey ? -1 : 1) + T.length) % T.length]; this.spawnSel = null; this.buildSpawnList(); } }
+      else if (k === 'Tab') { if (this.spawnMode === 'spawn') { this.spawnTab = this.spawnTab === 'fish' ? 'wild' : 'fish'; this.spawnSel = null; this.buildSpawnList(); } }
       else if (step) { const L = [...document.querySelectorAll('#spList [data-id]')]; if (!L.length) return true;
         const i = clamp((this.spawnNav ? L.findIndex(li => li.dataset.id === this.spawnSel) : step > 0 ? -1 : 1) + step, 0, L.length - 1); this.spawnSelect(L[i].dataset.id); L[i].scrollIntoView({ block: 'nearest' }); }
       else if (this.spawnNav || (typing && this.spawnSel)) this.spawnPlace();   // from the search box, Enter takes the top match
@@ -9849,7 +9857,9 @@ window.addEventListener('DOMContentLoaded', () => {
     Game.emit('ready');
     const ld = document.getElementById('loading'); if (ld) ld.remove();
     // menus are tinted with the average colour on screen, darkened so cream text stays readable
-    const tc = document.createElement('canvas'); tc.width = 16; tc.height = 9; const tx = tc.getContext('2d', { willReadFrequently: true }); tx.imageSmoothingQuality = 'high'; let tintT = -1e9;
+    const tc = document.createElement('canvas'); tc.width = 16; tc.height = 9; const tx = tc.getContext('2d');   // GPU canvas: the full frame is shrunk on the GPU, only 16×9 pixels come back
+    tx.imageSmoothingQuality = 'high'; let tintT = -1e9;
+    const menuUp = () => document.querySelector('.panel:not([hidden]):not(dialog), dialog.panel[open], #catch:not([hidden])');
     function sceneTint() {
       try { tx.drawImage(Engine.canvas, 0, 0, 16, 9); } catch (e) { return; }
       const d = tx.getImageData(0, 0, 16, 9).data; let r = 0, g = 0, b = 0;
@@ -9859,7 +9869,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     function frame(timestamp) { // also measures what a frame costs without background work, to size the next budget
       const t0 = performance.now(); Engine.update(timestamp); Engine.render();
-      if (timestamp - tintT > 500) { tintT = timestamp; sceneTint(); }   // read right after drawing, while the frame is still in the buffer
+      if (timestamp - tintT > 500 && menuUp()) { tintT = timestamp; sceneTint(); }   // only while a menu shows; read right after drawing, while the frame is still in the buffer
       const w = performance.now() - t0 - (Engine.bgSpent || 0); Engine.workMs = Engine.workMs == null ? w : Engine.workMs + (w - Engine.workMs) * 0.1;
       requestAnimationFrame(frame); }
     requestAnimationFrame(frame);
@@ -17426,7 +17436,7 @@ window.addEventListener('DOMContentLoaded', () => {
       "neck": 0.12,
       "fore": 0.4,
       "rear": "tail",
-      "tail": 0.38,
+      "tail": 0.28,
       "whiskers": 1,
       "ears": 0.3,
       "eye": 0.7

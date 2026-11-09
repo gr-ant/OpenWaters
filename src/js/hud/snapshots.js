@@ -59,6 +59,7 @@ function gearIconHTML(g) {
 }
 const boatKey = D => `boat:${D.id}:${stamp(D)}`, animalKey = D => `fish:${D.id}:${stamp(D)}`;
 const boatPicHTML = D => snapHTML(boatKey(D), () => D._mesh), animalPicHTML = D => snapHTML(animalKey(D), () => D._mesh);
+const birdPicHTML = sp => snapHTML(`bird:${sp.id}`, () => sp.meshes[sp.meshes.length - 5], '', { dir: [0.35, -0.7, 0.9] });   // meshes end: glide, soar, dive, sit, stand
 // all pictures are made while the loading screen is up (later imports are picked up by snapPump)
 Game.on('ready', () => { Engine.snapAll(); Engine.snapPump(1e9); const pf = Engine.mapPrefetchList(); Engine.mapWork(pf.filter(t => t[0] >= 6), 1e9); Engine.mapPrefetch = pf.filter(t => t[0] < 6); });
 

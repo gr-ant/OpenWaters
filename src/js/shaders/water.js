@@ -45,9 +45,11 @@ void main(){
     o = vec4(fog(c, wp), 1.); return;
   }
   // standing waves: big swell on the sea, wind chop on lakes, near-glass on ponds
-  float sw = wav * wav; // long regular swell only really belongs to the sea
-  vec2 g = sw * vec2(.18*cos(q.x*.35 + t*1.3) + .08*aa(1.3)*cos((q.x+q.y)*.9 - t*2.1) + .05*aa(2.3)*cos(q.y*2.3 + t*3.),
-                     .18*sin(q.y*.3 - t*.9) + .08*aa(1.3)*sin((q.x-q.y)*.8 + t*1.7) + .05*aa(2.1)*sin(q.x*2.1 - t*2.7));
+  float sw = min(wav * wav, 2.); // long swell only really belongs to the sea
+  // swell: waves of different lengths from different (never square-on) directions, so they don't line up into a grid; deep-water speeds
+  vec2 g = vec2(0.);
+  #define WV(an, k, s) { vec2 d = vec2(cos(an), sin(an)); g += d * (sw * (s) * aa(k) * cos(dot(d, q) * (k) + t * sqrt(9.8 * (k)))); }
+  WV(.35, .29, .07) WV(1.2, .47, .05) WV(-.55, .71, .04) WV(.95, 1.13, .03) WV(-.2, 1.9, .02)
   g += (.03 + .06 * sw) * aa(4.3) * vec2(sin(q.x*4.1 + q.y*1.3 + t*4.), cos(q.y*3.7 - q.x*1.1 + t*3.6));
   // irregular wind ripples: two noise layers drifting different ways, so the pattern keeps changing
   g += (grd(q * .9 + t * vec2(.35, .22)) * aa(5.7) + grd(q * 1.7 - t * vec2(.18, .41) + 11.) * .6 * aa(10.7)) * (.05 + .16 * wav);
