@@ -356,7 +356,7 @@ const Birds = globalThis.Birds = (() => {
         for (const sp of Object.values(species)) {
           sp.want = this.census(sp); const fl = sp.flock;
           if ((fl.at -= 2.5) <= 0) { this.anchor(sp); fl.at = 8 + rnd() * 6; }
-          const mine = this.list.filter(b => b.sp === sp), flying = mine.filter(b => b.st === 'fly');
+          const mine = this.list.filter(b => b.sp === sp && !b.spawned), flying = mine.filter(b => b.st === 'fly');
           this.school(sp, mine);
           if (mine.length < sp.want) { const a = rnd() * TAU, r = 170 + rnd() * 60, b = this.make(sp, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, 'fly'); b.a = a + Math.PI; }
           else if (mine.length > sp.want + 1 && flying.length) flying[rnd() * flying.length | 0].st = 'leave';

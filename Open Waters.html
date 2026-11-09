@@ -447,6 +447,8 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 .pm-foot-note { margin: 0 30px; padding: 16px 0 22px; border-top: 1px solid #ffffff2a; color: var(--muted); font-size: 13px; letter-spacing: 1.5px; }
 .pm-bar, .pm-foot { border-color: #ffffff2a; }
 #pauseMenu[data-page="main"] { width: min(420px, calc(100vw - 32px)); }
+#spawn .tabs { flex-wrap: wrap; } #spawn .tabs button { flex: 1 1 auto; padding: 8px 12px; font-size: 15px; } #spawn .tabs button svg { width: 22px; height: 22px; }
+#spBiome[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -475,7 +477,6 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
       <button id="resumeGame" class="pm-item pm-primary" type="button">Resume <kbd>Esc</kbd></button>
       <button class="pm-item" type="button" data-go="settings"><span class="pm-ic" data-icon="ui.gear"></span>Settings</button>
       <button class="pm-item" type="button" data-go="controls"><span class="pm-ic" data-icon="ui.pad"></span>Controls</button>
-      <button id="pmHelp" class="pm-item" type="button"><span class="pm-ic" data-icon="ui.card"></span>Controls card</button>
     </nav>
     <footer id="pmFoot" class="pm-foot-note"></footer>
   </section>
@@ -521,6 +522,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
   <header><span class="sp-art" data-icon="dock.spawn"></span><div class="tk-title"><h2>Spawn</h2><i>A little company on the water.</i></div><button id="spClose" class="round-x" title="Close" data-icon="ui.close"></button></header>
   <label class="search"><span data-icon="ui.search"></span><input id="spSearch" type="search" placeholder="Find a boat or creature…" autocomplete="off"></label>
   <div class="tabs" id="spTabs"></div>
+  <div class="subtabs" id="spBiome"></div>
   <div class="subtabs" id="spSub"></div>
   <ul id="spList"></ul>
 </div>
@@ -4008,7 +4010,6 @@ Object.assign(Engine, {
       for (const b of opts) b.onclick = () => { CONFIG.groundCover = +b.dataset.ground; show(); try { localStorage.setItem('embercrown-groundcover', b.dataset.ground); } catch (_) { /* session only */ } };
       show(); }
     D.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) this.pauseShow(b.dataset.go); });
-    document.getElementById('pmHelp').onclick = () => { this.togglePause(false, true); this.toggleHelp(true); };
     D.addEventListener('keydown', e => {   // ↑ ↓ move between the menu's buttons
       if (this.ksCap || (e.code !== 'ArrowUp' && e.code !== 'ArrowDown')) return;
       const L = [...D.querySelectorAll('.pm-page:not([hidden]) .pm-menu button')]; if (!L.length) return;
@@ -4784,12 +4785,14 @@ Object.assign(Engine, {
 <script>
 'use strict';
 // Engine: the spawn picker panel (B boats, 1 animals).
+// spawn tabs: [key, label, icon or '']
+const SPAWN_TYPES = [['fish', 'Fish', 'fish'], ['shell', 'Shellfish', ''], ['mammal', 'Mammals', ''], ['herp', 'Reptiles & amphibians', ''], ['bird', 'Birds', 'heron']];
 Object.assign(Engine, {
   // ---- spawn picker (K, or the Spawn button) ----
   // B: boats; 1 (a secret): fish and wildlife. Both open on the water you're nearest.
   openSpawn(mode) {
     if (this.spawnOpen && this.spawnMode === mode) return this.toggleSpawn(false);
-    this.spawnMode = mode; this.spawnTab = mode === 'boats' ? 'boats' : 'fish'; this.spawnSub = this.contextKind(); this.spawnSel = null;
+    this.spawnMode = mode; this.spawnTab = mode === 'boats' ? 'boats' : 'fish'; this.spawnSub = this.contextKind(); this.spawnBiome = CLIMATE.key; this.spawnSel = null;
     if (this.spawnOpen) this.buildSpawnList(); else this.toggleSpawn(true);
   },
   toggleSpawn(open = !this.spawnOpen) {
@@ -4804,20 +4807,22 @@ Object.assign(Engine, {
     document.getElementById('spClose').onclick = () => this.toggleSpawn(false);
     document.getElementById('spSearch').oninput = () => this.buildSpawnList();
     document.getElementById('spTabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { this.spawnTab = b.dataset.tab; this.spawnSel = null; this.buildSpawnList(); } };
+    document.getElementById('spBiome').onclick = e => { const b = e.target.closest('[data-biome]'); if (b) { this.spawnBiome = b.dataset.biome; this.buildSpawnList(); } };
     document.getElementById('spSub').onclick = e => { const b = e.target.closest('[data-sub]'); if (b) { this.spawnSub = b.dataset.sub; this.buildSpawnList(); } };
     document.getElementById('spList').onclick = e => { const li = e.target.closest('[data-id]'); if (li) { this.spawnSelect(li.dataset.id); this.spawnPlace(); } };   // a click places it
-    this.spawnMode = 'boats'; this.spawnTab = 'boats'; this.spawnSub = 'all';
+    this.spawnMode = 'boats'; this.spawnTab = 'boats'; this.spawnSub = 'all'; this.spawnBiome = 'all';
   },
   // what's in the list for the current tab, filter chip and search
   spawnItems() {
     const t = this.spawnTab, sub = this.spawnSub, q = t === 'boats' ? '' : document.getElementById('spSearch').value.trim().toLowerCase();   // boats: no search
     if (t === 'boats') return BoatDB.list.filter(D => (sub === 'all' || boatWaters(D).includes(sub)) && (!q || (D.name + ' ' + D.propulsion.type).toLowerCase().includes(q)));
+    // by animal type (the tab), biome (island climate; none listed = any) and water
+    const bio = this.spawnBiome, inBiome = C => bio === 'all' || !C || C.includes(bio);
+    const match = (W, txt) => (sub === 'all' || W[sub] > 0) && (!q || (txt + ' ' + Object.keys(W).filter(w => W[w] > 0).join(' ')).toLowerCase().includes(q));
+    const byName = (a, b) => a.name.localeCompare(b.name);
+    if (t === 'bird') return Object.values(Birds.species).filter(B => inBiome(B.climates) && match(B.habitat.any ? { sea: 1, lake: 1, pond: 1, river: 1, creek: 1 } : B.habitat, B.name)).sort(byName);
     const kindOf = D => D._herp ? 'herp' : D._air ? 'mammal' : D._shell ? 'shell' : 'fish';
-    return FishDB.list.filter(D => { const W = D.habitat.waters, k = kindOf(D);
-      if (t === 'fish' ? k !== 'fish' : k === 'fish') return false;
-      if (sub !== 'all' && !(W[sub] > 0)) return false;
-      return !q || (D.name + ' ' + D.scientific + ' ' + Object.keys(W).filter(w => W[w] > 0).join(' ')).toLowerCase().includes(q);
-    }).sort((a, b) => a.name.localeCompare(b.name));
+    return FishDB.list.filter(D => kindOf(D) === t && inBiome(D.habitat.climates) && match(D.habitat.waters, D.name + ' ' + D.scientific)).sort(byName);
   },
   buildSpawnList() {
     const ul = document.getElementById('spList'), esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -4830,24 +4835,33 @@ Object.assign(Engine, {
       document.getElementById('spSearch').placeholder = boatsMode ? 'Find a boat…' : 'Find a creature…';
     }
     tabs.hidden = boatsMode;
-    tabs.innerHTML = boatsMode ? '' : [['fish', 'Fish', 'fish'], ['wild', 'Wildlife', 'heron']].map(([k, l, ic]) => `<button data-tab="${k}" class="${k === this.spawnTab ? 'on' : ''}">${uiIcon('ui.' + ic)}${l}</button>`).join('');
+    tabs.innerHTML = boatsMode ? '' : SPAWN_TYPES.map(([k, l, ic]) => `<button data-tab="${k}" class="${k === this.spawnTab ? 'on' : ''}">${ic ? uiIcon('ui.' + ic) : ''}${l}</button>`).join('');
+    const bio = document.getElementById('spBiome'); bio.hidden = boatsMode;
+    bio.innerHTML = boatsMode ? '' : [['all', 'All biomes'], ...Object.entries(CLIMATES).map(([k, C]) => [k, C.name])].map(([k, l]) => `<button data-biome="${k}" class="${k === this.spawnBiome ? 'on' : ''}">${l}</button>`).join('');
     document.getElementById('spSub').innerHTML = catChips(this.spawnSub, 'data-sub');
     const items = this.spawnItems(), boats = this.spawnTab === 'boats';
     if (!items.some(D => D.id === this.spawnSel)) { this.spawnSel = items.length ? items[0].id : null; this.spawnNav = false; }
     ul.classList.toggle('grid', boats);   // boats: picture tiles, the name on hover
     ul.innerHTML = items.map(D => boats
       ? `<li data-id="${esc(D.id)}" class="tile${D.id === this.spawnSel && this.spawnNav ? ' nav' : ''}" title="${esc(D.name)} · ${D.hull.length_m} m">${boatPicHTML(D)}</li>`
-      : `<li data-id="${esc(D.id)}" class="card${D.id === this.spawnSel && this.spawnNav ? ' nav' : ''}"><span class="ri wide">${animalPicHTML(D)}</span>`
-      + `<span class="tx"><b>${esc(D.name)}</b><small>${D.size.length_cm.typical} cm</small></span><span class="chev">${uiIcon('ui.chevron')}</span></li>`).join('') || '<li class="none">Nothing matches</li>';
+      : `<li data-id="${esc(D.id)}" class="card${D.id === this.spawnSel && this.spawnNav ? ' nav' : ''}"><span class="ri wide">${D.size ? animalPicHTML(D) : uiIcon('ui.heron')}</span>`
+      + `<span class="tx"><b>${esc(D.name)}</b><small>${D.size ? D.size.length_cm.typical + ' cm' : Math.round(D.look.wing.span * 100) + ' cm wingspan'}</small></span><span class="chev">${uiIcon('ui.chevron')}</span></li>`).join('') || '<li class="none">Nothing matches</li>';
   },
   // the card the keyboard is on (outlined); Enter places it
   spawnSelect(id) {
     this.spawnSel = id; this.spawnNav = true;
     for (const li of document.querySelectorAll('#spList [data-id]')) li.classList.toggle('nav', li.dataset.id === id);
   },
+  // a bird flying in a little way ahead of you; it stays until you go far away
+  spawnBird(id) {
+    const sp = Birds.species[id]; if (!sp) return null; const P = this.P, d = 10;
+    const b = Birds.make(sp, P.x + Math.cos(P.a) * d, P.y + Math.sin(P.a) * d, 'fly'); b.spawned = true;
+    this.say(sp.name + (sp.climates && !sp.climates.includes(CLIMATE.key) ? ` (it doesn't normally live on ${CLIMATE.name.toLowerCase()} islands)` : ''), 3); Game.emit('spawn', [b]);
+    return b;
+  },
   spawnPlace() {
     if (!this.spawnSel || performance.now() - this.spawnOpenT < 450) return;   // ignore the tap that opened the panel
-    if (this.spawnTab === 'boats') { if (this.spawnBoat(this.spawnSel)) this.toggleSpawn(false); } else this.spawnAnimal(this.spawnSel);
+    if (this.spawnTab === 'boats') { if (this.spawnBoat(this.spawnSel)) this.toggleSpawn(false); } else if (this.spawnTab === 'bird') this.spawnBird(this.spawnSel); else this.spawnAnimal(this.spawnSel);
   },
 });
 </script>
@@ -7781,7 +7795,6 @@ ${eye(20, 35, 2.6, '#2a1a12')}</g>`;
         gear: L(`<path d="${cog}"/><circle cx="12" cy="12" r="2.8"/>`),
         book: L('<path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5ZM12 6.5V19"/>'),
         pad: L('<path d="M7 7h10a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.4 2.4 0 0 1-4.1 1.1L14 15.5h-4l-2.4 2.4a2.4 2.4 0 0 1-4.1-1.1l-.9-4.4A4.5 4.5 0 0 1 7 7Z"/><path d="M8 10v3M6.5 11.5h3"/><circle cx="15.5" cy="10.8" r=".5" fill="currentColor"/><circle cx="17" cy="12.6" r=".5" fill="currentColor"/>'),
-        card: L('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M7 9.5h.01M10 9.5h7M7 12h.01M10 12h7M7 14.5h.01M10 14.5h5"/>'),
         close: L('<path d="M6 6l12 12M18 6L6 18"/>'),
         cast: L('<path d="M3 21L13 7"/><path d="M13 7c4-2 7 .5 6.5 4.5"/><path d="M19.5 11.5V16a2.2 2.2 0 0 1-4.4 0"/><path d="M11 9.5l2-2.5"/>'),
         reel: L('<circle cx="11" cy="13" r="5.5"/><circle cx="11" cy="13" r="1.4"/><path d="M11 7.5V4h6"/><path d="M15 16.5l4 3"/>'),
@@ -8362,7 +8375,7 @@ Object.assign(Engine, {
     const step = k === 'ArrowDown' ? 1 : k === 'ArrowUp' ? -1 : 0, side = k === 'ArrowRight' ? 1 : k === 'ArrowLeft' ? -1 : 0;
     if (panel === 'spawn') {
       if (side) { const C = ['all', ...WATER_CATS.map(c => c[0])]; this.spawnSub = C[(C.indexOf(this.spawnSub) + side + C.length) % C.length]; this.spawnSel = null; this.buildSpawnList(); }
-      else if (k === 'Tab') { if (this.spawnMode === 'spawn') { this.spawnTab = this.spawnTab === 'fish' ? 'wild' : 'fish'; this.spawnSel = null; this.buildSpawnList(); } }
+      else if (k === 'Tab') { if (this.spawnMode === 'spawn') { const T = SPAWN_TYPES.map(c => c[0]); this.spawnTab = T[(T.indexOf(this.spawnTab) + (e.shiftKey ? -1 : 1) + T.length) % T.length]; this.spawnSel = null; this.buildSpawnList(); } }
       else if (step) { const L = [...document.querySelectorAll('#spList [data-id]')]; if (!L.length) return true;
         const i = clamp((this.spawnNav ? L.findIndex(li => li.dataset.id === this.spawnSel) : step > 0 ? -1 : 1) + step, 0, L.length - 1); this.spawnSelect(L[i].dataset.id); L[i].scrollIntoView({ block: 'nearest' }); }
       else if (this.spawnNav || (typing && this.spawnSel)) this.spawnPlace();   // from the search box, Enter takes the top match
@@ -8836,7 +8849,7 @@ const Birds = globalThis.Birds = (() => {
         for (const sp of Object.values(species)) {
           sp.want = this.census(sp); const fl = sp.flock;
           if ((fl.at -= 2.5) <= 0) { this.anchor(sp); fl.at = 8 + rnd() * 6; }
-          const mine = this.list.filter(b => b.sp === sp), flying = mine.filter(b => b.st === 'fly');
+          const mine = this.list.filter(b => b.sp === sp && !b.spawned), flying = mine.filter(b => b.st === 'fly');
           this.school(sp, mine);
           if (mine.length < sp.want) { const a = rnd() * TAU, r = 170 + rnd() * 60, b = this.make(sp, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, 'fly'); b.a = a + Math.PI; }
           else if (mine.length > sp.want + 1 && flying.length) flying[rnd() * flying.length | 0].st = 'leave';

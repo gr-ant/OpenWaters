@@ -440,3 +440,5 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 .pm-foot-note { margin: 0 30px; padding: 16px 0 22px; border-top: 1px solid #ffffff2a; color: var(--muted); font-size: 13px; letter-spacing: 1.5px; }
 .pm-bar, .pm-foot { border-color: #ffffff2a; }
 #pauseMenu[data-page="main"] { width: min(420px, calc(100vw - 32px)); }
+#spawn .tabs { flex-wrap: wrap; } #spawn .tabs button { flex: 1 1 auto; padding: 8px 12px; font-size: 15px; } #spawn .tabs button svg { width: 22px; height: 22px; }
+#spBiome[hidden] { display: none; }

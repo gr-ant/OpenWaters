@@ -45,7 +45,6 @@ Object.assign(Engine, {
       for (const b of opts) b.onclick = () => { CONFIG.groundCover = +b.dataset.ground; show(); try { localStorage.setItem('embercrown-groundcover', b.dataset.ground); } catch (_) { /* session only */ } };
       show(); }
     D.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) this.pauseShow(b.dataset.go); });
-    document.getElementById('pmHelp').onclick = () => { this.togglePause(false, true); this.toggleHelp(true); };
     D.addEventListener('keydown', e => {   // ↑ ↓ move between the menu's buttons
       if (this.ksCap || (e.code !== 'ArrowUp' && e.code !== 'ArrowDown')) return;
       const L = [...D.querySelectorAll('.pm-page:not([hidden]) .pm-menu button')]; if (!L.length) return;
