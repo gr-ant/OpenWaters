@@ -109,6 +109,6 @@
     const P = Engine.P; P.a = Engine.titleA + 0.07 * Math.sin(Engine.time * 0.11); P.pitch = -0.2 + 0.025 * Math.sin(Engine.time * 0.17);
   });
 
-  Game.on('action', () => { const l = Game.lookingAt; if (l) { Game.splash(l.x, l.y, 20); Game.say(`Plop. ${l.name}`, 1); } else Game.say('Nothing to use here', 1); });
+  Game.on('action', () => { const l = Game.lookingAt; if (l) { Game.splash(l.x, l.y, 20); Game.sound('plop', { x: l.x, y: l.y }); Game.say(`Plop. ${l.name}`, 1); } else Game.say('Nothing to use here', 1); });
 })();
 

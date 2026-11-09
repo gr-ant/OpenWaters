@@ -1,0 +1,26 @@
+# Push to the itch.io branch to publish the game to https://gra-nt.itch.io/open-waters
+# Needs the repo secret BUTLER_API_KEY (your itch.io API key).
+name: Deploy to itch.io
+on:
+  push:
+    branches: ['itch.io']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          python3 build.py
+          mkdir dist
+          cp "Open Waters.html" dist/index.html
+      - name: Install butler
+        run: |
+          curl -sSfL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d butler && chmod +x butler/butler
+      - name: Push to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: butler/butler push dist gra-nt/open-waters:html5 --userversion "${GITHUB_SHA::7}"

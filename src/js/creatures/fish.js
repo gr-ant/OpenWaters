@@ -147,6 +147,9 @@ function fishMesh(D) {
   const below = j => { const m = Math.min(j, NS - 1 - j); return m >= jb; };   // quad j is under the mouth line (either side)
   const th = ih / NR, hx = X(th), hz = Math.cos(ja) * HH(th);
   D._jaw = [hx, hz, 0.3 + 0.55 * B.head.mouth];
+  // the jaw is rigid in front of the hinge; behind it the throat skin stretches over R, long enough (vs the depth below
+  // the hinge and the widest gape) that it never folds over itself
+  const R = Math.max(gape * 0.3, 1.6 * D._jaw[2] * (hz + HH(th))), ihT = clamp(ih + Math.ceil(R / bl * NR), ih, NR - 2);
   // Body skin. Logic (jaw, patterns, spot placement) still works on the NR x NS grid of patches, but the skin is drawn
   // SUB times finer with normals taken from the smooth body surface and colours worked out at every vertex, so
   // light and pattern edges blend instead of stepping patch by patch.
@@ -197,7 +200,7 @@ function fishMesh(D) {
   for (let a = 0; a <= GI; a++) for (let b = 0; b <= GJ; b++) { const fi = a / SUB, fj = b / SUB, k = gk(a, b); GP[k] = Vc(fi, fj); GN[k] = Nc(fi, fj); GC[k] = colorAt(fi, fj); }
   for (let a = 0; a < GI; a++) for (let b = 0; b < GJ; b++) {
     const i = Math.floor(a / SUB), j = Math.floor(b / SUB);
-    M.mat = i < ih && below(j) ? MT.JAW : MT.CLOTH;
+    M.mat = i < ihT && below(j) ? MT.JAW : MT.CLOTH;
     const q = [gk(a, b), gk(a, b + 1), gk(a + 1, b + 1), gk(a + 1, b)], T = (x, y, z) => M.triN(GP[x], GP[y], GP[z], GN[x], GN[y], GN[z], GC[x], GC[y], GC[z]);
     T(q[0], q[1], q[2]); T(q[0], q[2], q[3]);
   }
@@ -238,12 +241,14 @@ function fishMesh(D) {
   else if (B.tail.shape === 'rounded') { poly = []; for (let k = 0; k <= 8; k++) { const a = -1.4 + k / 8 * 2.8; poly.push([x1 - (x1 - xe) * Math.cos(a * 0.9), T * 0.9 * Math.sin(a) / Math.sin(1.4)]); } }
   else { const f = B.tail.shape === 'emarginate' ? Math.min(fk, 0.2) : B.tail.shape === 'lunate' ? Math.max(fk, 0.45) : fk, sw = B.tail.shape === 'lunate' ? 0.15 : 0; poly = [[xe + sw * tl, T * (1 + sw)], [xe + f * (x1 - xe), 0], [xe + sw * tl, -T * (1 + sw)]]; }
   if (B.tail.shape === 'flukes') { // a whale's tail: two horizontal blades, swept back to pointed tips, notched in the middle
-    const L = (x1 - xe) * 1.15, sp = 0.1 + 0.5 * tl, N = 6, fc = mix(C.back, C.fins, 0.25);   // half-span ~ 1/6 of the length
+    const L = (x1 - xe) * 1.15, sp = 0.1 + 0.5 * tl, N = 8, fc = mix(C.back, C.fins, 0.25);   // half-span ~ 1/6 of the length
+    M.blob([x1 - L * 0.06, 0, 0], L * 0.16, hr * 1.25, hr * 0.8, 6, 10, fc);   // the tail stock flattens into the flukes and closes the body's open end
     for (const sd of [1, -1]) {
-      const pts = [[x1 + 0.01, sd * hr * 0.7, 0]];
-      for (let k = 1; k <= N; k++) { const u = k / N; pts.push([x1 - L * 0.62 * Math.pow(u, 1.3), sd * sp * (0.15 + 0.85 * u), 0]); }   // leading edge out to the tip
-      for (let k = 1; k <= N; k++) { const v = k / N; pts.push([x1 - L * (0.62 - 0.2 * v) + L * 0.12 * Math.sin(Math.PI * v), sd * sp * (1 - v), 0]); }   // trailing edge back to the notch
-      const c = [x1 - L * 0.32, sd * sp * 0.42, 0];
+      // root runs along the centre line (the two blades meet, no gap); the leading edge bows out then sweeps back to the tip
+      const pts = [[x1 + 0.01, 0, 0], [x1 + 0.01, sd * hr * 0.9, 0]];
+      for (let k = 1; k <= N; k++) { const u = k / N; pts.push([x1 - L * 0.62 * Math.pow(u, 1.6), sd * (hr * 0.9 + (sp - hr * 0.9) * Math.sin(u * Math.PI / 2)), 0]); }
+      for (let k = 1; k <= N; k++) { const v = k / N; pts.push([x1 - L * (0.62 - 0.2 * v) + L * 0.08 * Math.sin(Math.PI * v), sd * sp * (1 - v), 0]); }   // trailing edge back to the notch
+      const c = [x1 - L * 0.3, sd * sp * 0.35, 0];
       for (let k = 0; k < pts.length; k++) M.tri(c, pts[k], pts[(k + 1) % pts.length], fc, [c[0], c[1], -1]);   // oriented to face up, into the light (a point above would turn them to face down and sit in shadow)
     }
   } else {
@@ -271,15 +276,16 @@ function fishMesh(D) {
     const s = k % 2 ? 1 : -1, r = (k >> 1), len = hl * bl * (r === 0 ? 0.9 : 0.45), a = 0.5 + r * 0.45, zz = tip[2] + (r % 2 ? -1 : 1) * HH(0.03) * 0.5;
     M.tube([x0 - 0.01, s * HW(0.04) * 0.7, zz], [x0 - len * 0.5, s * (HW(0.04) + len * Math.sin(a)), zz - len * 0.35], 0.004, 0.0015, 3, mix(C.back, [0.1, 0.1, 0.1], 0.4));
   }
-  // jaw weights: full swing at the lips, fading toward the belly (the throat stretches like a real fish's) and to the hinge.
+  // jaw weights: 1 for the whole jaw in front of the hinge (it swings as one piece); behind it the throat fades out with
+  // distance, and toward the mouth line, which stays shut behind the corner so the skin doesn't tear there.
   // Stored in the material channel as 13 + weight (the vertex shader reads it).
   const v = M.v, span0 = Math.PI - ja;
   for (let k = 0; k < v.length; k += VS) {
-    if (v[k + 9] === 98) { const t = clamp((x0 - v[k]) / bl, 0, 1); v[k + 9] = v[k + 2] > Math.cos(ja) * HH(t) - 0.001 ? MT.CLOTH : MT.JAW + sm(0, 1, (v[k] - hx) / (gape * 0.4)) * 0.98; continue; }
+    if (v[k + 9] === 98) { const t = clamp((x0 - v[k]) / bl, 0, 1); v[k + 9] = v[k + 2] > Math.cos(ja) * HH(t) - 0.001 ? MT.CLOTH : MT.JAW + 0.98; continue; }
     if (v[k + 9] !== MT.JAW) continue;
     const x = v[k + 0], y = v[k + 1], z = v[k + 2], t = clamp((x0 - x) / bl, 0, 1);
-    const phi = Math.atan2(Math.abs(y) / Math.max(HW(t), 1e-4), z / Math.max(HH(t), 1e-4)), span = span0 * (0.3 + 0.7 * (1 - t / th));
-    const w = (1 - sm(0, span, phi - ja)) * sm(0, 1, (x - hx) / (gape * 0.4));
+    const phi = Math.atan2(Math.abs(y) / Math.max(HW(t), 1e-4), z / Math.max(HH(t), 1e-4)), b = hx - x;
+    const w = b <= 0 ? 1 : (1 - sm(0, R, b)) * sm(0, span0 * 0.5, phi - ja);
     v[k + 9] = MT.JAW + w * 0.98;
   }
   // a bill: the body is squeezed back to make room, then a spear (marlin) or long toothy jaws (gar) out front

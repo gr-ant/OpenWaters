@@ -26,7 +26,7 @@ That writes `Open Waters.html`. It needs Python 3 and nothing else. Don't edit `
 build.py              inlines src/ into "Open Waters.html"
 src/
   index.html          page markup, plus the list of every script and data file, in load order
-  css/style.css       all styles
+  css/style.css       main styles (css/tutorial.css: the tutorial card)
   js/
     config.js         engine overview and CONFIG (tuning knobs)
     controls.js       rebindable keys and presets
@@ -39,7 +39,9 @@ src/
     tackle.js         rods, reels, lines, lures, rigs
     fishing/          casting, bites, the fight, tackle box, lure camera
     game-api.js       the public Game API
-    hud/              on-screen interface, icons, journal, menu keyboard navigation
+    hud/              on-screen interface, icons, journal, menu keyboard navigation, tutorial
+    sounds.js         sound effects synthesized with Web Audio, defined as data
+    birds.js          birds: flight, landing, perching, swimming; species are data
     game.js           game-specific setup on top of the API
     urchin.js         music synthesizer (see Music below)
     boot.js           reads the built-in data and starts the game

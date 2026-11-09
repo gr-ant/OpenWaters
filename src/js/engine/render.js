@@ -157,6 +157,7 @@ Object.assign(Engine, {
       }
       gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0);
     }
+    if (globalThis.Birds) Birds.draw(this, gl, L, E);   // birds: in the air, on the water, on perches and boats
     if (this.ang && this.ang.out) { this.drawTackle(gl, L, E, !!camera); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
     // props (static decorations) and pickups, instanced per mesh; the pickup you'd collect pulses
     const drawInst = (m, arr) => { if (!arr.length) return; this.upInst(m, arr); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, arr.length / 6); };

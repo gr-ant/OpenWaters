@@ -18,20 +18,45 @@
     "condition_sd": 0.1
   },
   "body": {
-    "plan": "pinniped",
-    "height": 0.3,
-    "width": 0.28,
+    "profile": [
+      0.88,
+      0.97,
+      1,
+      1,
+      0.9,
+      0.72,
+      0.46,
+      0.22
+    ],
+    "height": 0.2,
+    "width": 0.17,
     "flex": 0.5,
-    "swim": "auto",
-    "parts": {
+    "swim": "cetacean",
+    "head": {
+      "length": 0.36,
       "snout": 1,
-      "neck": 0,
-      "fore": 0.18,
-      "rear": "tail",
-      "tail": 0.5,
-      "whiskers": 0,
-      "ears": 0,
-      "eye": 0.3
+      "mouth": 0.55,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "flukes",
+      "size": 0.17
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.66,
+          "length": 0.08,
+          "height": 0.025
+        }
+      ],
+      "anal": {
+        "at": 0.8,
+        "length": 0.01,
+        "height": 0.004
+      },
+      "pectoral": 0.1,
+      "pelvic": 0
     },
     "colors": {
       "back": "#4a4e58",
@@ -53,7 +78,10 @@
     ]
   },
   "habitat": {
-    "climates": ["temperate", "tropical"],
+    "climates": [
+      "temperate",
+      "tropical"
+    ],
     "waters": {
       "sea": 1
     },
