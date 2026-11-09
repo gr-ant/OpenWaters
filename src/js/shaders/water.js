@@ -19,6 +19,7 @@ uniform vec4 wx; // weather: rain, wind, stream turbidity, lightning
 uniform vec4 ice; // ice on lakes, on ponds; snow lying on it; arctic pack ice on the sea
 ${FOG_GLSL}
 ${NOISE_GLSL}
+${CAVE_GLSL}
 float hgt(vec2 q){ return vn(q) * .6 + vn(q * 2.3 + 4.1) * .4; }
 vec2 grd(vec2 q){ float h = hgt(q); return vec2(hgt(q + vec2(.12, 0.)) - h, hgt(q + vec2(0., .12)) - h) / .12; }
 void main(){
@@ -79,11 +80,12 @@ void main(){
   float fo = clamp(foam + shore * (.5 + .5 * wav), 0., 1.), fm = fo * smoothstep(.35, .7, fn + fo * .35);
   if (uwf < .5) { // seen from above
     vec3 V = normalize(cam - wp), R = reflect(-V, N);
-    vec3 sky = mix(hor, zen, clamp(R.z * 2.2, 0., 1.));
-    float spec = pow(max(dot(R, sun), 0.), 280.) * 3., fr = .03 + .97 * pow(1. - max(dot(N, V), 0.), 5.);
+    vec2 cs = caveShade(wp, sun);   // under a cenote's roof: the ceiling, not the sky, is reflected; sunlight only through the opening
+    vec3 sky = mix(hor, zen, clamp(R.z * 2.2, 0., 1.)) * (1. - .85 * cs.x);
+    float spec = pow(max(dot(R, sun), 0.), 280.) * 3. * (1. - cs.y), fr = .03 + .97 * pow(1. - max(dot(N, V), 0.), 5.);
     vec3 shallow = mix(vec3(.13, .45, .42), vec3(.22, .3, .12), murk), deep = mix(vec3(.02, .12, .2), vec3(.06, .1, .04), murk);
     float dd = clamp(dep / (3.5 - 2.5 * murk), 0., 1.);
-    vec3 body = mix(shallow, deep, sqrt(dd)) * (amb * 1.6 + lcol * (.45 + .4 * max(dot(N, sun), 0.)));
+    vec3 body = mix(shallow, deep, sqrt(dd)) * (amb * 1.6 * (1. - .6 * cs.x) + lcol * (.45 + .4 * max(dot(N, sun), 0.)) * (1. - cs.y));
     vec3 c = mix(body, sky, fr * .9) + lcol * spec * (1. - fm);
     float al = max(max(mix(.16 + .55 * murk, .95, smoothstep(0., 1., dd)), .12), fr * .85);
     c = mix(c, vec3(.92, .96, 1.) * (amb * 1.4 + lcol * .9), fm * .9); al = max(al, fm * .9);

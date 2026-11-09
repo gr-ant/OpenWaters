@@ -135,28 +135,52 @@ function seaDepth(x, y, off) {
   return Math.max(1, d);
 }
 
-// Permanent ice is spatial terrain, independent of seasonal snow. The summit cap
-// feeds the forward gullies; a separate tongue descends the back slope to the coast.
-const GLACIERS = (() => {
-  if (CLIMATE.key !== 'arctic') return null;
-  const L = LAYOUT, ux = -L.vx * L.pdir, uy = -L.vy * L.pdir;
-  let length = L.pr;
-  for (let d = L.pr * 0.3; d < CONFIG.islandSize; d += 24) {
-    length = d;
-    if (islandBase(L.px + ux * d, L.py + uy * d) < WLW) break;
+// Permanent ice is spatial terrain, independent of seasonal snow (src/features/glaciers.json: how many of each kind, per climate).
+// Laid out once per seed, lazily (after the JSON is read). ice cap: on the summit · valley: a tongue from the summit down a slope ·
+// tidewater: a valley glacier that pushes out past the coast and ends in an ice cliff · piedmont: one that spreads into a broad
+// lobe on the lowland · cirque: a small glacier in a high hollow on the mountain's flank.
+let GLACIERS = null, GLAC_TIDE = 0;   // GLAC_TIDE: ice-front height above the sea of the tidewater glacier found by the last glacierAt()
+function glaciers() {
+  if (GLACIERS) return GLACIERS; GLACIERS = [];
+  const F = BUILTIN.feature.find(f => f.type === 'glaciers'), C = F && F.climates[CLIMATE.key]; if (!C) return GLACIERS;
+  const L = LAYOUT, rng = mulberry32((SEED ^ 0x61ac1) >>> 0), pick = ([a, b]) => a + (b - a) * rng();
+  const toCoast = (ux, uy) => { let d = L.pr * 0.3; for (; d < CONFIG.islandSize; d += 24) if (islandBase(L.px + ux * d, L.py + uy * d) < WLW) break; return d; };
+  if (rng() < C.cap) GLACIERS.push({ kind: 'cap', x: L.px, y: L.py, R: L.pr * 0.45 });
+  const main = Math.atan2(-L.vy * L.pdir, -L.vx * L.pdir);   // the first runs down the back slope, away from the river
+  for (let k = 0, n = Math.round(pick(C.valleys)); k < n; k++) {
+    const a = k ? main + (rng() < 0.5 ? -1 : 1) * (1 + 1.6 * rng()) : main, ux = Math.cos(a), uy = Math.sin(a), coast = toCoast(ux, uy);
+    const tide = rng() < C.tidewater, pied = !tide && rng() < C.piedmont;
+    GLACIERS.push({ kind: tide ? 'tidewater' : pied ? 'piedmont' : 'valley', x: L.px, y: L.py, ux, uy, w: L.pr * (0.12 + 0.06 * rng()), ph: k ? rng() * 6.28 : 0,
+      length: tide ? coast + pick(F.tidewater_reach_m) : pied ? coast * (0.6 + 0.2 * rng()) : k ? coast * (0.55 + 0.45 * rng()) : coast,
+      front: tide ? pick(F.tidewater_front_m) : 0, lobe: pied ? L.pr * (0.35 + 0.15 * rng()) : 0 });
   }
-  return { ux, uy, length };
-})();
+  const top = islandBase(L.px, L.py);
+  for (let k = 0, n = Math.round(pick(C.cirques)), tries = 0; k < n && tries < 80; tries++) {   // cirques: high on the flanks, nudged downhill
+    const a = rng() * 6.2832, d = L.pr * (0.35 + 0.6 * rng()), x = L.px + Math.cos(a) * d, y = L.py + Math.sin(a) * d;
+    if (islandBase(x, y) < WLW + (top - WLW) * 0.45) continue;
+    const gx = islandBase(x + 20, y) - islandBase(x - 20, y), gy = islandBase(x, y + 20) - islandBase(x, y - 20), g = Math.hypot(gx, gy) || 1;
+    GLACIERS.push({ kind: 'cirque', x: x - gx / g * 30, y: y - gy / g * 30, r: pick(F.cirque_radius_m), dx: -gx / g, dy: -gy / g }); k++;
+  }
+  return GLACIERS;
+}
 function glacierAt(x, y) {
-  if (!GLACIERS || !Number.isFinite(x) || !Number.isFinite(y)) return 0;
-  const L = LAYOUT, G = GLACIERS, dx = x - L.px, dy = y - L.py;
-  const along = dx * G.ux + dy * G.uy, across = -dx * G.uy + dy * G.ux;
-  const edge = nR(x / 110, y / 110) * 0.08;
-  const cap = 1 - sstep(0.23, 0.39, Math.hypot(dx, dy) / L.pr + edge);
-  const width = L.pr * (0.14 + 0.08 * clamp(along / G.length, 0, 1));
-  const tongue = sstep(-L.pr * 0.1, L.pr * 0.2, along) * (1 - sstep(G.length - 24, G.length + 24, along)) *
-    (1 - sstep(0.65, 1, Math.abs(across + 35 * Math.sin(along / 250)) / width + edge));
-  return Math.max(cap, tongue);
+  GLAC_TIDE = 0; if (!Number.isFinite(x) || !Number.isFinite(y)) return 0;
+  const Gs = GLACIERS || glaciers(); if (!Gs.length) return 0;
+  const L = LAYOUT, edge = nR(x / 110, y / 110) * 0.08; let best = 0;
+  for (const G of Gs) {
+    const dx = x - G.x, dy = y - G.y; let v = 0;
+    if (G.kind === 'cap') { if (Math.abs(dx) > G.R || Math.abs(dy) > G.R) continue; v = 1 - sstep(0.23, 0.39, Math.hypot(dx, dy) / L.pr + edge); }
+    else if (G.kind === 'cirque') { if (Math.abs(dx) > G.r * 1.6 || Math.abs(dy) > G.r * 1.6) continue;
+      const u = (dx * G.dx + dy * G.dy) / (G.r * 1.3), w = (dy * G.dx - dx * G.dy) / G.r; v = 1 - sstep(0.7, 1, Math.hypot(u, w) + edge * 2); }   // a little longer downhill
+    else {
+      const along = dx * G.ux + dy * G.uy; if (along < -L.pr * 0.2 || along > G.length + G.lobe + 60) continue;
+      const across = dy * G.ux - dx * G.uy, width = G.w * (1 + 0.6 * clamp(along / G.length, 0, 1)), sharp = G.front ? 6 : 24;   // a tidewater front ends abruptly
+      v = sstep(-L.pr * 0.1, L.pr * 0.2, along) * (1 - sstep(G.length - sharp, G.length + sharp, along)) * (1 - sstep(0.65, 1, Math.abs(across + 35 * Math.sin(along / 250 + G.ph)) / width + edge));
+      if (G.lobe) v = Math.max(v, 1 - sstep(0.75, 1, Math.hypot((along - G.length) * 0.8, across) / G.lobe + edge));   // the piedmont lobe
+    }
+    if (v > best) { best = v; GLAC_TIDE = G.front || 0; }
+  }
+  return best;
 }
 
 let ISL = null;
@@ -165,7 +189,9 @@ function buildIsland(diagnostics = false) {
   const H = new Float32Array(NN);
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const x = ox + i * C, y = oy + j * C, base = islandBase(x, y);
-    H[j * N + i] = base + glacierAt(x, y) * (base > WLW - 2 ? 6 : 0);
+    const g = glacierAt(x, y); let h = base + g * (base > WLW - 2 ? 6 : 0);
+    if (GLAC_TIDE && base <= WLW - 2) h = Math.max(h, base + (WLW + GLAC_TIDE - base) * sstep(0.5, 0.8, g));   // tidewater: ice standing out of the sea, ending in a cliff
+    H[j * N + i] = h;
   }
   const D8 = [-1, 1, -N, N, -N - 1, -N + 1, N - 1, N + 1];
   // priority flood from the map edge (the open sea): fills every basin to its spill point and records, for each
@@ -416,7 +442,8 @@ function seaStacks() {
       if (islandBase(cx, cy) > WLW - F.min_depth_m) continue;   // open water round it
       for (let k = 0, n = Math.round(pick(F.stacks)); k < n; k++) {
         const r = pick(F.radius_m), q = rng() * 6.2832, o = k ? F.spread_m * Math.sqrt(rng()) : 0;
-        STACKS.push({ x: cx + Math.cos(q) * o, y: cy + Math.sin(q) * o, r, top: WLW + pick(F.height_m) * (0.6 + 0.4 * r / F.radius_m[1]), ph: rng() * 100 });
+        STACKS.push({ x: cx + Math.cos(q) * o, y: cy + Math.sin(q) * o, r, rin: Math.max(1, 0.8 * r - Math.max(6, 0.3 * r) - 1),   // rin: safely on the flat top
+          top: WLW + pick(F.height_m) * (0.6 + 0.4 * r / F.radius_m[1]), ph: rng() * 100 });
       }
       c++;
     }
@@ -428,11 +455,55 @@ function stackS(x, y) {
   let best = 0;
   for (const k of STACKS || seaStacks()) {
     const dx = x - k.x, dy = y - k.y; if (Math.abs(dx) > k.r * 1.4 || Math.abs(dy) > k.r * 1.4) continue;
-    const dd = Math.hypot(dx, dy) + 1e-6, rr = k.r * (1 + 0.25 * nM(dx / dd * 1.5 + k.ph, dy / dd * 1.5) + 0.06 * nM(x / 5, y / 5)), s = 1 - sstep(0.9, 1.02, dd / rr);   // ragged outline, near-sheer sides
+    const dd = Math.hypot(dx, dy) + 1e-6, rr = k.r * (1 + 0.25 * nM(dx / dd * 1.5 + k.ph, dy / dd * 1.5) + 0.08 * nM(dx / dd * 6 + k.ph, dy / dd * 6) + 0.05 * nM(x / 4, y / 4));   // ragged outline: lobes, buttresses and gullies
+    const s0 = 1 - sstep(rr - Math.max(8, 0.35 * rr), rr, dd), t = s0 * 3 + 1.4 * s0 * (1 - s0) * nM(x / 7 + k.ph, y / 7), f = Math.floor(t), s = clamp((f + sstep(0.5, 1, t - f)) / 3, 0, 1);   // the cliff spans 8 m+ (4+ terrain cells; one stretched triangle smears colour and snow), broken by two or three uneven ledges
     if (s > best) { best = s; STK_T = k.top + 1.5 * nM(x / 9 + k.ph, y / 9) - 3 * (dd / rr) ** 2; }   // a gently domed, lumpy top
   }
   return best;
 }
+// cenotes: round sinkholes inland with sheer rock walls and clear deep water a few metres down (lake water). Laid out once per seed.
+let CENOTES = null;
+function cenotes() {
+  if (CENOTES) return CENOTES; CENOTES = []; if (!ISL) buildIsland();
+  const R = CONFIG.islandSize / 2, rng = mulberry32((SEED ^ 0xce707e) >>> 0), pick = ([a, b]) => a + (b - a) * rng();
+  for (const F of BUILTIN.feature.filter(f => f.type === 'cenotes')) {
+    if (rng() >= (F.chance[CLIMATE.key] ?? 0)) continue;
+    for (let n = Math.round(pick(F.count)), tries = 0; n > 0 && tries < 400; tries++) {
+      const a = rng() * 6.2832, d = Math.sqrt(rng()) * R, x = Math.cos(a) * d, y = Math.sin(a) * d, r = pick(F.radius_m), drop = pick(F.drop_m);
+      if (!inGrid(x, y) || bil(ISL.wet, x, y) > 0.05) continue;   // dry land, clear of lakes and rivers
+      let lo = 1e9, hi = -1e9, qlo = 0; for (let k = 0; k < 12; k++) { const q = k / 12 * 6.2832, h = landH(x + Math.cos(q) * (r + 6), y + Math.sin(q) * (r + 6)); if (h < lo) { lo = h; qlo = q; } hi = Math.max(hi, h); }
+      if (hi - lo > 4 || lo < WLW + drop + 2 || CENOTES.some(c => Math.hypot(c.cx - x, c.cy - y) < c.R + r + 60)) continue;   // flat ground, well above the sea, apart
+      const free = F.names.filter(m => !CENOTES.some(c => c.name === m + ' Cenote')), nm = free.length ? free[Math.floor(rng() * free.length)] : 'Deep';   // no two alike
+      const roof = rng() < (F.cave ?? 0), ro = r * pick(F.opening ?? [0.4, 0.4]);   // roof: a cave cenote (models/cenote-caves.js), ro: its opening's radius
+      const c = { cx: x, cy: y, R: r, lev: lo - drop, D: pick(F.depth_m), kind: LAKE, cenote: true, roof, ro, ph: rng() * 100, id: 'cenote' + CENOTES.length, name: nm + ' Cenote' };
+      // the way in: on its lowest side the wall has slumped into a long gentle slope down into the water (cenoteRamp)
+      c.rux = Math.cos(qlo); c.ruy = Math.sin(qlo); c.rw = Math.max(4, 0.3 * r); c.ra0 = 0.5 * r; c.rlen = c.ra0 + (hi + 2 - c.lev + 1.5) / RAMP_K + 10;
+      CENOTES.push(c); n--;
+    }
+  }
+  return CENOTES;
+}
+let CEN_D = 0, CEN_R = 0;   // distance from the centre and the (ragged) radius of the cenote found by the last cenoteAt()
+function cenoteAt(x, y) {
+  for (const c of CENOTES || cenotes()) {
+    const dx = x - c.cx, dy = y - c.cy; if (Math.abs(dx) > c.R * 1.3 + 3 || Math.abs(dy) > c.R * 1.3 + 3) continue;
+    const d = Math.hypot(dx, dy) + 1e-6, rr = c.R * (1 + 0.15 * nM(dx / d * 1.4 + c.ph, dy / d * 1.4));
+    if (d < rr + 2) { CEN_D = d; CEN_R = rr; return c; }
+  }
+  return null;
+}
+// a cenote's ramp near (x, y): a, distance along it from the centre; b, distance off its middle; z, its surface there. Or null
+const RAMP_K = 0.25;   // its slope
+function cenoteRamp(x, y) {
+  for (const c of CENOTES || cenotes()) {
+    const dx = x - c.cx, dy = y - c.cy, a = dx * c.rux + dy * c.ruy; if (a < c.ra0 - 6 || a > c.rlen) continue;
+    const b = Math.abs(dx * c.ruy - dy * c.rux); if (b > c.rw + 40) continue;
+    return { c, a, b, z: c.lev - 1.5 + (a - c.ra0) * RAMP_K };
+  }
+  return null;
+}
+// how much (x, y) is the ramp's floor, 0..1 (its flanks fade out wider the deeper the cut); hb: the ground without the ramp
+function rampW(r, hb) { const cut = Math.max(0, hb - r.z); return (1 - sstep(r.c.rw, r.c.rw + 3 + cut * 1.6, r.b)) * sstep(r.c.ra0 - 6, r.c.ra0, r.a) * (1 - sstep(r.c.rlen - 8, r.c.rlen, r.a)); }
 // terrain before channels and ponds: the grid plus fine bumps kept off the shores, then any sea stack standing on it
 function landH(x, y) { const g = landH0(x, y), s = stackS(x, y); return s > 0 ? g + Math.max(0, STK_T - g) * s : g; }
 function landH0(x, y) {
@@ -501,6 +572,10 @@ function world(x, y) {
         if (h0 > WLW + 0.2 && (lakeLev === null || (CH_S[k] > lakeLev + 0.05 && h0 > lakeLev))) { lev = Math.max(CH_S[k], WLW); kind = CH_K[k]; obj = null; }
       }
     }
+    if (!obj && kind === OCEAN) { const c = cenoteAt(x, y), hb = h;   // a cenote: the pit's wall spans 4 m+ (2+ terrain cells) so its colours don't smear
+      if (c) { const floor = c.lev - c.D * (1 - Math.min(1, CEN_D / CEN_R) ** 2), b = sstep(CEN_R - Math.max(4, 0.25 * CEN_R), CEN_R, CEN_D);
+        h = Math.min(h, floor + (h - floor) * b); if (CEN_D < CEN_R) { lev = c.lev; kind = LAKE; obj = c; } }
+      const r = cenoteRamp(x, y); if (r) { const w = rampW(r, hb); if (w > 0) h += (Math.min(hb, r.z) - h) * w; if (!obj && h < r.c.lev) { lev = r.c.lev; kind = LAKE; obj = r.c; } } }
     if (!obj && kind === OCEAN) { // ponds in hollows
       const G = 170, ci = Math.floor(x / G), cj = Math.floor(y / G);
       for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
@@ -583,6 +658,7 @@ const MATS = [
 if (CLIMATE.mats) for (const k in CLIMATE.mats) MATS[k].col = CLIMATE.mats[k];   // the climate recolours the land
 function material(e, m, x, y) {
   if (e >= WL) { const s = stackS(x, y); if (s > 0.02) return s > 0.97 ? PLAIN : ROCK; }   // sea stacks: rock faces, grass on top
+  if (e >= WL && inGrid(x, y) && cenoteAt(x, y)) { const r = cenoteRamp(x, y); if (!r || r.b > r.c.rw) return ROCK; }   // cenote walls and their rocky lip (not the ramp's floor)
   if (e >= WL && glacierAt(x, y) > 0.3) return GLACIER;
   if (e < 0.2) return DEEP;
   if (e < WL) return SHALLOW;

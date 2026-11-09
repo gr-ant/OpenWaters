@@ -1,0 +1,12 @@
+{
+  "id": "glaciers",
+  "type": "glaciers",
+  "name": "Glaciers",
+  "about": "Permanent ice, per climate: an ice cap on the summit, valley glaciers down its slopes (some reaching the sea as tidewater glaciers with an ice cliff, some spreading into a piedmont lobe on the lowland), and small cirque glaciers in high hollows.",
+  "climates": {
+    "arctic": { "cap": 1, "valleys": [1, 3], "tidewater": 0.45, "piedmont": 0.35, "cirques": [2, 5] }
+  },
+  "tidewater_reach_m": [80, 220],
+  "tidewater_front_m": [10, 20],
+  "cirque_radius_m": [50, 110]
+}

@@ -14,7 +14,7 @@ const Engine = {
     if (code === 'KeyV' && !e.repeat && this.boat) this.toggleBoatMode();                       // take the helm / leave it to move about the boat
     if (code === 'KeyC' && !e.repeat && this.boat && this.boatMode === 'deck') this.toggleBoatSit();   // sit down / stand up
     if (code === 'KeyM' && !e.repeat) this.toggleBigMap();
-    if (code === 'KeyN' && !e.repeat && this.showMap) this.seedPress();                       // the map screen's icons: a new island (twice), pin the minimap
+    if (code === 'KeyN' && !e.repeat && this.showMap) this.seedPress();                       // the map screen's icons: a new island (pick its biome), pin the minimap
     if (code === 'KeyP' && !e.repeat && this.showMap) this.togglePin();
     if ((code === 'Enter' || code === 'NumpadEnter') && !e.repeat && this.showMap) { this.menu = null; this.say('Travelling…', 1); setTimeout(() => this.travel(this.mapCX, this.mapCY, CONFIG.travelSymbol), 30); }   // to the crosshair
     if (code === 'KeyI' && !e.repeat) this.toggleTackle();                                       // the tackle box

@@ -68,7 +68,7 @@ const Tutorial = globalThis.Tutorial = (() => {
       text: () => T.touch() ? (Engine.journalOpen ? `Close the journal (${T.btn('✕')}), then tap ${T.btn('Map')}.` : `Tap ${T.btn('Map')} to open the map.`) : `Press ${T.key('map')} to open the map${Engine.journalOpen ? ' (it closes the journal)' : ''}.`,
       latch: 'map', done: () => !!T.flags.map },
     { id: 'newIsland', title: 'A whole new island', feats: ['boats', 'use', 'helm', 'rod', 'cast', 'drag', 'journal', 'map', 'newIsland'], glow: ['newIsland'],
-      text: () => `That's the pond done. ${T.touch() ? `Tap ${T.btn('New island')} twice` : `Press <kbd class="glow">N</kbd> twice (or the island button)`} and a fresh island loads with its whole map open. It's yours to explore.`,
+      text: () => `That's the pond done. ${T.touch() ? `Tap ${T.btn('New island')}` : `Press <kbd class="glow">N</kbd> (or the island button)`}, pick a biome, and a fresh island loads with its whole map open. It's yours to explore.`,
       done: () => false },
   ];
   // a latched step counts as done for everything before it, so leaving the canoe after the catch doesn't send you back
@@ -243,10 +243,11 @@ const Tutorial = globalThis.Tutorial = (() => {
   const seedPress = Engine.seedPress;
   Engine.seedPress = function () {
     if (T.active && STEPS[T.i].id !== 'newIsland') { note('Not yet: follow the steps above.'); return; }
-    if (T.active && performance.now() - (this.seedArm || -1e9) < 5000) { try { sessionStorage.setItem('ow-tutorial-done', '1'); } catch (e) { /* */ } }
-    else if (T.active) note('Once more for a new island.');
+    if (T.active) note('Pick a biome for the new island.');
     return seedPress.call(this);
   };
+  const newIsland = Engine.newIsland;
+  Engine.newIsland = function (k) { if (T.active) { try { sessionStorage.setItem('ow-tutorial-done', '1'); } catch (e) { /* */ } } return newIsland.call(this, k); };
 
   // ---- following along ----
   Game.on('cast', () => { if (T.active) { T.flags.cast = true; T.waitT = 0; T.helped = false; } });

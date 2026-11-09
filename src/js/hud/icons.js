@@ -361,6 +361,20 @@ ${tray(4, 26, 42, 4)}${tray(50, 22, 42, 4)}${tray(24, 34, 48, 5)}
 <ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 54C66 52 76 56 86 52" fill="none" stroke="#dff3ff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
 <g filter="url(#${P('s')})"><path d="M18 46C24 36 36 32 48 34C62 36 74 36 80 46C72 52 24 52 18 46Z" fill="#e8d6a2" stroke="${OL}" stroke-width="1.8"/>
 <path d="M26 44C32 34 44 30 54 33C64 36 70 40 72 44C62 48 36 48 26 44Z" fill="url(#${P('g')})" stroke="${OL}" stroke-width="1.4"/>${pine(40, 36, 20)}${pine(56, 38, 15)}</g>`); })(),
+        // the same island, tropical: turquoise shallows, pale sand and a leaning palm
+        islandTropical: (() => { const P = ids(), frond = (x, y, a, L) => `<path d="M${x} ${y}q${Math.cos(a) * L * .5} ${Math.sin(a) * L * .5 - 6} ${Math.cos(a) * L} ${Math.sin(a) * L}q${-Math.cos(a) * L * .45} ${-Math.sin(a) * L * .2 + 2} ${-Math.cos(a) * L} ${-Math.sin(a) * L}Z" fill="#5aa63e" stroke="${OL}" stroke-width="1.1" stroke-linejoin="round"/>`;
+          return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#9ff0e6'], [.5, '#3fc0c8'], [1, '#1a6f9c']], .5, .55, .6)}${lg(P('g'), [[0, '#a8d86a'], [1, '#4e8a3a']])}${shadow(P('s'))}</defs>
+<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 54C66 52 76 56 86 52" fill="none" stroke="#f0fffc" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>
+<g filter="url(#${P('s')})"><path d="M16 46C22 36 36 32 48 34C62 36 76 36 82 46C72 53 22 53 16 46Z" fill="#f4e6b8" stroke="${OL}" stroke-width="1.8"/>
+<path d="M34 44C38 38 48 36 56 38C62 40 66 42 66 44C58 47 40 47 34 44Z" fill="url(#${P('g')})" stroke="${OL}" stroke-width="1.3"/>
+<path d="M46 42C46 32 49 22 55 14" fill="none" stroke="${OL}" stroke-width="4" stroke-linecap="round"/><path d="M46 42C46 32 49 22 55 14" fill="none" stroke="#a07a4a" stroke-width="2.2" stroke-linecap="round"/>
+${frond(55, 14, -2.6, 16)}${frond(55, 14, -0.4, 16)}${frond(55, 14, 0.5, 13)}${frond(55, 14, -1.6, 12)}${frond(55, 14, 2.4, 13)}<circle cx="53.5" cy="17" r="2" fill="#7a5a2a" stroke="${OL}" stroke-width=".8"/></g>`); })(),
+        // the same island, arctic: dark cold water, a snowy hump with a dark pine, an iceberg alongside
+        islandArctic: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#a8c8dc'], [.6, '#4a7494'], [1, '#1e3a56']], .5, .55, .6)}${lg(P('i'), [[0, '#ffffff'], [1, '#c4dcec']])}${lg(P('b'), [[0, '#eaf8ff'], [1, '#8cc4e4']], 1, 1)}${shadow(P('s'))}</defs>
+<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 56C66 54 76 58 86 54" fill="none" stroke="#e6f4ff" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>
+<g filter="url(#${P('s')})"><path d="M14 46C20 34 32 28 44 30C58 32 68 36 72 46C62 52 22 52 14 46Z" fill="#8a8a86" stroke="${OL}" stroke-width="1.8"/>
+<path d="M20 43C26 33 36 29 46 31C56 33 64 37 66 43C56 47 30 47 20 43Z" fill="url(#${P('i')})" stroke="${OL}" stroke-width="1.3"/>${pine(34, 40, 14)}<path d="M34 28.5L37 35H31Z" fill="#fff" opacity=".85"/>
+<path d="M70 52L74 40L80 36L86 44L88 52Z" fill="url(#${P('b')})" stroke="${OL}" stroke-width="1.5" stroke-linejoin="round"/><path d="M75 40L78 49" stroke="#9cc8e2" stroke-width="1.2" stroke-linecap="round"/></g>`); })(),
         // a trail map held by a red pushpin
         pin: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${lg(P('p'), [[0, '#f6e8c4'], [1, '#d9c08c']], 1, 1)}${rg(P('l'), [[0, '#9fd6ee'], [.6, '#4a92c0'], [1, '#235a86']], .45, .4, .6)}${lg(P('h'), [[0, '#ff7a6a'], [1, '#b8261c']])}${shadow(P('s'))}</defs>
 <g filter="url(#${P('s')})"><path d="M14 14L82 10L84 60L16 64Z" fill="url(#${P('p')})" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>

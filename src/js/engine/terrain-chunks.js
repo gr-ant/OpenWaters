@@ -73,6 +73,8 @@ Object.assign(Engine, {
       const k = j * N + i, e = c[k * LS], m = c[k * LS + 1], wl = c[k * LS + 2], kd = c[k * LS + 3] | 0, h = hW(e);
       const hx = (H(i + 1, j) - H(i - 1, j)) / (2 * SP), hy = (H(i, j + 1) - H(i, j - 1)) / (2 * SP), nl = 1 / Math.hypot(hx, hy, 1);
       f[k * 6] = x0 + i * SP; f[k * 6 + 1] = y0 + j * SP; f[k * 6 + 2] = h; f[k * 6 + 5] = wl;
+      { const st = sstep(0.62, 0.32, nl), px = x0 + i * SP, py = y0 + j * SP;   // steep ground: the vertex is shoved about so cliffs break into crags and buttresses (walking still uses the true height); world-placed, so chunk edges agree
+        if (st > 0) { f[k * 6] += 1.2 * st * nM(px / 3.3 + 5.1, py / 3.3 - 2.7); f[k * 6 + 1] += 1.2 * st * nM(px / 3.3 - 8.3, py / 3.3 + 4.4); f[k * 6 + 2] += 0.7 * st * nM(px / 2.1 + 1.7, py / 2.1 + 9.2); } }
       b8[k * 24 + 12] = -hx * nl * 127; b8[k * 24 + 13] = -hy * nl * 127; b8[k * 24 + 14] = nl * 127; u8[k * 24 + 19] = WATER[kd].murk * 255;
       const jit = 0.975 + 0.05 * hash2(cx * CHK + i, cy * CHK + j, SEED + 9), wx = x0 + i * SP, wy = y0 + j * SP;
       // blend biomes across a band with wavy edges, so boundaries aren't straight contour lines

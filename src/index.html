@@ -110,7 +110,12 @@
   </div>
   <div id="hKeys"></div>
   <div id="hMapBtns">
-    <button id="hSeed" title="New island (press twice)"><span data-icon="dock.island"></span><kbd>N</kbd></button>
+    <button id="hSeed" title="New island: pick its biome"><span data-icon="dock.island"></span><kbd>N</kbd></button>
+    <div id="hBiomes" hidden>
+      <button data-climate="temperate" title="Temperate"><span data-icon="dock.island"></span><small>Temperate</small></button>
+      <button data-climate="tropical" title="Tropical"><span data-icon="dock.islandTropical"></span><small>Tropical</small></button>
+      <button data-climate="arctic" title="Arctic"><span data-icon="dock.islandArctic"></span><small>Arctic</small></button>
+    </div>
     <button id="hPin" title="Show the small map while you play"><span data-icon="dock.pin"></span><kbd>P</kbd></button>
     <small id="hSeedInfo"></small>
   </div>
@@ -187,6 +192,7 @@
 <script src="js/engine/inventory-bag.js"></script>
 <script src="js/engine/sky-light.js"></script>
 <script src="js/engine/render.js"></script>
+<script src="js/models/cenote-caves.js"></script>
 <script src="js/engine/overlay.js"></script>
 <script src="js/engine/map.js"></script>
 <script src="js/tackle.js"></script>
@@ -215,6 +221,8 @@
 <script src="js/boot.js"></script>
 <!-- built-in fish species, boats and tackle: one JSON block each, the same format as files you drop onto the game -->
 <script type="application/json" data-builtin="feature" src="features/sea_stacks.json"></script>
+<script type="application/json" data-builtin="feature" src="features/glaciers.json"></script>
+<script type="application/json" data-builtin="feature" src="features/cenotes.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/ballan_wrasse.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/common_periwinkle.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/cunner.json"></script>
@@ -458,6 +466,14 @@
 <script type="application/json" data-builtin="tackle" src="tackle/saltwater_jig.json"></script>
 <script type="application/json" data-builtin="tackle" src="tackle/squid_bottom.json"></script>
 <script type="application/json" data-builtin="tackle" src="tackle/surf_shrimp.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/fiddler_crab.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/popping_cork.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/popping_cork_shrimp.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/freeline_shrimp.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/fiddler_crab_rocks.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/saltwater_popper.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/flats_spoon.json"></script>
+<script type="application/json" data-builtin="tackle" src="tackle/live_bait_cork.json"></script>
 <script type="application/json" data-builtin="tackle" src="tackle/texas_worm.json"></script>
 <script type="application/json" data-builtin="tackle" src="tackle/topwater.json"></script>
 <script type="application/json" data-builtin="tackle" src="tackle/trout_spinner.json"></script>

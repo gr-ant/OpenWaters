@@ -53,6 +53,7 @@ Object.assign(Engine, {
     gl.uniform1f(L.u.time, this.time); gl.uniform1f(L.u.sway, 0); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     gl.uniform1f(L.u.inst, 0); gl.uniform1f(L.u.pscale, 1); gl.uniform1f(L.u.dry, 0);
     gl.uniform4f(L.u.seasA, ENV.leaf, ENV.autumn, ENV.young, ENV.dormant); gl.uniform4f(L.u.seasB, ENV.snowCover, ENV.wet, ENV.flash * 0.8, 0);
+    this.caveUniforms(gl, L, E);
     { // 8 nearest fire lights, flickering
       const T = this.time, ls = [];
       for (const l of this.lights) ls.push([l.x, l.y, l.z, l.intensity * (l.flicker ? 0.85 + 0.1 * Math.sin(T * 17 + l.x) + 0.05 * Math.sin(T * 31 + l.y) : 1)]);
@@ -173,10 +174,11 @@ Object.assign(Engine, {
       add(this.itemMesh(q.item), q.x, q.y, q.z + bob, q.scale * (it.worldScale || 1), rot, q === tgt ? 0.5 + 0.25 * (1 + Math.sin(this.time * 8)) : 0.5);
     }
     for (const [m, arr] of groups) drawInst(m, arr);
+    this.drawCaves(gl, drawInst, E);   // cave cenotes' roofs
     // water surfaces (blended, no depth write), with the 8 nearest live ripples
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
     this.drawParticles(vp, Hh, ty, E, 0);   // particles beyond the surface (droplets under it, seen from above) go before it
-    const Wt = this.water; gl.useProgram(Wt.p);
+    const Wt = this.water; gl.useProgram(Wt.p); this.caveUniforms(gl, Wt, E);
     gl.uniformMatrix4fv(Wt.u.vp, false, vp); gl.uniform1f(Wt.u.far, FOGD); gl.uniform1f(Wt.u.uwf, uw ? 1 : 0);
     gl.uniform3fv(Wt.u.cam, E); gl.uniform3fv(Wt.u.sun, S.sun[2] > -0.05 ? S.sun : SUN); gl.uniform3fv(Wt.u.fogc, HORZ); gl.uniform1f(Wt.u.t, this.time);
     gl.uniform3fv(Wt.u.lcol, S.lcol); gl.uniform3fv(Wt.u.amb, S.amb); gl.uniform3fv(Wt.u.zen, S.zen); gl.uniform3fv(Wt.u.hor, S.hor);

@@ -3,12 +3,12 @@
   "type": "stacks",
   "name": "Sea stacks",
   "about": "A cluster of sheer rock pillars standing off the coast, grass on top. Puffins nest on them.",
-  "chance": { "temperate": 0.7, "arctic": 0.7, "tropical": 0.3 },
+  "chance": { "temperate": 0, "arctic": 0, "tropical": 0 },
   "clusters": [1, 2],
   "stacks": [2, 5],
   "spread_m": 110,
   "offshore_m": [120, 400],
   "min_depth_m": 8,
-  "radius_m": [10, 32],
+  "radius_m": [14, 34],
   "height_m": [18, 60]
 }

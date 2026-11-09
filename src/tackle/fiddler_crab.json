@@ -1,0 +1,23 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "fiddler_crab",
+  "type": "bait",
+  "name": "Fiddler crab",
+  "description": "A small live crab. Sheepshead, tautog, wrasse and redfish nibble them off pilings and rocks.",
+  "food": {
+    "crayfish": 1,
+    "snails": 0.3,
+    "shrimp": 0.3
+  },
+  "size_cm": 3,
+  "scent": 0.5,
+  "wiggle": 0.4,
+  "lasts": 3,
+  "floats": false,
+  "shape": "shrimp",
+  "weight_g": 4,
+  "colors": {
+    "body": "#8a6a4a",
+    "accent": "#e8c070"
+  }
+}

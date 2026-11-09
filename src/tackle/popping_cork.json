@@ -1,0 +1,15 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "popping_cork",
+  "type": "float",
+  "name": "Popping cork",
+  "description": "A cork on a wire that clacks and splashes when you jerk it, calling fish to the bait hanging underneath.",
+  "kind": "fixed",
+  "buoyancy_g": 14,
+  "depth_m": 0.8,
+  "size_mm": 28,
+  "colors": {
+    "top": "#f2d020",
+    "bottom": "#f4f4f0"
+  }
+}

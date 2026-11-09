@@ -279,6 +279,11 @@
   #hMapBtns button { pointer-events: auto; }
   #hSeed.armed > span { filter: drop-shadow(0 0 7px #ff7a4a) drop-shadow(0 3px 3px #000b); } #hSeed.armed kbd { background: #a03c28ee; }
   #hPin.on kbd { background: #5d6e3cee; }
+  #hBiomes { position: absolute; right: 76px; top: -6px; display: flex; gap: 6px; padding: 8px 10px 6px; border-radius: 14px; background: #1c261dd8; border: 1.5px solid #d4e4e066; box-shadow: 0 4px 14px #0008; }
+  #hBiomes[hidden] { display: none; }
+  #hBiomes button { width: 76px; height: 72px; } #hBiomes button > span { inset: 0 0 18px; }
+  #hBiomes small { position: absolute; left: 0; right: 0; bottom: 0; font: 600 12px var(--serif); color: var(--cream); text-align: center; }
+  #hBiomes button.on small { color: var(--gold-hi); }
   #hSeedInfo { font: 11px monospace; color: #ffe9b0cc; text-align: right; white-space: nowrap; }
   body.touch #hMapBtns { top: 60px; right: 8px; }
   body.mini-on #hHint { top: calc(18px + clamp(200px, 18vw, 300px) * 0.75 + 14px); }   /* under the pinned minimap */

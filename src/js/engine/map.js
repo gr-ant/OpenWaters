@@ -63,6 +63,8 @@ Object.assign(Engine, {
         let col, sh;
         if (wk && wet * 2 >= kk * kk) { col = WATER[wk].map; sh = clamp(1.15 - wd / wet * 0.06, 0.6, 1.15); } // lakes, ponds, rivers
         else { col = MATS[material(wet * 2 >= kk * kk ? Math.min(e, WL - 0.01) : Math.max(e, WL), moist(wx, wy), wx, wy)].col; sh = wet * 2 >= kk * kk ? clamp(1.1 - 0.075 * Math.log2(1 + wd / wet), 0.3, 1.1) : clamp(0.55 + (e - WL) * 0.9, 0.35, 1.1); }   // the sea shades darker with depth: reef flats and shelf light, the deep dark
+        if (job.snow && wet * 2 < kk * kk && col !== MATS[GLACIER].col) {   // lying snow, patchy, as the season has it
+          const sn = sstep(0.15, 0.6, job.snow + 0.25 * nM(wx / 90, wy / 90)) * 0.9; col = col.map((v, q) => v + ([0.9, 0.93, 0.97][q] - v) * sn); }
         const n = (j * TS + i) * 4;
         d[n] = clamp(col[0] * sh, 0, 1) * 255; d[n + 1] = clamp(col[1] * sh, 0, 1) * 255; d[n + 2] = clamp(col[2] * sh, 0, 1) * 255; d[n + 3] = 255;
       }
@@ -70,18 +72,53 @@ Object.assign(Engine, {
     if (job.row < TS) return false;
     job.cv.getContext('2d').putImageData(job.img, 0, 0);
     this.paintChannels({ cv: job.cv, ox: X + TS * ts / 2, oy: Y + TS * ts / 2, W: TS, H: TS, scale: ts });
-    this.mapTiles.set(`${job.lvl}:${job.tx}:${job.ty}`, job.cv);
+    job.cv.snow = job.snow; this.mapTiles.set(`${job.lvl}:${job.tx}:${job.ty}`, job.cv);
     if (this.mapTiles.size > 1200) this.mapTiles.delete(this.mapTiles.keys().next().value);
     return true;
   },
-  mapStart(lvl, tx, ty) { const cv = document.createElement('canvas'); cv.width = cv.height = 64; return { lvl, tx, ty, cv, img: cv.getContext('2d').createImageData(64, 64), row: 0 }; },
+  // landmarks worth finding, worked out once per island: each sea-stack cluster, the glacier, the summit with its height
+  landmarks() {
+    if (this._landmarks) return this._landmarks; const out = [], L = LAYOUT;
+    for (const k of seaStacks()) { const g = out.find(m => Math.hypot(m.x - k.x, m.y - k.y) < 250);
+      if (g) { g.n++; g.x += (k.x - g.x) / g.n; g.y += (k.y - g.y) / g.n; } else out.push({ kind: 'stacks', x: k.x, y: k.y, n: 1, label: 'Sea stacks' }); }
+    const GN = { valley: 'Valley glacier', tidewater: 'Tidewater glacier', piedmont: 'Piedmont glacier', cirque: 'Cirque glacier' };
+    for (const G of glaciers()) if (G.kind !== 'cap') {   // the ice cap is named with the summit
+      const d = G.kind === 'tidewater' ? G.length - 25 : G.kind === 'piedmont' ? G.length : G.length * 0.55;   // the ice front · the lobe · halfway down
+      out.push(G.kind === 'cirque' ? { kind: 'glacier', x: G.x, y: G.y, label: GN.cirque } : { kind: 'glacier', x: G.x + G.ux * d, y: G.y + G.uy * d, label: GN[G.kind] }); }
+    for (const c of cenotes()) out.push({ kind: 'cenote', x: c.cx, y: c.cy, label: c.name + (c.roof ? ' · cave' : '') });
+    let top = -1e9, tx = L.px, ty = L.py;
+    for (let i = 0; i < 400; i++) { const a = i * 2.4, r = Math.sqrt(i / 400) * L.pr * 0.6, x = L.px + Math.cos(a) * r, y = L.py + Math.sin(a) * r, h = hW(elev(x, y)); if (h > top) { top = h; tx = x; ty = y; } }   // the highest point round the layout's peak
+    out.push({ kind: 'peak', x: tx, y: ty, label: `Summit · ${Math.round(top - WLW)} m` + (glaciers().some(G => G.kind === 'cap') ? ' · ice cap' : '') });
+    return this._landmarks = out;
+  },
+  drawLandmarks(c, toPx, inside, labels) {   // labels: on the big map, for the icon under the pointer
+    for (const m of this.landmarks()) {
+      const [x, y] = toPx(m.x, m.y); if (!inside(x, y)) continue;
+      c.save(); c.translate(x, y); c.lineJoin = 'round'; c.lineWidth = 1.2; c.strokeStyle = '#141a14';
+      if (m.kind === 'stacks') for (const [dx, h, w] of [[-5, 9, 4], [0, 13, 5], [5, 7, 4]]) {   // three rock pillars, grass on top
+        c.fillStyle = '#8c8379'; c.beginPath(); c.rect(dx - w / 2, 5 - h, w, h); c.fill(); c.stroke(); c.fillStyle = '#6f9a4a'; c.fillRect(dx - w / 2 + 0.6, 5.6 - h, w - 1.2, 2); }
+      else if (m.kind === 'cenote') {   // a round pit: rock rim round deep blue water
+        c.fillStyle = '#b9ad94'; c.beginPath(); c.arc(0, 0, 7.5, 0, 6.2832); c.fill(); c.stroke(); c.fillStyle = '#1f6fa0'; c.beginPath(); c.arc(0, 0, 4.6, 0, 6.2832); c.fill();
+        c.fillStyle = '#7fd0f0'; c.beginPath(); c.arc(-1.3, -1.3, 1.4, 0, 6.2832); c.fill(); }
+      else if (m.kind === 'glacier') {   // an ice-blue badge with a snowflake
+        c.fillStyle = '#9fd0ec'; c.beginPath(); c.arc(0, 0, 7.5, 0, 6.2832); c.fill(); c.stroke(); c.strokeStyle = '#fff'; c.lineWidth = 1.4; c.beginPath();
+        for (let k = 0; k < 3; k++) { const a = k * Math.PI / 3 + Math.PI / 2, ca = Math.cos(a) * 5, sa = Math.sin(a) * 5; c.moveTo(-ca, -sa); c.lineTo(ca, sa); } c.stroke(); }
+      else {   // a peak with a snowcap
+        c.fillStyle = '#7a5a3a'; c.beginPath(); c.moveTo(-8, 5); c.lineTo(0, -8); c.lineTo(8, 5); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#f4f6f8'; c.beginPath(); c.moveTo(-3.1, -3); c.lineTo(0, -8); c.lineTo(3.1, -3); c.lineTo(1, -4.2); c.lineTo(-1, -2.8); c.closePath(); c.fill(); }
+      const M = this.mouseXY; if (labels && M && Math.abs(M[0] - x) < 11 && Math.abs(M[1] - y) < 11) { c.font = 'bold 12px Georgia, serif'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = 'rgba(10,14,10,.8)'; c.strokeText(m.label, 12, 0); c.fillStyle = '#f2e9d0'; c.fillText(m.label, 12, 0); }
+      c.restore();
+    }
+  },
+  mapStart(lvl, tx, ty) { const cv = document.createElement('canvas'); cv.width = cv.height = 64; return { lvl, tx, ty, cv, img: cv.getContext('2d').createImageData(64, 64), row: 0, snow: this.mapSnow() }; },
+  mapSnow() { return Math.round((ENV.snowCover || 0) * 4) / 4; },   // snow cover in quarter steps: a tile is redrawn when it moves on a step (the old one shows meanwhile)
   // build the wanted tiles ([lvl, tx, ty], nearest first) within the budget; the tile in hand is finished first
   mapWork(want, budget) {
     const t0 = performance.now(), left = () => budget - (performance.now() - t0);
     const wanted = (j, list) => list.some(([l, x, y]) => l === j.lvl && x === j.tx && y === j.ty);
     if (this.mapJob && !wanted(this.mapJob, want) && this.mapJob.row < 48) this.mapJob = null;   // moved on: drop it unless it's nearly done
     for (;;) {
-      if (!this.mapJob) { const nx = want.find(([l, x, y]) => !this.mapTiles.has(`${l}:${x}:${y}`)); if (!nx) break; this.mapJob = this.mapStart(...nx); }
+      if (!this.mapJob) { const sn = this.mapSnow(), nx = want.find(([l, x, y]) => { const t = this.mapTiles.get(`${l}:${x}:${y}`); return !t || t.snow !== sn; }); if (!nx) break; this.mapJob = this.mapStart(...nx); }
       if (left() <= 0) break;
       if (this.mapBuild(this.mapJob, left())) this.mapJob = null;
     }
@@ -120,6 +157,7 @@ Object.assign(Engine, {
     const inside = (px, py) => px >= x0 && px < x0 + w * cell && py >= y0 && py < y0 + h * cell;
     c.save(); c.beginPath(); c.rect(x0, y0, w * cell, h * cell); c.clip(); // keep roads/icons inside the map
     for (const fn of Game._mapHooks) fn(c, toPx, inside, scale); // games draw their own map icons
+    this.drawLandmarks(c, toPx, inside, memo === this.bigMemo);
     c.font = 'bold 13px monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
     for (const b of this.boats) { const [px, py] = toPx(b.x, b.y); if (!inside(px, py)) continue; const L = Math.max(4, b.def.hull.length_m / scale * cell), ca = Math.cos(b.a), sa = Math.sin(b.a);   // boats
       c.beginPath(); c.moveTo(px + ca * L * 0.6, py + sa * L * 0.6); c.lineTo(px - ca * L * 0.5 - sa * L * 0.25, py - sa * L * 0.5 + ca * L * 0.25); c.lineTo(px - ca * L * 0.5 + sa * L * 0.25, py - sa * L * 0.5 - ca * L * 0.25); c.closePath();

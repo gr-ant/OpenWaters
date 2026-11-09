@@ -1,0 +1,22 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "popping_cork_shrimp",
+  "type": "rig",
+  "name": "Shrimp under a popping cork",
+  "description": "A shrimp hung under a popping cork over grass flats and oyster bars. Pop it, let it sit: redfish, seatrout and snook come to the noise.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "braid_10",
+    "leader": "fluoro_leader_20",
+    "hook": "hook_1_0",
+    "sinker": "split_shot",
+    "float": "popping_cork",
+    "bait": "shrimp"
+  },
+  "drag": 0.3,
+  "waters": [
+    "sea"
+  ],
+  "float_depth_m": 0.8
+}

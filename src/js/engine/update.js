@@ -71,10 +71,11 @@ Object.assign(Engine, {
     const fwd = diving ? f * Math.cos(P.pitch) : f;
     const sp = (swim ? swimSp : (run ? CONFIG.runSpeed : CONFIG.walkSpeed) * (1 - 0.55 * wade) * Game.speedMultiplier) * dt;
     const ca = Math.cos(P.a), sa = Math.sin(P.a), mx = (ca * fwd - sa * s) * sp, my = (sa * fwd + ca * s) * sp;
-    const blocked = (x, y) => Game._solids.some(fn => fn(x, y, P.z)); // games can add solid areas
-    if (!blocked(P.x + mx, P.y)) { if (this.pastEdge(P.x + mx, P.y) && Math.abs(P.x + mx) > Math.abs(P.x)) this.edgeWarn(); else P.x += mx; }   // per axis, so you slide along obstacles (and the world's edge)
-    if (!blocked(P.x, P.y + my)) { if (this.pastEdge(P.x, P.y + my) && Math.abs(P.y + my) > Math.abs(P.y)) this.edgeWarn(); else P.y += my; }
-    const floor = Math.max(groundAt(P.x, P.y), iced ? wl0 : -1e9);
+    const feet = swim ? Math.max(P.z, wl0 - 0.5) : P.z;   // swimming: climb out from the surface, so beaches still let you wade ashore
+    const blocked = (x, y, d) => groundAt(x, y) - feet > 0.5 + d * 1.7 || Game._solids.some(fn => fn(x, y, P.z)); // no walking up cliffs (over ~60°, beyond a half-metre step); games can add solid areas
+    if (!blocked(P.x + mx, P.y, Math.abs(mx))) { if (this.pastEdge(P.x + mx, P.y) && Math.abs(P.x + mx) > Math.abs(P.x)) this.edgeWarn(); else P.x += mx; }   // per axis, so you slide along obstacles (and the world's edge)
+    if (!blocked(P.x, P.y + my, Math.abs(my))) { if (this.pastEdge(P.x, P.y + my) && Math.abs(P.y + my) > Math.abs(P.y)) this.edgeWarn(); else P.y += my; }
+    const roof = caveRoofAt(P.x, P.y), floor = Math.max(groundAt(P.x, P.y), iced ? wl0 : -1e9, roof && P.z > roof.under - 0.3 ? roof.top : -1e9);   // a cave cenote's roof bears you; its opening doesn't
     if (swim) {
       const up = K.Space, dn = K.KeyC;
       let vt = (up ? CONFIG.diveSpeed : 0) - (dn ? CONFIG.diveSpeed : 0) + (diving ? Math.sin(P.pitch) * f * swimSp : 0);

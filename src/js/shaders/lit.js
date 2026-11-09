@@ -87,6 +87,21 @@ const NOISE_GLSL = `float h21(vec2 p){ p = fract(mod(p, 512.) * vec2(.1031, .103
 float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3. - 2.*f);
   return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
 float fbm3(vec2 p){ return vn(p)*.5 + vn(p*2.07 + 5.2)*.3 + vn(p*4.31 + 1.7)*.2; }`;
+// cave cenotes (models/cenote-caves.js): what lies under a roof is dim, and the sun only reaches it through the opening
+const CAVE_GLSL = `
+uniform vec4 cav[4]; uniform float cavz[4]; uniform vec3 cavg[4];   // centre xy, opening radius, roof radius · roof height · the gap over the ramp: direction xy, half-width
+// x: roofed overhead (dims the ambient light) · y: the sun is blocked (the point traced up towards the sun to the roof's height lands on rock)
+float caveRoofK(vec2 v, vec4 c, vec3 g, float in0, float in1, float out0, float out1){   // v: offset from the centre
+  float d = length(v), gap = step(0., dot(v, g.xy)) * smoothstep(g.z + 1., g.z - 1., abs(v.x * g.y - v.y * g.x));
+  return smoothstep(c.z + in0, c.z + in1, d) * (1. - smoothstep(c.w + out0, c.w + out1, d)) * (1. - gap);
+}
+vec2 caveShade(vec3 p, vec3 sd){
+  vec2 r = vec2(0.);
+  for (int i = 0; i < 4; i++) { vec4 c = cav[i]; float top = cavz[i]; if (c.w <= 0. || p.z > top - .2) continue;
+    r.x = max(r.x, caveRoofK(p.xy - c.xy, c, cavg[i], -.5, 1.5, .5, 3.));
+    r.y = max(r.y, caveRoofK(p.xy + sd.xy * (top - p.z) / max(sd.z, .12) - c.xy, c, cavg[i], -.8, .8, 0., 2.)); }
+  return r;
+}`;
 const LIT_FS = `#version 300 es
 precision highp float;
 in vec3 wp; in vec3 wn; in vec3 col; in vec2 tuv; in float mt; in vec3 tp; in vec3 wv; out vec4 o;
@@ -95,18 +110,32 @@ uniform vec4 seasA, seasB; // seasB: snow cover, wetness, lightning flash
 ${FOG_GLSL}
 ${NOISE_GLSL}
 ${CAUSTIC_GLSL}
+${CAVE_GLSL}
 // face coordinates: u runs horizontally along a wall, v is height; flat tops use world xy
 vec2 faceUV(vec3 N, vec3 P){
   if (abs(N.z) > .7) return P.xy;
   vec2 t = normalize(vec2(-N.y, N.x) + vec2(1e-5));
   return vec2(dot(P.xy, t), P.z);
 }
+// terrain brightness: mottled ground, and where steep (st) weathered rock: broken wavy layers, near-vertical joints, rain stains, chips
+float af(float v, float f){ return mix(.5, v, smoothstep(.6, .25, f)); }   // a noise term faded to its mean once it's finer than a pixel
+float terrK(vec2 q, float z, float st, float fw){
+  float n = vn(q * .22) * .55 + af(vn(q * 1.7), fw * 1.7) * .3 + af(vn(q * 7.), fw * 7.) * .15, k = .86 + .28 * n;
+  if (st > 0.) {
+    float layer = vn(vec2(q.x * .07, z * .9 + vn(q * .05) * 3.)), joint = smoothstep(.06, 0., abs(vn(vec2(q.x * .6, z * .12)) - .5)) * smoothstep(.6, .25, fw * 1.2);
+    float streak = af(vn(vec2(q.x * 2.3, z * .04)), fw * 2.3), chip = af(vn(q * 3.1), fw * 3.1);
+    k *= mix(1., (.78 + .38 * layer) * (1. - .35 * joint) * (.85 + .25 * streak) * (.9 + .15 * chip), st);
+  }
+  return k;
+}
 vec3 surface(vec3 c, vec3 N, int id, inout float spec, inout float em){
   vec3 P = tp; vec2 q = faceUV(N, P);
   if (id == 0) { // generic: terrain and misc (first: it covers most of the screen)
-    float n = vn(q * .22) * .55 + vn(q * 1.7) * .3 + vn(q * 7.) * .15, k = .86 + .28 * n;
-    if (abs(N.z) < .35) k *= 1. - .14 * step(.86, fract(P.z * 2.2));
-    return c * k;
+    float fw = length(fwidth(P));   // metres per pixel: detail finer than that is faded out, not left to shimmer
+    if (abs(N.z) > .7) return c * terrK(P.xy, P.z, 0., fw);
+    // walls: two world-fixed projections blended by facing (one that turns with the wall bands like moiré on curved cliffs)
+    float st = smoothstep(.5, .2, abs(N.z)), w = smoothstep(.35, .65, abs(N.x) / (abs(N.x) + abs(N.y) + 1e-4));
+    return c * mix(terrK(P.xz, P.z, st, fw), terrK(P.yz, P.z, st, fw), w);
   }
   if (id == 2) { // wood: boards with grain and dark seams
     float bw = .24, b = floor(q.x / bw), fx = fract(q.x / bw);
@@ -116,7 +145,7 @@ vec3 surface(vec3 c, vec3 N, int id, inout float spec, inout float em){
     return c * (.85 + .3 * h21(vec2(b, 3.))) * (.72 + .45 * g) * (.55 + .45 * seam);
   }
   if (id == 5) { // broad mineral variation; let the mesh supply fracture planes
-    float n = vn(P.xy * .6 + P.z * .35), grit = vn(q * 8.);
+    float n = vn(P.xy * .6 + P.z * .35), grit = af(vn(q * 8.), length(fwidth(P)) * 8.);
     return c * (.86 + .20 * n + .06 * grit);
   }
   if (id == 6) { // restrained leaf texture over baked crown/plant shading
@@ -141,6 +170,7 @@ vec3 fireLight(vec3 N){ // up to 8 flickering warm lights (xyz, intensity)
 }
 void main(){
   vec3 N = normalize(wn); float spec = 0., em = 0.;
+  if (wv.z > .5 && N.z < .62) { vec3 Nf = normalize(cross(dFdx(wp), dFdy(wp))); if (dot(Nf, N) < 0.) Nf = -Nf; N = normalize(mix(N, Nf, smoothstep(.62, .35, N.z))); }   // steep terrain: faceted, like fractured rock, not draped cloth
   vec3 bc = surface(col, N, int(mt + .5), spec, em);
   { // seasons: dormant grass browns, snow settles on what faces up, rain darkens
     float above = (wv.z < .5 && wv.x == 0.) || wv.x - wp.z < -.04 ? 1. : 0., id = mt + .5;
@@ -150,8 +180,9 @@ void main(){
     if (seasB.x > 0.) sn = seasB.x * up * smoothstep(.15, .45, vn(wp.xy * .4) * .55 + vn(wp.xy * 2.1) * .25 + seasB.x * .55) * above;
     bc = mix(bc * (1. - .22 * seasB.y * above), vec3(.9, .93, .97), sn);
   }
-  float d = max(dot(N, sun), 0.);
-  vec3 a = amb * (.75 + .5 * (.5 + .5 * N.z));
+  vec2 cs = caveShade(wp, sun);
+  float d = max(dot(N, sun), 0.) * (1. - cs.y); spec *= 1. - cs.y;
+  vec3 a = amb * (.75 + .5 * (.5 + .5 * N.z)) * (1. - .6 * cs.x);
   vec3 c = bc * (a + lcol * d);
   if (spec > 0.) { vec3 V = normalize(cam - wp), H = normalize(sun + V); c += lcol * spec * pow(max(dot(N, H), 0.), 60.) * .8; }
   c += bc * fireLight(N);

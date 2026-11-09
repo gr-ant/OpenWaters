@@ -1,0 +1,14 @@
+{
+  "id": "cenotes",
+  "type": "cenotes",
+  "name": "Cenotes",
+  "about": "Sinkholes in limestone country: a round pit with sheer rock walls, open to the sky, with clear deep water a few metres below the ground.",
+  "chance": { "tropical": 0.25, "temperate": 0.1, "arctic": 0 },
+  "count": [2, 5],
+  "radius_m": [8, 25],
+  "drop_m": [4, 12],
+  "depth_m": [15, 45],
+  "cave": 0.75,
+  "opening": [0.3, 0.55],
+  "names": ["Blue", "Jade", "Swallow", "Echo", "Lantern", "Vine", "Sun", "Jaguar", "Root", "Kingfisher", "Moonwell", "Fern"]
+}

@@ -130,7 +130,8 @@ Object.assign(Engine, {
       if (cb) { cb.hidden = !out || ph === 'card'; cb.textContent = ph === 'water' ? 'Reel' : ph === 'fight' ? 'Reel' : ph === 'bite' ? (A.took ? 'Strike!' : '…') : ph === 'flight' ? 'Stop' : 'Cast'; cb.classList.toggle('lit', ph === 'bite' && !!A.took); }
       for (const id of ['bDrDn', 'bDrUp']) { const b = document.getElementById(id); if (b) b.hidden = ph !== 'fight'; }
       { const b = document.getElementById('bBail'); if (b) b.hidden = !out || ph === 'card'; }
-      { const b = document.getElementById('bFast'); if (b) b.hidden = ph !== 'water' && ph !== 'bite'; } }   // hold to speed time while waiting for a bite const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');
+      { const b = document.getElementById('bFast'); if (b) b.hidden = ph !== 'water' && ph !== 'bite'; } }   // hold to speed time while waiting for a bite
+    const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');
     if (h) { h.hidden = !this.boat; h.textContent = this.boatMode === 'deck' ? 'Helm' : (this.boat && !this.boatCanStand(this.boat.def) ? 'Fish' : 'Stand'); }
     if (dv) dv.textContent = this.boat && this.boatMode === 'deck' ? (this.boatSit ? 'Stand' : 'Sit') : 'Dive';
   },

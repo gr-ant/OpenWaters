@@ -67,7 +67,7 @@ Object.assign(Engine, {
       if (lost && !this.mouseLookBlocked()) this.togglePause(true);
     });
     addEventListener('mousemove', e => {
-      if (document.pointerLockElement !== this.ov) return;
+      if (document.pointerLockElement !== this.ov) { this.mouseXY = [e.clientX, e.clientY]; return; }   // the pointer, for hovering map icons
       if (this.skipMouseEvent) { this.skipMouseEvent = false; return; }
       this.queueMouseLook(e.movementX, e.movementY);
     });

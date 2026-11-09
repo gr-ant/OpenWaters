@@ -286,6 +286,11 @@
   #hMapBtns button { pointer-events: auto; }
   #hSeed.armed > span { filter: drop-shadow(0 0 7px #ff7a4a) drop-shadow(0 3px 3px #000b); } #hSeed.armed kbd { background: #a03c28ee; }
   #hPin.on kbd { background: #5d6e3cee; }
+  #hBiomes { position: absolute; right: 76px; top: -6px; display: flex; gap: 6px; padding: 8px 10px 6px; border-radius: 14px; background: #1c261dd8; border: 1.5px solid #d4e4e066; box-shadow: 0 4px 14px #0008; }
+  #hBiomes[hidden] { display: none; }
+  #hBiomes button { width: 76px; height: 72px; } #hBiomes button > span { inset: 0 0 18px; }
+  #hBiomes small { position: absolute; left: 0; right: 0; bottom: 0; font: 600 12px var(--serif); color: var(--cream); text-align: center; }
+  #hBiomes button.on small { color: var(--gold-hi); }
   #hSeedInfo { font: 11px monospace; color: #ffe9b0cc; text-align: right; white-space: nowrap; }
   body.touch #hMapBtns { top: 60px; right: 8px; }
   body.mini-on #hHint { top: calc(18px + clamp(200px, 18vw, 300px) * 0.75 + 14px); }   /* under the pinned minimap */
@@ -532,7 +537,12 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
   </div>
   <div id="hKeys"></div>
   <div id="hMapBtns">
-    <button id="hSeed" title="New island (press twice)"><span data-icon="dock.island"></span><kbd>N</kbd></button>
+    <button id="hSeed" title="New island: pick its biome"><span data-icon="dock.island"></span><kbd>N</kbd></button>
+    <div id="hBiomes" hidden>
+      <button data-climate="temperate" title="Temperate"><span data-icon="dock.island"></span><small>Temperate</small></button>
+      <button data-climate="tropical" title="Tropical"><span data-icon="dock.islandTropical"></span><small>Tropical</small></button>
+      <button data-climate="arctic" title="Arctic"><span data-icon="dock.islandArctic"></span><small>Arctic</small></button>
+    </div>
     <button id="hPin" title="Show the small map while you play"><span data-icon="dock.pin"></span><kbd>P</kbd></button>
     <small id="hSeedInfo"></small>
   </div>
@@ -946,28 +956,52 @@ function seaDepth(x, y, off) {
   return Math.max(1, d);
 }
 
-// Permanent ice is spatial terrain, independent of seasonal snow. The summit cap
-// feeds the forward gullies; a separate tongue descends the back slope to the coast.
-const GLACIERS = (() => {
-  if (CLIMATE.key !== 'arctic') return null;
-  const L = LAYOUT, ux = -L.vx * L.pdir, uy = -L.vy * L.pdir;
-  let length = L.pr;
-  for (let d = L.pr * 0.3; d < CONFIG.islandSize; d += 24) {
-    length = d;
-    if (islandBase(L.px + ux * d, L.py + uy * d) < WLW) break;
+// Permanent ice is spatial terrain, independent of seasonal snow (src/features/glaciers.json: how many of each kind, per climate).
+// Laid out once per seed, lazily (after the JSON is read). ice cap: on the summit · valley: a tongue from the summit down a slope ·
+// tidewater: a valley glacier that pushes out past the coast and ends in an ice cliff · piedmont: one that spreads into a broad
+// lobe on the lowland · cirque: a small glacier in a high hollow on the mountain's flank.
+let GLACIERS = null, GLAC_TIDE = 0;   // GLAC_TIDE: ice-front height above the sea of the tidewater glacier found by the last glacierAt()
+function glaciers() {
+  if (GLACIERS) return GLACIERS; GLACIERS = [];
+  const F = BUILTIN.feature.find(f => f.type === 'glaciers'), C = F && F.climates[CLIMATE.key]; if (!C) return GLACIERS;
+  const L = LAYOUT, rng = mulberry32((SEED ^ 0x61ac1) >>> 0), pick = ([a, b]) => a + (b - a) * rng();
+  const toCoast = (ux, uy) => { let d = L.pr * 0.3; for (; d < CONFIG.islandSize; d += 24) if (islandBase(L.px + ux * d, L.py + uy * d) < WLW) break; return d; };
+  if (rng() < C.cap) GLACIERS.push({ kind: 'cap', x: L.px, y: L.py, R: L.pr * 0.45 });
+  const main = Math.atan2(-L.vy * L.pdir, -L.vx * L.pdir);   // the first runs down the back slope, away from the river
+  for (let k = 0, n = Math.round(pick(C.valleys)); k < n; k++) {
+    const a = k ? main + (rng() < 0.5 ? -1 : 1) * (1 + 1.6 * rng()) : main, ux = Math.cos(a), uy = Math.sin(a), coast = toCoast(ux, uy);
+    const tide = rng() < C.tidewater, pied = !tide && rng() < C.piedmont;
+    GLACIERS.push({ kind: tide ? 'tidewater' : pied ? 'piedmont' : 'valley', x: L.px, y: L.py, ux, uy, w: L.pr * (0.12 + 0.06 * rng()), ph: k ? rng() * 6.28 : 0,
+      length: tide ? coast + pick(F.tidewater_reach_m) : pied ? coast * (0.6 + 0.2 * rng()) : k ? coast * (0.55 + 0.45 * rng()) : coast,
+      front: tide ? pick(F.tidewater_front_m) : 0, lobe: pied ? L.pr * (0.35 + 0.15 * rng()) : 0 });
   }
-  return { ux, uy, length };
-})();
+  const top = islandBase(L.px, L.py);
+  for (let k = 0, n = Math.round(pick(C.cirques)), tries = 0; k < n && tries < 80; tries++) {   // cirques: high on the flanks, nudged downhill
+    const a = rng() * 6.2832, d = L.pr * (0.35 + 0.6 * rng()), x = L.px + Math.cos(a) * d, y = L.py + Math.sin(a) * d;
+    if (islandBase(x, y) < WLW + (top - WLW) * 0.45) continue;
+    const gx = islandBase(x + 20, y) - islandBase(x - 20, y), gy = islandBase(x, y + 20) - islandBase(x, y - 20), g = Math.hypot(gx, gy) || 1;
+    GLACIERS.push({ kind: 'cirque', x: x - gx / g * 30, y: y - gy / g * 30, r: pick(F.cirque_radius_m), dx: -gx / g, dy: -gy / g }); k++;
+  }
+  return GLACIERS;
+}
 function glacierAt(x, y) {
-  if (!GLACIERS || !Number.isFinite(x) || !Number.isFinite(y)) return 0;
-  const L = LAYOUT, G = GLACIERS, dx = x - L.px, dy = y - L.py;
-  const along = dx * G.ux + dy * G.uy, across = -dx * G.uy + dy * G.ux;
-  const edge = nR(x / 110, y / 110) * 0.08;
-  const cap = 1 - sstep(0.23, 0.39, Math.hypot(dx, dy) / L.pr + edge);
-  const width = L.pr * (0.14 + 0.08 * clamp(along / G.length, 0, 1));
-  const tongue = sstep(-L.pr * 0.1, L.pr * 0.2, along) * (1 - sstep(G.length - 24, G.length + 24, along)) *
-    (1 - sstep(0.65, 1, Math.abs(across + 35 * Math.sin(along / 250)) / width + edge));
-  return Math.max(cap, tongue);
+  GLAC_TIDE = 0; if (!Number.isFinite(x) || !Number.isFinite(y)) return 0;
+  const Gs = GLACIERS || glaciers(); if (!Gs.length) return 0;
+  const L = LAYOUT, edge = nR(x / 110, y / 110) * 0.08; let best = 0;
+  for (const G of Gs) {
+    const dx = x - G.x, dy = y - G.y; let v = 0;
+    if (G.kind === 'cap') { if (Math.abs(dx) > G.R || Math.abs(dy) > G.R) continue; v = 1 - sstep(0.23, 0.39, Math.hypot(dx, dy) / L.pr + edge); }
+    else if (G.kind === 'cirque') { if (Math.abs(dx) > G.r * 1.6 || Math.abs(dy) > G.r * 1.6) continue;
+      const u = (dx * G.dx + dy * G.dy) / (G.r * 1.3), w = (dy * G.dx - dx * G.dy) / G.r; v = 1 - sstep(0.7, 1, Math.hypot(u, w) + edge * 2); }   // a little longer downhill
+    else {
+      const along = dx * G.ux + dy * G.uy; if (along < -L.pr * 0.2 || along > G.length + G.lobe + 60) continue;
+      const across = dy * G.ux - dx * G.uy, width = G.w * (1 + 0.6 * clamp(along / G.length, 0, 1)), sharp = G.front ? 6 : 24;   // a tidewater front ends abruptly
+      v = sstep(-L.pr * 0.1, L.pr * 0.2, along) * (1 - sstep(G.length - sharp, G.length + sharp, along)) * (1 - sstep(0.65, 1, Math.abs(across + 35 * Math.sin(along / 250 + G.ph)) / width + edge));
+      if (G.lobe) v = Math.max(v, 1 - sstep(0.75, 1, Math.hypot((along - G.length) * 0.8, across) / G.lobe + edge));   // the piedmont lobe
+    }
+    if (v > best) { best = v; GLAC_TIDE = G.front || 0; }
+  }
+  return best;
 }
 
 let ISL = null;
@@ -976,7 +1010,9 @@ function buildIsland(diagnostics = false) {
   const H = new Float32Array(NN);
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const x = ox + i * C, y = oy + j * C, base = islandBase(x, y);
-    H[j * N + i] = base + glacierAt(x, y) * (base > WLW - 2 ? 6 : 0);
+    const g = glacierAt(x, y); let h = base + g * (base > WLW - 2 ? 6 : 0);
+    if (GLAC_TIDE && base <= WLW - 2) h = Math.max(h, base + (WLW + GLAC_TIDE - base) * sstep(0.5, 0.8, g));   // tidewater: ice standing out of the sea, ending in a cliff
+    H[j * N + i] = h;
   }
   const D8 = [-1, 1, -N, N, -N - 1, -N + 1, N - 1, N + 1];
   // priority flood from the map edge (the open sea): fills every basin to its spill point and records, for each
@@ -1227,7 +1263,8 @@ function seaStacks() {
       if (islandBase(cx, cy) > WLW - F.min_depth_m) continue;   // open water round it
       for (let k = 0, n = Math.round(pick(F.stacks)); k < n; k++) {
         const r = pick(F.radius_m), q = rng() * 6.2832, o = k ? F.spread_m * Math.sqrt(rng()) : 0;
-        STACKS.push({ x: cx + Math.cos(q) * o, y: cy + Math.sin(q) * o, r, top: WLW + pick(F.height_m) * (0.6 + 0.4 * r / F.radius_m[1]), ph: rng() * 100 });
+        STACKS.push({ x: cx + Math.cos(q) * o, y: cy + Math.sin(q) * o, r, rin: Math.max(1, 0.8 * r - Math.max(6, 0.3 * r) - 1),   // rin: safely on the flat top
+          top: WLW + pick(F.height_m) * (0.6 + 0.4 * r / F.radius_m[1]), ph: rng() * 100 });
       }
       c++;
     }
@@ -1239,11 +1276,55 @@ function stackS(x, y) {
   let best = 0;
   for (const k of STACKS || seaStacks()) {
     const dx = x - k.x, dy = y - k.y; if (Math.abs(dx) > k.r * 1.4 || Math.abs(dy) > k.r * 1.4) continue;
-    const dd = Math.hypot(dx, dy) + 1e-6, rr = k.r * (1 + 0.25 * nM(dx / dd * 1.5 + k.ph, dy / dd * 1.5) + 0.06 * nM(x / 5, y / 5)), s = 1 - sstep(0.9, 1.02, dd / rr);   // ragged outline, near-sheer sides
+    const dd = Math.hypot(dx, dy) + 1e-6, rr = k.r * (1 + 0.25 * nM(dx / dd * 1.5 + k.ph, dy / dd * 1.5) + 0.08 * nM(dx / dd * 6 + k.ph, dy / dd * 6) + 0.05 * nM(x / 4, y / 4));   // ragged outline: lobes, buttresses and gullies
+    const s0 = 1 - sstep(rr - Math.max(8, 0.35 * rr), rr, dd), t = s0 * 3 + 1.4 * s0 * (1 - s0) * nM(x / 7 + k.ph, y / 7), f = Math.floor(t), s = clamp((f + sstep(0.5, 1, t - f)) / 3, 0, 1);   // the cliff spans 8 m+ (4+ terrain cells; one stretched triangle smears colour and snow), broken by two or three uneven ledges
     if (s > best) { best = s; STK_T = k.top + 1.5 * nM(x / 9 + k.ph, y / 9) - 3 * (dd / rr) ** 2; }   // a gently domed, lumpy top
   }
   return best;
 }
+// cenotes: round sinkholes inland with sheer rock walls and clear deep water a few metres down (lake water). Laid out once per seed.
+let CENOTES = null;
+function cenotes() {
+  if (CENOTES) return CENOTES; CENOTES = []; if (!ISL) buildIsland();
+  const R = CONFIG.islandSize / 2, rng = mulberry32((SEED ^ 0xce707e) >>> 0), pick = ([a, b]) => a + (b - a) * rng();
+  for (const F of BUILTIN.feature.filter(f => f.type === 'cenotes')) {
+    if (rng() >= (F.chance[CLIMATE.key] ?? 0)) continue;
+    for (let n = Math.round(pick(F.count)), tries = 0; n > 0 && tries < 400; tries++) {
+      const a = rng() * 6.2832, d = Math.sqrt(rng()) * R, x = Math.cos(a) * d, y = Math.sin(a) * d, r = pick(F.radius_m), drop = pick(F.drop_m);
+      if (!inGrid(x, y) || bil(ISL.wet, x, y) > 0.05) continue;   // dry land, clear of lakes and rivers
+      let lo = 1e9, hi = -1e9, qlo = 0; for (let k = 0; k < 12; k++) { const q = k / 12 * 6.2832, h = landH(x + Math.cos(q) * (r + 6), y + Math.sin(q) * (r + 6)); if (h < lo) { lo = h; qlo = q; } hi = Math.max(hi, h); }
+      if (hi - lo > 4 || lo < WLW + drop + 2 || CENOTES.some(c => Math.hypot(c.cx - x, c.cy - y) < c.R + r + 60)) continue;   // flat ground, well above the sea, apart
+      const free = F.names.filter(m => !CENOTES.some(c => c.name === m + ' Cenote')), nm = free.length ? free[Math.floor(rng() * free.length)] : 'Deep';   // no two alike
+      const roof = rng() < (F.cave ?? 0), ro = r * pick(F.opening ?? [0.4, 0.4]);   // roof: a cave cenote (models/cenote-caves.js), ro: its opening's radius
+      const c = { cx: x, cy: y, R: r, lev: lo - drop, D: pick(F.depth_m), kind: LAKE, cenote: true, roof, ro, ph: rng() * 100, id: 'cenote' + CENOTES.length, name: nm + ' Cenote' };
+      // the way in: on its lowest side the wall has slumped into a long gentle slope down into the water (cenoteRamp)
+      c.rux = Math.cos(qlo); c.ruy = Math.sin(qlo); c.rw = Math.max(4, 0.3 * r); c.ra0 = 0.5 * r; c.rlen = c.ra0 + (hi + 2 - c.lev + 1.5) / RAMP_K + 10;
+      CENOTES.push(c); n--;
+    }
+  }
+  return CENOTES;
+}
+let CEN_D = 0, CEN_R = 0;   // distance from the centre and the (ragged) radius of the cenote found by the last cenoteAt()
+function cenoteAt(x, y) {
+  for (const c of CENOTES || cenotes()) {
+    const dx = x - c.cx, dy = y - c.cy; if (Math.abs(dx) > c.R * 1.3 + 3 || Math.abs(dy) > c.R * 1.3 + 3) continue;
+    const d = Math.hypot(dx, dy) + 1e-6, rr = c.R * (1 + 0.15 * nM(dx / d * 1.4 + c.ph, dy / d * 1.4));
+    if (d < rr + 2) { CEN_D = d; CEN_R = rr; return c; }
+  }
+  return null;
+}
+// a cenote's ramp near (x, y): a, distance along it from the centre; b, distance off its middle; z, its surface there. Or null
+const RAMP_K = 0.25;   // its slope
+function cenoteRamp(x, y) {
+  for (const c of CENOTES || cenotes()) {
+    const dx = x - c.cx, dy = y - c.cy, a = dx * c.rux + dy * c.ruy; if (a < c.ra0 - 6 || a > c.rlen) continue;
+    const b = Math.abs(dx * c.ruy - dy * c.rux); if (b > c.rw + 40) continue;
+    return { c, a, b, z: c.lev - 1.5 + (a - c.ra0) * RAMP_K };
+  }
+  return null;
+}
+// how much (x, y) is the ramp's floor, 0..1 (its flanks fade out wider the deeper the cut); hb: the ground without the ramp
+function rampW(r, hb) { const cut = Math.max(0, hb - r.z); return (1 - sstep(r.c.rw, r.c.rw + 3 + cut * 1.6, r.b)) * sstep(r.c.ra0 - 6, r.c.ra0, r.a) * (1 - sstep(r.c.rlen - 8, r.c.rlen, r.a)); }
 // terrain before channels and ponds: the grid plus fine bumps kept off the shores, then any sea stack standing on it
 function landH(x, y) { const g = landH0(x, y), s = stackS(x, y); return s > 0 ? g + Math.max(0, STK_T - g) * s : g; }
 function landH0(x, y) {
@@ -1312,6 +1393,10 @@ function world(x, y) {
         if (h0 > WLW + 0.2 && (lakeLev === null || (CH_S[k] > lakeLev + 0.05 && h0 > lakeLev))) { lev = Math.max(CH_S[k], WLW); kind = CH_K[k]; obj = null; }
       }
     }
+    if (!obj && kind === OCEAN) { const c = cenoteAt(x, y), hb = h;   // a cenote: the pit's wall spans 4 m+ (2+ terrain cells) so its colours don't smear
+      if (c) { const floor = c.lev - c.D * (1 - Math.min(1, CEN_D / CEN_R) ** 2), b = sstep(CEN_R - Math.max(4, 0.25 * CEN_R), CEN_R, CEN_D);
+        h = Math.min(h, floor + (h - floor) * b); if (CEN_D < CEN_R) { lev = c.lev; kind = LAKE; obj = c; } }
+      const r = cenoteRamp(x, y); if (r) { const w = rampW(r, hb); if (w > 0) h += (Math.min(hb, r.z) - h) * w; if (!obj && h < r.c.lev) { lev = r.c.lev; kind = LAKE; obj = r.c; } } }
     if (!obj && kind === OCEAN) { // ponds in hollows
       const G = 170, ci = Math.floor(x / G), cj = Math.floor(y / G);
       for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
@@ -1394,6 +1479,7 @@ const MATS = [
 if (CLIMATE.mats) for (const k in CLIMATE.mats) MATS[k].col = CLIMATE.mats[k];   // the climate recolours the land
 function material(e, m, x, y) {
   if (e >= WL) { const s = stackS(x, y); if (s > 0.02) return s > 0.97 ? PLAIN : ROCK; }   // sea stacks: rock faces, grass on top
+  if (e >= WL && inGrid(x, y) && cenoteAt(x, y)) { const r = cenoteRamp(x, y); if (!r || r.b > r.c.rw) return ROCK; }   // cenote walls and their rocky lip (not the ramp's floor)
   if (e >= WL && glacierAt(x, y) > 0.3) return GLACIER;
   if (e < 0.2) return DEEP;
   if (e < WL) return SHALLOW;
@@ -1580,6 +1666,21 @@ const NOISE_GLSL = `float h21(vec2 p){ p = fract(mod(p, 512.) * vec2(.1031, .103
 float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3. - 2.*f);
   return mix(mix(h21(i), h21(i + vec2(1, 0)), f.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), f.x), f.y); }
 float fbm3(vec2 p){ return vn(p)*.5 + vn(p*2.07 + 5.2)*.3 + vn(p*4.31 + 1.7)*.2; }`;
+// cave cenotes (models/cenote-caves.js): what lies under a roof is dim, and the sun only reaches it through the opening
+const CAVE_GLSL = `
+uniform vec4 cav[4]; uniform float cavz[4]; uniform vec3 cavg[4];   // centre xy, opening radius, roof radius · roof height · the gap over the ramp: direction xy, half-width
+// x: roofed overhead (dims the ambient light) · y: the sun is blocked (the point traced up towards the sun to the roof's height lands on rock)
+float caveRoofK(vec2 v, vec4 c, vec3 g, float in0, float in1, float out0, float out1){   // v: offset from the centre
+  float d = length(v), gap = step(0., dot(v, g.xy)) * smoothstep(g.z + 1., g.z - 1., abs(v.x * g.y - v.y * g.x));
+  return smoothstep(c.z + in0, c.z + in1, d) * (1. - smoothstep(c.w + out0, c.w + out1, d)) * (1. - gap);
+}
+vec2 caveShade(vec3 p, vec3 sd){
+  vec2 r = vec2(0.);
+  for (int i = 0; i < 4; i++) { vec4 c = cav[i]; float top = cavz[i]; if (c.w <= 0. || p.z > top - .2) continue;
+    r.x = max(r.x, caveRoofK(p.xy - c.xy, c, cavg[i], -.5, 1.5, .5, 3.));
+    r.y = max(r.y, caveRoofK(p.xy + sd.xy * (top - p.z) / max(sd.z, .12) - c.xy, c, cavg[i], -.8, .8, 0., 2.)); }
+  return r;
+}`;
 const LIT_FS = `#version 300 es
 precision highp float;
 in vec3 wp; in vec3 wn; in vec3 col; in vec2 tuv; in float mt; in vec3 tp; in vec3 wv; out vec4 o;
@@ -1588,18 +1689,32 @@ uniform vec4 seasA, seasB; // seasB: snow cover, wetness, lightning flash
 ${FOG_GLSL}
 ${NOISE_GLSL}
 ${CAUSTIC_GLSL}
+${CAVE_GLSL}
 // face coordinates: u runs horizontally along a wall, v is height; flat tops use world xy
 vec2 faceUV(vec3 N, vec3 P){
   if (abs(N.z) > .7) return P.xy;
   vec2 t = normalize(vec2(-N.y, N.x) + vec2(1e-5));
   return vec2(dot(P.xy, t), P.z);
 }
+// terrain brightness: mottled ground, and where steep (st) weathered rock: broken wavy layers, near-vertical joints, rain stains, chips
+float af(float v, float f){ return mix(.5, v, smoothstep(.6, .25, f)); }   // a noise term faded to its mean once it's finer than a pixel
+float terrK(vec2 q, float z, float st, float fw){
+  float n = vn(q * .22) * .55 + af(vn(q * 1.7), fw * 1.7) * .3 + af(vn(q * 7.), fw * 7.) * .15, k = .86 + .28 * n;
+  if (st > 0.) {
+    float layer = vn(vec2(q.x * .07, z * .9 + vn(q * .05) * 3.)), joint = smoothstep(.06, 0., abs(vn(vec2(q.x * .6, z * .12)) - .5)) * smoothstep(.6, .25, fw * 1.2);
+    float streak = af(vn(vec2(q.x * 2.3, z * .04)), fw * 2.3), chip = af(vn(q * 3.1), fw * 3.1);
+    k *= mix(1., (.78 + .38 * layer) * (1. - .35 * joint) * (.85 + .25 * streak) * (.9 + .15 * chip), st);
+  }
+  return k;
+}
 vec3 surface(vec3 c, vec3 N, int id, inout float spec, inout float em){
   vec3 P = tp; vec2 q = faceUV(N, P);
   if (id == 0) { // generic: terrain and misc (first: it covers most of the screen)
-    float n = vn(q * .22) * .55 + vn(q * 1.7) * .3 + vn(q * 7.) * .15, k = .86 + .28 * n;
-    if (abs(N.z) < .35) k *= 1. - .14 * step(.86, fract(P.z * 2.2));
-    return c * k;
+    float fw = length(fwidth(P));   // metres per pixel: detail finer than that is faded out, not left to shimmer
+    if (abs(N.z) > .7) return c * terrK(P.xy, P.z, 0., fw);
+    // walls: two world-fixed projections blended by facing (one that turns with the wall bands like moiré on curved cliffs)
+    float st = smoothstep(.5, .2, abs(N.z)), w = smoothstep(.35, .65, abs(N.x) / (abs(N.x) + abs(N.y) + 1e-4));
+    return c * mix(terrK(P.xz, P.z, st, fw), terrK(P.yz, P.z, st, fw), w);
   }
   if (id == 2) { // wood: boards with grain and dark seams
     float bw = .24, b = floor(q.x / bw), fx = fract(q.x / bw);
@@ -1609,7 +1724,7 @@ vec3 surface(vec3 c, vec3 N, int id, inout float spec, inout float em){
     return c * (.85 + .3 * h21(vec2(b, 3.))) * (.72 + .45 * g) * (.55 + .45 * seam);
   }
   if (id == 5) { // broad mineral variation; let the mesh supply fracture planes
-    float n = vn(P.xy * .6 + P.z * .35), grit = vn(q * 8.);
+    float n = vn(P.xy * .6 + P.z * .35), grit = af(vn(q * 8.), length(fwidth(P)) * 8.);
     return c * (.86 + .20 * n + .06 * grit);
   }
   if (id == 6) { // restrained leaf texture over baked crown/plant shading
@@ -1634,6 +1749,7 @@ vec3 fireLight(vec3 N){ // up to 8 flickering warm lights (xyz, intensity)
 }
 void main(){
   vec3 N = normalize(wn); float spec = 0., em = 0.;
+  if (wv.z > .5 && N.z < .62) { vec3 Nf = normalize(cross(dFdx(wp), dFdy(wp))); if (dot(Nf, N) < 0.) Nf = -Nf; N = normalize(mix(N, Nf, smoothstep(.62, .35, N.z))); }   // steep terrain: faceted, like fractured rock, not draped cloth
   vec3 bc = surface(col, N, int(mt + .5), spec, em);
   { // seasons: dormant grass browns, snow settles on what faces up, rain darkens
     float above = (wv.z < .5 && wv.x == 0.) || wv.x - wp.z < -.04 ? 1. : 0., id = mt + .5;
@@ -1643,8 +1759,9 @@ void main(){
     if (seasB.x > 0.) sn = seasB.x * up * smoothstep(.15, .45, vn(wp.xy * .4) * .55 + vn(wp.xy * 2.1) * .25 + seasB.x * .55) * above;
     bc = mix(bc * (1. - .22 * seasB.y * above), vec3(.9, .93, .97), sn);
   }
-  float d = max(dot(N, sun), 0.);
-  vec3 a = amb * (.75 + .5 * (.5 + .5 * N.z));
+  vec2 cs = caveShade(wp, sun);
+  float d = max(dot(N, sun), 0.) * (1. - cs.y); spec *= 1. - cs.y;
+  vec3 a = amb * (.75 + .5 * (.5 + .5 * N.z)) * (1. - .6 * cs.x);
   vec3 c = bc * (a + lcol * d);
   if (spec > 0.) { vec3 V = normalize(cam - wp), H = normalize(sun + V); c += lcol * spec * pow(max(dot(N, H), 0.), 60.) * .8; }
   c += bc * fireLight(N);
@@ -1682,6 +1799,7 @@ uniform vec4 wx; // weather: rain, wind, stream turbidity, lightning
 uniform vec4 ice; // ice on lakes, on ponds; snow lying on it; arctic pack ice on the sea
 ${FOG_GLSL}
 ${NOISE_GLSL}
+${CAVE_GLSL}
 float hgt(vec2 q){ return vn(q) * .6 + vn(q * 2.3 + 4.1) * .4; }
 vec2 grd(vec2 q){ float h = hgt(q); return vec2(hgt(q + vec2(.12, 0.)) - h, hgt(q + vec2(0., .12)) - h) / .12; }
 void main(){
@@ -1742,11 +1860,12 @@ void main(){
   float fo = clamp(foam + shore * (.5 + .5 * wav), 0., 1.), fm = fo * smoothstep(.35, .7, fn + fo * .35);
   if (uwf < .5) { // seen from above
     vec3 V = normalize(cam - wp), R = reflect(-V, N);
-    vec3 sky = mix(hor, zen, clamp(R.z * 2.2, 0., 1.));
-    float spec = pow(max(dot(R, sun), 0.), 280.) * 3., fr = .03 + .97 * pow(1. - max(dot(N, V), 0.), 5.);
+    vec2 cs = caveShade(wp, sun);   // under a cenote's roof: the ceiling, not the sky, is reflected; sunlight only through the opening
+    vec3 sky = mix(hor, zen, clamp(R.z * 2.2, 0., 1.)) * (1. - .85 * cs.x);
+    float spec = pow(max(dot(R, sun), 0.), 280.) * 3. * (1. - cs.y), fr = .03 + .97 * pow(1. - max(dot(N, V), 0.), 5.);
     vec3 shallow = mix(vec3(.13, .45, .42), vec3(.22, .3, .12), murk), deep = mix(vec3(.02, .12, .2), vec3(.06, .1, .04), murk);
     float dd = clamp(dep / (3.5 - 2.5 * murk), 0., 1.);
-    vec3 body = mix(shallow, deep, sqrt(dd)) * (amb * 1.6 + lcol * (.45 + .4 * max(dot(N, sun), 0.)));
+    vec3 body = mix(shallow, deep, sqrt(dd)) * (amb * 1.6 * (1. - .6 * cs.x) + lcol * (.45 + .4 * max(dot(N, sun), 0.)) * (1. - cs.y));
     vec3 c = mix(body, sky, fr * .9) + lcol * spec * (1. - fm);
     float al = max(max(mix(.16 + .55 * murk, .95, smoothstep(0., 1., dd)), .12), fr * .85);
     c = mix(c, vec3(.92, .96, 1.) * (amb * 1.4 + lcol * .9), fm * .9); al = max(al, fm * .9);
@@ -3804,7 +3923,7 @@ const Engine = {
     if (code === 'KeyV' && !e.repeat && this.boat) this.toggleBoatMode();                       // take the helm / leave it to move about the boat
     if (code === 'KeyC' && !e.repeat && this.boat && this.boatMode === 'deck') this.toggleBoatSit();   // sit down / stand up
     if (code === 'KeyM' && !e.repeat) this.toggleBigMap();
-    if (code === 'KeyN' && !e.repeat && this.showMap) this.seedPress();                       // the map screen's icons: a new island (twice), pin the minimap
+    if (code === 'KeyN' && !e.repeat && this.showMap) this.seedPress();                       // the map screen's icons: a new island (pick its biome), pin the minimap
     if (code === 'KeyP' && !e.repeat && this.showMap) this.togglePin();
     if ((code === 'Enter' || code === 'NumpadEnter') && !e.repeat && this.showMap) { this.menu = null; this.say('Travelling…', 1); setTimeout(() => this.travel(this.mapCX, this.mapCY, CONFIG.travelSymbol), 30); }   // to the crosshair
     if (code === 'KeyI' && !e.repeat) this.toggleTackle();                                       // the tackle box
@@ -4030,7 +4149,7 @@ Object.assign(Engine, {
       if (lost && !this.mouseLookBlocked()) this.togglePause(true);
     });
     addEventListener('mousemove', e => {
-      if (document.pointerLockElement !== this.ov) return;
+      if (document.pointerLockElement !== this.ov) { this.mouseXY = [e.clientX, e.clientY]; return; }   // the pointer, for hovering map icons
       if (this.skipMouseEvent) { this.skipMouseEvent = false; return; }
       this.queueMouseLook(e.movementX, e.movementY);
     });
@@ -4821,7 +4940,8 @@ Object.assign(Engine, {
       if (cb) { cb.hidden = !out || ph === 'card'; cb.textContent = ph === 'water' ? 'Reel' : ph === 'fight' ? 'Reel' : ph === 'bite' ? (A.took ? 'Strike!' : '…') : ph === 'flight' ? 'Stop' : 'Cast'; cb.classList.toggle('lit', ph === 'bite' && !!A.took); }
       for (const id of ['bDrDn', 'bDrUp']) { const b = document.getElementById(id); if (b) b.hidden = ph !== 'fight'; }
       { const b = document.getElementById('bBail'); if (b) b.hidden = !out || ph === 'card'; }
-      { const b = document.getElementById('bFast'); if (b) b.hidden = ph !== 'water' && ph !== 'bite'; } }   // hold to speed time while waiting for a bite const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');
+      { const b = document.getElementById('bFast'); if (b) b.hidden = ph !== 'water' && ph !== 'bite'; } }   // hold to speed time while waiting for a bite
+    const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');
     if (h) { h.hidden = !this.boat; h.textContent = this.boatMode === 'deck' ? 'Helm' : (this.boat && !this.boatCanStand(this.boat.def) ? 'Fish' : 'Stand'); }
     if (dv) dv.textContent = this.boat && this.boatMode === 'deck' ? (this.boatSit ? 'Stand' : 'Sit') : 'Dive';
   },
@@ -5218,10 +5338,11 @@ Object.assign(Engine, {
     const fwd = diving ? f * Math.cos(P.pitch) : f;
     const sp = (swim ? swimSp : (run ? CONFIG.runSpeed : CONFIG.walkSpeed) * (1 - 0.55 * wade) * Game.speedMultiplier) * dt;
     const ca = Math.cos(P.a), sa = Math.sin(P.a), mx = (ca * fwd - sa * s) * sp, my = (sa * fwd + ca * s) * sp;
-    const blocked = (x, y) => Game._solids.some(fn => fn(x, y, P.z)); // games can add solid areas
-    if (!blocked(P.x + mx, P.y)) { if (this.pastEdge(P.x + mx, P.y) && Math.abs(P.x + mx) > Math.abs(P.x)) this.edgeWarn(); else P.x += mx; }   // per axis, so you slide along obstacles (and the world's edge)
-    if (!blocked(P.x, P.y + my)) { if (this.pastEdge(P.x, P.y + my) && Math.abs(P.y + my) > Math.abs(P.y)) this.edgeWarn(); else P.y += my; }
-    const floor = Math.max(groundAt(P.x, P.y), iced ? wl0 : -1e9);
+    const feet = swim ? Math.max(P.z, wl0 - 0.5) : P.z;   // swimming: climb out from the surface, so beaches still let you wade ashore
+    const blocked = (x, y, d) => groundAt(x, y) - feet > 0.5 + d * 1.7 || Game._solids.some(fn => fn(x, y, P.z)); // no walking up cliffs (over ~60°, beyond a half-metre step); games can add solid areas
+    if (!blocked(P.x + mx, P.y, Math.abs(mx))) { if (this.pastEdge(P.x + mx, P.y) && Math.abs(P.x + mx) > Math.abs(P.x)) this.edgeWarn(); else P.x += mx; }   // per axis, so you slide along obstacles (and the world's edge)
+    if (!blocked(P.x, P.y + my, Math.abs(my))) { if (this.pastEdge(P.x, P.y + my) && Math.abs(P.y + my) > Math.abs(P.y)) this.edgeWarn(); else P.y += my; }
+    const roof = caveRoofAt(P.x, P.y), floor = Math.max(groundAt(P.x, P.y), iced ? wl0 : -1e9, roof && P.z > roof.under - 0.3 ? roof.top : -1e9);   // a cave cenote's roof bears you; its opening doesn't
     if (swim) {
       const up = K.Space, dn = K.KeyC;
       let vt = (up ? CONFIG.diveSpeed : 0) - (dn ? CONFIG.diveSpeed : 0) + (diving ? Math.sin(P.pitch) * f * swimSp : 0);
@@ -5307,13 +5428,11 @@ Object.assign(Engine, {
       wx: v.ox + ((cx - v.x0) / v.cell - v.w / 2) * v.scale, wy: v.oy + ((cy - v.y0) / v.cell - v.h / 2) * v.scale };
     return true;
   },
-  // the map's new-island button: first press arms it, a second within 5 s reloads the page on a random seed
-  seedPress() {
-    if (!this.showMap) return;
-    if (performance.now() - (this.seedArm || -1e9) < 5000) {
-      const seed = 1 + Math.floor(Math.random() * 999999998); this.say('Shaping a new island…', 5);
-      setTimeout(() => { const h = '#seed-' + seed + (HASH_OPTS ? '&' + HASH_OPTS : '') + '&map&mz=' + this.mapScale.toFixed(2); try { history.replaceState(null, '', h); } catch (e) { location.hash = h.slice(1); } location.reload(); }, 60);   // &map: come back with the map open, &mz: at the same zoom
-    } else { this.seedArm = performance.now(); this.menu = null; }
+  // the map's new-island button opens the biome picker (#hBiomes); a pick reloads the page on a random seed in that climate
+  seedPress() { if (this.showMap) { this.biomePick = !this.biomePick; this.menu = null; } },
+  newIsland(climate) {
+    const seed = 1 + Math.floor(Math.random() * 999999998), opts = HASH_OPTS.split('&').filter(o => o && !o.startsWith('climate-')); this.biomePick = false; this.say('Shaping a new island…', 5);
+    setTimeout(() => { const h = '#seed-' + seed + '&climate-' + climate + (opts.length ? '&' + opts.join('&') : '') + '&map&mz=' + this.mapScale.toFixed(2); try { history.replaceState(null, '', h); } catch (e) { location.hash = h.slice(1); } location.reload(); }, 60);   // &map: come back with the map open, &mz: at the same zoom
   },
   menuClick(cx, cy) { // true if a menu was open (it closes either way)
     const m = this.menu; if (!m) return false;
@@ -5549,6 +5668,8 @@ Object.assign(Engine, {
       const k = j * N + i, e = c[k * LS], m = c[k * LS + 1], wl = c[k * LS + 2], kd = c[k * LS + 3] | 0, h = hW(e);
       const hx = (H(i + 1, j) - H(i - 1, j)) / (2 * SP), hy = (H(i, j + 1) - H(i, j - 1)) / (2 * SP), nl = 1 / Math.hypot(hx, hy, 1);
       f[k * 6] = x0 + i * SP; f[k * 6 + 1] = y0 + j * SP; f[k * 6 + 2] = h; f[k * 6 + 5] = wl;
+      { const st = sstep(0.62, 0.32, nl), px = x0 + i * SP, py = y0 + j * SP;   // steep ground: the vertex is shoved about so cliffs break into crags and buttresses (walking still uses the true height); world-placed, so chunk edges agree
+        if (st > 0) { f[k * 6] += 1.2 * st * nM(px / 3.3 + 5.1, py / 3.3 - 2.7); f[k * 6 + 1] += 1.2 * st * nM(px / 3.3 - 8.3, py / 3.3 + 4.4); f[k * 6 + 2] += 0.7 * st * nM(px / 2.1 + 1.7, py / 2.1 + 9.2); } }
       b8[k * 24 + 12] = -hx * nl * 127; b8[k * 24 + 13] = -hy * nl * 127; b8[k * 24 + 14] = nl * 127; u8[k * 24 + 19] = WATER[kd].murk * 255;
       const jit = 0.975 + 0.05 * hash2(cx * CHK + i, cy * CHK + j, SEED + 9), wx = x0 + i * SP, wy = y0 + j * SP;
       // blend biomes across a band with wavy edges, so boundaries aren't straight contour lines
@@ -5947,6 +6068,7 @@ Object.assign(Engine, {
     gl.uniform1f(L.u.time, this.time); gl.uniform1f(L.u.sway, 0); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     gl.uniform1f(L.u.inst, 0); gl.uniform1f(L.u.pscale, 1); gl.uniform1f(L.u.dry, 0);
     gl.uniform4f(L.u.seasA, ENV.leaf, ENV.autumn, ENV.young, ENV.dormant); gl.uniform4f(L.u.seasB, ENV.snowCover, ENV.wet, ENV.flash * 0.8, 0);
+    this.caveUniforms(gl, L, E);
     { // 8 nearest fire lights, flickering
       const T = this.time, ls = [];
       for (const l of this.lights) ls.push([l.x, l.y, l.z, l.intensity * (l.flicker ? 0.85 + 0.1 * Math.sin(T * 17 + l.x) + 0.05 * Math.sin(T * 31 + l.y) : 1)]);
@@ -6067,10 +6189,11 @@ Object.assign(Engine, {
       add(this.itemMesh(q.item), q.x, q.y, q.z + bob, q.scale * (it.worldScale || 1), rot, q === tgt ? 0.5 + 0.25 * (1 + Math.sin(this.time * 8)) : 0.5);
     }
     for (const [m, arr] of groups) drawInst(m, arr);
+    this.drawCaves(gl, drawInst, E);   // cave cenotes' roofs
     // water surfaces (blended, no depth write), with the 8 nearest live ripples
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
     this.drawParticles(vp, Hh, ty, E, 0);   // particles beyond the surface (droplets under it, seen from above) go before it
-    const Wt = this.water; gl.useProgram(Wt.p);
+    const Wt = this.water; gl.useProgram(Wt.p); this.caveUniforms(gl, Wt, E);
     gl.uniformMatrix4fv(Wt.u.vp, false, vp); gl.uniform1f(Wt.u.far, FOGD); gl.uniform1f(Wt.u.uwf, uw ? 1 : 0);
     gl.uniform3fv(Wt.u.cam, E); gl.uniform3fv(Wt.u.sun, S.sun[2] > -0.05 ? S.sun : SUN); gl.uniform3fv(Wt.u.fogc, HORZ); gl.uniform1f(Wt.u.t, this.time);
     gl.uniform3fv(Wt.u.lcol, S.lcol); gl.uniform3fv(Wt.u.amb, S.amb); gl.uniform3fv(Wt.u.zen, S.zen); gl.uniform3fv(Wt.u.hor, S.hor);
@@ -6107,6 +6230,74 @@ Object.assign(Engine, {
     this.drawOverlay();
   },
 
+});
+</script>
+<script>
+'use strict';
+// Cave cenotes: a rock roof over most of the pit, flush with the ground, with a ragged opening the light falls through.
+// The ceiling arches down towards the walls and drips stalactites. The terrain stays a heightfield (the pit is carved
+// in world()); the roof is its own mesh, and the lit and water shaders darken what lies under it (CAVE_GLSL in lit.js).
+// the roof over (x, y): { c, top, under } or null. top: the walkable surface; under: the ceiling
+function caveRoofAt(x, y) {
+  for (const c of CENOTES || cenotes()) {
+    if (!c.roof) continue; const dx = x - c.cx, dy = y - c.cy, d = Math.hypot(dx, dy) + 1e-6; if (d > c.R + 1.5) continue;
+    const ro = c.ro * (1 + 0.22 * nM(dx / d * 1.3 + c.ph + 5, dy / d * 1.3)); if (d < ro) return null;   // the opening
+    if (caveGap(c, dx, dy)) return null;   // the roof has fallen in over the ramp
+    const top = landH(x, y) + 0.04, lip = top - 1.2, u = clamp((d - ro) / (c.R - ro), 0, 1);
+    return { c, top, under: lip + (c.lev + 1 - lip) * u ** 1.7 };
+  }
+  return null;
+}
+// over the ramp (cenoteRamp) the roof is gone: a gap as wide as the ramp's floor plus a little, from the opening out
+const caveGap = (c, dx, dy) => dx * c.rux + dy * c.ruy > 0 && Math.abs(dx * c.ruy - dy * c.rux) < c.rw + 2;
+// the roof mesh, in the cenote's own frame (centre at 0, 0)
+function caveMesh(c) {
+  const B = meshBuilder(), A = 72, K = 9, rnd = mulberry32((c.ph * 1e4) | 0), rockC = [0.44, 0.41, 0.37];
+  const ground = (() => { const x = c.cx + c.R * 1.3 + 6, y = c.cy; return MATS[material(world(x, y), moist(x, y), x, y)].col; })();   // the ground round it, for the roof's top
+  const P = [], T = [], U = [], S = [];   // per ring and angle: xy, top z, ceiling z, open (the gap over the ramp)
+  for (let k = 0; k < K; k++) { P.push([]); T.push([]); U.push([]); S.push([]);
+    for (let a = 0; a < A; a++) { const q = a / A * 6.2832, ux = Math.cos(q), uy = Math.sin(q), ro = c.ro * (1 + 0.22 * nM(ux * 1.3 + c.ph + 5, uy * 1.3)) + 0.02;
+      const r = ro + (c.R + 1.5 - ro) * k / (K - 1), x = c.cx + ux * r, y = c.cy + uy * r, R = caveRoofAt(x, y) || { top: landH(x, y) + 0.04, under: c.lev + 1 };
+      S[k].push(caveGap(c, x - c.cx, y - c.cy)); P[k].push([ux * r, uy * r]); T[k].push(R.top); U[k].push(R.under - (k && k < K - 1 ? 0.5 * nM(x / 2.2, y / 2.2) : 0)); } }   // a lumpy ceiling
+  const v = (k, a, z) => [P[k][a % A][0], P[k][a % A][1], z];
+  const open = (k, a) => k < 0 || k >= K - 1 ? false : S[k][a % A] || S[k + 1][a % A] || S[k][(a + 1) % A] || S[k + 1][(a + 1) % A];   // a quad touching the gap is left out
+  for (let k = 0; k < K - 1; k++) for (let a = 0; a < A; a++) {
+    if (open(k, a)) continue;
+    { const wall = (k1, a1, k2, a2) => { B.mat = MT.ROCK; B.quad(v(k1, a1, T[k1][a1 % A]), v(k2, a2, T[k2][a2 % A]), v(k2, a2, U[k2][a2 % A]), v(k1, a1, U[k1][a1 % A]), rockC, mid); };   // the gap's sides, facing into it
+      const mid = [(P[k][a][0] + P[k + 1][(a + 1) % A][0]) / 2, (P[k][a][1] + P[k + 1][(a + 1) % A][1]) / 2, (T[k][a] + U[k][a]) / 2];
+      if (open(k, a + A - 1)) wall(k, a, k + 1, a); if (open(k, a + 1)) wall(k, a + 1, k + 1, a + 1);
+      if (open(k - 1, a)) wall(k, a, k, a + 1); if (open(k + 1, a)) wall(k + 1, a, k + 1, a + 1); }
+    const t = (kk, aa) => v(kk, aa, T[kk][aa % A]), u = (kk, aa) => v(kk, aa, U[kk][aa % A]), lipK = k === 0 ? 0.6 : 0;   // the top's inner ring is bare rock
+    B.mat = MT.GEN; const tc = ground.map((g, i) => g + (rockC[i] - g) * lipK);
+    B.quad(t(k, a), t(k + 1, a), t(k + 1, a + 1), t(k, a + 1), tc, [0, 0, T[k][a] - 50]);   // the top: faces up
+    B.mat = MT.ROCK; const sh = 0.8 + 0.25 * rnd();
+    B.quad(u(k, a), u(k + 1, a), u(k + 1, a + 1), u(k, a + 1), rockC.map(g => g * sh), [0, 0, T[k][a] + 50]);   // the ceiling: faces down
+  }
+  B.mat = MT.ROCK;
+  for (let a = 0; a < A; a++) { const o = [P[0][a][0] * 3, P[0][a][1] * 3, T[0][a]];   // the opening's rim: faces into the hole
+    B.quad(v(0, a, T[0][a]), v(0, a + 1, T[0][(a + 1) % A]), v(0, a + 1, U[0][(a + 1) % A]), v(0, a, U[0][a]), rockC, o); }
+  for (let n = 0; n < 26 + c.R * 1.5; n++) {   // stalactites, longer where the ceiling is high
+    const k = 1 + Math.floor(rnd() * (K - 3)), a = Math.floor(rnd() * A), z = U[k][a] + 0.1, room = z - c.lev, len = Math.min(room - 0.4, 0.4 + rnd() * 2.2 * Math.min(1, room / 5));
+    if (len > 0.25) B.tube([P[k][a][0], P[k][a][1], z], [P[k][a][0] + (rnd() - 0.5) * 0.1, P[k][a][1] + (rnd() - 0.5) * 0.1, z - len], 0.1 + 0.08 * len, 0.02, 5, rockC.map(g => g * (1 + 0.15 * rnd())), false);
+  }
+  return new Float32Array(B.v);
+}
+Object.assign(Engine, {
+  // roofed cenotes near the camera, nearest first (the shaders take four)
+  cavesNear(E, R = 600) { return (CENOTES || cenotes()).filter(c => c.roof && Math.abs(c.cx - E[0]) < R && Math.abs(c.cy - E[1]) < R).sort((a, b) => Math.hypot(a.cx - E[0], a.cy - E[1]) - Math.hypot(b.cx - E[0], b.cy - E[1])).slice(0, 4); },
+  // CAVE_GLSL's uniforms for a program: centre, opening and roof radius; roof height
+  caveUniforms(gl, prog, E) {
+    const near = this.cavesNear(E), a = this.caveUni || (this.caveUni = new Float32Array(16)), z = this.caveZ || (this.caveZ = new Float32Array(4)); a.fill(0); z.fill(0);
+    const g = this.caveGapU || (this.caveGapU = new Float32Array(12)); g.fill(0);
+    near.forEach((c, i) => { a.set([c.cx, c.cy, c.ro, c.R], i * 4); z[i] = landH(c.cx + c.R * 0.6, c.cy) + 0.04; g.set([c.rux, c.ruy, c.rw + 2], i * 3); });
+    if (prog.u['cav[0]']) gl.uniform4fv(prog.u['cav[0]'], a); if (prog.u['cavz[0]']) gl.uniform1fv(prog.u['cavz[0]'], z); if (prog.u['cavg[0]']) gl.uniform3fv(prog.u['cavg[0]'], g);
+  },
+  drawCaves(gl, drawInst, E) {
+    const near = this.cavesNear(E, 500); if (!near.length) return; const cull = gl.isEnabled(gl.CULL_FACE); gl.disable(gl.CULL_FACE);
+    for (const c of near) { if (!c.gpu) { const m = caveMesh(c), ib = gl.createBuffer(); c.gpu = { vao: this.litVao(this.vbo(m), VB, ib), ib, n: m.length / VS }; }
+      drawInst(c.gpu, [c.cx, c.cy, 0, 1, 0, 0.5]); }
+    if (cull) gl.enable(gl.CULL_FACE);
+  },
 });
 </script>
 <script>
@@ -6236,6 +6427,8 @@ Object.assign(Engine, {
         let col, sh;
         if (wk && wet * 2 >= kk * kk) { col = WATER[wk].map; sh = clamp(1.15 - wd / wet * 0.06, 0.6, 1.15); } // lakes, ponds, rivers
         else { col = MATS[material(wet * 2 >= kk * kk ? Math.min(e, WL - 0.01) : Math.max(e, WL), moist(wx, wy), wx, wy)].col; sh = wet * 2 >= kk * kk ? clamp(1.1 - 0.075 * Math.log2(1 + wd / wet), 0.3, 1.1) : clamp(0.55 + (e - WL) * 0.9, 0.35, 1.1); }   // the sea shades darker with depth: reef flats and shelf light, the deep dark
+        if (job.snow && wet * 2 < kk * kk && col !== MATS[GLACIER].col) {   // lying snow, patchy, as the season has it
+          const sn = sstep(0.15, 0.6, job.snow + 0.25 * nM(wx / 90, wy / 90)) * 0.9; col = col.map((v, q) => v + ([0.9, 0.93, 0.97][q] - v) * sn); }
         const n = (j * TS + i) * 4;
         d[n] = clamp(col[0] * sh, 0, 1) * 255; d[n + 1] = clamp(col[1] * sh, 0, 1) * 255; d[n + 2] = clamp(col[2] * sh, 0, 1) * 255; d[n + 3] = 255;
       }
@@ -6243,18 +6436,53 @@ Object.assign(Engine, {
     if (job.row < TS) return false;
     job.cv.getContext('2d').putImageData(job.img, 0, 0);
     this.paintChannels({ cv: job.cv, ox: X + TS * ts / 2, oy: Y + TS * ts / 2, W: TS, H: TS, scale: ts });
-    this.mapTiles.set(`${job.lvl}:${job.tx}:${job.ty}`, job.cv);
+    job.cv.snow = job.snow; this.mapTiles.set(`${job.lvl}:${job.tx}:${job.ty}`, job.cv);
     if (this.mapTiles.size > 1200) this.mapTiles.delete(this.mapTiles.keys().next().value);
     return true;
   },
-  mapStart(lvl, tx, ty) { const cv = document.createElement('canvas'); cv.width = cv.height = 64; return { lvl, tx, ty, cv, img: cv.getContext('2d').createImageData(64, 64), row: 0 }; },
+  // landmarks worth finding, worked out once per island: each sea-stack cluster, the glacier, the summit with its height
+  landmarks() {
+    if (this._landmarks) return this._landmarks; const out = [], L = LAYOUT;
+    for (const k of seaStacks()) { const g = out.find(m => Math.hypot(m.x - k.x, m.y - k.y) < 250);
+      if (g) { g.n++; g.x += (k.x - g.x) / g.n; g.y += (k.y - g.y) / g.n; } else out.push({ kind: 'stacks', x: k.x, y: k.y, n: 1, label: 'Sea stacks' }); }
+    const GN = { valley: 'Valley glacier', tidewater: 'Tidewater glacier', piedmont: 'Piedmont glacier', cirque: 'Cirque glacier' };
+    for (const G of glaciers()) if (G.kind !== 'cap') {   // the ice cap is named with the summit
+      const d = G.kind === 'tidewater' ? G.length - 25 : G.kind === 'piedmont' ? G.length : G.length * 0.55;   // the ice front · the lobe · halfway down
+      out.push(G.kind === 'cirque' ? { kind: 'glacier', x: G.x, y: G.y, label: GN.cirque } : { kind: 'glacier', x: G.x + G.ux * d, y: G.y + G.uy * d, label: GN[G.kind] }); }
+    for (const c of cenotes()) out.push({ kind: 'cenote', x: c.cx, y: c.cy, label: c.name + (c.roof ? ' · cave' : '') });
+    let top = -1e9, tx = L.px, ty = L.py;
+    for (let i = 0; i < 400; i++) { const a = i * 2.4, r = Math.sqrt(i / 400) * L.pr * 0.6, x = L.px + Math.cos(a) * r, y = L.py + Math.sin(a) * r, h = hW(elev(x, y)); if (h > top) { top = h; tx = x; ty = y; } }   // the highest point round the layout's peak
+    out.push({ kind: 'peak', x: tx, y: ty, label: `Summit · ${Math.round(top - WLW)} m` + (glaciers().some(G => G.kind === 'cap') ? ' · ice cap' : '') });
+    return this._landmarks = out;
+  },
+  drawLandmarks(c, toPx, inside, labels) {   // labels: on the big map, for the icon under the pointer
+    for (const m of this.landmarks()) {
+      const [x, y] = toPx(m.x, m.y); if (!inside(x, y)) continue;
+      c.save(); c.translate(x, y); c.lineJoin = 'round'; c.lineWidth = 1.2; c.strokeStyle = '#141a14';
+      if (m.kind === 'stacks') for (const [dx, h, w] of [[-5, 9, 4], [0, 13, 5], [5, 7, 4]]) {   // three rock pillars, grass on top
+        c.fillStyle = '#8c8379'; c.beginPath(); c.rect(dx - w / 2, 5 - h, w, h); c.fill(); c.stroke(); c.fillStyle = '#6f9a4a'; c.fillRect(dx - w / 2 + 0.6, 5.6 - h, w - 1.2, 2); }
+      else if (m.kind === 'cenote') {   // a round pit: rock rim round deep blue water
+        c.fillStyle = '#b9ad94'; c.beginPath(); c.arc(0, 0, 7.5, 0, 6.2832); c.fill(); c.stroke(); c.fillStyle = '#1f6fa0'; c.beginPath(); c.arc(0, 0, 4.6, 0, 6.2832); c.fill();
+        c.fillStyle = '#7fd0f0'; c.beginPath(); c.arc(-1.3, -1.3, 1.4, 0, 6.2832); c.fill(); }
+      else if (m.kind === 'glacier') {   // an ice-blue badge with a snowflake
+        c.fillStyle = '#9fd0ec'; c.beginPath(); c.arc(0, 0, 7.5, 0, 6.2832); c.fill(); c.stroke(); c.strokeStyle = '#fff'; c.lineWidth = 1.4; c.beginPath();
+        for (let k = 0; k < 3; k++) { const a = k * Math.PI / 3 + Math.PI / 2, ca = Math.cos(a) * 5, sa = Math.sin(a) * 5; c.moveTo(-ca, -sa); c.lineTo(ca, sa); } c.stroke(); }
+      else {   // a peak with a snowcap
+        c.fillStyle = '#7a5a3a'; c.beginPath(); c.moveTo(-8, 5); c.lineTo(0, -8); c.lineTo(8, 5); c.closePath(); c.fill(); c.stroke();
+        c.fillStyle = '#f4f6f8'; c.beginPath(); c.moveTo(-3.1, -3); c.lineTo(0, -8); c.lineTo(3.1, -3); c.lineTo(1, -4.2); c.lineTo(-1, -2.8); c.closePath(); c.fill(); }
+      const M = this.mouseXY; if (labels && M && Math.abs(M[0] - x) < 11 && Math.abs(M[1] - y) < 11) { c.font = 'bold 12px Georgia, serif'; c.textAlign = 'left'; c.textBaseline = 'middle'; c.lineWidth = 3; c.strokeStyle = 'rgba(10,14,10,.8)'; c.strokeText(m.label, 12, 0); c.fillStyle = '#f2e9d0'; c.fillText(m.label, 12, 0); }
+      c.restore();
+    }
+  },
+  mapStart(lvl, tx, ty) { const cv = document.createElement('canvas'); cv.width = cv.height = 64; return { lvl, tx, ty, cv, img: cv.getContext('2d').createImageData(64, 64), row: 0, snow: this.mapSnow() }; },
+  mapSnow() { return Math.round((ENV.snowCover || 0) * 4) / 4; },   // snow cover in quarter steps: a tile is redrawn when it moves on a step (the old one shows meanwhile)
   // build the wanted tiles ([lvl, tx, ty], nearest first) within the budget; the tile in hand is finished first
   mapWork(want, budget) {
     const t0 = performance.now(), left = () => budget - (performance.now() - t0);
     const wanted = (j, list) => list.some(([l, x, y]) => l === j.lvl && x === j.tx && y === j.ty);
     if (this.mapJob && !wanted(this.mapJob, want) && this.mapJob.row < 48) this.mapJob = null;   // moved on: drop it unless it's nearly done
     for (;;) {
-      if (!this.mapJob) { const nx = want.find(([l, x, y]) => !this.mapTiles.has(`${l}:${x}:${y}`)); if (!nx) break; this.mapJob = this.mapStart(...nx); }
+      if (!this.mapJob) { const sn = this.mapSnow(), nx = want.find(([l, x, y]) => { const t = this.mapTiles.get(`${l}:${x}:${y}`); return !t || t.snow !== sn; }); if (!nx) break; this.mapJob = this.mapStart(...nx); }
       if (left() <= 0) break;
       if (this.mapBuild(this.mapJob, left())) this.mapJob = null;
     }
@@ -6293,6 +6521,7 @@ Object.assign(Engine, {
     const inside = (px, py) => px >= x0 && px < x0 + w * cell && py >= y0 && py < y0 + h * cell;
     c.save(); c.beginPath(); c.rect(x0, y0, w * cell, h * cell); c.clip(); // keep roads/icons inside the map
     for (const fn of Game._mapHooks) fn(c, toPx, inside, scale); // games draw their own map icons
+    this.drawLandmarks(c, toPx, inside, memo === this.bigMemo);
     c.font = 'bold 13px monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
     for (const b of this.boats) { const [px, py] = toPx(b.x, b.y); if (!inside(px, py)) continue; const L = Math.max(4, b.def.hull.length_m / scale * cell), ca = Math.cos(b.a), sa = Math.sin(b.a);   // boats
       c.beginPath(); c.moveTo(px + ca * L * 0.6, py + sa * L * 0.6); c.lineTo(px - ca * L * 0.5 - sa * L * 0.25, py - sa * L * 0.5 + ca * L * 0.25); c.lineTo(px - ca * L * 0.5 + sa * L * 0.25, py - sa * L * 0.5 - ca * L * 0.25); c.closePath();
@@ -7949,6 +8178,20 @@ ${tray(4, 26, 42, 4)}${tray(50, 22, 42, 4)}${tray(24, 34, 48, 5)}
 <ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 54C66 52 76 56 86 52" fill="none" stroke="#dff3ff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
 <g filter="url(#${P('s')})"><path d="M18 46C24 36 36 32 48 34C62 36 74 36 80 46C72 52 24 52 18 46Z" fill="#e8d6a2" stroke="${OL}" stroke-width="1.8"/>
 <path d="M26 44C32 34 44 30 54 33C64 36 70 40 72 44C62 48 36 48 26 44Z" fill="url(#${P('g')})" stroke="${OL}" stroke-width="1.4"/>${pine(40, 36, 20)}${pine(56, 38, 15)}</g>`); })(),
+        // the same island, tropical: turquoise shallows, pale sand and a leaning palm
+        islandTropical: (() => { const P = ids(), frond = (x, y, a, L) => `<path d="M${x} ${y}q${Math.cos(a) * L * .5} ${Math.sin(a) * L * .5 - 6} ${Math.cos(a) * L} ${Math.sin(a) * L}q${-Math.cos(a) * L * .45} ${-Math.sin(a) * L * .2 + 2} ${-Math.cos(a) * L} ${-Math.sin(a) * L}Z" fill="#5aa63e" stroke="${OL}" stroke-width="1.1" stroke-linejoin="round"/>`;
+          return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#9ff0e6'], [.5, '#3fc0c8'], [1, '#1a6f9c']], .5, .55, .6)}${lg(P('g'), [[0, '#a8d86a'], [1, '#4e8a3a']])}${shadow(P('s'))}</defs>
+<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 54C66 52 76 56 86 52" fill="none" stroke="#f0fffc" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>
+<g filter="url(#${P('s')})"><path d="M16 46C22 36 36 32 48 34C62 36 76 36 82 46C72 53 22 53 16 46Z" fill="#f4e6b8" stroke="${OL}" stroke-width="1.8"/>
+<path d="M34 44C38 38 48 36 56 38C62 40 66 42 66 44C58 47 40 47 34 44Z" fill="url(#${P('g')})" stroke="${OL}" stroke-width="1.3"/>
+<path d="M46 42C46 32 49 22 55 14" fill="none" stroke="${OL}" stroke-width="4" stroke-linecap="round"/><path d="M46 42C46 32 49 22 55 14" fill="none" stroke="#a07a4a" stroke-width="2.2" stroke-linecap="round"/>
+${frond(55, 14, -2.6, 16)}${frond(55, 14, -0.4, 16)}${frond(55, 14, 0.5, 13)}${frond(55, 14, -1.6, 12)}${frond(55, 14, 2.4, 13)}<circle cx="53.5" cy="17" r="2" fill="#7a5a2a" stroke="${OL}" stroke-width=".8"/></g>`); })(),
+        // the same island, arctic: dark cold water, a snowy hump with a dark pine, an iceberg alongside
+        islandArctic: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#a8c8dc'], [.6, '#4a7494'], [1, '#1e3a56']], .5, .55, .6)}${lg(P('i'), [[0, '#ffffff'], [1, '#c4dcec']])}${lg(P('b'), [[0, '#eaf8ff'], [1, '#8cc4e4']], 1, 1)}${shadow(P('s'))}</defs>
+<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 56C66 54 76 58 86 54" fill="none" stroke="#e6f4ff" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>
+<g filter="url(#${P('s')})"><path d="M14 46C20 34 32 28 44 30C58 32 68 36 72 46C62 52 22 52 14 46Z" fill="#8a8a86" stroke="${OL}" stroke-width="1.8"/>
+<path d="M20 43C26 33 36 29 46 31C56 33 64 37 66 43C56 47 30 47 20 43Z" fill="url(#${P('i')})" stroke="${OL}" stroke-width="1.3"/>${pine(34, 40, 14)}<path d="M34 28.5L37 35H31Z" fill="#fff" opacity=".85"/>
+<path d="M70 52L74 40L80 36L86 44L88 52Z" fill="url(#${P('b')})" stroke="${OL}" stroke-width="1.5" stroke-linejoin="round"/><path d="M75 40L78 49" stroke="#9cc8e2" stroke-width="1.2" stroke-linecap="round"/></g>`); })(),
         // a trail map held by a red pushpin
         pin: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${lg(P('p'), [[0, '#f6e8c4'], [1, '#d9c08c']], 1, 1)}${rg(P('l'), [[0, '#9fd6ee'], [.6, '#4a92c0'], [1, '#235a86']], .45, .4, .6)}${lg(P('h'), [[0, '#ff7a6a'], [1, '#b8261c']])}${shadow(P('s'))}</defs>
 <g filter="url(#${P('s')})"><path d="M14 14L82 10L84 60L16 64Z" fill="url(#${P('p')})" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>
@@ -8184,7 +8427,8 @@ Object.assign(Engine, {
     try { this.miniPinned = localStorage.getItem('embercrown-minimap') === '1'; } catch (e) { this.miniPinned = false; }
     document.getElementById('hPin').onclick = e => { e.stopPropagation(); this.togglePin(); };
     document.getElementById('hSeed').onclick = e => { e.stopPropagation(); this.seedPress(); };
-    for (const id of ['hPin', 'hSeed']) for (const ev of ['pointerdown', 'pointerup', 'mousedown', 'touchstart']) document.getElementById(id).addEventListener(ev, e => e.stopPropagation());
+    document.getElementById('hBiomes').onclick = e => { e.stopPropagation(); const b = e.target.closest('[data-climate]'); if (b) this.newIsland(b.dataset.climate); };
+    for (const id of ['hPin', 'hSeed', 'hBiomes']) for (const ev of ['pointerdown', 'pointerup', 'mousedown', 'touchstart']) document.getElementById(id).addEventListener(ev, e => e.stopPropagation());
   },
   openJournal() { this.toggleJournal(); },
   // the address keeps the seed and other switches as they were, plus at=x,y,heading
@@ -8202,7 +8446,7 @@ Object.assign(Engine, {
   hudMapRect() {   // measured only when something that moves the frame has changed (a layout read every frame would force a reflow)
     const el = this.hud && this.hud.map; if (!el || this.showMap) return null;
     const key = innerWidth + 'x' + innerHeight + ':' + (this.miniPinned ? 1 : 0) + (this.touchUI ? 1 : 0) + (this.spawnOpen ? 1 : 0) + (this.pauseOpen ? 1 : 0);
-    if (this.mapRectKey !== key) { this.mapRectKey = key; const r = el.getBoundingClientRect(); this.mapRect = r.width > 20 ? { x: r.left + 3, y: r.top + 3, w: r.width - 6, h: r.height - 6 } : null; }
+    if (this.mapRectKey !== key) { const r = el.getBoundingClientRect(); this.mapRect = r.width > 20 ? { x: r.left + 3, y: r.top + 3, w: r.width - 6, h: r.height - 6 } : null; if (this.mapRect) this.mapRectKey = key; }   // a hidden frame is measured again next frame (it may be about to show)
     return this.mapRect;
   },
 
@@ -8216,8 +8460,9 @@ Object.assign(Engine, {
     const cls = (el, name, on) => { if (el.classList.contains(name) !== on) el.classList.toggle(name, on); };
     cls(H.root, 'off', this.showMap); cls(document.body, 'map-open', !!this.showMap);
     { const deep = this.torchDeep() || this.torchOn; for (const id of ['hTorch', 'bTorch']) { const b = document.getElementById(id); if (b) { if (b.hidden === deep) b.hidden = !deep; cls(b, 'lit', !!this.torchOn); } } } cls(document.body, 'touch', !!this.touchUI); cls(document.body, 'spawn-open', !!this.spawnOpen); cls(document.body, 'tackle-open', !!this.tackleOpen); cls(document.body, 'journal-open', !!this.journalOpen); cls(document.body, 'mini-on', !!this.miniPinned);
-    if (this.showMap) { const armed = performance.now() - (this.seedArm || -1e9) < 5000; cls(document.getElementById('hPin'), 'on', this.miniPinned); cls(document.getElementById('hSeed'), 'armed', armed);
-      set('hSeedInfo', armed ? 'press again: new island' : `seed ${SEED} · ${CLIMATE.name}`); }
+    { const pick = !!(this.showMap && this.biomePick), bp = document.getElementById('hBiomes'); if (bp.hidden === pick) { bp.hidden = !pick; for (const b of bp.children) cls(b, 'on', b.dataset.climate === CLIMATE.key); } if (!this.showMap) this.biomePick = false; }
+    if (this.showMap) { const armed = !!this.biomePick; cls(document.getElementById('hPin'), 'on', this.miniPinned); cls(document.getElementById('hSeed'), 'armed', armed);
+      set('hSeedInfo', armed ? 'pick a biome for the new island' : `seed ${SEED} · ${CLIMATE.name}`); }
     if (this.showMap) return;
     const P = this.P;
     // where you are: the water you're in or looking at, else the nearest one (looked up twice a second)
@@ -8652,6 +8897,7 @@ const Birds = globalThis.Birds = (() => {
 
   // =================== perches ===================
   const providers = new Map();
+  const FEAR = 2;   // scales every species' shy (and, × 0.9, wary) distance: birds keep well clear of you
   let boatIds = 0;
   const boatId = b => b._birdId || (b._birdId = ++boatIds);
   function boatPerches(b) {   // the bow, the transom (beside an outboard), the gunwales fore and aft, clear of where you sit
@@ -8713,7 +8959,7 @@ const Birds = globalThis.Birds = (() => {
       return out; },
     cliff(x, y, R) { const out = [];   // the grassy rims of sea stacks, a few steps in from the drop
       for (const k of seaStacks()) { if (Math.hypot(k.x - x, k.y - y) > R + k.r) continue;
-        for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + k.ph, px = k.x + Math.cos(a) * k.r * 0.72, py = k.y + Math.sin(a) * k.r * 0.72, z = Game.groundAt(px, py);
+        for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + k.ph, px = k.x + Math.cos(a) * k.rin, py = k.y + Math.sin(a) * k.rin, z = Game.groundAt(px, py);
           if (z > WLW + 5) out.push({ kind: 'cliff', x: px, y: py, z, pose: 'stand', high: true, key: `c:${px | 0}:${py | 0}` }); } }
       return out; },
     boat(x, y, R) { const out = [];   // slow boats only; birds ride along until the boat really gets going
@@ -8802,7 +9048,7 @@ const Birds = globalThis.Birds = (() => {
     settle(b, s, quiet) {
       if (b.group) setTimeout(() => this.disband(b), 4000);   // give the followers a moment to see where the leader came down
       b.st = s.pose === 'float' ? 'float' : 'stand'; b.spot = s; b.v = b.vz = 0; b.lt = 0; b.roll = 0;
-      b.stay = this.night() && b.sp.night === 'roost' ? 1e9 : rr(b.sp.stay) * (s.kind === 'boat' ? 1.5 : 1); b.callT = 4 + rnd() * 25;
+      b.stay = this.night() && b.sp.night === 'roost' ? 1e9 : rr(b.sp.stay) * (s.kind === 'boat' ? 0.5 : 1); b.callT = 4 + rnd() * 25;
       if (!quiet && s.pose === 'float') Game.ripple(b.x, b.y, 0.45);
       if (!quiet) Game.emit('birdLand', b, s);
     },
@@ -8814,8 +9060,8 @@ const Birds = globalThis.Birds = (() => {
     // choose somewhere to come down, by the species' taste for each kind of perch; your own boat is the favourite
     pickSpot(b) {
       const sp = b.sp, fl = sp.flock, P = Engine.P, Ls = sp.lands, kinds = Object.keys(Ls).filter(k => Ls[k] > 0 && providers.has(k));
-      const free = s => (s.bold || Math.hypot(s.x - P.x, s.y - P.y) > 14) && Perches.free(s, b);
-      if (Ls.boat > 0 && Engine.boat && rnd() < Math.min(0.85, Ls.boat * 1.3)) { const c = Perches.near(b.x, b.y, 160, ['boat'], b).filter(s => s.mine && free(s)); if (c.length) return c[rnd() * c.length | 0]; }
+      const free = s => (s.bold || Math.hypot(s.x - P.x, s.y - P.y) > 25) && Perches.free(s, b);
+      if (Ls.boat > 0 && Engine.boat && rnd() < Math.min(0.2, Ls.boat * 0.35)) { const c = Perches.near(b.x, b.y, 160, ['boat'], b).filter(s => s.mine && free(s)); if (c.length) return c[rnd() * c.length | 0]; }
       for (let tries = 0; tries < 3; tries++) {
         let r = rnd() * kinds.reduce((t, k) => t + Ls[k], 0), k = kinds[0]; for (const q of kinds) { r -= Ls[q]; if (r <= 0) { k = q; break; } }
         const c = Perches.near(k === 'boat' ? b.x : fl.x, k === 'boat' ? b.y : fl.y, k === 'boat' ? 160 : 70, [k], b).filter(free);
@@ -8934,7 +9180,7 @@ const Birds = globalThis.Birds = (() => {
           if (!this.list.includes(Ld) || Ld.st === 'leave' || Ld.st === 'takeoff') { b.leader = null; b.slot = null; }
           else if (Ld.st === 'land' || Ld.st === 'float' || Ld.st === 'stand') {   // the leader's coming down: so do we, nearby, on the same sort of perch
             const sp0 = Ld.target || Ld.spot; b.leader = null; b.slot = null;
-            if (sp0 && rnd() < sp.flocking.landTogether) { const c = Perches.near(sp0.x, sp0.y, 25, [sp0.provider || 'water'], b).filter(q => Perches.free(q, b) && (q.bold || Math.hypot(q.x - P.x, q.y - P.y) > 14));
+            if (sp0 && rnd() < sp.flocking.landTogether) { const c = Perches.near(sp0.x, sp0.y, 25, [sp0.provider || 'water'], b).filter(q => Perches.free(q, b) && (q.bold || Math.hypot(q.x - P.x, q.y - P.y) > 25));
               if (c.length) { c.sort((p, q) => Math.hypot(p.x - sp0.x, p.y - sp0.y) - Math.hypot(q.x - sp0.x, q.y - sp0.y)); b.st = 'land'; b.target = c[Math.min(c.length - 1, rnd() * 3 | 0)]; b.lt = 0; return; } }
           } else {   // hold the slot (it breathes a little), matching the leader's speed and catching up when behind
             const c = Math.cos(Ld.a), si = Math.sin(Ld.a), w = 0.6 * Math.sin(T * 0.3 + b.wob), o = b.slot;
@@ -8961,7 +9207,7 @@ const Birds = globalThis.Birds = (() => {
       }
       if (b.st === 'takeoff') { b.want = true; vT = F.speed; tz = Math.max(tz, b.z + 3); }
       // keep clear of you: headed your way and getting close, it turns off and climbs over (a bird landing on your boat is the exception)
-      const W = sp.wary, eyeZ = P.z + CONFIG.eyeHeight, ex = b.x - P.x, ey = b.y - P.y, dh = Math.hypot(ex, ey), bold = b.st === 'land' && b.target && b.target.bold;
+      const W = sp.wary * FEAR * 0.9, eyeZ = P.z + CONFIG.eyeHeight, ex = b.x - P.x, ey = b.y - P.y, dh = Math.hypot(ex, ey), bold = b.st === 'land' && b.target && b.target.bold;
       if (!bold && dh < W * 2.5) {
         if (Math.cos(b.a) * ex + Math.sin(b.a) * ey < 0) { const away = Math.atan2(ey, ex) + (b.dir || 1) * 0.6; tx = b.x + Math.cos(away) * 20; ty = b.y + Math.sin(away) * 20; turn = Math.max(turn, 2.2); }
         tz = Math.max(tz, eyeZ + W * (1.2 - dh / (W * 2.5))); b.want = true;
@@ -9018,7 +9264,7 @@ const Birds = globalThis.Birds = (() => {
       const s = b.spot, P = Engine.P, bt = Engine.boat, p = Perches.at(s);
       if (p.gone) { this.takeoff(b); return; }
       const near = Math.hypot(b.x - P.x, b.y - P.y), d3 = Math.hypot(near, b.z - P.z - 1), roost = b.sp.night === 'roost';
-      const shy = s.bold ? d3 < 1 : s.high ? d3 < b.sp.shy * 0.75 : near < (bt && Math.abs(bt.speed || 0) > 1.5 ? b.sp.shy * 2.2 : Engine.swim ? b.sp.shy * 0.65 : b.sp.shy);
+      const sh = b.sp.shy * FEAR, shy = s.bold ? d3 < 2.5 : s.high ? d3 < sh * 0.75 : near < (bt && Math.abs(bt.speed || 0) > 1.5 ? sh * 2.2 : Engine.swim ? sh * 0.65 : sh);
       if (shy || (p.speed || 0) > (s.flushSpeed ?? 1e9) || ((!night || !roost) && b.lt > b.stay) || (!night && b.stay > 1e8 && rnd() < dt / 40)) { this.takeoff(b); return; }   // at dawn they drift off one by one
       if (s.pose === 'float') {
         const wa = (ENV.windDir ?? 0.8) + Math.PI; b.a += wrap(wa + 0.6 * Math.sin(b.wob + Engine.time * 0.03) - b.a) * Math.min(1, dt * 0.2);   // head to wind
@@ -9367,7 +9613,7 @@ const Tutorial = globalThis.Tutorial = (() => {
       text: () => T.touch() ? (Engine.journalOpen ? `Close the journal (${T.btn('✕')}), then tap ${T.btn('Map')}.` : `Tap ${T.btn('Map')} to open the map.`) : `Press ${T.key('map')} to open the map${Engine.journalOpen ? ' (it closes the journal)' : ''}.`,
       latch: 'map', done: () => !!T.flags.map },
     { id: 'newIsland', title: 'A whole new island', feats: ['boats', 'use', 'helm', 'rod', 'cast', 'drag', 'journal', 'map', 'newIsland'], glow: ['newIsland'],
-      text: () => `That's the pond done. ${T.touch() ? `Tap ${T.btn('New island')} twice` : `Press <kbd class="glow">N</kbd> twice (or the island button)`} and a fresh island loads with its whole map open. It's yours to explore.`,
+      text: () => `That's the pond done. ${T.touch() ? `Tap ${T.btn('New island')}` : `Press <kbd class="glow">N</kbd> (or the island button)`}, pick a biome, and a fresh island loads with its whole map open. It's yours to explore.`,
       done: () => false },
   ];
   // a latched step counts as done for everything before it, so leaving the canoe after the catch doesn't send you back
@@ -9542,10 +9788,11 @@ const Tutorial = globalThis.Tutorial = (() => {
   const seedPress = Engine.seedPress;
   Engine.seedPress = function () {
     if (T.active && STEPS[T.i].id !== 'newIsland') { note('Not yet: follow the steps above.'); return; }
-    if (T.active && performance.now() - (this.seedArm || -1e9) < 5000) { try { sessionStorage.setItem('ow-tutorial-done', '1'); } catch (e) { /* */ } }
-    else if (T.active) note('Once more for a new island.');
+    if (T.active) note('Pick a biome for the new island.');
     return seedPress.call(this);
   };
+  const newIsland = Engine.newIsland;
+  Engine.newIsland = function (k) { if (T.active) { try { sessionStorage.setItem('ow-tutorial-done', '1'); } catch (e) { /* */ } } return newIsland.call(this, k); };
 
   // ---- following along ----
   Game.on('cast', () => { if (T.active) { T.flags.cast = true; T.waitT = 0; T.helped = false; } });
@@ -9935,14 +10182,44 @@ window.addEventListener('DOMContentLoaded', () => {
   "type": "stacks",
   "name": "Sea stacks",
   "about": "A cluster of sheer rock pillars standing off the coast, grass on top. Puffins nest on them.",
-  "chance": { "temperate": 0.7, "arctic": 0.7, "tropical": 0.3 },
+  "chance": { "temperate": 0, "arctic": 0, "tropical": 0 },
   "clusters": [1, 2],
   "stacks": [2, 5],
   "spread_m": 110,
   "offshore_m": [120, 400],
   "min_depth_m": 8,
-  "radius_m": [10, 32],
+  "radius_m": [14, 34],
   "height_m": [18, 60]
+}
+</script>
+<script type="application/json" data-builtin="feature">
+{
+  "id": "glaciers",
+  "type": "glaciers",
+  "name": "Glaciers",
+  "about": "Permanent ice, per climate: an ice cap on the summit, valley glaciers down its slopes (some reaching the sea as tidewater glaciers with an ice cliff, some spreading into a piedmont lobe on the lowland), and small cirque glaciers in high hollows.",
+  "climates": {
+    "arctic": { "cap": 1, "valleys": [1, 3], "tidewater": 0.45, "piedmont": 0.35, "cirques": [2, 5] }
+  },
+  "tidewater_reach_m": [80, 220],
+  "tidewater_front_m": [10, 20],
+  "cirque_radius_m": [50, 110]
+}
+</script>
+<script type="application/json" data-builtin="feature">
+{
+  "id": "cenotes",
+  "type": "cenotes",
+  "name": "Cenotes",
+  "about": "Sinkholes in limestone country: a round pit with sheer rock walls, open to the sky, with clear deep water a few metres below the ground.",
+  "chance": { "tropical": 0.25, "temperate": 0.1, "arctic": 0 },
+  "count": [2, 5],
+  "radius_m": [8, 25],
+  "drop_m": [4, 12],
+  "depth_m": [15, 45],
+  "cave": 0.75,
+  "opening": [0.3, 0.55],
+  "names": ["Blue", "Jade", "Swallow", "Echo", "Lantern", "Vine", "Sun", "Jaguar", "Root", "Kingfisher", "Moonwell", "Fern"]
 }
 </script>
 <script type="application/json" data-builtin="fish">
@@ -37501,6 +37778,178 @@ window.addEventListener('DOMContentLoaded', () => {
   },
   "drag": 0.3,
   "waters": ["sea"]
+}
+</script>
+<script type="application/json" data-builtin="tackle">
+{
+  "schema": "embercrown-tackle/1",
+  "id": "fiddler_crab",
+  "type": "bait",
+  "name": "Fiddler crab",
+  "description": "A small live crab. Sheepshead, tautog, wrasse and redfish nibble them off pilings and rocks.",
+  "food": {
+    "crayfish": 1,
+    "snails": 0.3,
+    "shrimp": 0.3
+  },
+  "size_cm": 3,
+  "scent": 0.5,
+  "wiggle": 0.4,
+  "lasts": 3,
+  "floats": false,
+  "shape": "shrimp",
+  "weight_g": 4,
+  "colors": {
+    "body": "#8a6a4a",
+    "accent": "#e8c070"
+  }
+}
+</script>
+<script type="application/json" data-builtin="tackle">
+{
+  "schema": "embercrown-tackle/1",
+  "id": "popping_cork",
+  "type": "float",
+  "name": "Popping cork",
+  "description": "A cork on a wire that clacks and splashes when you jerk it, calling fish to the bait hanging underneath.",
+  "kind": "fixed",
+  "buoyancy_g": 14,
+  "depth_m": 0.8,
+  "size_mm": 28,
+  "colors": {
+    "top": "#f2d020",
+    "bottom": "#f4f4f0"
+  }
+}
+</script>
+<script type="application/json" data-builtin="tackle">
+{
+  "schema": "embercrown-tackle/1",
+  "id": "popping_cork_shrimp",
+  "type": "rig",
+  "name": "Shrimp under a popping cork",
+  "description": "A shrimp hung under a popping cork over grass flats and oyster bars. Pop it, let it sit: redfish, seatrout and snook come to the noise.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "braid_10",
+    "leader": "fluoro_leader_20",
+    "hook": "hook_1_0",
+    "sinker": "split_shot",
+    "float": "popping_cork",
+    "bait": "shrimp"
+  },
+  "drag": 0.3,
+  "waters": [
+    "sea"
+  ],
+  "float_depth_m": 0.8
+}
+</script>
+<script type="application/json" data-builtin="tackle">
+{
+  "schema": "embercrown-tackle/1",
+  "id": "freeline_shrimp",
+  "type": "rig",
+  "name": "Free-lined shrimp",
+  "description": "A shrimp on a bare hook with no weight, drifting naturally in knee-deep water. Quiet and deadly on the flats.",
+  "parts": {
+    "rod": "light_spinning",
+    "reel": "spinning_2000",
+    "line": "braid_10",
+    "leader": "fluoro_leader_20",
+    "hook": "hook_1_0",
+    "bait": "shrimp"
+  },
+  "drag": 0.3,
+  "waters": [
+    "sea"
+  ]
+}
+</script>
+<script type="application/json" data-builtin="tackle">
+{
+  "schema": "embercrown-tackle/1",
+  "id": "fiddler_crab_rocks",
+  "type": "rig",
+  "name": "Fiddler crab on the rocks",
+  "description": "A crab on a short leader with a small egg sinker, dropped beside rocks, pilings and jetties. Sheepshead, tautog, wrasse and triggerfish.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "braid_20",
+    "leader": "fluoro_leader_20",
+    "hook": "hook_2",
+    "sinker": "egg_sinker",
+    "bait": "fiddler_crab"
+  },
+  "drag": 0.35,
+  "waters": [
+    "sea"
+  ]
+}
+</script>
+<script type="application/json" data-builtin="tackle">
+{
+  "schema": "embercrown-tackle/1",
+  "id": "saltwater_popper",
+  "type": "rig",
+  "name": "Saltwater popper",
+  "description": "A popper on a stout leader, worked fast over the shallows at dawn and dusk. Snook, bluefish, striped bass, jacks and barracuda blow up on it.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "braid_20",
+    "leader": "mono_leader_40",
+    "lure": "topwater_popper"
+  },
+  "drag": 0.35,
+  "waters": [
+    "sea"
+  ]
+}
+</script>
+<script type="application/json" data-builtin="tackle">
+{
+  "schema": "embercrown-tackle/1",
+  "id": "flats_spoon",
+  "type": "rig",
+  "name": "Spoon on the flats",
+  "description": "A spoon cast ahead of tailing fish in shallow water and wobbled back slowly. Redfish, seatrout, sea bass and mackerel.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "braid_10",
+    "leader": "fluoro_leader_20",
+    "lure": "casting_spoon"
+  },
+  "drag": 0.3,
+  "waters": [
+    "sea"
+  ]
+}
+</script>
+<script type="application/json" data-builtin="tackle">
+{
+  "schema": "embercrown-tackle/1",
+  "id": "live_bait_cork",
+  "type": "rig",
+  "name": "Live bait under a cork",
+  "description": "A live baitfish swimming under a float along mangroves, channels and beaches. Tarpon, snook, barracuda, blacktips and bluefish.",
+  "parts": {
+    "rod": "heavy_spinning",
+    "reel": "spinning_4000",
+    "line": "braid_30",
+    "leader": "mono_leader_40",
+    "hook": "circle_3_0",
+    "float": "big_slip_float",
+    "bait": "live_minnow"
+  },
+  "drag": 0.35,
+  "waters": [
+    "sea"
+  ],
+  "float_depth_m": 1.2
 }
 </script>
 <script type="application/json" data-builtin="tackle">

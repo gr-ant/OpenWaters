@@ -25,7 +25,8 @@ Object.assign(Engine, {
     try { this.miniPinned = localStorage.getItem('embercrown-minimap') === '1'; } catch (e) { this.miniPinned = false; }
     document.getElementById('hPin').onclick = e => { e.stopPropagation(); this.togglePin(); };
     document.getElementById('hSeed').onclick = e => { e.stopPropagation(); this.seedPress(); };
-    for (const id of ['hPin', 'hSeed']) for (const ev of ['pointerdown', 'pointerup', 'mousedown', 'touchstart']) document.getElementById(id).addEventListener(ev, e => e.stopPropagation());
+    document.getElementById('hBiomes').onclick = e => { e.stopPropagation(); const b = e.target.closest('[data-climate]'); if (b) this.newIsland(b.dataset.climate); };
+    for (const id of ['hPin', 'hSeed', 'hBiomes']) for (const ev of ['pointerdown', 'pointerup', 'mousedown', 'touchstart']) document.getElementById(id).addEventListener(ev, e => e.stopPropagation());
   },
   openJournal() { this.toggleJournal(); },
   // the address keeps the seed and other switches as they were, plus at=x,y,heading
@@ -43,7 +44,7 @@ Object.assign(Engine, {
   hudMapRect() {   // measured only when something that moves the frame has changed (a layout read every frame would force a reflow)
     const el = this.hud && this.hud.map; if (!el || this.showMap) return null;
     const key = innerWidth + 'x' + innerHeight + ':' + (this.miniPinned ? 1 : 0) + (this.touchUI ? 1 : 0) + (this.spawnOpen ? 1 : 0) + (this.pauseOpen ? 1 : 0);
-    if (this.mapRectKey !== key) { this.mapRectKey = key; const r = el.getBoundingClientRect(); this.mapRect = r.width > 20 ? { x: r.left + 3, y: r.top + 3, w: r.width - 6, h: r.height - 6 } : null; }
+    if (this.mapRectKey !== key) { const r = el.getBoundingClientRect(); this.mapRect = r.width > 20 ? { x: r.left + 3, y: r.top + 3, w: r.width - 6, h: r.height - 6 } : null; if (this.mapRect) this.mapRectKey = key; }   // a hidden frame is measured again next frame (it may be about to show)
     return this.mapRect;
   },
 
@@ -57,8 +58,9 @@ Object.assign(Engine, {
     const cls = (el, name, on) => { if (el.classList.contains(name) !== on) el.classList.toggle(name, on); };
     cls(H.root, 'off', this.showMap); cls(document.body, 'map-open', !!this.showMap);
     { const deep = this.torchDeep() || this.torchOn; for (const id of ['hTorch', 'bTorch']) { const b = document.getElementById(id); if (b) { if (b.hidden === deep) b.hidden = !deep; cls(b, 'lit', !!this.torchOn); } } } cls(document.body, 'touch', !!this.touchUI); cls(document.body, 'spawn-open', !!this.spawnOpen); cls(document.body, 'tackle-open', !!this.tackleOpen); cls(document.body, 'journal-open', !!this.journalOpen); cls(document.body, 'mini-on', !!this.miniPinned);
-    if (this.showMap) { const armed = performance.now() - (this.seedArm || -1e9) < 5000; cls(document.getElementById('hPin'), 'on', this.miniPinned); cls(document.getElementById('hSeed'), 'armed', armed);
-      set('hSeedInfo', armed ? 'press again: new island' : `seed ${SEED} · ${CLIMATE.name}`); }
+    { const pick = !!(this.showMap && this.biomePick), bp = document.getElementById('hBiomes'); if (bp.hidden === pick) { bp.hidden = !pick; for (const b of bp.children) cls(b, 'on', b.dataset.climate === CLIMATE.key); } if (!this.showMap) this.biomePick = false; }
+    if (this.showMap) { const armed = !!this.biomePick; cls(document.getElementById('hPin'), 'on', this.miniPinned); cls(document.getElementById('hSeed'), 'armed', armed);
+      set('hSeedInfo', armed ? 'pick a biome for the new island' : `seed ${SEED} · ${CLIMATE.name}`); }
     if (this.showMap) return;
     const P = this.P;
     // where you are: the water you're in or looking at, else the nearest one (looked up twice a second)

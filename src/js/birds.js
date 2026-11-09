@@ -135,6 +135,7 @@ const Birds = globalThis.Birds = (() => {
 
   // =================== perches ===================
   const providers = new Map();
+  const FEAR = 2;   // scales every species' shy (and, × 0.9, wary) distance: birds keep well clear of you
   let boatIds = 0;
   const boatId = b => b._birdId || (b._birdId = ++boatIds);
   function boatPerches(b) {   // the bow, the transom (beside an outboard), the gunwales fore and aft, clear of where you sit
@@ -196,7 +197,7 @@ const Birds = globalThis.Birds = (() => {
       return out; },
     cliff(x, y, R) { const out = [];   // the grassy rims of sea stacks, a few steps in from the drop
       for (const k of seaStacks()) { if (Math.hypot(k.x - x, k.y - y) > R + k.r) continue;
-        for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + k.ph, px = k.x + Math.cos(a) * k.r * 0.72, py = k.y + Math.sin(a) * k.r * 0.72, z = Game.groundAt(px, py);
+        for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + k.ph, px = k.x + Math.cos(a) * k.rin, py = k.y + Math.sin(a) * k.rin, z = Game.groundAt(px, py);
           if (z > WLW + 5) out.push({ kind: 'cliff', x: px, y: py, z, pose: 'stand', high: true, key: `c:${px | 0}:${py | 0}` }); } }
       return out; },
     boat(x, y, R) { const out = [];   // slow boats only; birds ride along until the boat really gets going
@@ -285,7 +286,7 @@ const Birds = globalThis.Birds = (() => {
     settle(b, s, quiet) {
       if (b.group) setTimeout(() => this.disband(b), 4000);   // give the followers a moment to see where the leader came down
       b.st = s.pose === 'float' ? 'float' : 'stand'; b.spot = s; b.v = b.vz = 0; b.lt = 0; b.roll = 0;
-      b.stay = this.night() && b.sp.night === 'roost' ? 1e9 : rr(b.sp.stay) * (s.kind === 'boat' ? 1.5 : 1); b.callT = 4 + rnd() * 25;
+      b.stay = this.night() && b.sp.night === 'roost' ? 1e9 : rr(b.sp.stay) * (s.kind === 'boat' ? 0.5 : 1); b.callT = 4 + rnd() * 25;
       if (!quiet && s.pose === 'float') Game.ripple(b.x, b.y, 0.45);
       if (!quiet) Game.emit('birdLand', b, s);
     },
@@ -297,8 +298,8 @@ const Birds = globalThis.Birds = (() => {
     // choose somewhere to come down, by the species' taste for each kind of perch; your own boat is the favourite
     pickSpot(b) {
       const sp = b.sp, fl = sp.flock, P = Engine.P, Ls = sp.lands, kinds = Object.keys(Ls).filter(k => Ls[k] > 0 && providers.has(k));
-      const free = s => (s.bold || Math.hypot(s.x - P.x, s.y - P.y) > 14) && Perches.free(s, b);
-      if (Ls.boat > 0 && Engine.boat && rnd() < Math.min(0.85, Ls.boat * 1.3)) { const c = Perches.near(b.x, b.y, 160, ['boat'], b).filter(s => s.mine && free(s)); if (c.length) return c[rnd() * c.length | 0]; }
+      const free = s => (s.bold || Math.hypot(s.x - P.x, s.y - P.y) > 25) && Perches.free(s, b);
+      if (Ls.boat > 0 && Engine.boat && rnd() < Math.min(0.2, Ls.boat * 0.35)) { const c = Perches.near(b.x, b.y, 160, ['boat'], b).filter(s => s.mine && free(s)); if (c.length) return c[rnd() * c.length | 0]; }
       for (let tries = 0; tries < 3; tries++) {
         let r = rnd() * kinds.reduce((t, k) => t + Ls[k], 0), k = kinds[0]; for (const q of kinds) { r -= Ls[q]; if (r <= 0) { k = q; break; } }
         const c = Perches.near(k === 'boat' ? b.x : fl.x, k === 'boat' ? b.y : fl.y, k === 'boat' ? 160 : 70, [k], b).filter(free);
@@ -417,7 +418,7 @@ const Birds = globalThis.Birds = (() => {
           if (!this.list.includes(Ld) || Ld.st === 'leave' || Ld.st === 'takeoff') { b.leader = null; b.slot = null; }
           else if (Ld.st === 'land' || Ld.st === 'float' || Ld.st === 'stand') {   // the leader's coming down: so do we, nearby, on the same sort of perch
             const sp0 = Ld.target || Ld.spot; b.leader = null; b.slot = null;
-            if (sp0 && rnd() < sp.flocking.landTogether) { const c = Perches.near(sp0.x, sp0.y, 25, [sp0.provider || 'water'], b).filter(q => Perches.free(q, b) && (q.bold || Math.hypot(q.x - P.x, q.y - P.y) > 14));
+            if (sp0 && rnd() < sp.flocking.landTogether) { const c = Perches.near(sp0.x, sp0.y, 25, [sp0.provider || 'water'], b).filter(q => Perches.free(q, b) && (q.bold || Math.hypot(q.x - P.x, q.y - P.y) > 25));
               if (c.length) { c.sort((p, q) => Math.hypot(p.x - sp0.x, p.y - sp0.y) - Math.hypot(q.x - sp0.x, q.y - sp0.y)); b.st = 'land'; b.target = c[Math.min(c.length - 1, rnd() * 3 | 0)]; b.lt = 0; return; } }
           } else {   // hold the slot (it breathes a little), matching the leader's speed and catching up when behind
             const c = Math.cos(Ld.a), si = Math.sin(Ld.a), w = 0.6 * Math.sin(T * 0.3 + b.wob), o = b.slot;
@@ -444,7 +445,7 @@ const Birds = globalThis.Birds = (() => {
       }
       if (b.st === 'takeoff') { b.want = true; vT = F.speed; tz = Math.max(tz, b.z + 3); }
       // keep clear of you: headed your way and getting close, it turns off and climbs over (a bird landing on your boat is the exception)
-      const W = sp.wary, eyeZ = P.z + CONFIG.eyeHeight, ex = b.x - P.x, ey = b.y - P.y, dh = Math.hypot(ex, ey), bold = b.st === 'land' && b.target && b.target.bold;
+      const W = sp.wary * FEAR * 0.9, eyeZ = P.z + CONFIG.eyeHeight, ex = b.x - P.x, ey = b.y - P.y, dh = Math.hypot(ex, ey), bold = b.st === 'land' && b.target && b.target.bold;
       if (!bold && dh < W * 2.5) {
         if (Math.cos(b.a) * ex + Math.sin(b.a) * ey < 0) { const away = Math.atan2(ey, ex) + (b.dir || 1) * 0.6; tx = b.x + Math.cos(away) * 20; ty = b.y + Math.sin(away) * 20; turn = Math.max(turn, 2.2); }
         tz = Math.max(tz, eyeZ + W * (1.2 - dh / (W * 2.5))); b.want = true;
@@ -501,7 +502,7 @@ const Birds = globalThis.Birds = (() => {
       const s = b.spot, P = Engine.P, bt = Engine.boat, p = Perches.at(s);
       if (p.gone) { this.takeoff(b); return; }
       const near = Math.hypot(b.x - P.x, b.y - P.y), d3 = Math.hypot(near, b.z - P.z - 1), roost = b.sp.night === 'roost';
-      const shy = s.bold ? d3 < 1 : s.high ? d3 < b.sp.shy * 0.75 : near < (bt && Math.abs(bt.speed || 0) > 1.5 ? b.sp.shy * 2.2 : Engine.swim ? b.sp.shy * 0.65 : b.sp.shy);
+      const sh = b.sp.shy * FEAR, shy = s.bold ? d3 < 2.5 : s.high ? d3 < sh * 0.75 : near < (bt && Math.abs(bt.speed || 0) > 1.5 ? sh * 2.2 : Engine.swim ? sh * 0.65 : sh);
       if (shy || (p.speed || 0) > (s.flushSpeed ?? 1e9) || ((!night || !roost) && b.lt > b.stay) || (!night && b.stay > 1e8 && rnd() < dt / 40)) { this.takeoff(b); return; }   // at dawn they drift off one by one
       if (s.pose === 'float') {
         const wa = (ENV.windDir ?? 0.8) + Math.PI; b.a += wrap(wa + 0.6 * Math.sin(b.wob + Engine.time * 0.03) - b.a) * Math.min(1, dt * 0.2);   // head to wind

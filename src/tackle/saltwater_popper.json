@@ -1,0 +1,18 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "saltwater_popper",
+  "type": "rig",
+  "name": "Saltwater popper",
+  "description": "A popper on a stout leader, worked fast over the shallows at dawn and dusk. Snook, bluefish, striped bass, jacks and barracuda blow up on it.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "braid_20",
+    "leader": "mono_leader_40",
+    "lure": "topwater_popper"
+  },
+  "drag": 0.35,
+  "waters": [
+    "sea"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "fiddler_crab_rocks",
+  "type": "rig",
+  "name": "Fiddler crab on the rocks",
+  "description": "A crab on a short leader with a small egg sinker, dropped beside rocks, pilings and jetties. Sheepshead, tautog, wrasse and triggerfish.",
+  "parts": {
+    "rod": "medium_spinning",
+    "reel": "spinning_3000",
+    "line": "braid_20",
+    "leader": "fluoro_leader_20",
+    "hook": "hook_2",
+    "sinker": "egg_sinker",
+    "bait": "fiddler_crab"
+  },
+  "drag": 0.35,
+  "waters": [
+    "sea"
+  ]
+}

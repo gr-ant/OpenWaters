@@ -1,0 +1,21 @@
+{
+  "schema": "embercrown-tackle/1",
+  "id": "live_bait_cork",
+  "type": "rig",
+  "name": "Live bait under a cork",
+  "description": "A live baitfish swimming under a float along mangroves, channels and beaches. Tarpon, snook, barracuda, blacktips and bluefish.",
+  "parts": {
+    "rod": "heavy_spinning",
+    "reel": "spinning_4000",
+    "line": "braid_30",
+    "leader": "mono_leader_40",
+    "hook": "circle_3_0",
+    "float": "big_slip_float",
+    "bait": "live_minnow"
+  },
+  "drag": 0.35,
+  "waters": [
+    "sea"
+  ],
+  "float_depth_m": 1.2
+}
