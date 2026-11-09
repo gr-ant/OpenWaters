@@ -1,0 +1,68 @@
+{
+  "name": "open-waters",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "game": "node -e \"require('fs').mkdirSync('game',{recursive:true});require('fs').copyFileSync('../Open Waters.html','game/index.html')\"",
+    "start": "npm run game && electron .",
+    "dist": "npm run game && electron-builder --publish never"
+  },
+  "author": {
+    "name": "Grant Miller",
+    "email": "gra_nt@outlook.com"
+  },
+  "license": "UNLICENSED",
+  "description": "A first-person fishing and exploration game",
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0"
+  },
+  "productName": "Open Waters",
+  "build": {
+    "appId": "io.itch.gra-nt.openwaters",
+    "productName": "Open Waters",
+    "artifactName": "Open-Waters-${version}-${os}-${arch}.${ext}",
+    "files": [
+      "main.js",
+      "game/**",
+      "build/icon.png"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Game",
+      "maintainer": "Grant Miller",
+      "syncDesktopName": true
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "Open-Waters-${version}-win-portable.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.games",
+      "identity": null
+    }
+  },
+  "desktopName": "open-waters.desktop",
+  "homepage": "https://gra-nt.itch.io/open-waters"
+}

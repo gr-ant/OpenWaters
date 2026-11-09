@@ -20,6 +20,18 @@ python3 build.py
 
 That writes `Open Waters.html`. It needs Python 3 and nothing else. Don't edit `Open Waters.html` by hand, because the next build overwrites it.
 
+## Desktop app (Linux, Windows, macOS)
+
+`electron/` wraps the built game in an Electron window. To run or package it on your machine:
+
+```sh
+cd electron && npm ci
+npm start                                      # play in a desktop window
+npm run game && npx electron-builder --linux   # or --win / --mac; output in electron/dist/
+```
+
+Push to the `desktop` branch (`git push origin main:desktop`) and GitHub builds all three and publishes them on the repo's Releases page. The builds aren't code-signed yet, so Windows SmartScreen and macOS Gatekeeper will warn the first time.
+
 ## Layout
 
 ```

@@ -1,0 +1,67 @@
+# Push to the desktop branch to build the Electron app for Linux, Windows and macOS
+# and publish the installers as a GitHub Release (Releases page of the repo).
+name: Desktop builds
+on:
+  push:
+    branches: ['desktop']
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, flag: --linux }
+          - { os: windows-latest, flag: --win }
+          - { os: macos-latest, flag: --mac }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: electron/package-lock.json
+      - name: Build the game
+        run: python build.py
+      - name: Package
+        working-directory: electron
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'   # unsigned: no Apple / Windows code-signing certificates yet
+        run: |
+          npm ci
+          npm run game
+          npx electron-builder ${{ matrix.flag }} --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: open-waters-${{ runner.os }}
+          path: |
+            electron/dist/*.AppImage
+            electron/dist/*.deb
+            electron/dist/*.exe
+            electron/dist/*.dmg
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=$(node -p "require('./electron/package.json').version")
+          tag="desktop-v$v-${GITHUB_SHA::7}"
+          gh release create "$tag" out/* --target "$GITHUB_SHA" --title "Open Waters $v (desktop, ${GITHUB_SHA::7})" \
+            --notes "Desktop builds of commit ${GITHUB_SHA::7}. Linux: AppImage or .deb. Windows: Setup .exe (installer) or portable .exe. macOS: .dmg (arm64 for Apple silicon, x64 for Intel); unsigned, so right-click the app and choose Open the first time."
