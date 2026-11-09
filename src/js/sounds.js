@@ -10,10 +10,21 @@
 //  Play one:  Game.sound('plop', { x, y, z, volume, pitch })   (no position: plays flat, at full volume)
 //  Add one:   Game.registerSound('ding', def)   ·   Game.soundsOn = false mutes them all
 //  Sound starts after your first click or key press (browsers require it).
+//  Music:     Sounds.setMusic(true) loops src/music/open-waters.urchin (Settings → Music; off by default)
 // ======================================================================
 const Sounds = globalThis.Sounds = (() => {
   let ac = null, noise = null;
-  const wake = () => { try { if (!ac) { const A = globalThis.AudioContext || globalThis.webkitAudioContext; if (A) ac = new A(); } if (ac && ac.state !== 'running') ac.resume(); } catch (e) { /* no audio */ } };
+  let song = null, music = null, musicOn = false;
+  // music: the Urchin song rendered once and looped; the note tails that run past its end are wrapped onto the start, so the seam is silent.
+  // shortcut: renders on the main thread (~1 s on a phone, once); move it to a Worker if that hitch shows up in play
+  const musicGo = () => {
+    if (!musicOn || music || !ac || ac.state !== 'running' || !globalThis.Urchin) return;
+    if (!song) { const text = Urchin.song('open-waters'), sc = Urchin.compile(text), a = Urchin.render(text, { sampleRate: 22050, volume: 0.5 });
+      const L = Math.round(sc.duration * a.sampleRate), d = a.samples.slice(0, L); for (let i = L; i < a.samples.length; i++) d[i % L] += a.samples[i];
+      song = ac.createBuffer(1, L, a.sampleRate); song.copyToChannel(d, 0); }
+    const g = ac.createGain(); g.gain.value = 0.6; music = ac.createBufferSource(); music.buffer = song; music.loop = true; music.connect(g); g.connect(ac.destination); music.start();
+  };
+  const wake = () => { try { if (!ac) { const A = globalThis.AudioContext || globalThis.webkitAudioContext; if (A) ac = new A(); } if (ac && ac.state !== 'running') ac.resume().then(musicGo, () => {}); else musicGo(); } catch (e) { /* no audio */ } };
   addEventListener('pointerdown', wake, true); addEventListener('keydown', wake, true);
   const noiseBuf = c => { if (noise && noise.sampleRate === c.sampleRate) return noise; const n = c.sampleRate * 2, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return noise = b; };
@@ -38,6 +49,8 @@ const Sounds = globalThis.Sounds = (() => {
   const S = {
     defs, voice,
     get context() { return ac; },
+    get musicOn() { return musicOn; },
+    setMusic(on) { musicOn = !!on; if (on) musicGo(); else if (music) { music.stop(); music.disconnect(); music = null; } },
     ready: () => !!ac && ac.state === 'running' && !document.hidden,
     register(name, def) { return defs[name] = Object.assign({ volume: 0.5, range: 80, near: 4, jitter: [0, 0], layers: [] }, def); },
     play(name, at = null) {

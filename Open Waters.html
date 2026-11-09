@@ -483,6 +483,8 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
         </div>
       </div>
       <label class="pm-check"><input id="setReelKeys" type="checkbox" checked> <span>Show controls on the reel<small>Key labels pinned to the handle, bail and drag while you fish.</small></span></label>
+      <label class="pm-check"><input id="setMusic" type="checkbox"> <span>Music<small>A calm, looping soundtrack.</small></span></label>
+      <label class="pm-check"><input id="setAnimals" type="checkbox"> <span>Animal sounds<small>Birds calling around you.</small></span></label>
     </div>
     <footer class="pm-foot"><button id="resetMouseSensitivity" class="pm-reset" type="button">Reset to default</button></footer>
   </section>
@@ -3960,6 +3962,13 @@ Object.assign(Engine, {
     try { this.showReelKeys = JSON.parse(localStorage.getItem('embercrown-hud') || '{}').reelKeys !== false; } catch (_) { this.showReelKeys = true; }
     rk.checked = this.showReelKeys;
     rk.onchange = () => { this.showReelKeys = rk.checked; try { localStorage.setItem('embercrown-hud', JSON.stringify({ reelKeys: rk.checked })); } catch (_) { /* session only */ } };
+    { // music and animal sounds: both off unless turned on here; kept in this browser
+      const mu = document.getElementById('setMusic'), an = document.getElementById('setAnimals');
+      let s = {}; try { s = JSON.parse(localStorage.getItem('embercrown-audio') || '{}'); } catch (_) { /* defaults */ }
+      mu.checked = s.music === true; an.checked = s.animals === true; Sounds.setMusic(mu.checked); Game.birdCalls = an.checked;
+      mu.onchange = an.onchange = () => { Sounds.setMusic(mu.checked); Game.birdCalls = an.checked;
+        try { localStorage.setItem('embercrown-audio', JSON.stringify({ music: mu.checked, animals: an.checked })); } catch (_) { /* session only */ } };
+    }
     { // wildlife density: three levels, kept in this browser, applied at once by letting the fish cells repopulate
       const opts = [...D.querySelectorAll('[data-wild]')];
       try { const v = +localStorage.getItem('embercrown-wildlife'); if (v >= 1 && v <= 3) CONFIG.wildlife = v; } catch (_) { /* default */ }
@@ -8362,10 +8371,21 @@ Object.assign(Engine, {
 //  Play one:  Game.sound('plop', { x, y, z, volume, pitch })   (no position: plays flat, at full volume)
 //  Add one:   Game.registerSound('ding', def)   ·   Game.soundsOn = false mutes them all
 //  Sound starts after your first click or key press (browsers require it).
+//  Music:     Sounds.setMusic(true) loops src/music/open-waters.urchin (Settings → Music; off by default)
 // ======================================================================
 const Sounds = globalThis.Sounds = (() => {
   let ac = null, noise = null;
-  const wake = () => { try { if (!ac) { const A = globalThis.AudioContext || globalThis.webkitAudioContext; if (A) ac = new A(); } if (ac && ac.state !== 'running') ac.resume(); } catch (e) { /* no audio */ } };
+  let song = null, music = null, musicOn = false;
+  // music: the Urchin song rendered once and looped; the note tails that run past its end are wrapped onto the start, so the seam is silent.
+  // shortcut: renders on the main thread (~1 s on a phone, once); move it to a Worker if that hitch shows up in play
+  const musicGo = () => {
+    if (!musicOn || music || !ac || ac.state !== 'running' || !globalThis.Urchin) return;
+    if (!song) { const text = Urchin.song('open-waters'), sc = Urchin.compile(text), a = Urchin.render(text, { sampleRate: 22050, volume: 0.5 });
+      const L = Math.round(sc.duration * a.sampleRate), d = a.samples.slice(0, L); for (let i = L; i < a.samples.length; i++) d[i % L] += a.samples[i];
+      song = ac.createBuffer(1, L, a.sampleRate); song.copyToChannel(d, 0); }
+    const g = ac.createGain(); g.gain.value = 0.6; music = ac.createBufferSource(); music.buffer = song; music.loop = true; music.connect(g); g.connect(ac.destination); music.start();
+  };
+  const wake = () => { try { if (!ac) { const A = globalThis.AudioContext || globalThis.webkitAudioContext; if (A) ac = new A(); } if (ac && ac.state !== 'running') ac.resume().then(musicGo, () => {}); else musicGo(); } catch (e) { /* no audio */ } };
   addEventListener('pointerdown', wake, true); addEventListener('keydown', wake, true);
   const noiseBuf = c => { if (noise && noise.sampleRate === c.sampleRate) return noise; const n = c.sampleRate * 2, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return noise = b; };
@@ -8390,6 +8410,8 @@ const Sounds = globalThis.Sounds = (() => {
   const S = {
     defs, voice,
     get context() { return ac; },
+    get musicOn() { return musicOn; },
+    setMusic(on) { musicOn = !!on; if (on) musicGo(); else if (music) { music.stop(); music.disconnect(); music = null; } },
     ready: () => !!ac && ac.state === 'running' && !document.hidden,
     register(name, def) { return defs[name] = Object.assign({ volume: 0.5, range: 80, near: 4, jitter: [0, 0], layers: [] }, def); },
     play(name, at = null) {
@@ -9015,7 +9037,7 @@ Birds.register({
 });
 
 // ---------------- Game API ----------------
-Game.birdCalls = true;
+Game.birdCalls = false;   // Settings → Animal sounds turns them on
 Object.defineProperty(Game, 'birds', { get: () => Birds.list });
 Game.birdsOf = id => Birds.list.filter(b => b.sp.id === id);
 Game.registerBird = def => Birds.register(def);
@@ -38052,6 +38074,25 @@ window.addEventListener('DOMContentLoaded', () => {
     "instruments": { "P": "piano", "B": "bass", "F": "flute" }
   },
   "sequence": "A1B1@2w A1P1@3q A2P5@3q A3P8@3q A4P1@4q B1B6@2w B1P1@4q B2P5@4q B3P8@4q B4F1@5q C1B8@2w C1P8@3h C1P12@3h C1F3@5h C3F12@4h D1B1@2w D1P1@4w D1P5@4w D1P8@4w D1F1@5w"
+}
+</script>
+<script type="application/json" data-song="open-waters">
+{
+  "format": "CSLT-1",
+  "version": "1.1",
+  "metadata": {
+    "title": "Open Waters",
+    "tempo_bpm": 66,
+    "time_signature": "8/8",
+    "instruments": {
+      "D": "pad",
+      "B": "bass",
+      "P": "piano",
+      "H": "harp",
+      "V": "vibraphone"
+    }
+  },
+  "sequence": "A1D10@3w A1D1@4w A1D5@4w A1B6@2w A1V5@6h B1D8@3w B1D12@3w B1D3@4w B1B5@2w C1D6@3w C1D10@3w C1D1@4w C1B3@2w D1D5@3w D1D8@3w D1D12@3w D1B1@2w D1H1@3e D2H8@3e D3H12@3e D4H5@4e D5H12@3e D6H8@3e D7H1@3e D8H8@3e E1D10@3w E1D1@4w E1D5@4w E1B6@2w E1P1@5q E3P10@4q E5P5@5h F1D8@3w F1D12@3w F1D3@4w F1B5@2w F1P3@5q F3P12@4q F5P8@4h G1D6@3w G1D10@3w G1D1@4w G1B3@2w G1P6@4e G2P10@4e G3P1@5q G5P5@5q G7P3@5q H1D5@3w H1D8@3w H1D12@3w H1B1@2w H1P5@5h H5P8@4h I1D6@3w I1D10@3w I1D3@4w I1B11@1w I1P3@5q I3P6@5q I5P10@5h I1V10@5h J1D10@3w J1D1@4w J1D5@4w J1B6@2w J1P10@5q J3P8@5q J5P6@5h J1H6@3e J2H1@4e J3H5@4e J4H10@4e J5H5@4e J6H1@4e J7H6@3e J8H1@4e K1D6@3w K1D11@3w K1D3@4w K1B8@2w K1P3@5q K3P6@5q K5P11@4q K7P3@5q L1D6@3w L1D8@3w L1D1@4w L1B1@2w L1P5@5w L1H1@3e L2H8@3e L3H1@4e L4H3@4e L5H1@4e L6H8@3e L7H1@3e L8H8@3e M1D10@3w M1D1@4w M1D5@4w M1B6@2w M1H6@3e M2H1@4e M3H5@4e M4H10@4e M5H5@4e M6H1@4e M7H6@3e M8H1@4e M1V5@6h N1D8@3w N1D12@3w N1D3@4w N1B5@2w N1H5@3e N2H12@3e N3H3@4e N4H8@4e N5H3@4e N6H12@3e N7H5@3e N8H12@3e O1D6@3w O1D10@3w O1D1@4w O1B3@2w O1H3@3e O2H10@3e O3H1@4e O4H6@4e O5H1@4e O6H10@3e O7H3@3e O8H10@3e P1D5@3w P1D8@3w P1D12@3w P1B1@2w P1H1@3e P2H8@3e P3H12@3e P4H5@4e P5H12@3e P6H8@3e P7H1@3e P8H8@3e Q1D6@3w Q1D10@3w Q1D3@4w Q1B11@1w Q1P3@5q Q3P6@5q Q5P10@5h R1D10@3w R1D1@4w R1D5@4w R1B6@2w R1P10@5q R3P8@5q R5P6@5h S1D6@3w S1D11@3w S1D3@4w S1B8@2w S1P3@5q S3P6@5q S5P11@4q S7P3@5q T1D6@3w T1D8@3w T1D1@4w T1B1@2w T1P5@5w U1D10@3w U1D1@4w U1D5@4w U1B6@2w U1P1@5w U1V1@6h V1D8@3w V1D12@3w V1D3@4w V1B5@2w V1P12@4w V1H5@3e V2H12@3e V3H3@4e V4H8@4e V5H3@4e V6H12@3e V7H5@3e V8H12@3e W1D6@3w W1D10@3w W1D1@4w W1B3@2w W1P10@4w X1D5@3w X1D8@3w X1D12@3w X1B1@2w X1P8@4h X5P5@4h X1H1@3e X2H8@3e X3H12@3e X4H5@4e X5H12@3e X6H8@3e X7H1@3e X8H8@3e"
 }
 </script>
 </body>

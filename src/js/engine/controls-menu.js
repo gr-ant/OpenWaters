@@ -23,6 +23,13 @@ Object.assign(Engine, {
     try { this.showReelKeys = JSON.parse(localStorage.getItem('embercrown-hud') || '{}').reelKeys !== false; } catch (_) { this.showReelKeys = true; }
     rk.checked = this.showReelKeys;
     rk.onchange = () => { this.showReelKeys = rk.checked; try { localStorage.setItem('embercrown-hud', JSON.stringify({ reelKeys: rk.checked })); } catch (_) { /* session only */ } };
+    { // music and animal sounds: both off unless turned on here; kept in this browser
+      const mu = document.getElementById('setMusic'), an = document.getElementById('setAnimals');
+      let s = {}; try { s = JSON.parse(localStorage.getItem('embercrown-audio') || '{}'); } catch (_) { /* defaults */ }
+      mu.checked = s.music === true; an.checked = s.animals === true; Sounds.setMusic(mu.checked); Game.birdCalls = an.checked;
+      mu.onchange = an.onchange = () => { Sounds.setMusic(mu.checked); Game.birdCalls = an.checked;
+        try { localStorage.setItem('embercrown-audio', JSON.stringify({ music: mu.checked, animals: an.checked })); } catch (_) { /* session only */ } };
+    }
     { // wildlife density: three levels, kept in this browser, applied at once by letting the fish cells repopulate
       const opts = [...D.querySelectorAll('[data-wild]')];
       try { const v = +localStorage.getItem('embercrown-wildlife'); if (v >= 1 && v <= 3) CONFIG.wildlife = v; } catch (_) { /* default */ }

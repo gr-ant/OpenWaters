@@ -583,7 +583,7 @@ Birds.register({
 });
 
 // ---------------- Game API ----------------
-Game.birdCalls = true;
+Game.birdCalls = false;   // Settings → Animal sounds turns them on
 Object.defineProperty(Game, 'birds', { get: () => Birds.list });
 Game.birdsOf = id => Birds.list.filter(b => b.sp.id === id);
 Game.registerBird = def => Birds.register(def);
