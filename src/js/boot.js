@@ -40,8 +40,18 @@ window.addEventListener('DOMContentLoaded', () => {
     Engine.init();
     Game.emit('ready');
     const ld = document.getElementById('loading'); if (ld) ld.remove();
+    // menus are tinted with the average colour on screen, darkened so cream text stays readable
+    const tc = document.createElement('canvas'); tc.width = 16; tc.height = 9; const tx = tc.getContext('2d', { willReadFrequently: true }); tx.imageSmoothingQuality = 'high'; let tintT = -1e9;
+    function sceneTint() {
+      try { tx.drawImage(Engine.canvas, 0, 0, 16, 9); } catch (e) { return; }
+      const d = tx.getImageData(0, 0, 16, 9).data; let r = 0, g = 0, b = 0;
+      for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+      const n = d.length / 4, y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / n, k = Math.min(1, 46 / Math.max(y, 1));
+      document.documentElement.style.setProperty('--tint', `${Math.round(r / n * k)} ${Math.round(g / n * k)} ${Math.round(b / n * k)}`);
+    }
     function frame(timestamp) { // also measures what a frame costs without background work, to size the next budget
       const t0 = performance.now(); Engine.update(timestamp); Engine.render();
+      if (timestamp - tintT > 500) { tintT = timestamp; sceneTint(); }   // read right after drawing, while the frame is still in the buffer
       const w = performance.now() - t0 - (Engine.bgSpent || 0); Engine.workMs = Engine.workMs == null ? w : Engine.workMs + (w - Engine.workMs) * 0.1;
       requestAnimationFrame(frame); }
     requestAnimationFrame(frame);

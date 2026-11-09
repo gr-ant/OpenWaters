@@ -27,12 +27,12 @@
 <canvas id="overlay" tabindex="-1"></canvas>
 <dialog id="pauseMenu" class="panel" aria-labelledby="pauseTitle" data-page="main">
   <section class="pm-page" data-page="main">
-    <header class="pm-title"><small>OPEN WATERS</small><h2 id="pauseTitle">Paused</h2><p id="pmWhere"></p></header>
+    <header class="pm-title"><span class="pm-mark" aria-hidden="true">〜</span><small>OPEN WATERS</small><h2 id="pauseTitle">Paused</h2><p id="pmWhere"></p></header>
     <nav class="pm-menu" aria-label="Pause menu">
       <button id="resumeGame" class="pm-item pm-primary" type="button">Resume <kbd>Esc</kbd></button>
-      <button class="pm-item" type="button" data-go="settings">Settings</button>
-      <button class="pm-item" type="button" data-go="controls">Controls</button>
-      <button id="pmHelp" class="pm-item" type="button">Controls card</button>
+      <button class="pm-item" type="button" data-go="settings"><span class="pm-ic" data-icon="ui.gear"></span>Settings</button>
+      <button class="pm-item" type="button" data-go="controls"><span class="pm-ic" data-icon="ui.pad"></span>Controls</button>
+      <button id="pmHelp" class="pm-item" type="button"><span class="pm-ic" data-icon="ui.card"></span>Controls card</button>
     </nav>
     <footer id="pmFoot" class="pm-foot-note"></footer>
   </section>

@@ -25,6 +25,9 @@ void main(){
   float dep = prp.x, foam = prp.y, murk = prp.z, wav = prp.w * (.55 + 1.1 * wx.y);
   if (wkd > 2.5) murk += wx.z * .55;   // streams run muddy after rain
   vec2 q = wp.xy;
+  // metres of water under one pixel: detail finer than that aliases into stripes far off, so fade it (aa(freq in rad/m))
+  vec2 fq2 = fwidth(q); float px = max(fq2.x, fq2.y);
+  #define aa(f) (1. - smoothstep(.6, 2., px * (f)))
   float ia = wkd > .5 && wkd < 1.5 ? ice.x : wkd > 1.5 && wkd < 2.5 ? ice.y : 0.;
   float icy = ia > 0. ? smoothstep(-.3, .3, ia * 16. - .2 - dep + (vn(q * .3) - .5) * 1.5) : 0.;
   if (wkd < .5 && ice.w > 0.) { // pack ice floes (the same noise the game walks on: floe() in JS)
@@ -43,26 +46,26 @@ void main(){
   }
   // standing waves: big swell on the sea, wind chop on lakes, near-glass on ponds
   float sw = wav * wav; // long regular swell only really belongs to the sea
-  vec2 g = sw * vec2(.18*cos(q.x*.35 + t*1.3) + .08*cos((q.x+q.y)*.9 - t*2.1) + .05*cos(q.y*2.3 + t*3.),
-                     .18*sin(q.y*.3 - t*.9) + .08*sin((q.x-q.y)*.8 + t*1.7) + .05*sin(q.x*2.1 - t*2.7));
-  g += (.03 + .06 * sw) * vec2(sin(q.x*4.1 + q.y*1.3 + t*4.), cos(q.y*3.7 - q.x*1.1 + t*3.6));
+  vec2 g = sw * vec2(.18*cos(q.x*.35 + t*1.3) + .08*aa(1.3)*cos((q.x+q.y)*.9 - t*2.1) + .05*aa(2.3)*cos(q.y*2.3 + t*3.),
+                     .18*sin(q.y*.3 - t*.9) + .08*aa(1.3)*sin((q.x-q.y)*.8 + t*1.7) + .05*aa(2.1)*sin(q.x*2.1 - t*2.7));
+  g += (.03 + .06 * sw) * aa(4.3) * vec2(sin(q.x*4.1 + q.y*1.3 + t*4.), cos(q.y*3.7 - q.x*1.1 + t*3.6));
   // irregular wind ripples: two noise layers drifting different ways, so the pattern keeps changing
-  g += (grd(q * .9 + t * vec2(.35, .22)) + grd(q * 1.7 - t * vec2(.18, .41) + 11.) * .6) * (.05 + .16 * wav);
+  g += (grd(q * .9 + t * vec2(.35, .22)) * aa(5.7) + grd(q * 1.7 - t * vec2(.18, .41) + 11.) * .6 * aa(10.7)) * (.05 + .16 * wav);
   // flowing water: ripple noise carried along the current in two staggered phases, cross-faded so it never stretches
   float sp = length(flw), ph0 = fract(t * .3), ph1 = fract(t * .3 + .5), bl = abs(1. - 2. * ph0);
   vec2 a0 = q - flw * ph0 * 3.33, a1 = q - flw * ph1 * 3.33 + vec2(3.7, 1.9);
   float moving = smoothstep(.02, .3, sp);
-  if (moving > 0.) g += mix(grd(a0 * 1.9), grd(a1 * 1.9), bl) * (.07 + .12 * min(sp, 2.)) * moving;   // one scale of ripples is plenty
+  if (moving > 0.) g += mix(grd(a0 * 1.9), grd(a1 * 1.9), bl) * (.07 + .12 * min(sp, 2.)) * moving * aa(12.);   // one scale of ripples is plenty
   if (wx.x > .01) for (int k = 0; k < 2; k++) { // raindrops: rings popping up all over
     vec2 cq = q * 1.8 + float(k) * vec2(.37, .71), id = floor(cq), fq = fract(cq) - .5;
     float h = h21(id + float(k) * 7.3); if (h > wx.x) continue;
     float ph = fract(t * 1.3 + h * 7.), r = ph * .42; vec2 dv = fq - (vec2(h21(id + 3.1), h21(id + 5.7)) - .5) * .5; float dd = length(dv) + .001;
-    g += dv / dd * sin((dd - r) * 40.) * exp(-pow((dd - r) * 14., 2.)) * (1. - ph) * .35;
+    g += dv / dd * sin((dd - r) * 40.) * exp(-pow((dd - r) * 14., 2.)) * (1. - ph) * .35 * aa(72.);
   }
   // ripple rings (swimmers, rising fish, splashes)
   for (int i = 0; i < 8; i++) { vec4 r = rip[i]; float age = t - r.z; if (r.w <= 0. || age < 0. || age > 5.) continue;
     vec2 dv = q - r.xy; float d = length(dv) + .001, k = d - age * 1.3;
-    g += dv / d * sin(k * 8.) * exp(-k * k * 1.5) * exp(-age * .8) * r.w * min(age * 4., 1.); }
+    g += dv / d * sin(k * 8.) * exp(-k * k * 1.5) * exp(-age * .8) * r.w * min(age * 4., 1.) * aa(8.); }
   vec3 N = normalize(vec3(-g, 1.));
   // foam: shoreline lapping band plus rapids, broken up by noise that rides the current
   float fn = moving > 0. ? mix(vn(a0 * 1.7), vn(a1 * 1.7 + 7.), bl) : vn(q * 1.7 + t * .05);
