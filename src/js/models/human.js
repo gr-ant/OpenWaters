@@ -52,7 +52,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
 }
 // A pose: o.mode 'jump' (in the air: o.rise), 'stand' (o.crouch after a landing; moving too: o.swing 0..1 how much, o.gait 0 walk .. 1 jog .. 2 run, o.ph the stride phase, o.stride the metres a whole cycle covers), 'swim' (o.body: body pitch, -pi/2 lying
 // face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet;
-// o.paddle; o.helm). o.rod: the right hand holds a rod out in front (o.castW, o.castF: casting; o.hands2: the left hand on it too, o.crank: winding). Returns the parts as [part, forward, side, up, pitch, roll, yaw],
+// o.paddle; o.helm). o.rod: the right hand holds a rod out in front (o.castW, o.castF: casting; o.hands2: the left hand on it too, o.crank: winding). o.toss 0..1: throwing a net or pot; o.pull: hauling one in (radians). Returns the parts as [part, forward, side, up, pitch, roll, yaw],
 // the right hand and the head centre, all relative to the feet (standing, sitting) under the body's own heading. Every part hangs
 // down from its joint, is rolled out to the side (roll, + to the right), pitched forward (pitch), then turned (yaw): the order the
 // lit shader applies them, so a limb can swing sideways and the shoulders can turn against the hips.
@@ -98,6 +98,11 @@ function humanPose(o) {
       upR[i] = side * (0.08 + 0.02 * sw * g); foR[i] = -side * G3(0.04, 0.14, 0.1);
       if (i) { twist = G3(0.1, 0.14, 0.2) * sw * c; turn = -G3(0.03, 0.04, 0.05) * sw * c; sway = G3(0.02, 0.012, 0.005) * big * Math.sin(6.2832 * (u - duty / 2) + PI / 2); } }   // right leg forward: right shoulder back, right hip forward; a walker's weight shifts over the standing foot
   }
+  if (!o.rod && o.mode !== 'swim' && o.toss !== undefined) { const u = clamp(o.toss, 0, 1), sm = v => { v = clamp(v, 0, 1); return v * v * (3 - 2 * v); }, wind = u < 0.4 ? sm(u / 0.4) : 1 - sm((u - 0.4) / 0.2), fling = u > 0.4 ? Math.sin(Math.PI * (u - 0.4) / 0.6) : 0;   // throwing a net or a pot: both arms swung back to the right, then flung out in front
+    for (let i = 0; i < 2; i++) { up[i] = b + 0.2 - 0.5 * wind + 1.5 * fling; fore[i] = up[i] + 0.6 - 0.3 * fling; upR[i] = (i ? 1 : -1) * 0.15 + 0.35 * wind; foR[i] = 0; }
+    twist += 0.45 * wind - 0.35 * fling; }
+  else if (!o.rod && o.mode !== 'swim' && o.pull !== undefined) { if (o.mode === 'stand') b += 0.06;   // hauling: hand over hand, leaning back on it
+    for (let i = 0; i < 2; i++) { const q = Math.sin(o.pull + i * PI); up[i] = b + 0.75 + 0.35 * q; fore[i] = up[i] + 0.95 - 0.35 * q; upR[i] = (i ? 1 : -1) * 0.1; foR[i] = (i ? -1 : 1) * 0.12; } }
   if (o.rod && o.mode !== 'swim') { const w = clamp(o.castW || 0, 0, 1), f = clamp(o.castF || 0, 0, 1);   // right forearm out in front, the hand in toward the middle, holding the rod
     up[1] = b + 0.45 + 0.75 * w + 0.45 * f; fore[1] = up[1] + 1.25 + 0.9 * w - 0.75 * f; upR[1] = 0.06 + 0.5 * w + 0.12 * f; foR[1] = -0.16 + 0.35 * w;   // casting (o.castW wound back 0..1, o.castF following through 0..1): the arm lifts back and out to the right, then reaches forward
     twist += 0.32 * w - 0.22 * f; if (o.mode === 'stand') b -= 0.08 * f; }   // the shoulders turn with it, and he leans into the throw
