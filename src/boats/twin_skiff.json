@@ -1,0 +1,22 @@
+{
+  "schema": "embercrown-boat/2",
+  "id": "twin_skiff",
+  "name": "Twin-engine skiff",
+  "size": "medium",
+  "build": "skiff",
+  "engines": [
+    "small",
+    "small"
+  ],
+  "hull": [
+    "storage",
+    "seat"
+  ],
+  "deck": [
+    "console",
+    "rod_holders"
+  ],
+  "colors": {
+    "hull": "#3d5a6a"
+  }
+}

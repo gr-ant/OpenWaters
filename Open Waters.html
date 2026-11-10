@@ -1784,6 +1784,7 @@ in vec3 wp; in vec3 wn; in vec3 col; in vec2 tuv; in float mt; in vec3 tp; in ve
 uniform float night, emk, time; uniform vec4 fl[8]; uniform int nfl; uniform vec3 lcol, amb;
 uniform vec4 seasA, seasB; // seasB: snow cover, wetness, lightning flash
 uniform float clr;   // > 0: see-through (jellies), more solid where seen edge-on; 0 (unset) is opaque
+uniform float hull;  // drawing a boat: only what's below its own waterline (model z < 0) is under water, never the floor inside
 ${FOG_GLSL}
 ${NOISE_GLSL}
 ${CAUSTIC_GLSL}
@@ -1814,10 +1815,10 @@ vec3 surface(vec3 c, vec3 N, int id, inout float spec, inout float em){
     float st = smoothstep(.5, .2, abs(N.z)), w = smoothstep(.35, .65, abs(N.x) / (abs(N.x) + abs(N.y) + 1e-4));
     return c * mix(terrK(P.xz, P.z, st, fw), terrK(P.yz, P.z, st, fw), w);
   }
-  if (id == 2) { // wood: boards with grain and dark seams
-    float bw = .24, b = floor(q.x / bw), fx = fract(q.x / bw);
-    float g = vn(vec2(q.x * 28., q.y * 1.4 + b * 7.)) * .6 + vn(vec2(q.x * 80., q.y * 3.5 + b)) * .4;
-    float seam = smoothstep(0., .07, fx) * smoothstep(1., .93, fx);
+  if (id == 2) { // wood: boards with grain and dark seams; grain and seams finer than a pixel fade to their average (no shimmer on far rails and planks)
+    float bw = .24, b = floor(q.x / bw), fx = fract(q.x / bw), fw = length(fwidth(P));
+    float g = af(vn(vec2(q.x * 28., q.y * 1.4 + b * 7.)), fw * 28.) * .6 + af(vn(vec2(q.x * 80., q.y * 3.5 + b)), fw * 80.) * .4;
+    float seam = mix(.93, smoothstep(0., .07, fx) * smoothstep(1., .93, fx), smoothstep(.6, .25, fw * 60.));
     if (abs(N.z) > .7) seam = 1.;
     return c * (.85 + .3 * h21(vec2(b, 3.))) * (.72 + .45 * g) * (.55 + .45 * seam);
   }
@@ -1834,10 +1835,10 @@ vec3 surface(vec3 c, vec3 N, int id, inout float spec, inout float em){
     float f = vn(vec2(q.x * 16., q.y * 1.3)) * .7 + vn(vec2(q.x * 40., q.y * 4.)) * .3;
     return c * (.64 + .50 * f);
   }
-  if (id == 8) return c * (.94 + .06 * vn(q * 45.)); // cloth / skin: smooth with a faint weave
+  if (id == 8) return c * (.94 + .06 * af(vn(q * 45.), length(fwidth(P)) * 45.)); // cloth / skin: smooth with a faint weave
   if (id == 9) { em = 1.; return c; } // crystals glow
   if (id == 11) { em = night; return mix(c * .45, c, night); } // lamp glass
-  if (id == 12) { spec = 1.2; return c * (.9 + .1 * vn(q * 30.)); } // metal
+  if (id == 12) { spec = 1.2; return c * (.9 + .1 * af(vn(q * 30.), length(fwidth(P)) * 30.)); } // metal
   return c;
 }
 vec3 fireLight(vec3 N){ // up to 8 flickering warm lights (xyz, intensity)
@@ -1865,6 +1866,7 @@ void main(){
   c += bc * fireLight(N);
   c += bc * seasB.z * vec3(.7, .75, 1.) * (.5 + .5 * max(N.z, 0.));   // lightning
   float wd = wv.x - wp.z; // depth below the local water surface
+  if (hull > .5) wd = min(wd, -tp.z);
   if (wd > 0.) { // underwater: tinted, dimmed with depth, dappled by caustics
     float mk = wv.y;
     vec3 tint = mix(vec3(.36, .68, .72), vec3(.5, .55, .25), mk);
@@ -1898,11 +1900,24 @@ uniform vec4 ice; // ice on lakes, on ponds; snow lying on it; arctic pack ice o
 ${FOG_GLSL}
 ${NOISE_GLSL}
 ${CAVE_GLSL}
+// boats (up to 4): x, y, cos/sin heading · length, z, sin pitch, sin roll · freeboard, draft; then half-beams at the waterline and the gunwale, 12 stations each
+uniform vec4 hul[12]; uniform vec4 hbt[24]; uniform int nh;
+float hbAt(int base, int k){ return dot(hbt[base + k / 4], vec4(equal(ivec4(k % 4), ivec4(0, 1, 2, 3)))); }
+bool inHull(vec3 p){   // is this bit of water inside a hull? (then it isn't drawn: no water sloshing over the floor)
+  for (int i = 0; i < 4; i++) { if (i >= nh) break;
+    vec4 A = hul[i * 3], B = hul[i * 3 + 1], C = hul[i * 3 + 2]; vec2 d = p.xy - A.xy; float lx = dot(d, A.zw), ly = d.y * A.z - d.x * A.w, t = lx / B.x + .5;
+    if (t <= 0. || t >= 1.) continue;
+    float f = t * 11.; int k = min(int(f), 10); f -= float(k);
+    float w = mix(hbAt(i * 6, k), hbAt(i * 6, k + 1), f), g = mix(hbAt(i * 6 + 3, k), hbAt(i * 6 + 3, k + 1), f), lz = p.z - B.y - B.z * lx - B.w * ly;
+    if (abs(ly) < (lz < 0. ? w * max(0., 1. + lz / C.y) : mix(w, g, min(lz / C.x, 1.))) + .015) return true; }
+  return false;
+}
 float hgt(vec2 q){ return vn(q) * .6 + vn(q * 2.3 + 4.1) * .4; }
 vec2 grd(vec2 q){ float h = hgt(q); return vec2(hgt(q + vec2(.12, 0.)) - h, hgt(q + vec2(0., .12)) - h) / .12; }
 void main(){
   float dep = prp.x, foam = prp.y, murk = prp.z, wav = prp.w * (.55 + 1.1 * wx.y);
   if (wkd > 2.5) murk += wx.z * .55;   // streams run muddy after rain
+  if (nh > 0 && inHull(wp)) discard;
   vec2 q = wp.xy;
   // metres of water under one pixel: detail finer than that aliases into stripes far off, so fade it (aa(freq in rad/m))
   vec2 fq2 = fwidth(q); float px = max(fq2.x, fq2.y);
@@ -3931,9 +3946,9 @@ const BOAT_DEFAULTS = {
   handling: { stability: 0.5, waves_max: 0.5, current_drift: 1, beach: true },
   crew: { seat_at: 0.25, seat_side: 0, eye_height_m: 0.95 },
   seats: [],
-  features: { motor: null, trolling_motor: false, console: null, casting_decks: false, rod_holders: 0, paddle: '', fish_finder: false, livewell: false, cabin: null },
+  features: { motor: null, motors: null, trolling_motor: false, console: null, casting_decks: false, rod_holders: 0, paddle: '', fish_finder: false, livewell: false, cabin: null },
 };
-const BOAT_REPLACE = new Set(['seats', 'decks', 'cockpit', 'motor', 'console', 'cabin']);
+const BOAT_REPLACE = new Set(['seats', 'decks', 'cockpit', 'motor', 'motors', 'console', 'cabin']);
 const boatMerge = (a, b) => deepMerge(a, b, BOAT_REPLACE);
 function validateBoat(raw) {
   const errors = [], warnings = [];
@@ -3953,7 +3968,7 @@ function validateBoat(raw) {
   num(Pr.max_speed_ms, 'propulsion.max_speed_ms', 0.5, 30);
   for (const [k, v] of Object.entries(d.colors)) if (v && !isHex(v)) errors.push(`colors.${k} must be a hex colour`);
   if (!Array.isArray(d.seats)) errors.push('seats must be a list');
-  else for (const [i, s] of d.seats.entries()) if (!['thwart', 'bench', 'kayak', 'pedestal'].includes(s.type)) errors.push(`seats[${i}].type: thwart, bench, kayak or pedestal`);
+  else for (const [i, s] of d.seats.entries()) if (!['thwart', 'bench', 'kayak', 'pedestal', 'locker'].includes(s.type)) errors.push(`seats[${i}].type: thwart, bench, kayak, pedestal or locker`);
   return { def: errors.length ? null : d, errors, warnings };
 }
 // the hull's shape: half-beam at the gunwale, keel depth and gunwale height along the length (t: 0 stern .. 1 bow)
@@ -3980,48 +3995,64 @@ function hullShape(H) {
     return [b * Math.sin(s * Math.PI / 2), -k + (g + k) * (1 - Math.cos(s * Math.PI / 2))]; };
   return { L, hb, keel, gun, sec, x: t => (t - 0.5) * L };
 }
+// meshBuilder(true): rounded parts are smooth-shaded. Surfaces are MT.PLASTER (plain paint): the generic material draws rock strata on upright faces and wood draws plank grain, and on a
+// hull both read as stray lines.
 function boatMesh(D) {
-  const H = D.hull, S = hullShape(H), M = meshBuilder(), C = {}; for (const k in BOAT_DEFAULTS.colors) C[k] = hexRGB(D.colors[k] || D.colors.hull || BOAT_DEFAULTS.colors[k]);
-  const NT = 22, NS = 8, th = H.thickness_m, fz = H.floor_m, wl = 0.01, below = C.bottom ? C.bottom : C.hull;
+  const H = D.hull, S = hullShape(H), M = meshBuilder(true), C = {}; for (const k in BOAT_DEFAULTS.colors) C[k] = hexRGB(D.colors[k] || D.colors.hull || BOAT_DEFAULTS.colors[k]);
+  const NT = 36, NS = 12, th = H.thickness_m, fz = H.floor_m, wl = 0.01, below = C.bottom ? C.bottom : C.hull;
   const decked = t => (H.decks && (t > 1 - (H.decks.bow || 0) || t < (H.decks.stern || 0))) || (H.cockpit && (t < H.cockpit[0] || t > H.cockpit[1]));
   const P = (t, s, sd) => { const [y, z] = S.sec(t, s); return [S.x(t), sd * y, z]; };
   // outer skin (antifouling below the waterline)
-  M.mat = MT.GEN;
-  for (let i = 0; i < NT; i++) for (let j = 0; j < NS; j++) for (const sd of [1, -1]) {
-    const t0 = i / NT, t1 = (i + 1) / NT, s0 = j / NS, s1 = (j + 1) / NS, a = P(t0, s0, sd), b = P(t1, s0, sd), c = P(t1, s1, sd), e = P(t0, s1, sd);
-    const col = (a[2] + c[2]) / 2 < wl ? below : C.hull; M.quad(a, b, c, e, col, [a[0], 0, 0.3]);
-  }
+  M.mat = MT.PLASTER;
+  // each panel is cut along the waterline, so the antifouling meets the topsides in a clean line, not a staircase of whole panels
+  const sWl = t => { let lo = 0, hi = 1; for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < wl) lo = m; else hi = m; } return (lo + hi) / 2; };
+  // the skin is smooth-shaded: each corner takes the hull's own slope there, so the panels blend into one fair curve
+  const nrm = (t, s, sd) => { const e = 0.006, a = P(Math.min(1, t + e), s, sd), b = P(Math.max(0, t - e), s, sd), c = P(t, Math.min(1, s + e), sd), d = P(t, Math.max(0, s - e), sd), p = P(t, s, sd);
+    let n = cross3([a[0] - b[0], a[1] - b[1], a[2] - b[2]], [c[0] - d[0], c[1] - d[1], c[2] - d[2]]); if (Math.hypot(...n) < 1e-9) return [0, sd, 0];
+    n = norm3(n); return n[1] * p[1] + n[2] * (p[2] - 0.3) < 0 ? [-n[0], -n[1], -n[2]] : n; };   // pointing out, away from the middle of the boat
+  const skin = (qa, qb, qc, qd, sd, col) => { const v = [qa, qb, qc, qd].map(q => P(q[0], q[1], sd)), n = [qa, qb, qc, qd].map(q => nrm(q[0], q[1], sd));
+    for (const [i, j, k] of [[0, 1, 2], [0, 2, 3]]) { const f = cross3([v[j][0] - v[i][0], v[j][1] - v[i][1], v[j][2] - v[i][2]], [v[k][0] - v[i][0], v[k][1] - v[i][1], v[k][2] - v[i][2]]), out = f[0] * n[i][0] + f[1] * n[i][1] + f[2] * n[i][2] >= 0;   // wound to face outward
+      if (Math.hypot(...f) > 1e-12) out ? M.triN(v[i], v[j], v[k], n[i], n[j], n[k], col, col, col) : M.triN(v[i], v[k], v[j], n[i], n[k], n[j], col, col, col); } };
+  for (let i = 0; i < NT; i++) { const t0 = i / NT, t1 = (i + 1) / NT, w0 = sWl(t0), w1 = sWl(t1);
+    for (let j = 0; j < NS; j++) for (const sd of [1, -1]) {
+      const s0 = j / NS, s1 = (j + 1) / NS, m0 = clamp(w0, s0, s1), m1 = clamp(w1, s0, s1);
+      if (m0 > s0 || m1 > s0) skin([t0, s0], [t1, s0], [t1, m1], [t0, m0], sd, below);
+      if (m0 < s1 || m1 < s1) skin([t0, m0], [t1, m1], [t1, s1], [t0, s1], sd, C.hull);
+    } }
   // inside: walls down to the floor, the floor, and the rim along the gunwale
   const inner = (t, sd, z) => { let y = 0; for (let k = 0; k <= 20; k++) { const [yy, zz] = S.sec(t, k / 20); if (zz >= z) { y = yy; break; } y = yy; } return [S.x(t), sd * Math.max(0, y - th), z]; };
   for (let i = 0; i < NT; i++) {
     const t0 = i / NT, t1 = (i + 1) / NT, tm = (t0 + t1) / 2;
     for (const sd of [1, -1]) {
       const g0 = S.gun(t0), g1 = S.gun(t1), o0 = P(t0, 1, sd), o1 = P(t1, 1, sd), in0 = inner(t0, sd, g0 - 0.005), in1 = inner(t1, sd, g1 - 0.005);
-      M.mat = MT.WOOD; M.quad(o0, o1, in1, in0, C.trim, [o0[0], 0, -1]);   // gunwale rim
-      if (!decked(tm)) { const f0 = inner(t0, sd, fz), f1 = inner(t1, sd, fz); M.mat = MT.GEN; M.quad(in0, in1, f1, f0, C.interior, [o0[0], sd * 2, (g0 + fz) / 2]); }
+      M.mat = MT.PLASTER; M.quad(o0, o1, in1, in0, C.trim, [o0[0], 0, -1]);   // gunwale rim
+      if (!decked(tm)) { const f0 = inner(t0, sd, fz), f1 = inner(t1, sd, fz); M.mat = MT.PLASTER; M.quad(in0, in1, f1, f0, C.interior, [o0[0], sd * 2, (g0 + fz) / 2]); }
     }
-    if (!decked(tm)) { const a = inner(t0, 1, fz), b = inner(t1, 1, fz), c = inner(t1, -1, fz), e = inner(t0, -1, fz); M.mat = MT.WOOD; M.quad(a, b, c, e, V3.mul(C.interior, 0.9), [a[0], 0, -1]); }
+    if (!decked(tm)) { const a = inner(t0, 1, fz), b = inner(t1, 1, fz), c = inner(t1, -1, fz), e = inner(t0, -1, fz); M.mat = MT.PLASTER; M.quad(a, b, c, e, V3.mul(C.interior, 0.9), [a[0], 0, -1]); }
     else { // a deck, crowned a little in the middle, from gunwale to gunwale
       const crown = 0.04 + 0.03 * H.beam_m, D0 = sd => inner(t0, sd, S.gun(t0) - 0.005), D1 = sd => inner(t1, sd, S.gun(t1) - 0.005);
       const m0 = [S.x(t0), 0, S.gun(t0) + crown * Math.min(1, S.hb(t0) * 4)], m1 = [S.x(t1), 0, S.gun(t1) + crown * Math.min(1, S.hb(t1) * 4)];
-      M.mat = MT.GEN; for (const sd of [1, -1]) M.quad(D0(sd), D1(sd), m1, m0, C.deck, [m0[0], 0, -1]);
+      M.mat = MT.PLASTER; for (const sd of [1, -1]) M.quad(D0(sd), D1(sd), m1, m0, C.deck, [m0[0], 0, -1]);
     }
   }
   // closing walls where an open cockpit meets a deck (bulkheads), and the transom
   const bulk = t => { const g = S.gun(t), n = 10; for (const sd of [1, -1]) for (let k = 0; k < n; k++) { const z0 = fz + (g - fz) * k / n, z1 = fz + (g - fz) * (k + 1) / n; M.quad(inner(t, sd, z0), inner(t, sd, z1), [S.x(t), 0, z1], [S.x(t), 0, z0], C.interior, [S.x(t) + 1, 0, 0]); } };
-  M.mat = MT.GEN;
+  M.mat = MT.PLASTER;
   for (let i = 1; i < NT; i++) { const t = i / NT, a = decked(t - 0.5 / NT), b = decked(t + 0.5 / NT); if (a !== b) bulk(t); }
-  if (H.stern === 'transom') { M.mat = MT.GEN; for (let j = 0; j < NS; j++) for (const sd of [1, -1]) { const a = P(0, j / NS, sd), b = P(0, (j + 1) / NS, sd); M.tri([S.x(0), 0, S.gun(0) * 0.3 - S.keel(0) * 0.7], a, b, (a[2] + b[2]) / 2 < wl ? below : C.hull, [S.x(0) + 1, 0, 0]); }
+  if (H.stern === 'transom') { M.mat = MT.PLASTER; for (let j = 0; j < NS; j++) for (const sd of [1, -1]) { const a = P(0, j / NS, sd), b = P(0, (j + 1) / NS, sd); M.tri([S.x(0), 0, S.gun(0) * 0.3 - S.keel(0) * 0.7], a, b, (a[2] + b[2]) / 2 < wl ? below : C.hull, [S.x(0) + 1, 0, 0]); }
     M.tri([S.x(0), 0, S.gun(0)], P(0, 1, 1), P(0, 1, -1), C.hull, [S.x(0) + 1, 0, 0]); if (!decked(0.02)) bulk(0.001); }
   if (H.bow === 'blunt') { const t = 1, n = NS; for (let j = 0; j < n; j++) for (const sd of [1, -1]) M.tri([S.x(t), 0, S.gun(t) * 0.5 - S.keel(t) * 0.5], P(t, j / n, sd), P(t, (j + 1) / n, sd), C.hull, [S.x(t) - 1, 0, 0]); if (!decked(0.98)) bulk(0.999); }
-  if (H.cockpit) { const [c0, c1] = H.cockpit, n = 18; M.mat = MT.GEN;   // a coaming lip round the cockpit
+  if (H.cockpit) { const [c0, c1] = H.cockpit, n = 18; M.mat = MT.PLASTER;   // a coaming lip round the cockpit
     for (let k = 0; k < n; k++) { const a0 = k / n * TAU, a1 = (k + 1) / n * TAU, cx = S.x((c0 + c1) / 2), rx = (c1 - c0) / 2 * S.L, ry = S.hb((c0 + c1) / 2) * 0.82, z = S.gun((c0 + c1) / 2) + 0.05;
       M.tube([cx + Math.cos(a0) * rx, Math.sin(a0) * ry, z], [cx + Math.cos(a1) * rx, Math.sin(a1) * ry, z], 0.018, 0.018, 4, C.trim); } }
   // seats
   for (const st of D.seats) {
     const t = clamp(st.at, 0.02, 0.98), x = S.x(t), w = Math.max(0.05, S.hb(t) - th) * (st.type === 'thwart' ? 1 : 0.8), g = S.gun(t);
-    if (st.type === 'thwart') { M.mat = MT.WOOD; M.quad([x - 0.1, -w, g - 0.06], [x + 0.1, -w, g - 0.06], [x + 0.1, w, g - 0.06], [x - 0.1, w, g - 0.06], C.trim, [x, 0, -1]); M.quad([x - 0.1, -w, g - 0.09], [x - 0.1, w, g - 0.09], [x + 0.1, w, g - 0.09], [x + 0.1, -w, g - 0.09], C.trim, [x, 0, 1]); }
-    else if (st.type === 'bench') { M.mat = MT.WOOD; const z = fz + (st.height ?? 0.32); M.quad([x - 0.18, -w, z], [x + 0.18, -w, z], [x + 0.18, w, z], [x - 0.18, w, z], C.deck, [x, 0, -1]); M.quad([x - 0.18, -w, fz], [x - 0.18, -w, z], [x - 0.18, w, z], [x - 0.18, w, fz], V3.mul(C.deck, 0.8), [x + 1, 0, 0]); }
+    if (st.type === 'thwart') { M.mat = MT.PLASTER; M.quad([x - 0.1, -w, g - 0.06], [x + 0.1, -w, g - 0.06], [x + 0.1, w, g - 0.06], [x - 0.1, w, g - 0.06], C.trim, [x, 0, -1]); M.quad([x - 0.1, -w, g - 0.09], [x - 0.1, w, g - 0.09], [x + 0.1, w, g - 0.09], [x + 0.1, -w, g - 0.09], C.trim, [x, 0, 1]); }
+    else if (st.type === 'bench') { M.mat = MT.PLASTER; const z = fz + (st.height ?? 0.32); M.quad([x - 0.18, -w, z], [x + 0.18, -w, z], [x + 0.18, w, z], [x - 0.18, w, z], C.deck, [x, 0, -1]); M.quad([x - 0.18, -w, fz], [x - 0.18, -w, z], [x - 0.18, w, z], [x - 0.18, w, fz], V3.mul(C.deck, 0.8), [x + 1, 0, 0]); }
+    else if (st.type === 'locker') { M.mat = MT.PLASTER; const z = fz + (st.height ?? 0.42), x0 = x - 0.26, x1 = x + 0.26, cx = [x, 0, (fz + z) / 2];   // a storage locker across the boat: a closed box with a lid proud of it
+      M.quad([x0, -w, z], [x1, -w, z], [x1, w, z], [x0, w, z], C.trim, [x, 0, -9]); M.quad([x0 - 0.02, -w, z + 0.03], [x1 + 0.02, -w, z + 0.03], [x1 + 0.02, w, z + 0.03], [x0 - 0.02, w, z + 0.03], C.deck, [x, 0, -9]);
+      for (const [p, q] of [[[x0, -w], [x1, -w]], [[x1, -w], [x1, w]], [[x1, w], [x0, w]], [[x0, w], [x0, -w]]]) { M.quad([p[0], p[1], fz], [q[0], q[1], fz], [q[0], q[1], z], [p[0], p[1], z], V3.mul(C.deck, 0.85), cx); M.quad([p[0], p[1], z], [q[0], q[1], z], [q[0], q[1], z + 0.03], [p[0], p[1], z + 0.03], C.deck, cx); } }
     else if (st.type === 'kayak') { M.mat = MT.CLOTH; M.blob([x, 0, fz + 0.04], 0.22, 0.2, 0.04, 3, 8, C.accent); M.quad([x - 0.2, -0.17, fz + 0.06], [x - 0.24, -0.17, fz + 0.38], [x - 0.24, 0.17, fz + 0.38], [x - 0.2, 0.17, fz + 0.06], C.accent, [x + 1, 0, 0.2]); }
     else if (st.type === 'pedestal') { const z = fz + (st.height ?? 0.6); M.mat = MT.METAL; M.tube([x, 0, fz], [x, 0, z - 0.05], 0.03, 0.03, 6, [0.7, 0.7, 0.72]); M.mat = MT.CLOTH; M.blob([x, 0, z], 0.22, 0.22, 0.06, 3, 10, C.accent); M.quad([x - 0.2, -0.18, z], [x - 0.22, -0.18, z + 0.32], [x - 0.22, 0.18, z + 0.32], [x - 0.2, 0.18, z], C.accent, [x + 1, 0, 0.2]); }
   }
@@ -4030,26 +4061,22 @@ function boatMesh(D) {
     for (const [ta, tb] of [[0.68, 0.97], [0.02, 0.2]]) for (let i = 0; i < 6; i++) { const t0 = ta + (tb - ta) * i / 6, t1 = ta + (tb - ta) * (i + 1) / 6, z0 = S.gun(t0) - 0.12, z1 = S.gun(t1) - 0.12;
       const a = inner(t0, 1, z0), b = inner(t1, 1, z1), c = inner(t1, -1, z1), e = inner(t0, -1, z0); M.quad(a, b, c, e, C.deck, [a[0], 0, -1]); } }
   if (F.console) { const t = F.console.at ?? 0.45, x = S.x(t), oy = -(F.console.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (F.console.side ? 0.25 : 0.45)), h = F.console.height ?? 0.95, z0 = fz;   // helm console with a windscreen (side: off to starboard, as on a bass boat)
-    M.mat = MT.GEN; const box = (x0, x1, ya, yb, za, zb, col) => { const y0 = ya + oy, y1 = yb + oy; M.quad([x0, y0, zb], [x1, y0, zb], [x1, y1, zb], [x0, y1, zb], col, [x0, 0, -9]);
+    M.mat = MT.PLASTER; const box = (x0, x1, ya, yb, za, zb, col) => { const y0 = ya + oy, y1 = yb + oy; M.quad([x0, y0, zb], [x1, y0, zb], [x1, y1, zb], [x0, y1, zb], col, [x0, 0, -9]);
       for (const [p, q] of [[[x0, y0], [x1, y0]], [[x1, y0], [x1, y1]], [[x1, y1], [x0, y1]], [[x0, y1], [x0, y0]]]) M.quad([p[0], p[1], za], [q[0], q[1], za], [q[0], q[1], zb], [p[0], p[1], zb], col, [(x0 + x1) / 2, (y0 + y1) / 2, (za + zb) / 2]); };
     const scr = F.console.screen ?? 0.3; box(x - 0.3, x + 0.25, -w, w, z0, z0 + h, C.deck); M.mat = MT.GLASS; M.quad([x + 0.25, oy - w, z0 + h], [x + 0.25 + scr * 0.25, oy - w, z0 + h + scr], [x + 0.25 + scr * 0.25, oy + w, z0 + h + scr], [x + 0.25, oy + w, z0 + h], [0.6, 0.75, 0.85], [x - 1, 0, 0]);
     M.mat = MT.METAL; M.tube([x - 0.05, oy, z0 + h + 0.02], [x - 0.15, oy, z0 + h + 0.12], 0.012, 0.012, 5, [0.2, 0.2, 0.22]); M.blob([x - 0.16, oy, z0 + h + 0.13], 0.11, 0.11, 0.015, 2, 10, [0.15, 0.15, 0.16]);   // wheel
     if (F.fish_finder) { const fw = Math.min(0.09, w * 0.5); M.mat = MT.GLOW; M.quad([x + 0.12, oy - fw, z0 + h + 0.01], [x + 0.12, oy + fw, z0 + h + 0.01], [x + 0.16, oy + fw, z0 + h + 0.11], [x + 0.16, oy - fw, z0 + h + 0.11], [0.25, 0.75, 0.9], [x - 1, 0, 0]); } }
   else if (F.fish_finder) { const t = clamp(D.crew.seat_at + 0.1, 0, 0.95), x = S.x(t), g = S.gun(t); M.mat = MT.GLOW; M.quad([x, -0.08, g + 0.04], [x, 0.08, g + 0.04], [x + 0.03, 0.08, g + 0.16], [x + 0.03, -0.08, g + 0.16], [0.3, 0.9, 1.1], [x - 1, 0, 0]); }
-  if (F.motor) { const hp = clamp(F.motor.hp ?? 25, 2, 450), sc = 0.55 + 0.35 * Math.log10(hp), x = S.x(0) - 0.12 * sc, g = S.gun(0), col = hexRGB(F.motor.color || '#202020');   // an outboard on the transom
-    M.mat = MT.METAL; M.blob([x - 0.08 * sc, 0, g + 0.22 * sc], 0.22 * sc, 0.17 * sc, 0.25 * sc, 4, 10, col);
-    M.tube([x, 0, g], [x, 0, -S.keel(0) - 0.25 * sc], 0.06 * sc, 0.045 * sc, 6, V3.mul(col, 0.85));
-    M.blob([x + 0.02, 0, -S.keel(0) - 0.25 * sc], 0.14 * sc, 0.05 * sc, 0.05 * sc, 3, 8, V3.mul(col, 0.8));
-    for (let k = 0; k < 3; k++) { const a = k * 2.09; M.blob([x - 0.12 * sc, Math.cos(a) * 0.07 * sc, -S.keel(0) - 0.25 * sc + Math.sin(a) * 0.07 * sc], 0.01, 0.06 * sc, 0.03 * sc, 2, 6, [0.6, 0.6, 0.62]); } }
+  const motorAt = [];
+  { const list = Array.isArray(F.motors) && F.motors.length ? F.motors : F.motor ? [F.motor] : [], room = Math.max(0.1, S.hb(0) * 2 * (H.stern === 'transom' ? H.transom_width : 0.5));   // an outboard per engine, side by side on the transom
+    list.forEach((mo, k) => { const hp = clamp(mo.hp ?? 25, 2, 450), sc = 0.55 + 0.35 * Math.log10(hp), x = S.x(0) - 0.12 * sc, g = S.gun(0), col = hexRGB(mo.color || '#202020'), y = (k - (list.length - 1) / 2) * Math.min(0.75, room / list.length); motorAt.push([x, y, sc, g, col, hp]);
+    M.mat = MT.METAL; M.blob([x - 0.08 * sc, y, g + 0.22 * sc], 0.22 * sc, 0.17 * sc, 0.25 * sc, 4, 10, col);
+    M.tube([x, y, g], [x, y, -S.keel(0) - 0.25 * sc], 0.06 * sc, 0.045 * sc, 6, V3.mul(col, 0.85));
+    M.blob([x + 0.02, y, -S.keel(0) - 0.25 * sc], 0.14 * sc, 0.05 * sc, 0.05 * sc, 3, 8, V3.mul(col, 0.8));
+    for (let k = 0; k < 3; k++) { const a = k * 2.09; M.blob([x - 0.12 * sc, y + Math.cos(a) * 0.07 * sc, -S.keel(0) - 0.25 * sc + Math.sin(a) * 0.07 * sc], 0.01, 0.06 * sc, 0.03 * sc, 2, 6, [0.6, 0.6, 0.62]); } }); }
   if (F.trolling_motor) { const x = S.x(0.97), g = S.gun(0.97); M.mat = MT.METAL; M.tube([x, 0, g + 0.15], [x + 0.05, 0, -0.4], 0.015, 0.015, 5, [0.2, 0.2, 0.22]); M.blob([x + 0.05, 0, -0.42], 0.1, 0.04, 0.04, 3, 8, [0.15, 0.15, 0.17]); M.blob([x, 0, g + 0.17], 0.08, 0.06, 0.05, 3, 8, [0.15, 0.15, 0.17]); }
   for (let k = 0; k < (F.rod_holders | 0); k++) { const t = 0.15 + 0.12 * (k >> 1), sd = k % 2 ? 1 : -1, x = S.x(t), y = sd * (S.hb(t) - 0.03), g = S.gun(t); M.mat = MT.METAL; M.tube([x, y, g - 0.08], [x - 0.04, y + sd * 0.02, g + 0.06], 0.02, 0.02, 5, [0.8, 0.8, 0.82], true); }
-  if (F.paddle === 'oars') { const t = clamp(D.crew.seat_at + 0.08, 0, 0.9), x = S.x(t), g = S.gun(t), w = S.hb(t);   // a pair of oars in their rowlocks
-    M.mat = MT.WOOD; for (const sd of [1, -1]) { M.tube([x + 0.5, sd * (w - 0.6), g + 0.12], [x - 0.9, sd * (w + 1.1), g - 0.15], 0.02, 0.018, 5, C.trim); M.blob([x - 0.95, sd * (w + 1.15), g - 0.17], 0.25, 0.06, 0.012, 3, 8, C.accent); } }
-  else if (F.paddle) { const dbl = F.paddle === 'double', t = clamp(D.crew.seat_at + 0.15, 0, 0.9), x = S.x(t), z = (dbl ? S.gun(t) + 0.08 : fz + 0.04), len = dbl ? 2.2 : 1.4;   // a paddle lying across / along the boat
-    M.mat = MT.WOOD; M.tube([x - (dbl ? 0 : len / 2), dbl ? -len / 2 : 0.12, z], [x + (dbl ? 0 : len / 2), dbl ? len / 2 : 0.12, z], 0.015, 0.015, 5, C.trim);
-    const blade = (p, d) => M.blob(p, d ? 0.05 : 0.22, d ? 0.22 : 0.05, 0.012, 3, 8, C.accent);
-    if (dbl) { blade([x, -len / 2, z], true); blade([x, len / 2, z], true); } else blade([x + len / 2, 0.12, z], false); }
-  if (F.cabin) { const t0 = F.cabin.from ?? 0.45, t1 = F.cabin.to ?? 0.8, h = F.cabin.height ?? 1.1; M.mat = MT.GEN;   // a small wheelhouse
+  if (F.cabin) { const t0 = F.cabin.from ?? 0.45, t1 = F.cabin.to ?? 0.8, h = F.cabin.height ?? 1.1; M.mat = MT.PLASTER;   // a small wheelhouse
     const x0 = S.x(t0), x1 = S.x(t1), w = Math.min(S.hb(t0), S.hb(t1)) * 0.85, z0 = fz, z1 = fz + h;
     // each wall is a sill, a header and two posts round an open window, so you can see out from the helm inside
     const zs = z1 - 0.95, zt = z1 - 0.15, L = (p, q, u, z) => [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u, z];
@@ -4057,18 +4084,224 @@ function boatMesh(D) {
       for (const [u0, u1, za, zb] of [[0, 1, z0, zs], [0, 1, zt, z1], [0, 0.1, zs, zt], [0.9, 1, zs, zt]])
         M.quad(L(p, q, u0, za), L(p, q, u1, za), L(p, q, u1, zb), L(p, q, u0, zb), C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
     M.quad([x0 - 0.05, -w - 0.05, z1], [x1 + 0.05, -w - 0.05, z1], [x1 + 0.05, w + 0.05, z1], [x0 - 0.05, w + 0.05, z1], C.trim, [x0, 0, 0]); }
+  if (typeof boatDetail === 'function') boatDetail(D, S, M, C, { inner, P, fz, decked, motors: motorAt });   // trim and fittings (boat-detail.js)
+  D._hullN = M.v.length / VS;   // the hull's own vertices; the oars / paddle (at rest) follow, for the menu picture
+  const O = D._oars = boatOars(D, S, C); if (O) { const m = new Float32Array(O.mesh.length); for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(D, O, 0, 0, sd, false, O.m); oarXform(O.mesh, O.m, m); for (const v of m) M.v.push(v); } }
   return new Float32Array(M.v);
+}
+// ---- oars and paddles: one small mesh about its pivot (a rowlock, the paddler's lower hand, the middle of a kayak paddle), posed every frame ----
+function boatOars(D, S, C) {
+  const F = D.features, kind = F.paddle === 'oars' ? 'oars' : F.paddle === 'double' ? 'double' : F.paddle ? 'single' : ''; if (!kind) return null;
+  const M = meshBuilder(true); M.mat = MT.PLASTER;
+  if (kind === 'oars') { M.tube([0, -0.55, 0], [0, 1.3, 0], 0.02, 0.018, 5, C.trim); M.blob([0, 1.47, 0], 0.012, 0.24, 0.07, 3, 8, C.accent); }   // shaft out along +y, handle inboard
+  else if (kind === 'double') { M.tube([0, -1.1, 0], [0, 1.1, 0], 0.015, 0.015, 5, C.trim); for (const sd of [1, -1]) M.blob([0, sd * 1.12, 0], 0.012, 0.22, 0.08, 3, 8, C.accent); }
+  else { M.tube([0, 0, -0.45], [0, 0, 0.75], 0.015, 0.015, 5, C.trim); M.blob([0, 0, 0.78], 0.02, 0.06, 0.02, 2, 6, C.trim); M.blob([0, 0, -0.62], 0.012, 0.09, 0.2, 3, 8, C.accent); }   // grip up, blade down
+  return { kind, mesh: new Float32Array(M.v), live: ['paddle', 'double_paddle', 'oars'].includes(D.propulsion.type), m: new Float32Array(12) };   // live: worked from the helm (a pedal kayak's paddle stays stowed)
+}
+// pose of one oar / paddle in the boat's frame (out: 3x3 rotation, column-major, then the pivot): ph the stroke phase, k how hard you're
+// pulling (0..1), sd the side (oars: +1 starboard, -1 port), live false: stowed. Blade in the water while sin(ph) > 0, sweeping aft.
+function oarPose(D, O, ph, k, sd, live, out) {
+  const S = D._shape || hullShape(D.hull), H = D.hull, ts = clamp(D.crew.seat_at, 0, 1), dr = sstep(-0.3, 0.3, Math.sin(ph)), c = Math.cos(ph);
+  const rx = a => [1, 0, 0, 0, Math.cos(a), Math.sin(a), 0, -Math.sin(a), Math.cos(a)], ry = a => [Math.cos(a), 0, -Math.sin(a), 0, 1, 0, Math.sin(a), 0, Math.cos(a)], rz = a => [Math.cos(a), Math.sin(a), 0, -Math.sin(a), Math.cos(a), 0, 0, 0, 1];
+  const mm = (A, B) => { const R = []; for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) R[j * 3 + i] = A[i] * B[j * 3] + A[3 + i] * B[j * 3 + 1] + A[6 + i] * B[j * 3 + 2]; return R; };
+  let R, T;
+  if (O.kind === 'oars') { const t = clamp(ts + 0.08, 0, 0.9), g = S.gun(t), din = Math.asin(clamp((g + 0.12) / 1.47, 0, 0.9));   // dipped just enough to bury the blade
+    const th = live ? 0.65 * k * c : -1.1, dip = live ? din - 0.25 + 0.25 * dr * Math.min(1, k * 2) : 0.12;   // stowed: trailing aft along the hull
+    R = mm(rz(-th), rx(-dip)); T = [S.x(t), S.hb(t), g + 0.05]; }
+  else if (O.kind === 'double') { const t = clamp(ts + (live ? 0 : 0.15), 0, 0.9), g = S.gun(t);
+    R = live ? mm(rz(-0.5 * k * c), rx(-0.62 * k * Math.sin(ph))) : ry(Math.PI / 2); T = live ? [S.x(t) + 0.45, 0, g + 0.22] : [S.x(t), 0, g + 0.08]; }
+  else { const t = clamp(ts + (live ? 0 : 0.15), 0, 0.9), g = S.gun(t);   // single blade on the starboard side: reach forward, pull aft, lift and feather out
+    R = live ? mm(rx(0.15 + 0.5 * (1 - dr * k)), ry(-0.35 * k * c)) : ry(Math.PI / 2);
+    T = live ? [S.x(t) + 0.3 + 0.32 * k * c, S.hb(t) + 0.07, g + 0.12 + 0.3 * (1 - dr * k)] : [S.x(t), 0.12, H.floor_m + 0.04]; }
+  for (let i = 0; i < 9; i++) out[i] = R[i] * (i % 3 === 1 ? sd : 1); out[9] = T[0]; out[10] = sd * T[1]; out[11] = T[2];   // the port side is the mirror image
+  return out;
+}
+// the oar mesh (src) posed by m into dst: positions and normals
+function oarXform(src, m, dst) {
+  for (let o = 0; o < src.length; o += VS) { const x = src[o], y = src[o + 1], z = src[o + 2], nx = src[o + 3], ny = src[o + 4], nz = src[o + 5];
+    dst[o] = m[0] * x + m[3] * y + m[6] * z + m[9]; dst[o + 1] = m[1] * x + m[4] * y + m[7] * z + m[10]; dst[o + 2] = m[2] * x + m[5] * y + m[8] * z + m[11];
+    dst[o + 3] = m[0] * nx + m[3] * ny + m[6] * nz; dst[o + 4] = m[1] * nx + m[4] * ny + m[7] * nz; dst[o + 5] = m[2] * nx + m[5] * ny + m[8] * nz;
+    for (let q = 6; q < VS; q++) dst[o + q] = src[o + q]; }
+  return dst;
+}
+// where the water must not show: the hull's half-beam at the waterline and at the gunwale, 12 stations stern to bow (for the water shader)
+function hullWaterTable(H, S) {
+  const tab = new Float32Array(24);
+  for (let i = 0; i < 12; i++) { const t = i / 11; let lo = 0, hi = 1; for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < 0) lo = m; else hi = m; }
+    tab[i] = S.sec(t, lo)[0]; tab[12 + i] = S.hb(t); }
+  return tab;
 }
 const BoatDB = {
   list: [], byId: {}, gpu: [],
   register(raw, { quiet = false } = {}) {
+    if (typeof isShortBoat === 'function' && isShortBoat(raw)) { const b = buildBoat(raw); if (!b.def) { if (!quiet) console.warn('Boat rejected:', raw && raw.id, b.errors); return b; } raw = b.def; }   // a boat named by its parts (boat-builder.js): built into a full definition first
     const r = validateBoat(raw);
     if (!r.def) { if (!quiet) console.warn('Boat rejected:', raw && raw.id, r.errors); return r; }
-    const d = r.def; d._mesh = boatMesh(d); d._shape = hullShape(d.hull);
+    const d = r.def; d._shape = hullShape(d.hull); d._mesh = boatMesh(d); d._wtab = hullWaterTable(d.hull, d._shape); d._fb = (d._shape.gun(0.25) + d._shape.gun(0.5) + d._shape.gun(0.75)) / 3;
     const old = this.byId[d.id]; if (old) { const i = this.list.indexOf(old); this.list[i] = d; if (this.gpu[i]) this.gpu[i].stale = true; } else this.list.push(d);
     this.byId[d.id] = d; if (r.warnings.length && !quiet) console.info(`Boat "${d.id}" notes:`, r.warnings); return r;
   },
 };
+</script>
+<script>
+'use strict';
+// ======================================================================
+//  BOAT BUILDER — a boat from parts, the way a rig is tied from tackle. A short definition names a size, a build and what's
+//  fitted; buildBoat() turns it into the full boat definition (hull, propulsion, handling, seats, features) that boats.js meshes:
+//    { "schema": "embercrown-boat/2", "id": "skiff", "name": "Skiff", "size": "small", "build": "skiff",
+//      "engines": ["small"], "hull": ["seat"], "deck": ["rod_holders"], "colors": { "hull": "#5a6a4a" } }
+//  The parts are data too: src/boats/parts.json (sizes, builds, engines, hull items, deck items). A size gives so many engine,
+//  hull and deck spots; every part fitted takes some. No engines: it's paddled or rowed, whichever the build says.
+//  BoatDB.register() accepts either kind, so Game.loadBoat(def) and the built-in list take short definitions as they are.
+// ======================================================================
+const BOAT_SCHEMA2 = 'embercrown-boat/2';
+let BOAT_PARTS = null;   // parts.json, set at boot (boot.js) before the boats are registered
+const isShortBoat = raw => !!raw && typeof raw === 'object' && (raw.schema === BOAT_SCHEMA2 || (typeof raw.size === 'string' && typeof raw.build === 'string'));
+// Returns { def (a full embercrown-boat/1 definition, or null), errors, warnings }.
+function buildBoat(raw, parts = BOAT_PARTS) {
+  const errors = [], warnings = [], fail = () => ({ def: null, errors, warnings });
+  if (!parts) { errors.push('boat parts are not loaded'); return fail(); }
+  for (const k of Object.keys(raw)) if (!['schema', 'id', 'name', 'description', 'waters', 'size', 'build', 'engines', 'hull', 'deck', 'colors'].includes(k) && !k.startsWith('_')) warnings.push(`unknown field "${k}" (ignored)`);
+  const Z = parts.sizes[raw.size], B = parts.builds[raw.build];
+  if (!Z) errors.push(`size: one of ${Object.keys(parts.sizes).join(', ')}`);
+  if (!B) errors.push(`build: one of ${Object.keys(parts.builds).join(', ')}`);
+  if (errors.length) return fail();
+  if (!B.sizes.includes(raw.size)) errors.push(`a ${raw.build} can't be ${raw.size}: ${B.sizes.join(' or ')}`);
+  // what's fitted, and whether it fits the spots this size has
+  const fitted = (list, table, kind) => { const out = []; if (list !== undefined && !Array.isArray(list)) { errors.push(`${kind}: a list of part names`); return out; }
+    for (const id of list || []) { const p = table[id]; if (!p) errors.push(`${kind}: no part called "${id}" (${Object.keys(table).join(', ')})`); else if (p.sizes && !p.sizes.includes(raw.size)) errors.push(`${kind}: a ${id} doesn't go on a ${raw.size} boat`); else out.push(Object.assign({ id }, p)); }
+    return out; };
+  const engines = fitted(raw.engines, parts.engines, 'engines'), items = fitted(raw.hull, parts.hull_items, 'hull'), gear = fitted(raw.deck, parts.deck_items, 'deck'), used = l => l.reduce((a, p) => a + (p.spots || 1), 0);
+  for (const [kind, list, label] of [['engine', engines, 'engines'], ['hull', items, 'hull'], ['deck', gear, 'deck']]) if (used(list) > Z.spots[kind]) errors.push(`${label}: ${used(list)} spots used, a ${raw.size} boat has ${Z.spots[kind]}`);
+  if (new Set(gear.map(p => p.id)).size < gear.length) errors.push('deck: each deck item once');
+  if (errors.length) return fail();
+  const has = id => gear.some(p => p.id === id), console_ = has('console'), cabin = has('cabin');
+  if (console_ && cabin) { errors.push('deck: a console or a wheelhouse, not both'); return fail(); }
+  // hull: the size's dimensions (a build may stretch or narrow them) in the build's shape
+  const hull = Object.assign({}, Z.hull, B.hull); hull.length_m = +(Z.hull.length_m * (B.length || 1)).toFixed(2); hull.beam_m = +(Z.hull.beam_m * (B.beam || 1)).toFixed(2);
+  // propulsion: power and control add up from the engines (control is their average: small engines steer best)
+  const power = engines.reduce((a, e) => a + e.power, 0), control = engines.length ? engines.reduce((a, e) => a + e.control, 0) / engines.length : 3, hand = { paddle: [1.8, 0.6, 0.85, 0.08], double_paddle: [2.3, 0.8, 1.0, 0.06], oars: [1.6, 0.5, 0.7, 0.1] }[B.by_hand] || [1.6, 0.5, 0.7, 0.1];
+  const propulsion = power ? { type: 'outboard', max_speed_ms: +(3 + 6 * power / Math.sqrt(Z.mass)).toFixed(1), accel_ms2: +(1 + 3 * power / Z.mass).toFixed(1), turn_rate: +(Z.turn * (0.6 + 0.15 * control)).toFixed(2), reverse: 0.3, noise: +Math.min(1, 0.45 + 0.15 * power).toFixed(2) }
+    : { type: B.by_hand, max_speed_ms: +(hand[0] / Z.mass ** 0.25).toFixed(1), accel_ms2: +(hand[1] / Z.mass ** 0.5).toFixed(2), turn_rate: +(hand[2] * Z.turn).toFixed(2), reverse: 0.6, noise: hand[3] };
+  // the helm: a tiller seat aft, or behind a console, or in the wheelhouse; then the hull items in the clear places along the floor
+  const Hm = Z.helm || {}, features = { paddle: power ? '' : { paddle: 'single', double_paddle: 'double', oars: 'oars' }[B.by_hand] || '' }, seats = [];
+  let crew = { seat_at: B.helm_at ?? 0.12, eye_height_m: Hm.eye_height_m ?? 1.05 };
+  if (console_) { features.console = { at: 0.48, height: Hm.console_height ?? 0.9 }; crew = { seat_at: 0.36, eye_height_m: Hm.eye_height_m ?? 1.3 }; seats.push({ type: 'bench', at: 0.34, height: Hm.seat_height ?? 0.5 }); }
+  else if (cabin) { features.cabin = { from: 0.45, to: 0.78, height: Hm.cabin_height ?? 1.8 }; crew = { seat_at: 0.5, eye_height_m: Math.max(1.6, Hm.eye_height_m ?? 1.6) }; }
+  else seats.push(Object.assign({ type: B.helm_seat || 'bench', at: crew.seat_at }, B.helm_seat === 'bench' || !B.helm_seat ? { height: 0.3 } : {}));
+  const casting = has('casting_deck'), places = cabin ? [0.2, 0.32, 0.88] : console_ ? (casting ? [0.16, 0.6, 0.26] : [0.16, 0.68, 0.84]) : casting ? [0.32, 0.46, 0.6] : [0.45, 0.65, 0.82];
+  let n = 0; for (const it of items) for (let k = 0; k < (it.spots || 1); k++) if (it.seat) seats.push(Object.assign({ at: places[n++ % places.length] }, it.seat));
+  for (const g of gear) Object.assign(features, g.features);
+  if (engines.length) { features.motors = engines.map(e => ({ hp: e.hp, color: e.color })); features.motor = { hp: engines.reduce((a, e) => a + e.hp, 0), color: engines[0].color }; }
+  const def = { schema: 'embercrown-boat/1', id: raw.id, name: raw.name, description: raw.description || `${Z.name} ${B.name.toLowerCase()}${engines.length ? ', ' + engines.map(e => e.name.toLowerCase()).join(' + ') : ''}`,
+    hull, colors: Object.assign({}, B.colors, raw.colors), propulsion, handling: Object.assign({}, Z.handling), crew, seats, features,
+    _parts: { size: raw.size, build: raw.build, engines: engines.map(e => e.id), hull: items.map(p => p.id), deck: gear.map(p => p.id), power, control: +control.toFixed(2) } };
+  if (raw.waters) def.waters = raw.waters;
+  return { def, errors, warnings };
+}
+</script>
+<script>
+'use strict';
+// ======================================================================
+//  BOAT DETAIL — the fittings and trim that make a hull read as a boat: rub rails, keel and chine strakes, a boot stripe,
+//  cleats, a bow eye, navigation lights, ribs, bench fronts and cushions, a spoked wheel and console fittings, outboard
+//  brackets, tillers and a fuel tank, wheelhouse roof gear, deck hatches, an anchor, kayak deck lines.
+//  boatMesh() (boats.js) builds the hull, seats and features, then calls boatDetail() to add these on top; everything is placed
+//  from the hull's own shape (S), so it follows any size or build. X: { inner, P, fz, decked, motors: [[x, y, scale, gunwale, colour, hp]] }.
+// ======================================================================
+function boatDetail(D, S, M, C, X) {
+  const H = D.hull, F = D.features, L = H.length_m, k = clamp(L / 5, 0.7, 1.8), NT = 36, { inner, P, fz, decked, motors } = X;
+  const steel = [0.78, 0.79, 0.81], dark = [0.13, 0.13, 0.14], rope = [0.82, 0.76, 0.58], powered = ['outboard', 'inboard'].includes(D.propulsion.type), kayak = !!H.cockpit, tr = H.stern === 'transom', blunt = H.bow === 'blunt';
+  const crown = 0.04 + 0.03 * H.beam_m, deckZ = (t, y = 0) => S.gun(t) + crown * Math.min(1, S.hb(t) * 4) * (1 - Math.min(1, Math.abs(y) / Math.max(0.05, S.hb(t)))) + 0.006;   // the top of a crowned deck
+  const rod = (a, b, r, col, n = 6) => M.tube(a, b, r, r, n, col, false);
+  // a closed box (no bottom): top and four sides
+  const box = (x0, x1, y0, y1, z0, z1, col) => { const c = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]; M.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], col, [c[0], c[1], z0 - 9]);
+    for (const [p, q] of [[[x0, y0], [x1, y0]], [[x1, y0], [x1, y1]], [[x1, y1], [x0, y1]], [[x0, y1], [x0, y0]]]) M.quad([p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1], col, c); };
+  // a ring of rod: centre c, radius r, in the plane spanned by unit vectors u and v
+  const ring = (c, r, u, v, th, col, n = 16) => { for (let i = 0; i < n; i++) { const a0 = i / n * TAU, a1 = (i + 1) / n * TAU, at = a => [c[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * r, c[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * r, c[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * r]; rod(at(a0), at(a1), th, col); } };
+  // where the waterline meets the hull at station t (s along the section, 0 keel .. 1 gunwale)
+  const sAt = (t, z) => { let lo = 0, hi = 1; for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < z) lo = m; else hi = m; } return (lo + hi) / 2; };
+
+  // ---- the hull's lines ----
+  M.mat = MT.PLASTER;
+  { const r = 0.016 * k, col = C.accent, out = (t, sd) => { const p = P(t, 1, sd); return [p[0], p[1] + sd * r * 0.6, p[2] - r * 0.7]; };   // rub rail: a bead right round, just under the gunwale
+    for (let i = 0; i < NT; i++) for (const sd of [1, -1]) rod(out(i / NT, sd), out((i + 1) / NT, sd), r, col);
+    if (tr) rod(out(0, 1), out(0, -1), r, col); if (blunt) rod(out(1, 1), out(1, -1), r, col); }
+  { const r = 0.014 * k, col = V3.mul(C.bottom && C.bottom.length ? C.bottom : C.hull, 0.8), t1 = blunt ? 0.97 : 0.9;   // a keel strip along the bottom, turning up into the stem
+    for (let i = 0; i < NT; i++) { const a = i / NT, b = (i + 1) / NT; if (b <= t1 + 1e-6) rod([S.x(a), 0, -S.keel(a) - r * 0.5], [S.x(b), 0, -S.keel(b) - r * 0.5], r, col); }
+    if (!blunt) rod([S.x(0.9), 0, -S.keel(0.9) - r * 0.5], [S.x(1) - 0.01, 0, S.gun(1) * 0.55], r, col); }
+  if (H.bottom !== 'round') { const s = H.bottom === 'vee' ? 0.55 : 0.45, r = 0.012 * k, col = V3.mul(C.bottom && C.bottom.length ? C.bottom : C.hull, 0.85);   // chine strake: the hard corner where bottom meets side
+    for (let i = 0; i < NT - 1; i++) for (const sd of [1, -1]) rod(P(i / NT, s, sd), P((i + 1) / NT, s, sd), r, col); }
+  if (D.colors.bottom && L > 4) { const r = 0.011 * k, col = C.accent, at = (t, sd) => P(t, sAt(t, 0.07 * k), sd);   // boot stripe: a painted line just above the waterline
+    for (let i = 0; i < NT - 1; i++) for (const sd of [1, -1]) rod(at(i / NT, sd), at((i + 1) / NT, sd), r, col); }
+
+  // ---- inside ----
+  if (H.bottom === 'round' && !kayak && L < 6) { const col = C.trim, r = 0.009;   // steam-bent ribs up the inside of a canoe or rowboat
+    for (let t = 0.14; t < 0.88; t += 0.35 / L) { if (decked(t)) continue; const g = S.gun(t) - 0.02;
+      for (const sd of [1, -1]) for (let j = 0; j < 5; j++) rod(inner(t, sd, fz + (g - fz) * j / 5), inner(t, sd, fz + (g - fz) * (j + 1) / 5), r, col, 3);
+      rod(inner(t, 1, fz), inner(t, -1, fz), r, col, 3); } }
+  if (H.bottom === 'flat' && !kayak && !F.casting_decks) { const col = V3.mul(C.interior, 0.82);   // pressed ribs across an aluminium floor
+    for (let t = 0.2; t < 0.9; t += 0.45 / L) { if (decked(t) || D.seats.some(s => Math.abs(s.at - t) < 0.3 / L)) continue; const a = inner(t, 1, fz), b = inner(t, -1, fz); box(a[0] - 0.025, a[0] + 0.025, b[1], a[1], fz, fz + 0.03, col); } }
+  for (const st of D.seats) { const t = clamp(st.at, 0.02, 0.98), x = S.x(t), w = Math.max(0.05, S.hb(t) - H.thickness_m) * 0.8, z = fz + (st.height ?? 0.32);
+    if (st.type === 'bench') { M.mat = MT.PLASTER; M.quad([x + 0.18, -w, fz], [x + 0.18, w, fz], [x + 0.18, w, z], [x + 0.18, -w, z], V3.mul(C.deck, 0.8), [x - 1, 0, 0]);   // the bench's forward face (it only had an aft one)
+      for (const dx of [-0.18, 0.18]) rod([x + dx, -w, z], [x + dx, w, z], 0.012, C.trim);   // rolled edges
+      if ((st.height ?? 0.32) >= 0.5) { M.mat = MT.CLOTH; box(x - 0.16, x + 0.16, -w * 0.9, w * 0.9, z, z + 0.05, C.accent); box(x - 0.2, x - 0.14, -w * 0.9, w * 0.9, z, z + 0.38, C.accent); } }   // a helm seat: cushion and backrest
+    if (st.type === 'locker') { M.mat = MT.METAL; for (const sy of [-0.5, 0.5]) box(x + 0.26, x + 0.275, sy * w - 0.03, sy * w + 0.03, z - 0.06, z + 0.02, steel); } }   // latches
+
+  // ---- deck hardware ----
+  M.mat = MT.METAL;
+  if (!kayak && L >= 4) for (const t of [0.07, 0.86]) for (const sd of [1, -1]) { const p = inner(t, sd, S.gun(t)), x = p[0], y = p[1] + sd * 0.01, z = p[2] + 0.004;   // cleats, fore and aft
+      rod([x - 0.07 * k, y, z + 0.035], [x + 0.07 * k, y, z + 0.035], 0.011 * k, steel); for (const dx of [-0.025, 0.025]) rod([x + dx * k, y, z], [x + dx * k, y, z + 0.035], 0.012 * k, steel); }
+  if (!blunt && !kayak && L >= 3.5) M.blob([S.x(1) + 0.01, 0, S.gun(1) * 0.5], 0.035 * k, 0.02 * k, 0.03 * k, 3, 6, steel);   // bow eye
+  if (powered) { M.mat = MT.GLOW;   // navigation lights: red to port, green to starboard, a white all-round light on a pole aft
+    for (const [sd, col] of [[1, [1.5, 0.12, 0.1]], [-1, [0.1, 1.4, 0.25]]]) { const p = P(0.9, 1, sd); M.blob([p[0], p[1] - sd * 0.04, p[2] + 0.03], 0.03, 0.02, 0.022, 3, 6, col); }
+    if (L >= 5 && !F.cabin) { const p = inner(0.03, -1, S.gun(0.03)); M.mat = MT.METAL; rod([p[0], p[1], p[2]], [p[0], p[1], p[2] + 0.9], 0.012, steel); M.mat = MT.GLOW; M.blob([p[0], p[1], p[2] + 0.93], 0.03, 0.03, 0.035, 3, 6, [1.5, 1.5, 1.4]); } }
+  if (!kayak && (H.decks.bow || 0) > 0.05 && L >= 4) { const t = 1 - H.decks.bow * 0.55, x = S.x(t), z = deckZ(t);   // on the foredeck: a coil of rope and a small anchor
+    M.mat = MT.CLOTH; for (let i = 0; i < 3; i++) ring([x, 0.02, z + 0.012 + i * 0.016], 0.085 * k - i * 0.012, [1, 0, 0], [0, 1, 0], 0.011, rope, 10);
+    if (L >= 5) { M.mat = MT.METAL; const ax = x - 0.3 * k; rod([ax, -0.1, z + 0.02], [ax + 0.24, -0.1, z + 0.02], 0.012, dark); rod([ax + 0.24, -0.2, z + 0.02], [ax + 0.24, 0, z + 0.02], 0.012, dark); rod([ax + 0.03, -0.16, z + 0.02], [ax + 0.03, -0.04, z + 0.02], 0.009, dark); } }
+  if (F.casting_decks) { M.mat = MT.PLASTER; const col = V3.mul(C.deck, 0.8);   // hatch lids let into the casting decks
+    for (const [t, half] of [[0.8, 0.5], [0.1, 0.45]]) { const x = S.x(t), w = S.hb(t) * half, z = S.gun(t) - 0.12 + 0.008; M.quad([x - 0.22, -w, z], [x + 0.22, -w, z], [x + 0.22, w, z], [x - 0.22, w, z], col, [x, 0, -9]); M.mat = MT.METAL; rod([x + 0.2, -0.05, z + 0.012], [x + 0.2, 0.05, z + 0.012], 0.009, steel); M.mat = MT.PLASTER; } }
+  if (F.livewell) { const t = 0.24, x = S.x(t), w = Math.max(0.1, S.hb(t) - 0.12), y0 = w * 0.25; M.mat = MT.PLASTER; box(x - 0.24, x + 0.24, y0, y0 + Math.min(0.5, w * 0.7), fz, fz + 0.34, C.deck);   // a livewell: a tank with a blue lid
+    box(x - 0.25, x + 0.25, y0 - 0.01, y0 + Math.min(0.5, w * 0.7) + 0.01, fz + 0.34, fz + 0.37, [0.2, 0.42, 0.62]); }
+  if (kayak) { M.mat = MT.CLOTH; const c1 = H.cockpit[1], c0 = H.cockpit[0];   // a kayak's deck lines, a hatch behind the seat, carry toggles
+    for (const [ta, tb] of [[c1 + 0.06, c1 + 0.17], [c1 + 0.17, c1 + 0.06]]) { const wa = S.hb(c1 + 0.06) * 0.6, wb = S.hb(c1 + 0.17) * 0.6; rod([S.x(ta), ta < tb ? -wa : wa, deckZ(ta, wa) + 0.006], [S.x(tb), ta < tb ? wb : -wb, deckZ(tb, wb) + 0.006], 0.006, dark, 3); }
+    if (c0 > 0.2) { const t = c0 * 0.55; M.mat = MT.PLASTER; M.blob([S.x(t), 0, deckZ(t) + 0.004], 0.16, Math.min(0.14, S.hb(t) * 0.6), 0.014, 3, 10, dark); }
+    M.mat = MT.CLOTH; for (const t of [0.015, 0.985]) rod([S.x(t), -0.05, S.gun(t) + 0.02], [S.x(t), 0.05, S.gun(t) + 0.02], 0.012, dark); }
+
+  // ---- the helm ----
+  if (F.console) { const cs = F.console, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), h = cs.height ?? 0.95, top = fz + h, scr = cs.screen ?? 0.3;
+    M.mat = MT.METAL; const wc = [x - 0.2, oy, top - 0.1], u = [0, 1, 0], v = [-0.42, 0, 0.91];   // a spoked wheel, raked back on the aft face
+    ring(wc, 0.15, u, v, 0.012, dark, 12); for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 0.5; rod(wc, [wc[0] + v[0] * Math.sin(a) * 0.15, wc[1] + Math.cos(a) * 0.15, wc[2] + v[2] * Math.sin(a) * 0.15], 0.009, steel, 3); }
+    rod([x - 0.3, oy, top - 0.14], wc, 0.02, steel);
+    rod([x - 0.05, oy + w * 0.75, top], [x - 0.12, oy + w * 0.75, top + 0.15], 0.012, steel); M.blob([x - 0.125, oy + w * 0.75, top + 0.165], 0.022, 0.022, 0.025, 3, 6, dark);   // throttle lever
+    M.mat = MT.PLASTER; for (const sy of [-0.45, 0.1]) M.blob([x + 0.02, oy + sy * w, top + 0.008], 0.045, 0.045, 0.008, 2, 8, dark);   // gauges
+    M.mat = MT.METAL; const a = [x + 0.25, oy - w, top], b = [x + 0.25 + scr * 0.25, oy - w, top + scr], c = [x + 0.25 + scr * 0.25, oy + w, top + scr], e = [x + 0.25, oy + w, top];   // windscreen frame and a grab rail over it
+    rod(a, b, 0.011, steel); rod(b, c, 0.011, steel); rod(c, e, 0.011, steel);
+    if (h >= 0.8) { for (const sy of [-1, 1]) rod([x - 0.3, oy + sy * w, top], [x - 0.3, oy + sy * w, top + scr + 0.1], 0.013, steel); rod([x - 0.3, oy - w, top + scr + 0.1], [x - 0.3, oy + w, top + scr + 0.1], 0.013, steel); }
+    if (L >= 7 && !cs.side) { const zt = fz + 2.05, px = [x - 0.34, x + 0.3], pw = w + 0.06;   // a T-top over a big centre console: four legs and a canopy
+      for (const xx of px) for (const sy of [-1, 1]) rod([xx, oy + sy * pw, fz], [xx + (xx < x ? -0.2 : 0.15), oy + sy * pw * 1.25, zt], 0.02, steel, 5);
+      M.mat = MT.CLOTH; box(x - 0.85, x + 0.7, oy - pw * 1.7, oy + pw * 1.7, zt, zt + 0.05, C.accent); M.quad([x - 0.85, oy - pw * 1.7, zt], [x - 0.85, oy + pw * 1.7, zt], [x + 0.7, oy + pw * 1.7, zt], [x + 0.7, oy - pw * 1.7, zt], V3.mul(C.accent, 0.8), [x, oy, zt + 9]); } }
+  if (F.cabin) { const cb = F.cabin, t0 = cb.from ?? 0.45, t1 = cb.to ?? 0.8, x0 = S.x(t0), x1 = S.x(t1), w = Math.min(S.hb(t0), S.hb(t1)) * 0.85, z1 = fz + (cb.height ?? 1.1), zs = z1 - 0.95, zt = z1 - 0.15;
+    M.mat = MT.METAL; for (const sy of [-1, 1]) { rod([x0 + 0.1, sy * (w - 0.08), z1 + 0.09], [x1 - 0.1, sy * (w - 0.08), z1 + 0.09], 0.014, steel); for (const xx of [x0 + 0.1, (x0 + x1) / 2, x1 - 0.1]) rod([xx, sy * (w - 0.08), z1], [xx, sy * (w - 0.08), z1 + 0.09], 0.012, steel); }   // roof rails
+    const mx = x0 + 0.25; rod([mx, 0, z1], [mx, 0, z1 + 0.85], 0.022, steel, 5); rod([mx, -0.3, z1 + 0.6], [mx, 0.3, z1 + 0.6], 0.012, steel);   // a mast with a crosstree, the masthead light, a radar dome
+    M.mat = MT.GLOW; M.blob([mx, 0, z1 + 0.89], 0.035, 0.035, 0.04, 3, 6, [1.5, 1.5, 1.4]);
+    M.mat = MT.PLASTER; M.blob([(x0 + x1) / 2 + 0.15, 0, z1 + 0.13], 0.24, 0.24, 0.09, 3, 10, [0.92, 0.92, 0.9]); rod([(x0 + x1) / 2 + 0.15, 0, z1], [(x0 + x1) / 2 + 0.15, 0, z1 + 0.06], 0.05, steel, 6);
+    for (const sy of [-1, 1]) for (const zz of [zs, zt]) rod([x0, sy * (w + 0.012), zz], [x1, sy * (w + 0.012), zz], 0.014, C.trim);   // trim along the window sills and heads
+    for (const xx of [x0 - 0.012, x1 + 0.012]) for (const zz of [zs, zt]) rod([xx, -w, zz], [xx, w, zz], 0.014, C.trim);
+    M.mat = MT.CLOTH; ring([(x0 + x1) / 2, w + 0.04, zs - 0.32], 0.2, [1, 0, 0], [0, 0, 1], 0.045, [1.0, 0.42, 0.1], 10);   // a life ring on the port side
+    M.mat = MT.METAL; const ex = x0 + 0.12, ey = -(w - 0.14); rod([ex, ey, z1], [ex, ey, z1 + 0.55], 0.04, dark, 6); }   // exhaust stack
+
+  // ---- engines ----
+  for (const [x, y, sc, g, col, hp] of motors || []) { M.mat = MT.METAL;
+    box(x + 0.04 * sc, x + 0.14 * sc, y - 0.09 * sc, y + 0.09 * sc, g - 0.2 * sc, g + 0.03 * sc, dark);   // the clamp bracket over the transom
+    M.blob([x - 0.03 * sc, y, -S.keel(0) - 0.13 * sc], 0.2 * sc, 0.1 * sc, 0.012 * sc, 2, 8, V3.mul(col, 0.8));   // anti-ventilation plate above the propeller
+    M.tri([x - 0.06 * sc, y, -S.keel(0) - 0.29 * sc], [x + 0.08 * sc, y, -S.keel(0) - 0.29 * sc], [x - 0.04 * sc, y, -S.keel(0) - 0.47 * sc], V3.mul(col, 0.75), [x, y + 1, 0]);   // skeg (seen from both sides)
+    M.tri([x - 0.06 * sc, y, -S.keel(0) - 0.29 * sc], [x + 0.08 * sc, y, -S.keel(0) - 0.29 * sc], [x - 0.04 * sc, y, -S.keel(0) - 0.47 * sc], V3.mul(col, 0.75), [x, y - 1, 0]);
+    M.blob([x - 0.08 * sc, y, g + 0.11 * sc], 0.225 * sc, 0.175 * sc, 0.02 * sc, 2, 10, [0.85, 0.85, 0.86]);   // a bright band round the cowling
+    if (!F.console && !F.cabin && hp <= 40) { rod([x + 0.1 * sc, y, g + 0.2 * sc], [x + 0.62, y + 0.06, g + 0.3 * sc], 0.016, dark, 5); M.mat = MT.CLOTH; rod([x + 0.5, y + 0.05, g + 0.28 * sc], [x + 0.64, y + 0.062, g + 0.302 * sc], 0.024, dark, 6); } }   // a tiller with a twist grip
+  if (motors && motors.length && !F.cabin && L < 6.5) { const t = 0.2, x = S.x(t), w = Math.max(0.1, S.hb(t) - 0.14), y = -w * 0.55; M.mat = MT.PLASTER;   // a portable fuel tank on the floor, starboard side aft
+    box(x - 0.2, x + 0.2, y - 0.14, y + 0.14, fz, fz + 0.2, [0.72, 0.1, 0.08]); M.mat = MT.METAL; M.blob([x + 0.1, y, fz + 0.21], 0.035, 0.035, 0.015, 2, 6, dark); rod([x - 0.12, y, fz + 0.2], [x - 0.12, y, fz + 0.26], 0.01, dark); rod([x - 0.12, y, fz + 0.26], [x + 0.02, y, fz + 0.26], 0.01, dark); }
+}
 </script>
 <script>
 'use strict';
@@ -5030,12 +5263,12 @@ Object.assign(Engine, {
   },
   boardBoat(b) {
     this.boat = b; this.boatMode = 'drive'; this.boatSit = true; this.tuiState = null; this.P.vz = 0;   // the fish radar stays as you left it (key 2): boarding, as travel does, must not switch it on
-    const dh = b.a - this.P.a; this.P.a = b.a; this.P.pitch = -0.1; this.seatBoat(b);
+    const dh = b.a - this.P.a; this.P.a = b.a; this.P.pitch = -0.1; this.seatBoat(b); this.boatKick(b, -1.2, Math.random() < 0.5 ? 0.6 : -0.6);   // stepping in: it dips and wobbles
     this.say(`${b.def.name}: ${this.touchUI ? 'joystick' : 'W/S'} ${['outboard', 'inboard'].includes(b.def.propulsion.type) ? 'throttle' : b.def.propulsion.type === 'oars' ? 'row' : b.def.propulsion.type === 'pedal' ? 'pedal' : 'paddle'}, ${this.touchUI ? 'left/right' : 'A/D'} steer · ${this.touchUI ? 'Jump' : 'Space'} to jump out`, 5);
     Game.emit('boardBoat', b);
   },
   leaveBoat(jump) {
-    const b = this.boat; if (!b) return; const P = this.P, D = b.def; this.boat = null; this.boatMode = 'drive'; b.v = 0;
+    const b = this.boat; if (!b) return; const P = this.P, D = b.def; this.boat = null; this.boatMode = 'drive'; b.v = 0; b.oarOn = false; this.boatKick(b, jump ? -1.5 : 0.8, jump ? 0.8 : 0.4);
     if (jump) {   // over the side the way you're facing: clear of the hull, then the usual fall (into the water, or onto the bank)
       const ca = Math.cos(P.a), sa = Math.sin(P.a); let d = 0.6; while (d < D.hull.length_m + 1 && this.boatOver(b, P.x + ca * (d - 0.5), P.y + sa * (d - 0.5))) d += 0.2;
       P.x += ca * d; P.y += sa * d; P.vz = CONFIG.jumpSpeed; Game.emit('leaveBoat', b); return;
@@ -5065,10 +5298,11 @@ Object.assign(Engine, {
     // the current carries it; then move if the hull still floats there (bow and centre)
     const fl = flowAt(b.x, b.y, b.kd), drift = Hd.current_drift * (seat ? 1 : 0.6);
     const nx = b.x + (Math.cos(b.a) * b.v + fl[0] * drift) * dt, ny = b.y + (Math.sin(b.a) * b.v + fl[1] * drift) * dt, dir = Math.sign(b.v || 1);
-    const need = H.draft_m + 0.05, bowNow = this.boatDepth(b.x + Math.cos(b.a) * L * 0.48 * dir, b.y + Math.sin(b.a) * L * 0.48 * dir), bowNew = this.boatDepth(nx + Math.cos(b.a) * L * 0.48 * dir, ny + Math.sin(b.a) * L * 0.48 * dir);
-    const ok = this.boatDepth(nx, ny) >= need * 0.8 && (bowNew >= need * 0.6 || bowNew > bowNow);   // you can always back off or head for deeper water
+    let hit = null; const need = H.draft_m + 0.05, bowNow = this.boatDepth(b.x + Math.cos(b.a) * L * 0.48 * dir, b.y + Math.sin(b.a) * L * 0.48 * dir), bowNew = this.boatDepth(nx + Math.cos(b.a) * L * 0.48 * dir, ny + Math.sin(b.a) * L * 0.48 * dir);
+    const ok = this.boatDepth(nx, ny) >= need * 0.8 && (bowNew >= need * 0.6 || bowNew > bowNow) && !(hit = this.boatHits(b, nx, ny));   // you can always back off or head for deeper water; boats don't pass through each other
     if (ok && this.pastEdge(nx, ny) && Math.hypot(nx, ny) > Math.hypot(b.x, b.y)) { this.edgeWarn(); b.v *= 0.5; b.v = Math.min(b.v, 0.3); }   // the edge of the sea: no further out
     else if (ok) { b.x = nx; b.y = ny; }
+    else if (hit) { hit.x += Math.cos(b.a) * b.v * 0.4 * dt; hit.y += Math.sin(b.a) * b.v * 0.4 * dt; if (Math.abs(b.v) > 1) this.boatKick(b, -0.5, 1); b.v *= -0.3; }   // bumped another boat: nudge it, bounce off
     else { if (Math.abs(b.v) > 1.2 && performance.now() - (this.groundT || 0) > 2500) { this.groundT = performance.now(); this.say('Aground', 1.2); this.addRipple(b.x, b.y, 0.8); } b.v *= -0.15; }
     // ride the swell: height from the middle, pitch and heel from the ends and sides; motorboats lift their bow at speed
     const ca = Math.cos(b.a), sa = Math.sin(b.a), hw = H.beam_m / 2, soft = 1 - 0.6 * clamp(Hd.stability, 0, 1);
@@ -5076,9 +5310,17 @@ Object.assign(Engine, {
     const zl = this.swellAt(b.x - sa * hw, b.y + ca * hw, b.kd), zr = this.swellAt(b.x + sa * hw, b.y - ca * hw, b.kd);
     b.z = SW + (zb + zs + zl + zr) / 4;
     const plane = motor ? sstep(0.25, 0.6, b.v / Pr.max_speed_ms) * (1 - sstep(0.75, 1, b.v / Pr.max_speed_ms) * 0.5) : 0;
-    b.pitch += (Math.atan2(zb - zs, L) * (0.6 + soft) + 0.07 * plane - b.pitch) * Math.min(1, dt * 4);
-    b.roll += (Math.atan2(zl - zr, H.beam_m) * soft * 1.4 - dyaw / Math.max(dt, 1e-3) * 0.12 * clamp(b.v / 3, -1, 1) - b.roll) * Math.min(1, dt * 3);
-    b.z += plane * 0.08;
+    b.sp = (b.sp ?? b.pitch) + (Math.atan2(zb - zs, L) * (0.6 + soft) + 0.07 * plane - (b.sp ?? b.pitch)) * Math.min(1, dt * 4);
+    b.sr = (b.sr ?? b.roll) + (Math.atan2(zl - zr, H.beam_m) * soft * 1.4 - dyaw / Math.max(dt, 1e-3) * 0.12 * clamp(b.v / 3, -1, 1) - (b.sr ?? b.roll)) * Math.min(1, dt * 3);
+    // oars and paddles: the stroke runs with what you ask of it (each oar on its own, so A/D pulls one and backs the other)
+    const O = D._oars, row = seat && O && O.live; b.oarOn = row;
+    if (row) { const ph = b.oarPh || (b.oarPh = [0, 0]), rate = 6.2832 * (0.45 + 0.55 * clamp(Math.abs(b.v) / Pr.max_speed_ms, 0, 1));
+      for (const i of [0, 1]) { const e = O.kind === 'oars' ? clamp(f - (i ? -1 : 1) * s * 0.6, -1, 1) : f || Math.abs(s) * 0.6; ph[i] += dt * rate * Math.sign(e) * (0.5 + 0.5 * Math.abs(e)); }
+      b.oarK = (b.oarK || 0) + ((f || s ? 1 : 0) - (b.oarK || 0)) * Math.min(1, dt * 3); }
+    const stroke = row ? (O.kind === 'double' ? -Math.sin(b.oarPh[0]) : O.kind === 'single' ? -sstep(-0.3, 0.3, Math.sin(b.oarPh[0])) : 0) * b.oarK * 0.25 : 0;   // a paddle stroke rolls a light hull toward its side
+    this.boatRock(b, dt, seat ? null : this.boatLX, this.boatLY, stroke);
+    b.pitch = b.sp + b.rock[1]; b.roll = b.sr + b.rock[0];
+    b.z += plane * 0.08 + b.rock[2];
     if (seat) this.seatBoat(b);
     // wake, spray, and the noise that frightens fish
     const sp = Math.abs(b.v);
@@ -5086,6 +5328,12 @@ Object.assign(Engine, {
     if (sp > 2.5) this.emitN(sp * 6, dt, () => { const sd = Math.random() < 0.5 ? 1 : -1, bx = b.x + ca * L * 0.38 - sa * sd * hw * 0.8, by = b.y + sa * L * 0.38 + ca * sd * hw * 0.8;
       this.spawn(DROP, bx, by, b.wl + 0.05, -sa * sd * this.rnd(0.5, 1.5) - ca * sp * 0.2, ca * sd * this.rnd(0.5, 1.5) - sa * sp * 0.2, this.rnd(0.8, 1.8), this.rnd(0.4, 0.8), 0.04); });
     if (motor && sp > 0.5) this.emitN(sp * 4, dt, () => this.spawn(MIST, b.x - ca * L * 0.55, b.y - sa * L * 0.55, b.wl + 0.05, -ca * 1.5, -sa * 1.5, 0.3, this.rnd(0.6, 1.2), 0.25));
+    // the prop throws water: a fan of spray up and astern and a churn of foam, with the throttle (some even standing still), more with speed
+    const thr = motor && seat ? Math.abs(f) * (run ? 1 : 0.7) : 0;
+    if (thr > 0.05) { const px = b.x - ca * (L / 2 + 0.15), py = b.y - sa * (L / 2 + 0.15), back = Math.sign(f) * (1.5 + sp * 0.5), big = clamp(Math.log10(D.features.motor ? D.features.motor.hp ?? 25 : 150) / 2.3, 0.4, 1.2);
+      this.emitN(thr * big * (30 + 8 * sp), dt, () => { const sd = this.rnd(-1, 1); this.spawn(DROP, px - sa * sd * 0.25, py + ca * sd * 0.25, b.wl + 0.05, -ca * back * this.rnd(0.6, 1.2) - sa * sd * 0.9, -sa * back * this.rnd(0.6, 1.2) + ca * sd * 0.9, this.rnd(1.2, 3.2) * (0.6 + 0.6 * thr) * big, this.rnd(0.4, 0.9), this.rnd(0.03, 0.06)); });
+      this.emitN(thr * big * (10 + 2 * sp), dt, () => this.spawn(MIST, px + this.rnd(-0.3, 0.3) - ca * this.rnd(0, 1.5), py + this.rnd(-0.3, 0.3) - sa * this.rnd(0, 1.5), b.wl + 0.04, -ca * back * 0.4, -sa * back * 0.4, 0.05, this.rnd(1.2, 2.2), this.rnd(0.3, 0.55) * big, { g: 0 }));
+      if ((this.propT = (this.propT || 0) - dt) <= 0) { this.propT = 0.25; this.addRipple(px, py, 0.3 + 0.5 * thr); } }
     if ((this.boatNoiseT = (this.boatNoiseT || 0) - dt) <= 0) { this.boatNoiseT = 0.3; const n = Pr.noise * (motor ? 0.4 + sp / Pr.max_speed_ms : sp / Math.max(0.5, Pr.max_speed_ms)); if (n > 0.04) this.disturb(b.x, b.y, n * 1.6); }
     b.speed = sp;
     return b.wl;
@@ -5142,7 +5390,30 @@ Object.assign(Engine, {
   },
   // a world point in the boat's frame: along, across, up, and t (0 the stern .. 1 the bow)
   boatLocal(b, x, y, z = 0, o = []) { const dx = x - b.x, dy = y - b.y, ca = Math.cos(b.a), sa = Math.sin(b.a), lx = ca * dx + sa * dy, ly = ca * dy - sa * dx;
-    o[0] = lx; o[1] = ly; o[2] = z - b.z - Math.sin(b.pitch) * lx + Math.sin(b.roll) * ly; o[3] = lx / b.def.hull.length_m + 0.5; return o; },
+    o[0] = lx; o[1] = ly; o[2] = z - b.z - Math.sin(b.pitch) * lx - Math.sin(b.roll) * ly; o[3] = lx / b.def.hull.length_m + 0.5; return o; },   // + roll lifts the starboard (+y) side, as the hull is drawn
+  // ---- the hull answers your weight: heels and trims toward where you stand, dips at each step; a canoe a lot, a lobster boat barely ----
+  boatTip(D) { const H = D.hull; return (1.15 - clamp(D.handling.stability, 0, 1)) / (0.6 + H.length_m * H.beam_m * H.depth_m); },
+  // springs for heel, trim and heave (b.rock: the three and their speeds), toward your weight at (lx, ly) in the boat's frame (lx null: nobody aboard) plus a paddle's roll
+  boatRock(b, dt, lx, ly, roll = 0) {
+    const k = this.boatTip(b.def), R = b.rock || (b.rock = [0, 0, 0, 0, 0, 0]), on = lx != null;
+    const tg = [clamp((on ? -k * ly : 0) + k * roll, -0.3, 0.3), on ? clamp(-k * 0.15 * lx, -0.12, 0.12) : 0, on ? -0.04 * k : 0];
+    for (let i = 0; i < 3; i++) { const w = 4.5 + i * 0.8; R[i + 3] += ((tg[i] - R[i]) * w * w - 0.5 * w * R[i + 3]) * dt; R[i] += R[i + 3] * dt; }
+  },
+  boatKick(b, heave, roll) { const k = this.boatTip(b.def), R = b.rock || (b.rock = [0, 0, 0, 0, 0, 0]); R[5] += heave * 0.5 * k; R[3] += roll * k; },   // a step, a jump in or out
+  // another boat a hull at (x, y) would run into (bow, stern and both sides at the middle), or null
+  boatHits(b, x, y) {
+    const L = b.def.hull.length_m, ca = Math.cos(b.a), sa = Math.sin(b.a), hw = b.def.hull.beam_m / 2;
+    for (const o of this.boats) { if (o === b || Math.hypot(o.x - x, o.y - y) > (L + o.def.hull.length_m) / 2 + 1) continue;
+      for (const [u, v] of [[0.48, 0], [-0.48, 0], [0, 1], [0, -1], [0.25, 0.7], [0.25, -0.7], [-0.25, 0.7], [-0.25, -0.7]]) if (this.boatOver(o, x + ca * u * L - sa * v * hw, y + sa * u * L + ca * v * hw)) return o; }
+    return null;
+  },
+  // a hull someone in the water or on the bank at (x, y), feet at z, would be inside (with a body's width to spare), or null; you can dive under one
+  boatBlocks(x, y, z) {
+    for (const b of this.boats) { const L = b.def.hull.length_m; if (Math.abs(x - b.x) > L || Math.abs(y - b.y) > L) continue;
+      const S = b.def._shape, q = this.boatLocal(b, x, y, z, this._bb || (this._bb = [])), t = clamp(q[3], 0, 1);
+      if (Math.abs(q[0]) < L / 2 + 0.25 && Math.abs(q[1]) < S.hb(t) + 0.25 && q[2] < S.gun(t) && q[2] + 1.8 > -S.keel(t)) return b; }
+    return null;
+  },
   boatOver(b, x, y) { const q = this.boatLocal(b, x, y); return q[3] > 0 && q[3] < 1 && Math.abs(q[1]) < b.def._shape.hb(q[3]); },
   // push a point of the fishing line (p[j..j+2], and its last position in o) out of the hull: over the gunwale, round the side or under the keel,
   // whichever is nearest. True if it was inside
@@ -5172,25 +5443,27 @@ Object.assign(Engine, {
         if (best) [this.boatLX, this.boatLY] = best; }
       this.updateTui(); this.say(this.boatWalkable(D) ? (this.touchUI ? `Off the helm · joystick to move about` : `Off the helm · WASD to move about · C to ${this.boatSit ? 'stand' : 'sit'} · V to drive`) : `Fishing from the ${D.name.toLowerCase()} · ${this.touchUI ? 'Helm' : 'V'} to paddle`, 4); }
   },
-  toggleBoatSit() { const D = this.boat.def; if (!this.boatSit) this.boatSit = true; else if (this.boatCanStand(D)) this.boatSit = false; else { this.say(`Too tippy to stand in a ${D.name.toLowerCase()}`, 2); return; } this.say(this.boatSit ? 'Sitting' : 'Standing', 1); this.updateTui(); },
+  toggleBoatSit() { const D = this.boat.def; this.boatKick(this.boat, -0.6, 0); if (!this.boatSit) this.boatSit = true; else if (this.boatCanStand(D)) this.boatSit = false; else { this.say(`Too tippy to stand in a ${D.name.toLowerCase()}`, 2); return; } this.say(this.boatSit ? 'Sitting' : 'Standing', 1); this.updateTui(); },
   boatDeckStep(dt, f, s) {
     const b = this.boat, D = b.def, H = D.hull, S = D._shape, P = this.P;
     const wl = this.boatStep(dt, 0, 0, false, false);   // the boat drifts to a stop on its own
     if (this.boatWalkable(D) && !this.boatSit && (f || s)) {   // walk about, relative to where you're looking
       const rel = P.a - b.a, sp = 1.4 * dt, dx = (Math.cos(rel) * f - Math.sin(rel) * s) * sp, dy = (Math.sin(rel) * f + Math.cos(rel) * s) * sp;
       const ok = (x, y) => this.boatSpotOK(D, x, y) && Math.abs(this.boatDeckZ(D, x, y) - this.boatDeckZ(D, this.boatLX, this.boatLY)) < 0.7;   // step up onto a casting deck, not over a console
-      if (ok(this.boatLX + dx, this.boatLY)) this.boatLX += dx; if (ok(this.boatLX, this.boatLY + dy)) this.boatLY += dy;
+      const x0 = this.boatLX, y0 = this.boatLY; if (ok(this.boatLX + dx, this.boatLY)) this.boatLX += dx; if (ok(this.boatLX, this.boatLY + dy)) this.boatLY += dy;
+      if ((this.stepAcc = (this.stepAcc || 0) + Math.hypot(this.boatLX - x0, this.boatLY - y0)) > 0.6) { this.stepAcc = 0; this.boatKick(b, -0.6, (this.stepFoot = -(this.stepFoot || 1)) * 0.3); }   // each footfall
     }
     const lx = this.boatLX, ly = this.boatLY, ca = Math.cos(b.a), sa = Math.sin(b.a), eye = this.boatSit ? (H.cockpit ? D.crew.eye_height_m : 0.95) : 1.62;
     P.x = b.x + ca * lx - sa * ly; P.y = b.y + sa * lx + ca * ly;
-    P.z = b.z + this.boatDeckZ(D, lx, ly) + eye - EYE + Math.sin(b.pitch) * lx - Math.sin(b.roll) * ly; P.vz = 0;
+    P.z = b.z + this.boatDeckZ(D, lx, ly) + eye - EYE + Math.sin(b.pitch) * lx + Math.sin(b.roll) * ly; P.vz = 0;
     return wl;
   },
   updateIdleBoats(dt) { // boats nobody's in: drift on the current, ride the swell
     for (const b of this.boats) { if (b === this.boat) continue; sample(b.x, b.y); b.kd = SK; b.wl = SW; const fl = flowAt(b.x, b.y, b.kd), nx = b.x + fl[0] * 0.6 * dt, ny = b.y + fl[1] * 0.6 * dt;
       if (this.boatDepth(nx, ny) > b.def.hull.draft_m + 0.05) { b.x = nx; b.y = ny; }
       const L = b.def.hull.length_m, ca = Math.cos(b.a), sa = Math.sin(b.a), zb = this.swellAt(b.x + ca * L / 2, b.y + sa * L / 2, b.kd), zs = this.swellAt(b.x - ca * L / 2, b.y - sa * L / 2, b.kd);
-      b.z = b.wl + (zb + zs) / 2; b.pitch = Math.atan2(zb - zs, L) * 0.8; b.roll = 0.04 * Math.sin(this.time * 0.9 + b.x) * (1 - b.def.handling.stability); }
+      b.z = b.wl + (zb + zs) / 2; b.pitch = Math.atan2(zb - zs, L) * 0.8; b.roll = 0.04 * Math.sin(this.time * 0.9 + b.x) * (1 - b.def.handling.stability);
+      if (b.rock) { this.boatRock(b, dt, null); b.pitch += b.rock[1]; b.roll += b.rock[0]; b.z += b.rock[2]; b.sp = b.sr = undefined; } }   // still rocking after you've stepped off
   },
 });
 </script>
@@ -5536,9 +5809,11 @@ Object.assign(Engine, {
     const sp = (swim ? swimSp : (run ? CONFIG.runSpeed : CONFIG.walkSpeed) * (1 - 0.55 * wade) * Game.speedMultiplier) * dt;
     const ca = Math.cos(P.a), sa = Math.sin(P.a), mx = (ca * fwd - sa * s) * sp, my = (sa * fwd + ca * s) * sp;
     const feet = swim ? Math.max(P.z, wl0 - 0.5) : P.z;   // swimming: climb out from the surface, so beaches still let you wade ashore
-    const blocked = (x, y, d) => groundAt(x, y) - feet > 0.5 + d * 1.7 || Game._solids.some(fn => fn(x, y, P.z)); // no walking up cliffs (over ~60°, beyond a half-metre step); games can add solid areas
+    const inHull = this.boats.length ? this.boatBlocks(P.x, P.y, feet) : null;   // a boat drifted over you (or you came up under one): you can still get out
+    const blocked = (x, y, d) => groundAt(x, y) - feet > 0.5 + d * 1.7 || Game._solids.some(fn => fn(x, y, P.z)) || (!inHull && this.boats.length && this.boatBlocks(x, y, feet)); // no walking up cliffs (over ~60°, beyond a half-metre step); games can add solid areas; hulls are solid
     if (!blocked(P.x + mx, P.y, Math.abs(mx))) { if (this.pastEdge(P.x + mx, P.y) && Math.abs(P.x + mx) > Math.abs(P.x)) this.edgeWarn(); else P.x += mx; }   // per axis, so you slide along obstacles (and the world's edge)
     if (!blocked(P.x, P.y + my, Math.abs(my))) { if (this.pastEdge(P.x, P.y + my) && Math.abs(P.y + my) > Math.abs(P.y)) this.edgeWarn(); else P.y += my; }
+    if (inHull) { const q = this.boatLocal(inHull, P.x, P.y), k = (q[1] < 0 ? -2 : 2) * dt; P.x -= Math.sin(inHull.a) * k; P.y += Math.cos(inHull.a) * k; }   // eased out the nearer side
     const roof = caveRoofAt(P.x, P.y), floor = Math.max(groundAt(P.x, P.y), iced ? wl0 : -1e9, roof && P.z > roof.under - 0.3 ? roof.top : -1e9);   // a cave cenote's roof bears you; its opening doesn't
     if (swim) {
       const up = K.Space, dn = K.KeyC;
@@ -6368,15 +6643,21 @@ Object.assign(Engine, {
       gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (this.boats.length) { // boats: one draw each (they pitch and heel on their own)
-      gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]);
+      gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.hull, 1);
       for (const b of this.boats) {
         if (Math.abs(b.x - E[0]) > 900 || Math.abs(b.y - E[1]) > 900) continue;
         const i = BoatDB.list.indexOf(b.def); let g = BoatDB.gpu[i];
         if (!g || g.stale) { if (g) { gl.deleteVertexArray(g.vao); gl.deleteBuffer(g.ib); gl.deleteBuffer(g.vb); } const ib = gl.createBuffer(), vb = this.vbo(b.def._mesh); g = BoatDB.gpu[i] = { vao: this.litVao(vb, VB, ib, 40), ib, vb, n: b.def._mesh.length / VS }; }
         gl.uniform1f(L.u.roll, b.roll || 0);
-        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1);
+        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.def._oars ? b.def._hullN : g.n, 1);
+        const O = b.def._oars; if (O && (b.oarOn || b.oarWas)) {   // oars / paddle in the stroke: posed on the CPU (a few hundred vertices) into their own buffer, drawn with the hull's instance
+          if (!g.oar) { g.oar = { vb: gl.createBuffer(), data: new Float32Array(O.mesh.length * (O.kind === 'oars' ? 2 : 1)) }; g.oar.vao = this.litVao(g.oar.vb, VB, g.ib, 40); }
+          const n = O.mesh.length; let o = 0; for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(b.def, O, b.oarPh ? b.oarPh[sd > 0 ? 0 : 1] : 0, b.oarOn ? b.oarK || 0 : 0, sd, !!b.oarOn, O.m); oarXform(O.mesh, O.m, g.oar.data.subarray(o, o + n)); o += n; }
+          gl.bindBuffer(gl.ARRAY_BUFFER, g.oar.vb); gl.bufferData(gl.ARRAY_BUFFER, g.oar.data, gl.STREAM_DRAW); gl.bindVertexArray(g.oar.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, o / VS, 1);
+        } else if (O) gl.drawArraysInstanced(gl.TRIANGLES, b.def._hullN, g.n - b.def._hullN, 1);   // stowed: they're in the boat's own mesh
+        b.oarWas = b.oarOn;
       }
-      gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0);
+      gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0); gl.uniform1f(L.u.hull, 0);
     }
     if (globalThis.Birds) Birds.draw(this, gl, L, E);   // birds: in the air, on the water, on perches and boats
     if (this.ang && this.ang.out) { this.drawTackle(gl, L, E); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
@@ -6420,6 +6701,13 @@ Object.assign(Engine, {
       if (R.length > 8) R.sort((a, b) => a.d2 - b.d2);
       rp.fill(0); for (let i = 0; i < Math.min(8, R.length); i++) { const r = R[i]; rp[i * 4] = r.x; rp[i * 4 + 1] = r.y; rp[i * 4 + 2] = r.t; rp[i * 4 + 3] = r.s; }
       gl.uniform4fv(Wt.u['rip[0]'], rp); }
+    { // the 4 nearest boats: no water surface drawn inside their hulls
+      const hu = this.hulUni || (this.hulUni = new Float32Array(48)), ht = this.hbtUni || (this.hbtUni = new Float32Array(96)), bs = this._hulB || (this._hulB = []); bs.length = 0;
+      for (const b of this.boats) { b.d2 = (b.x - E[0]) ** 2 + (b.y - E[1]) ** 2; if (b.d2 < 300 * 300) bs.push(b); }
+      if (bs.length > 4) bs.sort((a, b) => a.d2 - b.d2);
+      const n = Math.min(4, bs.length);
+      for (let i = 0; i < n; i++) { const b = bs[i], D = b.def; hu.set([b.x, b.y, Math.cos(b.a), Math.sin(b.a), D.hull.length_m, b.z, Math.sin(b.pitch || 0), Math.sin(b.roll || 0), D._fb, D.hull.draft_m, 0, 0], i * 12); ht.set(D._wtab, i * 24); }
+      gl.uniform1i(Wt.u.nh, n); if (n) { gl.uniform4fv(Wt.u['hul[0]'], hu); gl.uniform4fv(Wt.u['hbt[0]'], ht); } }
     for (let i = 0; i < visible.length; i += 2) { const w = visible[i].water; if (w) { gl.bindVertexArray(w.vao); gl.drawElements(gl.TRIANGLES, w.count, gl.UNSIGNED_SHORT, 0); } }
     this.drawParticles(vp, Hh, ty, E, 1);   // particles on the camera's side of the water surface go on top of it
     if (!uw && ENV.rain > 0.03) { // rain or snow falling around you
@@ -10605,7 +10893,7 @@ globalThis.Urchin = {
 // built-in fish, boats and tackle: <script type="application/json" data-builtin="fish|boat|tackle"> blocks at the end of this
 // file, one per definition; they're parsed at boot, after the loading screen has painted (parsing hundreds of KB of JSON is quick,
 // but parsing it as JavaScript object literals before the page could draw was not)
-const BUILTIN = { fish: [], boat: [], tackle: [], feature: [] };   // feature: map features (src/features/*.json)
+const BUILTIN = { fish: [], boat: [], tackle: [], feature: [], boatparts: [] };   // feature: map features (src/features/*.json)
 function readBuiltins() {
   for (const el of document.querySelectorAll('script[data-builtin]')) {
     try { BUILTIN[el.dataset.builtin].push(JSON.parse(el.textContent)); } catch (e) { console.error('Bad built-in', el.dataset.builtin, 'JSON:', e.message); }
@@ -10634,7 +10922,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // generating the island and the first chunks takes a moment: sketch its bones on the loading screen and let that paint first
   { const cv = document.querySelector('#loading canvas'); if (cv) sketchIsland(cv); }
   requestAnimationFrame(() => setTimeout(() => {
-    readBuiltins();
+    readBuiltins(); BOAT_PARTS = BUILTIN.boatparts[0] || null;   // sizes, builds, engines and fittings (boats/parts.json), before the boats that name them
     for (const [list, DB, label] of [[BUILTIN.fish, FishDB, 'fish'], [BUILTIN.boat, BoatDB, 'boat'], [BUILTIN.tackle, TackleDB, 'tackle']]) {   // built-ins, then what this browser has imported (same id: the import wins)
       for (const j of list) for (const d of Array.isArray(j) ? j : [j]) { const r = DB.register(d, { quiet: true }); if (!r.def) console.error(`Built-in ${label} rejected:`, d.id, r.errors); }
     }
@@ -37315,6 +37603,152 @@ window.addEventListener('DOMContentLoaded', () => {
   "features": {
     "paddle": "double"
   }
+}
+</script>
+<script type="application/json" data-builtin="boatparts">
+{
+  "schema": "embercrown-boatparts/1",
+  "sizes": {
+    "personal": { "name": "Personal", "spots": { "engine": 0, "hull": 0, "deck": 0 }, "mass": 0.35, "turn": 1.0,
+      "hull": { "length_m": 3.9, "beam_m": 0.8, "depth_m": 0.34, "draft_m": 0.1, "floor_m": 0.04 }, "handling": { "stability": 0.4, "waves_max": 0.5, "current_drift": 1 },
+      "helm": { "eye_height_m": 0.85 } },
+    "small": { "name": "Small", "spots": { "engine": 1, "hull": 1, "deck": 1 }, "mass": 1, "turn": 1.0,
+      "hull": { "length_m": 4.4, "beam_m": 1.5, "depth_m": 0.5, "draft_m": 0.12, "floor_m": 0.04 }, "handling": { "stability": 0.65, "waves_max": 0.55, "current_drift": 0.8 },
+      "helm": { "eye_height_m": 1.05, "seat_height": 0.3, "console_height": 0.55 } },
+    "medium": { "name": "Medium", "spots": { "engine": 2, "hull": 2, "deck": 2 }, "mass": 2.2, "turn": 0.85,
+      "hull": { "length_m": 6.2, "beam_m": 2.3, "depth_m": 0.8, "draft_m": 0.28, "floor_m": 0.1 }, "handling": { "stability": 0.8, "waves_max": 1.0, "current_drift": 0.5 },
+      "helm": { "eye_height_m": 1.5, "seat_height": 0.65, "console_height": 0.95, "cabin_height": 1.7 } },
+    "large": { "name": "Large", "spots": { "engine": 3, "hull": 3, "deck": 3 }, "mass": 4.5, "turn": 0.55,
+      "hull": { "length_m": 9.5, "beam_m": 3.3, "depth_m": 1.3, "draft_m": 0.65, "floor_m": 0.18 }, "handling": { "stability": 0.92, "waves_max": 1.7, "current_drift": 0.25 },
+      "helm": { "eye_height_m": 1.65, "seat_height": 0.75, "console_height": 1.0, "cabin_height": 2.0 } }
+  },
+  "builds": {
+    "canoe": { "name": "Canoe", "sizes": ["personal", "small"], "by_hand": "paddle", "helm_at": 0.17, "helm_seat": "thwart", "length": 1.15, "beam": 0.72,
+      "hull": { "bottom": "round", "bow": "pointed", "stern": "pointed", "fullness": 0.45, "sheer_bow_m": 0.22, "sheer_stern_m": 0.2, "decks": { "bow": 0.05, "stern": 0.05 } },
+      "colors": { "hull": "#2e6b4a", "deck": "#d8c8a0", "trim": "#6a4a2a", "interior": "#c8b896", "accent": "#202020" } },
+    "kayak": { "name": "Kayak", "sizes": ["personal"], "by_hand": "double_paddle", "helm_at": 0.4, "helm_seat": "kayak", "length": 1.15, "beam": 0.75,
+      "hull": { "bottom": "round", "bow": "pointed", "stern": "pointed", "fullness": 0.35, "sheer_bow_m": 0.12, "sheer_stern_m": 0.06, "floor_m": 0.02, "cockpit": [0.33, 0.52] },
+      "colors": { "hull": "#d9a020", "deck": "#e8c060", "trim": "#303030", "interior": "#404040", "accent": "#202020" } },
+    "skiff": { "name": "Skiff", "sizes": ["small", "medium"], "by_hand": "oars", "helm_at": 0.12, "helm_seat": "bench",
+      "hull": { "bottom": "flat", "bow": "blunt", "stern": "transom", "transom_width": 0.95, "fullness": 0.9, "sheer_bow_m": 0.1, "sheer_stern_m": 0, "decks": { "bow": 0.06, "stern": 0 } },
+      "colors": { "hull": "#5a6a4a", "bottom": "#8a8e90", "deck": "#9aa0a4", "trim": "#c8ccd0", "interior": "#a8acb0", "accent": "#303030" } },
+    "vee": { "name": "V-hull", "sizes": ["small", "medium", "large"], "by_hand": "oars", "helm_at": 0.12, "helm_seat": "bench",
+      "hull": { "bottom": "vee", "deadrise_deg": 18, "bow": "pointed", "stern": "transom", "transom_width": 0.85, "fullness": 0.55, "sheer_bow_m": 0.22, "sheer_stern_m": 0, "decks": { "bow": 0.12, "stern": 0 } },
+      "colors": { "hull": "#f0f0ec", "bottom": "#27405e", "deck": "#e4e4de", "trim": "#c8ccd0", "interior": "#dcdcd4", "accent": "#27405e" } },
+    "workboat": { "name": "Workboat", "sizes": ["medium", "large"], "by_hand": "oars", "helm_at": 0.2, "helm_seat": "bench",
+      "hull": { "bottom": "vee", "deadrise_deg": 14, "bow": "pointed", "stern": "transom", "transom_width": 0.88, "fullness": 0.6, "sheer_bow_m": 0.5, "sheer_stern_m": 0, "decks": { "bow": 0.12, "stern": 0 } },
+      "colors": { "hull": "#e8e4d8", "bottom": "#7a2a22", "deck": "#c9c4b4", "trim": "#2f4a3a", "interior": "#bdb8a8", "accent": "#2f4a3a" } }
+  },
+  "engines": {
+    "small": { "name": "Small outboard", "spots": 1, "power": 1, "control": 3, "hp": 15, "color": "#2a2a2a" },
+    "medium": { "name": "Medium outboard", "spots": 2, "power": 2, "control": 2, "hp": 70, "color": "#1a1a1e" },
+    "large": { "name": "Large outboard", "spots": 3, "power": 3, "control": 1, "hp": 250, "color": "#f2f2f2" }
+  },
+  "hull_items": {
+    "seat": { "name": "Bench seat", "spots": 1, "seat": { "type": "bench", "height": 0.3 } },
+    "storage": { "name": "Storage locker", "spots": 1, "seat": { "type": "locker", "height": 0.42 } }
+  },
+  "deck_items": {
+    "console": { "name": "Helm console", "spots": 1, "sizes": ["small", "medium", "large"], "console": true },
+    "cabin": { "name": "Wheelhouse", "spots": 2, "sizes": ["medium", "large"], "cabin": true },
+    "casting_deck": { "name": "Casting decks", "spots": 1, "features": { "casting_decks": true } },
+    "rod_holders": { "name": "Rod holders", "spots": 1, "features": { "rod_holders": 4 } },
+    "fish_finder": { "name": "Fish finder", "spots": 1, "features": { "fish_finder": true } },
+    "trolling_motor": { "name": "Trolling motor", "spots": 1, "features": { "trolling_motor": true } },
+    "livewell": { "name": "Livewell", "spots": 1, "features": { "livewell": true } }
+  }
+}
+</script>
+<script type="application/json" data-builtin="boat">
+{
+  "schema": "embercrown-boat/2",
+  "id": "pack_canoe",
+  "name": "Pack canoe",
+  "size": "personal",
+  "build": "canoe"
+}
+</script>
+<script type="application/json" data-builtin="boat">
+{
+  "schema": "embercrown-boat/2",
+  "id": "skiff",
+  "name": "Skiff",
+  "size": "small",
+  "build": "skiff",
+  "engines": [
+    "small"
+  ],
+  "hull": [
+    "seat"
+  ],
+  "deck": [
+    "rod_holders"
+  ]
+}
+</script>
+<script type="application/json" data-builtin="boat">
+{
+  "schema": "embercrown-boat/2",
+  "id": "bay_boat",
+  "name": "Bay boat",
+  "size": "medium",
+  "build": "vee",
+  "engines": [
+    "medium"
+  ],
+  "hull": [
+    "seat",
+    "storage"
+  ],
+  "deck": [
+    "console",
+    "casting_deck"
+  ]
+}
+</script>
+<script type="application/json" data-builtin="boat">
+{
+  "schema": "embercrown-boat/2",
+  "id": "twin_skiff",
+  "name": "Twin-engine skiff",
+  "size": "medium",
+  "build": "skiff",
+  "engines": [
+    "small",
+    "small"
+  ],
+  "hull": [
+    "storage",
+    "seat"
+  ],
+  "deck": [
+    "console",
+    "rod_holders"
+  ],
+  "colors": {
+    "hull": "#3d5a6a"
+  }
+}
+</script>
+<script type="application/json" data-builtin="boat">
+{
+  "schema": "embercrown-boat/2",
+  "id": "trawler",
+  "name": "Trawler",
+  "size": "large",
+  "build": "workboat",
+  "engines": [
+    "large"
+  ],
+  "hull": [
+    "storage",
+    "storage",
+    "seat"
+  ],
+  "deck": [
+    "cabin",
+    "rod_holders"
+  ]
 }
 </script>
 <script type="application/json" data-builtin="tackle">

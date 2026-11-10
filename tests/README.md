@@ -17,6 +17,10 @@ node tests/performance.mjs <baseline-revision>
 
 Do not regenerate fixtures simply to make a failing comparison pass. Intentional species or world-generation changes may require a new baseline.
 
+## Boat checks
+
+`node tests/boats.mjs` loads the boat definitions and the on-board engine code in Node and checks the oar / paddle stroke (blade in the water on the drive, sweeping aft), the hull heeling toward your weight and settling, and hulls being solid to swimmers and to other boats.
+
 ## Browser image comparisons
 
 Start an isolated headless Chrome instance in a separate terminal:

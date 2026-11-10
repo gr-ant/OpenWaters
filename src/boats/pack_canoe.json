@@ -1,0 +1,7 @@
+{
+  "schema": "embercrown-boat/2",
+  "id": "pack_canoe",
+  "name": "Pack canoe",
+  "size": "personal",
+  "build": "canoe"
+}
