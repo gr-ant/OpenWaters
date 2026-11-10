@@ -301,9 +301,9 @@ const Birds = globalThis.Birds = (() => {
     pickSpot(b) {
       const sp = b.sp, fl = sp.flock, P = Engine.P, Ls = sp.lands, kinds = Object.keys(Ls).filter(k => Ls[k] > 0 && providers.has(k));
       const free = s => (s.bold || Math.hypot(s.x - P.x, s.y - P.y) > 25) && Perches.free(s, b);
-      if (Ls.boat > 0 && Engine.boat && rnd() < Math.min(0.2, Ls.boat * 0.35)) { const c = Perches.near(b.x, b.y, 160, ['boat'], b).filter(s => s.mine && free(s)); if (c.length) return c[rnd() * c.length | 0]; }
+      if (Ls.boat > 0 && Engine.boat && rnd() < Math.min(0.1, Ls.boat * 0.175)) { const c = Perches.near(b.x, b.y, 160, ['boat'], b).filter(s => s.mine && free(s)); if (c.length) return c[rnd() * c.length | 0]; }
       for (let tries = 0; tries < 3; tries++) {
-        let r = rnd() * kinds.reduce((t, k) => t + Ls[k], 0), k = kinds[0]; for (const q of kinds) { r -= Ls[q]; if (r <= 0) { k = q; break; } }
+        const wt = q => Ls[q] * (q === 'boat' ? 0.5 : 1); let r = rnd() * kinds.reduce((t, q) => t + wt(q), 0), k = kinds[0]; for (const q of kinds) { r -= wt(q); if (r <= 0) { k = q; break; } }   // (boats count half: they were landing on yours too often)
         const c = Perches.near(k === 'boat' ? b.x : fl.x, k === 'boat' ? b.y : fl.y, k === 'boat' ? 160 : 70, [k], b).filter(free);
         if (c.length) return c[rnd() * c.length | 0];
       }
@@ -321,8 +321,8 @@ const Birds = globalThis.Birds = (() => {
     anchor(sp) {   // where a flock hangs about: over water near you (round the stacks, for colony birds); in your wake when you're under way (if it follows boats)
       const P = Engine.P, fl = sp.flock, bt = Engine.boat, home = sp.colony && this.colonyNear(P);
       if (home) { const a = rnd() * TAU, r = home.r + 10 + rnd() * 60; fl.ax = home.x + Math.cos(a) * r; fl.ay = home.y + Math.sin(a) * r; fl.lev = WLW; return; }
-      if (sp.flight.followBoats && bt && Math.abs(bt.speed || 0) > 1.5) { const d = 18 + rnd() * 20; fl.ax = bt.x - Math.cos(bt.a) * d; fl.ay = bt.y - Math.sin(bt.a) * d; return; }
-      for (let k = 0; k < 12; k++) { const r = 25 + rnd() * 70, a = rnd() * TAU, x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r, w = Game.waterAt(x, y);
+      if (sp.flight.followBoats && bt && Math.abs(bt.speed || 0) > 1.5 && rnd() < 0.5) { const d = 36 + rnd() * 40; fl.ax = bt.x - Math.cos(bt.a) * d; fl.ay = bt.y - Math.sin(bt.a) * d; return; }
+      for (let k = 0; k < 12; k++) { const r = 50 + rnd() * 110, a = rnd() * TAU, x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r, w = Game.waterAt(x, y);
         if (w.depth > 0.5) { fl.ax = x; fl.ay = y; fl.lev = w.level; return; } }
       fl.ax = P.x + (rnd() - 0.5) * 60; fl.ay = P.y + (rnd() - 0.5) * 60; fl.lev = Math.max(fl.lev, surfAt(P.x, P.y) - 5);
     },
@@ -384,7 +384,7 @@ const Birds = globalThis.Birds = (() => {
         if ((b.gzT -= dt) <= 0) { b.gzT = 0.4; b.gzv = surfAt(b.x, b.y); }
         if (b.st === 'float' || b.st === 'stand') this.perched(b, dt, night);
         else this.fly(b, dt, night, wd, ws, T);
-        if (b.flap) { b.ph += dt * b.hz * TAU * (b.st === 'takeoff' ? 1.35 : 1); if (b.ph >= TAU) { b.ph -= TAU; if (!b.want) b.flap = false; } }   // finish the stroke before gliding
+        if (b.flap) { b.ph += dt * b.hz * TAU * (b.st === 'takeoff' ? 1.35 : b.st === 'land' ? 1 + 0.9 * (b.flare || 0) : 1); if (b.ph >= TAU) { b.ph -= TAU; if (!b.want) b.flap = false; } }   // finish the stroke before gliding
         else if (b.want) b.flap = true;
         b.frame = b.st === 'float' || b.st === 'under' ? F_SIT : b.st === 'stand' ? F_STAND : b.st === 'dive' && b.sp.forage?.tuck ? F_DIVE : b.flap ? Math.floor(b.ph / TAU * NF) % NF
           : b.vz < -2.2 ? F_DIVE : b.sp.flight.soar && (ws > 0.55 || b.roll * b.roll > 0.12) ? F_SOAR : F_GLIDE;
@@ -398,13 +398,14 @@ const Birds = globalThis.Birds = (() => {
       else if (b.st === 'land') {
         const s = b.target, p = Perches.at(s);
         if (p.gone || (p.speed || 0) > (s.flushSpeed ?? 1e9) * 0.6 || Perches.taken(s.key, b)) { b.st = 'fly'; b.target = null; return; }
-        const lx = p.x, ly = p.y, lz = this.bodyZ(b, s, p), d = Math.hypot(lx - b.x, ly - b.y);
+        const lx = p.x, ly = p.y, lz = this.bodyZ(b, s, p), d = Math.hypot(lx - b.x, ly - b.y); b.flare = 0;
         tx = lx; ty = ly; tz = lz + Math.min(d * 0.32, 30); turn = d < 25 ? 2.2 : 1.2; vT = clamp(d * 0.35, 3.5, F.speed);
         b.want = d < 7 || b.vz > 0.8;   // a few beats to flare and brake at the end
         if (d < 9) {   // the last few metres: lined up, wings flared, dropping straight onto the spot
           const step = Math.min(d, clamp(d * 0.9, 1.2, 6) * dt); if (d > 0.01) { b.x += (lx - b.x) / d * step; b.y += (ly - b.y) / d * step; b.a += wrap(Math.atan2(ly - b.y, lx - b.x) - b.a) * Math.min(1, dt * 4); }
           b.z += (lz - b.z) * Math.min(1, dt * 2.5); b.v = step / Math.max(dt, 1e-3);
-          { const hx = b.x - P.x, hy = b.y - P.y, hz = b.z - P.z - CONFIG.eyeHeight, hd = Math.hypot(hx, hy, hz); if (hd < 0.9 && d > 0.5) b.z += (0.9 - hd) * Math.min(1, dt * 6); }   // over your head, not through it b.vz = 0; b.roll *= 0.9; b.pitch += (0.5 - b.pitch) * Math.min(1, dt * 4); b.want = true;
+          { const hx = b.x - P.x, hy = b.y - P.y, hz = b.z - P.z - CONFIG.eyeHeight, hd = Math.hypot(hx, hy, hz); if (hd < 0.9 && d > 0.5) b.z += (0.9 - hd) * Math.min(1, dt * 6); }   // over your head, not through it
+          b.flare = clamp(1 - d / 9, 0, 1); b.vz = 0; b.roll *= 0.9; b.pitch += (0.3 + 0.55 * b.flare - b.pitch) * Math.min(1, dt * 5); b.want = true;   // the flare: body tipped well back, tail down, wings beating fast to brake (b.flare 0..1 as it closes)
           if (d < 0.3 && Math.abs(b.z - lz) < 0.3) { b.target = null; this.settle(b, s); }
           return;
         }

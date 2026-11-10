@@ -2222,7 +2222,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
 }
 // A pose: o.mode 'jump' (in the air: o.rise), 'stand' (o.crouch after a landing; moving too: o.swing 0..1 how much, o.gait 0 walk .. 1 jog .. 2 run, o.ph the stride phase, o.stride the metres a whole cycle covers), 'swim' (o.body: body pitch, -pi/2 lying
 // face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet;
-// o.paddle; o.helm). o.rod: the right hand holds a rod out in front (o.castW, o.castF: casting; o.hands2: the left hand on it too, o.crank: winding). o.toss 0..1: throwing a net or pot; o.pull: hauling one in (radians). Returns the parts as [part, forward, side, up, pitch, roll, yaw],
+// o.paddle; o.helm). o.rod: the right hand holds a rod out in front (o.castW, o.castF: casting; o.hands2: the left hand on it too, o.crank: winding). o.toss 0..1: throwing a net or pot; o.pull: hauling one in (radians). o.reachL / o.reachR: a point [forward, right, up] for that hand to hold. Returns the parts as [part, forward, side, up, pitch, roll, yaw],
 // the right hand and the head centre, all relative to the feet (standing, sitting) under the body's own heading. Every part hangs
 // down from its joint, is rolled out to the side (roll, + to the right), pitched forward (pitch), then turned (yaw): the order the
 // lit shader applies them, so a limb can swing sideways and the shoulders can turn against the hips.
@@ -2279,15 +2279,16 @@ function humanPose(o) {
   const leg = i => { const side = i ? 1 : -1, hipJ = [-side * H.hip * Math.sin(turn), sway + side * H.hip * Math.cos(turn), 0], knee = end(hipJ, H.thigh, thigh[i], thR[i], turn), ankle = end(knee, H.shin, shin[i], shR[i], turn); return { hipJ, knee, ankle }; };
   if (o.mode === 'jump') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i]))));   // in the air the lowest heel or toe is where your feet are
   const hip = [0, sway, hipZ], sh = [-Math.sin(b) * H.torso, sway, hipZ + Math.cos(b) * H.torso], arm2 = end(sh, 0.15, b);   // the shoulders: up the (leaning) spine from the hips; arm2: the shoulder joints' height, well below the top of the sloping shoulders
-  if (o.rod && o.hands2 && o.mode !== 'swim') {   // both hands on the rod (casting, reeling): the left arm reaches across to it. o.crank: the left hand turns the reel handle
-    const ct = Math.cos(twist), st = Math.sin(twist), JR = [arm2[0] - H.shoulder * st, arm2[1] + H.shoulder * ct, arm2[2]], hR = end(end(JR, H.upper, up[1], upR[1], twist), H.fore + 0.04, fore[1], foR[1], twist);
-    const JL = [arm2[0] + H.shoulder * st, arm2[1] - H.shoulder * ct, arm2[2]], ck = o.crank, a = H.upper, bl = H.fore + 0.04;
-    const T = ck !== undefined ? [hR[0] + 0.03 + 0.035 * Math.cos(ck), hR[1] - 0.1, hR[2] - 0.05 + 0.035 * Math.sin(ck)] : [hR[0] - 0.07, hR[1] - 0.05, hR[2] - 0.1];   // on the reel handle, going round; or on the butt below the other hand
-    const v = [T[0] - JL[0], T[1] - JL[1], T[2] - JL[2]], far = Math.hypot(...v) || 1, n = v.map(x => x / far), dd = clamp(far, Math.abs(a - bl) + 0.02, a + bl - 0.01);   // as far as the arm reaches
-    const along = (a * a + dd * dd - bl * bl) / (2 * dd), rise = Math.sqrt(Math.max(0, a * a - along * along)), pd = -0.6 * n[1] - n[2], pole = [-pd * n[0], -0.6 - pd * n[1], -1 - pd * n[2]], pl = Math.hypot(...pole) || 1;   // the elbow drops down and out to the left
-    const El = JL.map((x, k) => x + n[k] * along + pole[k] / pl * rise), Tc = JL.map((x, k) => x + n[k] * dd);
+  // an arm reaching for a point (in the pose's own frame): the shoulder, elbow and hand line up on it, the elbow dropped down and outward
+  const ct = Math.cos(twist), st = Math.sin(twist), shoulderJ = i => { const sd = i ? 1 : -1; return [arm2[0] - sd * H.shoulder * st, arm2[1] + sd * H.shoulder * ct, arm2[2]]; };
+  const reach = (i, T) => { const J = shoulderJ(i), a = H.upper, bl = H.fore + 0.04, v = [T[0] - J[0], T[1] - J[1], T[2] - J[2]], far = Math.hypot(...v) || 1, n = v.map(x => x / far), dd = clamp(far, Math.abs(a - bl) + 0.02, a + bl - 0.01);   // as far as the arm goes
+    const along = (a * a + dd * dd - bl * bl) / (2 * dd), rise = Math.sqrt(Math.max(0, a * a - along * along)), py = (i ? 0.6 : -0.6), pd = py * n[1] - n[2], pole = [-pd * n[0], py - pd * n[1], -1 - pd * n[2]], pl = Math.hypot(...pole) || 1;
+    const El = J.map((x, k) => x + n[k] * along + pole[k] / pl * rise), Tc = J.map((x, k) => x + n[k] * dd);
     const aim = (p, q) => { const w = [q[0] - p[0], q[1] - p[1], q[2] - p[2]], l = Math.hypot(...w) || 1; return [Math.atan2((w[0] * ct + w[1] * st) / l, -w[2] / l), Math.asin(clamp((-w[0] * st + w[1] * ct) / l, -1, 1))]; };   // the pitch and roll that point a limb from p to q
-    [up[0], upR[0]] = aim(JL, El); [fore[0], foR[0]] = aim(El, Tc); }
+    [up[i], upR[i]] = aim(J, El); [fore[i], foR[i]] = aim(El, Tc); };
+  if (o.rod && o.hands2 && o.mode !== 'swim') { const hR = end(end(shoulderJ(1), H.upper, up[1], upR[1], twist), H.fore + 0.04, fore[1], foR[1], twist), ck = o.crank;   // both hands on the rod (casting, reeling): the left comes across to it
+    reach(0, ck !== undefined ? [hR[0] + 0.03 + 0.035 * Math.cos(ck), hR[1] - 0.1, hR[2] - 0.05 + 0.035 * Math.sin(ck)] : [hR[0] - 0.07, hR[1] - 0.05, hR[2] - 0.1]); }   // on the reel handle, going round (o.crank); or on the butt below the other hand
+  if (o.mode !== 'swim') { if (o.reachL) reach(0, o.reachL); if (o.reachR) reach(1, o.reachR); }   // hands put on something: a wheel, a throttle, a tiller
   out.push(['hips', hip[0], hip[1], hip[2], b, sway * 2, turn], ['torso', sh[0], sh[1], sh[2], b, -sway * 1.5, twist],   // the hips tip and the chest leans a little over the standing foot
     ['head', sh[0], sh[1], sh[2], headP, 0, twist * 0.3]);
   let hand = null;
@@ -6930,7 +6931,15 @@ Object.assign(Engine, {
       base = P.z + EYE - eye; if (helm) rot = this.hFace = b.a; else if (sit) rot = this.hFace = P.a;   // feet on the floor (or deck) under the eye the boat code puts you at; at the helm you face the bow
       this.hAmp = (this.hAmp || 0) + (clamp(spd, 0, 1) - (this.hAmp || 0)) * Math.min(1, dt * 8); const L = spd > 0.05 ? spd / (0.9 + 0.32 * Math.min(spd, 2.6)) : 0;   // on deck you walk
       this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist * 6.2832 / this.hStride) % 6.2832;
-      o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, stride: this.hStride, ph: this.hPh, rod }; }
+      o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, stride: this.hStride, ph: this.hPh, rod };
+      if (helm && ['outboard', 'inboard'].includes(D.propulsion.type)) {   // driving: both hands on the wheel (or one on the tiller); the right goes to the throttle while the speed is changing
+        const S = D._shape, F = D.features, st = clamp(D.crew.seat_at, 0, 1), sx = S.x(st), sy = -(D.crew.seat_side || 0) * S.hb(st), up = b.z - base, hip = o.hipZ, v = b.speed || 0;
+        if (Math.abs(v - (this.hBoatV ?? v)) > 0.25 * dt) this.hThr = 0.7; this.hBoatV = v; this.hThr = Math.max(0, (this.hThr || 0) - dt);
+        if (F.console) { const cs = F.console, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), top = D.hull.floor_m + (cs.height ?? 0.95), turn = 0.5 * Math.sin(this.time * 0.7) * Math.min(1, Math.abs(v) / 3);   // (the wheel: boat-detail.js)
+          o.reachL = [x - 0.23 - sx, oy - 0.13 * Math.cos(turn) - sy, up + top - 0.1 - 0.13 * Math.sin(turn)]; o.reachR = this.hThr > 0 ? [x - 0.125 - sx, oy + w * 0.75 - sy, up + top + 0.165] : [x - 0.23 - sx, oy + 0.13 * Math.cos(turn) - sy, up + top - 0.1 + 0.13 * Math.sin(turn)]; }
+        else if (F.cabin) { o.reachL = [0.42, -0.15, hip + 0.32]; o.reachR = this.hThr > 0 ? [0.4, 0.34, hip + 0.4] : [0.42, 0.15, hip + 0.32]; }   // a wheel in the wheelhouse, a throttle beside it
+        else o.reachR = [-0.05, 0.3, hip + 0.22 + (this.hThr > 0 ? 0.03 : 0)];   // a tiller beside you, its grip twisted for more or less
+      } }
     else if (this.swim) { const go = this.moving; this.hPh = ((this.hPh || 0) + dt * (go ? 3.6 : 1.8)) % 6.2832;   // a breaststroke every 1.75 s
       o = { mode: 'swim', tread: !go, body: go ? -Math.PI / 2 + (this.under ? clamp(P.pitch, -1.2, 1.2) : 0) : -0.25, ph: this.hPh }; }
     else if (this.airH > 0.15 || (this.airH > 0.05 && P.vz > 1)) { this.hAir = P.vz; o = { mode: 'jump', rise: P.vz / CONFIG.jumpSpeed, rod }; }   // off the ground (not just a step down a bank): going up, over the top, coming down
@@ -9923,9 +9932,9 @@ const Birds = globalThis.Birds = (() => {
     pickSpot(b) {
       const sp = b.sp, fl = sp.flock, P = Engine.P, Ls = sp.lands, kinds = Object.keys(Ls).filter(k => Ls[k] > 0 && providers.has(k));
       const free = s => (s.bold || Math.hypot(s.x - P.x, s.y - P.y) > 25) && Perches.free(s, b);
-      if (Ls.boat > 0 && Engine.boat && rnd() < Math.min(0.2, Ls.boat * 0.35)) { const c = Perches.near(b.x, b.y, 160, ['boat'], b).filter(s => s.mine && free(s)); if (c.length) return c[rnd() * c.length | 0]; }
+      if (Ls.boat > 0 && Engine.boat && rnd() < Math.min(0.1, Ls.boat * 0.175)) { const c = Perches.near(b.x, b.y, 160, ['boat'], b).filter(s => s.mine && free(s)); if (c.length) return c[rnd() * c.length | 0]; }
       for (let tries = 0; tries < 3; tries++) {
-        let r = rnd() * kinds.reduce((t, k) => t + Ls[k], 0), k = kinds[0]; for (const q of kinds) { r -= Ls[q]; if (r <= 0) { k = q; break; } }
+        const wt = q => Ls[q] * (q === 'boat' ? 0.5 : 1); let r = rnd() * kinds.reduce((t, q) => t + wt(q), 0), k = kinds[0]; for (const q of kinds) { r -= wt(q); if (r <= 0) { k = q; break; } }   // (boats count half: they were landing on yours too often)
         const c = Perches.near(k === 'boat' ? b.x : fl.x, k === 'boat' ? b.y : fl.y, k === 'boat' ? 160 : 70, [k], b).filter(free);
         if (c.length) return c[rnd() * c.length | 0];
       }
@@ -9943,8 +9952,8 @@ const Birds = globalThis.Birds = (() => {
     anchor(sp) {   // where a flock hangs about: over water near you (round the stacks, for colony birds); in your wake when you're under way (if it follows boats)
       const P = Engine.P, fl = sp.flock, bt = Engine.boat, home = sp.colony && this.colonyNear(P);
       if (home) { const a = rnd() * TAU, r = home.r + 10 + rnd() * 60; fl.ax = home.x + Math.cos(a) * r; fl.ay = home.y + Math.sin(a) * r; fl.lev = WLW; return; }
-      if (sp.flight.followBoats && bt && Math.abs(bt.speed || 0) > 1.5) { const d = 18 + rnd() * 20; fl.ax = bt.x - Math.cos(bt.a) * d; fl.ay = bt.y - Math.sin(bt.a) * d; return; }
-      for (let k = 0; k < 12; k++) { const r = 25 + rnd() * 70, a = rnd() * TAU, x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r, w = Game.waterAt(x, y);
+      if (sp.flight.followBoats && bt && Math.abs(bt.speed || 0) > 1.5 && rnd() < 0.5) { const d = 36 + rnd() * 40; fl.ax = bt.x - Math.cos(bt.a) * d; fl.ay = bt.y - Math.sin(bt.a) * d; return; }
+      for (let k = 0; k < 12; k++) { const r = 50 + rnd() * 110, a = rnd() * TAU, x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r, w = Game.waterAt(x, y);
         if (w.depth > 0.5) { fl.ax = x; fl.ay = y; fl.lev = w.level; return; } }
       fl.ax = P.x + (rnd() - 0.5) * 60; fl.ay = P.y + (rnd() - 0.5) * 60; fl.lev = Math.max(fl.lev, surfAt(P.x, P.y) - 5);
     },
@@ -10006,7 +10015,7 @@ const Birds = globalThis.Birds = (() => {
         if ((b.gzT -= dt) <= 0) { b.gzT = 0.4; b.gzv = surfAt(b.x, b.y); }
         if (b.st === 'float' || b.st === 'stand') this.perched(b, dt, night);
         else this.fly(b, dt, night, wd, ws, T);
-        if (b.flap) { b.ph += dt * b.hz * TAU * (b.st === 'takeoff' ? 1.35 : 1); if (b.ph >= TAU) { b.ph -= TAU; if (!b.want) b.flap = false; } }   // finish the stroke before gliding
+        if (b.flap) { b.ph += dt * b.hz * TAU * (b.st === 'takeoff' ? 1.35 : b.st === 'land' ? 1 + 0.9 * (b.flare || 0) : 1); if (b.ph >= TAU) { b.ph -= TAU; if (!b.want) b.flap = false; } }   // finish the stroke before gliding
         else if (b.want) b.flap = true;
         b.frame = b.st === 'float' || b.st === 'under' ? F_SIT : b.st === 'stand' ? F_STAND : b.st === 'dive' && b.sp.forage?.tuck ? F_DIVE : b.flap ? Math.floor(b.ph / TAU * NF) % NF
           : b.vz < -2.2 ? F_DIVE : b.sp.flight.soar && (ws > 0.55 || b.roll * b.roll > 0.12) ? F_SOAR : F_GLIDE;
@@ -10020,13 +10029,14 @@ const Birds = globalThis.Birds = (() => {
       else if (b.st === 'land') {
         const s = b.target, p = Perches.at(s);
         if (p.gone || (p.speed || 0) > (s.flushSpeed ?? 1e9) * 0.6 || Perches.taken(s.key, b)) { b.st = 'fly'; b.target = null; return; }
-        const lx = p.x, ly = p.y, lz = this.bodyZ(b, s, p), d = Math.hypot(lx - b.x, ly - b.y);
+        const lx = p.x, ly = p.y, lz = this.bodyZ(b, s, p), d = Math.hypot(lx - b.x, ly - b.y); b.flare = 0;
         tx = lx; ty = ly; tz = lz + Math.min(d * 0.32, 30); turn = d < 25 ? 2.2 : 1.2; vT = clamp(d * 0.35, 3.5, F.speed);
         b.want = d < 7 || b.vz > 0.8;   // a few beats to flare and brake at the end
         if (d < 9) {   // the last few metres: lined up, wings flared, dropping straight onto the spot
           const step = Math.min(d, clamp(d * 0.9, 1.2, 6) * dt); if (d > 0.01) { b.x += (lx - b.x) / d * step; b.y += (ly - b.y) / d * step; b.a += wrap(Math.atan2(ly - b.y, lx - b.x) - b.a) * Math.min(1, dt * 4); }
           b.z += (lz - b.z) * Math.min(1, dt * 2.5); b.v = step / Math.max(dt, 1e-3);
-          { const hx = b.x - P.x, hy = b.y - P.y, hz = b.z - P.z - CONFIG.eyeHeight, hd = Math.hypot(hx, hy, hz); if (hd < 0.9 && d > 0.5) b.z += (0.9 - hd) * Math.min(1, dt * 6); }   // over your head, not through it b.vz = 0; b.roll *= 0.9; b.pitch += (0.5 - b.pitch) * Math.min(1, dt * 4); b.want = true;
+          { const hx = b.x - P.x, hy = b.y - P.y, hz = b.z - P.z - CONFIG.eyeHeight, hd = Math.hypot(hx, hy, hz); if (hd < 0.9 && d > 0.5) b.z += (0.9 - hd) * Math.min(1, dt * 6); }   // over your head, not through it
+          b.flare = clamp(1 - d / 9, 0, 1); b.vz = 0; b.roll *= 0.9; b.pitch += (0.3 + 0.55 * b.flare - b.pitch) * Math.min(1, dt * 5); b.want = true;   // the flare: body tipped well back, tail down, wings beating fast to brake (b.flare 0..1 as it closes)
           if (d < 0.3 && Math.abs(b.z - lz) < 0.3) { b.target = null; this.settle(b, s); }
           return;
         }
