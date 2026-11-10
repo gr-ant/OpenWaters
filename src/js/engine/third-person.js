@@ -7,12 +7,14 @@ Object.assign(Engine, {
     for (const sel of ['#bView .ic', '#hView span']) { const el = document.querySelector(sel); if (el) el.innerHTML = uiIcon(this.thirdP ? 'dock.view3' : 'dock.view1'); }   // the picture (touch rail, desktop dock) shows the view you're in
     this.say(this.thirdP ? 'Third-person view' : 'First-person view', 1.2);
   },
-  // the camera: 3.2 m back along the view from just over your head, pulled in so it stays above the ground and on your side of
+  // how far back the camera sits: the wheel or PgUp / PgDn, 1.2 to 9 m (f < 1 brings it in)
+  camZoom(f) { this.camBack = clamp((this.camBack || 3.2) * f, 1.2, 9); },
+  // the camera: 3.2 m back (or as zoomed) along the view from just over your head, pulled in so it stays above the ground and on your side of
   // the water surface (above it while you're above, under it while you dive).
   // shortcut: ground and water only, not trees, rocks, boat cabins or cave roofs; upgrade to a sphere cast against those
   camPos(F) {
     const P = this.P, o = [P.x, P.y, P.z + EYE + 0.35]; sample(o[0], o[1]);
-    const under = o[2] < SW && hW(SE) < SW, D = 3.2; let d = D;
+    const under = o[2] < SW && hW(SE) < SW, D = this.camBack || 3.2; let d = D;
     for (let s = 0.25; s <= D; s += 0.25) { const x = o[0] - F[0] * s, y = o[1] - F[1] * s, z = o[2] - F[2] * s; sample(x, y); const g = hW(SE), wet = g < SW;
       if (z < g + 0.3 || (wet && (under ? z > SW - 0.2 : z < SW + 0.2))) { d = s - 0.25; break; } }
     this.camD = d < (this.camD || 0) ? d : (this.camD || 0) + (d - (this.camD || 0)) * 0.08;   // in at once when something's in the way, back out gently

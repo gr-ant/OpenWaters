@@ -70,7 +70,7 @@ T.hand = 'cast_net'; run(1.5); A(T.cn && finite() && spread() <= 0.46 && T.cn.p.
 const x0 = T.cn.p[0][0]; Game.player.x = 0.6; step(0.05); A(Math.abs(T.cn.p[0][0] - x0) < 0.55, 'the weights lag as you move: it swings'); Game.player.x = 0; run(1);
 const lines = []; Game.project = (x, y, z) => [x, z]; const pen = { save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() { lines.push(1); }, quadraticCurveTo() { lines.push('rope'); }, stroke() {}, arc() { lines.push('lead'); }, fill() {} };
 hud.forEach(f => f(pen)); A(lines.filter(l => l === 1).length === 40 && lines.filter(l => l === 'lead').length === 10 && !lines.includes('rope'), 'drawn: spokes, mesh rings and weights; no hand line until it is thrown');
-const r0 = Math.random; Math.random = () => 0.1; Engine.action(); A(T.net && T.net.stage === 'fly', 'thrown: ' + said.at(-1));
+const r0 = Math.random; Math.random = () => 0.1; Engine.based = false; Engine.action(); A(!T.net && Engine.based, 'F never throws the net'); R(); A(T.net && T.net.stage === 'fly', 'thrown: ' + said.at(-1));
 run(0.5); A(finite() && flat() > 1 && T.cn.hub[2] > -0.2 && T.act && T.act.toss > 0, 'spinning open in the air: ' + flat()); lines.length = 0; hud.forEach(f => f(pen)); A(lines.filter(l => l === 'rope').length === 2, 'the hand line runs out to it');
 run(0.4); A(T.net.stage === 'down' && small.hooked === 'net' && Engine.fish.length === 2, 'down over the small fish, which is held under it');
 Math.random = r0; run(5); A(T.net && T.net.stage === 'down' && finite() && T.cn.hub[2] < -1 && T.cn.p.every(p => p[2] <= -2.1 && p[2] >= -2.2), 'it stays down until you pull, the weights on the bed'); A(Engine.contextKeys()[0][1] === 'Haul net' && Engine.trapUseLabel() === 'Haul', 'haul hints');
@@ -78,9 +78,12 @@ hud.forEach(f => f()); A(/pull it in/.test(Engine.hudDetail), 'hud says how');
 R(); run(0.5); A(T.net && T.net.stage === 'haul' && T.cn.k < 1 && T.act && T.act.pull !== undefined && Math.abs(small.x - T.cn.hub[0]) < 0.3, 'coming in, closing, the catch with it');
 run(0.6); A(!T.net && T.card && T.card.gear === 'Cast net' && T.card.items.length === 1, 'net up: a card for the catch'); run(0.5); A(T.cn && spread() <= 0.6, 'gathered in your hand again');
 key('KeyX'); A(!T.card && small.hooked === false && small.state === 'flee' && Math.abs(small.x - 5.4) < 1e-9 && Engine.fish.length === 2 && /Let it go/.test(said.at(-1)), 'let go: back in the water where the net came down: ' + said.at(-1));
-run(0.5); Math.random = () => 0.1; small.x = 5.5; small.y = 0.3; Engine.action(); run(1); R(); run(1.6); Math.random = r0; A(T.card, 'caught again'); key('KeyE');
+run(0.5); Math.random = () => 0.1; small.x = 5.5; small.y = 0.3; R(); A(T.net, 'R throws the net too'); run(1); R(); run(1.6); Math.random = r0; A(T.card, 'caught again'); key('KeyE');
 A(Engine.fish.length === 1 && /In the creel: 1 × Mummichog/.test(said.at(-1)) && Engine.catchLog().at(-1).kept === true && Engine.catchLog().at(-1).rig === 'Cast net', 'kept: ' + said.at(-1));
 // putting the net away while it's down brings it in
-run(0.5); Engine.action(); run(1); A(T.net && T.net.stage === 'down', 'down again'); T.hand = null; run(1.2); A(!T.net && /empty/.test(said.at(-1)), 'put away: it came in'); step(0.05); A(!T.cn, 'and it is gone from your hand');
+run(0.5); R(); run(1); A(T.net && T.net.stage === 'down', 'down again'); T.hand = null; run(1.2); A(!T.net && /empty/.test(said.at(-1)), 'put away: it came in'); step(0.05); A(!T.cn, 'and it is gone from your hand');
+// with nothing in hand and nothing to haul, R takes the rod out (and that press doesn't also start a cast)
+let rodOn = null; Engine.toggleRod = on => { rodOn = on; }; Engine.keys = { KeyR: true }; Game.player.x = 100; R(); A(rodOn === true && !Engine.keys.KeyR, 'R: rod out');
+rodOn = null; T.hand = 'crab_pot'; R(); A(rodOn === null, 'not with a pot in hand'); T.hand = null;
 console.log('ok:', said.slice(-3).join(' | '));
 `, ctx);

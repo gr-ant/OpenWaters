@@ -52,7 +52,9 @@ Object.assign(Engine, {
       if (K.KeyW) this.mapScale = clamp(this.mapScale * Math.exp(-1.6 * dt), 1, 256); if (K.KeyS) this.mapScale = clamp(this.mapScale * Math.exp(1.6 * dt), 1, 256);
     } else {
       if (K.ArrowLeft) P.a -= CONFIG.arrowKeyTurnSpeed * dt; if (K.ArrowRight) P.a += CONFIG.arrowKeyTurnSpeed * dt;
-      if (K.ArrowUp || K.PageUp) P.pitch = Math.min(1.4, P.pitch + 1.2 * dt); if (K.ArrowDown || K.PageDown) P.pitch = Math.max(-1.4, P.pitch - 1.2 * dt);
+      const pu = K.PageUp && !this.thirdP, pd = K.PageDown && !this.thirdP;   // third person: PgUp / PgDn bring the camera in and out instead
+      if (K.ArrowUp || pu) P.pitch = Math.min(1.4, P.pitch + 1.2 * dt); if (K.ArrowDown || pd) P.pitch = Math.max(-1.4, P.pitch - 1.2 * dt);
+      if (this.thirdP && (K.PageUp || K.PageDown)) this.camZoom(Math.exp((K.PageUp ? -1.2 : 1.2) * dt));
     }
     const [jf, js, jrun] = this.joyInput();
     const f = this.showMap ? 0 : clamp((K.KeyW ? 1 : 0) - (K.KeyS ? 1 : 0) + jf, -1, 1), s = this.showMap ? 0 : clamp((K.KeyD ? 1 : 0) - (K.KeyA ? 1 : 0) + js, -1, 1);   // the keys belong to the map while it's open

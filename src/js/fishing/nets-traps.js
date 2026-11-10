@@ -108,7 +108,7 @@
 
   // ---- throwing and hauling are seen: things fly out in an arc, sink, and come back hand over hand ----
   // (props are drawn from buffers that only refill when the set changes, so anything moving asks for a refill each frame: Engine.propKey = null)
-  const ease = u => u * u * (3 - 2 * u), lerp = (a, b, u) => a + (b - a) * u, hands = () => { const P = Game.player, c = Math.cos(P.a), q = Math.sin(P.a); if (Engine.thirdP && Engine.hPose && Engine.hPose.hand) return Engine.hPose.hand.slice(); return [P.x + c * 0.55 - q * 0.22, P.y + q * 0.55 + c * 0.22, P.z + 1.2]; };   // in front and a little to the right (turning right is +angle); the figure's right hand in third person
+  const ease = u => u * u * (3 - 2 * u), lerp = (a, b, u) => a + (b - a) * u, hands = () => { const P = Game.player, c = Math.cos(P.a), q = Math.sin(P.a); if (Engine.thirdP && Engine.hPose && Engine.hPose.hand) return Engine.hPose.hand.slice(); return [P.x + c * 0.6 - q * 0.22, P.y + q * 0.6 + c * 0.22, P.z + 1.45]; };   // in front, a little to the right and high enough to see in first person (turning right is +angle); the figure's right hand in third person
   const haulKey = () => Engine.touchUI ? 'Use' : Controls.key('cast');
   T.act = null;   // what your arms are doing, for the third-person figure: { toss: 0..1 } or { pull: radians }
 
@@ -136,7 +136,9 @@
   };
   const haulNet = () => { const N = T.net; if (!N || N.stage !== 'down') return false; N.stage = 'haul'; N.t0 = Engine.time; N.back = T.cn.hub.slice(); Game.ripple(N.x, N.y, 1); return true; };
   const netStep = dt => { const N = T.net, want = T.hand === 'cast_net' || !!N; if (!want) { T.cn = null; return; } if (!T.cn) T.cn = netBody(hands());
-    const B = T.cn, hb = B.hub; if (!N) { const h = hands(); hb[0] = h[0]; hb[1] = h[1]; hb[2] = h[2] - 0.1; B.k += (0.25 - B.k) * Math.min(1, dt * 6); netPhys(B, dt, -1e9, false); return; }   // in your hand: gathered up, hanging and swinging as you move
+    const B = T.cn, hb = B.hub; if (!N) { const h = hands(); hb[0] = h[0]; hb[1] = h[1]; hb[2] = h[2] - 0.1; B.k += (0.25 - B.k) * Math.min(1, dt * 6); netPhys(B, dt, -1e9, false);   // in your hand: gathered up, hanging and swinging a little as you move
+      const q = Math.min(1, dt * 10); B.p.forEach((p, i) => { const o = B.o[i], a = i / NP * TAU2, t = [hb[0] + Math.cos(a) * 0.1, hb[1] + Math.sin(a) * 0.1, hb[2] - 0.38];   // held in a bundle: pulled back under the hub, the swing damped
+        for (let j = 0; j < 3; j++) { p[j] += (t[j] - p[j]) * q; o[j] = p[j] - (p[j] - o[j]) * 0.8; } }); return; }
     const t = Engine.time - N.t0;
     if (N.stage === 'fly') { const u = Math.min(1, t / 0.7), w = Game.waterAt(N.x, N.y); T.act = { toss: Math.min(1, t / 0.5) };   // out in an arc, opening as it spins
       hb[0] = lerp(N.from[0], N.x, u); hb[1] = lerp(N.from[1], N.y, u); hb[2] = lerp(N.from[2], w.level, u) + 1.5 * Math.sin(Math.PI * u); B.k = 0.25 + 0.75 * ease(u); netPhys(B, dt, w.level, true);
@@ -198,7 +200,7 @@
   const take = kind => { const A = Engine.ang;
     if (kind && A && A.out) { if (A.phase !== 'ready') return say('Reel in first', 2); Engine.toggleRod(false); }
     T.hand = kind; if (!kind) return say('Put away', 1.5);
-    const K = KINDS[kind]; say(`${K.name} in hand · ${useKey()} to ${kind === 'cast_net' ? 'throw it' : 'set it'}`, 3.5); Engine.toggleTackle(false);
+    const K = KINDS[kind]; say(`${K.name} in hand · ${kind === 'cast_net' ? `${haulKey()} to throw it` : `${useKey()} to set it`}`, 3.5); Engine.toggleTackle(false);
   };
   const netDown = () => !!(T.net && T.net.stage === 'down'), rodAway = () => !(Engine.ang && Engine.ang.out);
   const useLabel = () => { const A = Engine.ang; if (A && A.phase === 'card') return null; return netDown() ? 'Haul' : T.net ? null : T.hand ? KINDS[T.hand].use : nearTrap() ? 'Haul' : null; };
@@ -207,15 +209,19 @@
   Engine.action = function () { const near = !T.hand && nearTrap();
     if (T.card) return;   // decide about what came up first (E / X, or its buttons)
     if (T.net) { haulNet(); return; }   // the net's out: Use pulls it in too (the touch button)
-    if (T.hand) return T.hand === 'cast_net' ? throwNet() : setPot(T.hand);
+    if (T.hand === 'cast_net' && Engine.touchUI) return throwNet();   // the keyboard throws the net with R only; touch has just the Use button
+    if (T.hand && T.hand !== 'cast_net') return setPot(T.hand);
     if (near) return haul(near);
     return baseAction.call(this); };
-  // R (the cast / reel key) pulls things in: the net that's down, or the pot whose stake or buoy you're at
-  Game.on('key', code => { if (code !== 'KeyR' || !rodAway() || T.card) return; if (netDown()) { haulNet(); return; } const near = !T.hand && nearTrap(); if (near) haul(near); });
+  // R (the cast / reel key) throws the net in hand and pulls things in: the net that's down, or the pot whose stake or buoy you're at.
+  // With nothing else for it to do, it takes the rod out (as Q does), without that same press starting a cast.
+  Game.on('key', code => { if (code !== 'KeyR' || !rodAway() || T.card) return; if (netDown()) { haulNet(); return; } if (T.hand === 'cast_net' && !T.net) { throwNet(); return; }
+    const near = !T.hand && nearTrap(); if (near) { haul(near); return; }
+    if (!T.hand && !T.net && !Engine.showMap && !Engine.tackleOpen && !Engine.journalOpen) { Engine.toggleRod(true); Engine.keys.KeyR = false; } });
   const baseRod = Engine.toggleRod;
   Engine.toggleRod = function (on = !this.ang.out) { if (on) T.hand = null; return baseRod.call(this, on); };   // the rod out puts the net or pot away
   const baseKeys = Engine.contextKeys;
-  Engine.contextKeys = function () { const out = baseKeys.call(this), l = useLabel(); return l ? [[l === 'Haul' ? Controls.key('cast') : Controls.key('use'), netDown() ? 'Haul net' : l], ...out].slice(0, 4) : out; };
+  Engine.contextKeys = function () { const out = baseKeys.call(this), l = useLabel(); return l ? [[l === 'Haul' || l === 'Throw' ? Controls.key('cast') : Controls.key('use'), netDown() ? 'Haul net' : l], ...out].slice(0, 4) : out; };
 
   Game.on('update', dt => {
     for (const tr of T.set) tr.h += Engine.dtH || 0;
@@ -230,7 +236,7 @@
   Game.onHud(() => { const A = Engine.ang; if (A && A.phase === 'card') return; const tr = !T.hand && nearTrap();
     if (netDown()) Engine.hudDetail = `Cast net out  ·  ${haulKey()} to pull it in`;
     else if (tr) Engine.hudDetail = `${KINDS[tr.kind].name}  ·  set ${soaked(tr.h)} ago  ·  ${haulKey()} to haul`;
-    else if (T.hand) Engine.hudDetail = `${KINDS[T.hand].name} in hand  ·  ${useKey()} to ${T.hand === 'cast_net' ? 'throw' : Engine.boat || Game.swimming ? 'drop under a buoy' : 'set from the bank'}`; });
+    else if (T.hand) Engine.hudDetail = `${KINDS[T.hand].name} in hand  ·  ${T.hand === 'cast_net' ? `${haulKey()} to throw` : Engine.boat || Game.swimming ? 'drop under a buoy' : 'set from the bank'}`; });
   // the net and its hand line, drawn over the view (as the fishing line is): spokes from the hub to each weight, three rings of mesh, the weights
   // themselves, and the line from your hand, paying out as it flies, slack while it lies, coming in as you haul. Fainter where it's under water.
   Game.onHud(c => { const B = T.cn, N = T.net; if (!B || !c || Engine.showMap) return; const P = Game.player, wl = N && N.wl !== undefined ? N.wl : -1e9, pr = q => Game.project(q[0], q[1], q[2]);

@@ -97,7 +97,9 @@ const Engine = {
     addEventListener('blur', () => { this.keys = {}; this.joy = null; this.tlook = null; this.resetMouseLook(); });   // alt-tab while holding W doesn't keep you walking
     ov.addEventListener('wheel', e => { // scroll to zoom the big map around the cursor
       if (!this.showMap) { // off the map the wheel can be bound (Pike: drag); one press per notch, trackpads throttled
-        const c = e.deltaY < 0 ? 'WheelUp' : e.deltaY > 0 ? 'WheelDown' : null; if (!c || !Controls.bound(c) || this.pauseOpen || this.mouseLookBlocked()) return;
+        const c = e.deltaY < 0 ? 'WheelUp' : e.deltaY > 0 ? 'WheelDown' : null; if (!c || this.pauseOpen || this.mouseLookBlocked()) return;
+        if (this.thirdP && !(Controls.bound(c) && this.rodInHand())) { e.preventDefault(); this.camZoom(Math.exp(clamp(e.deltaY, -200, 200) * 0.002)); return; }   // third person: the wheel moves the camera in / out, unless it's bound to something the rod is using
+        if (!Controls.bound(c)) return;
         e.preventDefault(); const now = performance.now(); if (now - (this.wheelT || 0) < 60) return; this.wheelT = now;
         for (const code of Controls.codesFor(c)) { this.keyPress(code, { repeat: false }, !!(this.ang && this.ang.phase === 'card')); this.keys[code] = false; } return; }
       e.preventDefault(); this.mapZoomAt(Math.exp(clamp(e.deltaY, -200, 200) * 0.0025), e.clientX, e.clientY); this.mapHoldT = performance.now();
