@@ -60,7 +60,7 @@ Object.assign(Engine, {
     const b = this.boat; if (!b) return; const P = this.P, D = b.def; this.boat = null; this.boatMode = 'drive'; b.v = 0;
     if (jump) {   // over the side the way you're facing: clear of the hull, then the usual fall (into the water, or onto the bank)
       const ca = Math.cos(P.a), sa = Math.sin(P.a); let d = 0.6; while (d < D.hull.length_m + 1 && this.boatOver(b, P.x + ca * (d - 0.5), P.y + sa * (d - 0.5))) d += 0.2;
-      P.x += ca * d; P.y += sa * d; P.vz = CONFIG.jumpSpeed; Game.emit('leaveBoat', b); return;
+      P.x += ca * d; P.y += sa * d; P.vz = CONFIG.jumpSpeed * CONFIG.boatJumpFactor; Game.emit('leaveBoat', b); return;
     }
     // step ashore if there's dry land close by, otherwise slip into the water beside the boat
     let best = null, bd = 1e9;
