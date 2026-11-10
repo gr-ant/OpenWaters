@@ -42,15 +42,15 @@ function humanParts(look, climate = 'temperate', clothes = []) {
       if (Hr.style === 'long') B.blob([-0.075, 0, top - 0.11], 0.06, 0.1, 0.15, 3, 6, hair);   // down to the shoulders
       if (Hr.style === 'ponytail') B.blob([-0.14, 0, top - 0.07], 0.035, 0.035, 0.11, 3, 5, hair); }),
     torso: part('torso', B => { oval(B, 0.01, -0.04, [0.07, 0.07], [0.145, 0.095], skin); oval(B, -0.04, -0.11, [0.145, 0.095], sh, skin); oval(B, -0.11, -0.24, sh, G.chest, skin); oval(B, -0.24, -H.torso, G.chest, G.waist, skin, true); }),   // shoulders sloping well down from the neck, chest, waist
-    hips: part('hips', B => B.blob([0, 0, 0], G.hips[1], G.hips[0], 0.12, 4, 8, skin)),
+    hips: part('hips', B => B.blob([0, 0, 0], G.hips[1] - 0.008, G.hips[0] - 0.007, 0.112, 4, 8, skin)),
     upper: part('upper', B => { B.blob([0, 0, -0.02], 0.074, 0.074, 0.092, 4, 8, skin); B.tube([0, 0, -0.04], [0, 0, -H.upper], 0.07, 0.056, 8, skin, true); }),   // a tall soft cap for the shoulder (no flat top), the upper arm below it
     fore: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.044, 8, skin, false); B.blob([0, 0, -H.fore - 0.04], 0.044, 0.038, 0.06, 4, 6, skin); }),   // elbow, forearm, hand
-    thigh: part('thigh', B => B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.094, 0.072, 8, skin, true)),
+    thigh: part('thigh', B => { B.blob([0, 0, 0], 0.094, 0.094, 0.094, 4, 8, skin); B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.094, 0.072, 8, skin, true); }),   // a ball at the hip, so the leg stays whole when it swings out
     shin: part('shin', B => { B.blob([0, 0, -0.005], 0.076, 0.074, 0.08, 4, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.shin], 0.072, 0.054, 8, skin, false); }),   // knee, shin
     foot: part('foot', B => { B.blob([0, 0, 0], 0.056, 0.054, 0.05, 3, 6, skin); B.blob([0.055, 0, -H.foot + 0.055], 0.115, 0.058, 0.04, 4, 8, skin); }),   // ankle, foot (the sole is H.foot below the ankle)
   };
 }
-// A pose: o.mode 'stand' (walking and running too: o.swing 0..1 and o.ph, the stride phase), 'swim' (o.body: body pitch, -pi/2 lying
+// A pose: o.mode 'stand' (moving too: o.swing 0..1 how much, o.gait 0 walk .. 1 jog .. 2 run, o.ph the stride phase), 'swim' (o.body: body pitch, -pi/2 lying
 // face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet;
 // o.paddle; o.helm). o.rod: the right hand holds a rod out in front. Returns the parts as [part, forward, side, up, pitch, roll, yaw],
 // the right hand and the head centre, all relative to the feet (standing, sitting) under the body's own heading. Every part hangs
@@ -59,7 +59,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
 function humanPose(o) {
   const H = HUMAN, ph = o.ph || 0, sw = o.swing || 0, out = [], PI = Math.PI;
   const end = (J, L, pitch, roll = 0, yaw = 0) => { const x = L * Math.cos(roll) * Math.sin(pitch), y = L * Math.sin(roll), z = -L * Math.cos(roll) * Math.cos(pitch), c = Math.cos(yaw), q = Math.sin(yaw); return [J[0] + c * x - q * y, J[1] + q * x + c * y, J[2] + z]; };   // a limb's far end
-  let b = 0, hipZ = 0, headP = 0, twist = 0, turn = 0, sway = 0;   // body pitch; head pitch; shoulders' and hips' yaw; a shift over the standing foot
+  let b = 0, hipZ = 0, headP = 0, twist = 0, turn = 0, sway = 0, hop = 0;   // body pitch; head pitch; shoulders' and hips' yaw; a shift over the standing foot
   const thigh = [0, 0], shin = [0, 0], foot = [0, 0], up = [0, 0], fore = [0, 0], thR = [0, 0], shR = [0, 0], upR = [0, 0], foR = [0, 0];
   for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, p = ph + i * PI, s = Math.sin(p);   // i: 0 left, 1 right, half a stride apart
     if (o.mode === 'swim' && o.tread) { b = o.body ?? -PI / 2; headP = b;   // treading water: a slow flutter kick, the arms out to the sides, sculling
@@ -74,17 +74,19 @@ function humanPose(o) {
     else if (o.mode === 'sit') { b = o.paddle ? -0.12 : 0; hipZ = o.hipZ; headP = b * 0.4;
       thigh[i] = PI / 2 - 0.1; shin[i] = Math.acos(clamp((hipZ - H.foot) / H.shin, 0, 1)); foot[i] = shin[i]; thR[i] = side * 0.14;   // thighs along the seat, knees a little apart, shins down to the floor (straight out in a kayak)
       up[i] = o.paddle ? 0.75 + 0.4 * s : 0.45; fore[i] = up[i] + (o.paddle ? 0.5 : 0.9); upR[i] = side * 0.1; foR[i] = -side * 0.12; }
-    else { b = -(0.05 * sw + 0.09 * sw * sw); headP = b * 0.4;   // leaning into it, more at a run; the head stays more level than the chest
+    else { const g = clamp(o.gait || 0, 0, 2), G3 = (w, j, r) => g < 1 ? w + (j - w) * g : j + (r - j) * (g - 1);   // o.gait 0 walk .. 1 jog .. 2 run: G3(walk, jog, run) blends a setting between them
+      b = -sw * G3(0.03, 0.1, 0.2); headP = b * 0.4;   // upright walking, leaning into a jog, well forward at a run; the head stays more level than the chest
       const bump = (at, k) => ((1 + Math.cos(p - at)) / 2) ** k;   // a smooth rise and fall centred on a point of the stride
-      thigh[i] = b + sw * (0.5 * s + 0.1); thR[i] = side * 0.03;   // the thigh swings a little further forward than back
-      shin[i] = thigh[i] - sw * (1.25 * bump(-0.55, 2) + 0.22 * bump(2.3, 4));   // the knee folds as the leg comes through, and gives a little as the foot takes the weight
-      foot[i] = 0.6 * (shin[i] - b) * bump(-0.55, 1) - 0.5 * sw * bump(-PI / 2 - 0.25, 4) + 0.3 * sw * bump(PI / 2 - 0.15, 6);   // the ankle: toes hang through the swing, push off at the back, come up for the heel to land
-      up[i] = b - 0.55 * sw * s; fore[i] = up[i] + 0.15 + sw * (0.55 + 0.3 * (0.5 - 0.5 * s)); upR[i] = side * (0.08 + 0.04 * sw); foR[i] = -side * 0.04;   // arms swing against the legs, a little out from the body, the elbow closing on the way forward
-      if (i) { twist = 0.14 * sw * s; turn = -0.07 * sw * s; sway = -0.02 * sw * (1 - 0.4 * sw) * Math.cos(p); } }   // right leg forward: right shoulder back, right hip forward; the weight shifts over the foot on the ground
+      thigh[i] = b + sw * (G3(0.36, 0.5, 0.78) * s + G3(0.06, 0.12, 0.24)); thR[i] = side * 0.03;   // a short step walking; the knee driven high at a run
+      shin[i] = thigh[i] - sw * (G3(0.8, 1.35, 1.9) * bump(-0.55, 2) + G3(0.12, 0.25, 0.3) * bump(2.3, 4));   // the knee folds as the leg comes through (the heel right up behind at a run), and gives as the foot takes the weight
+      foot[i] = 0.6 * (shin[i] - b) * bump(-0.55, 1) - sw * G3(0.4, 0.5, 0.65) * bump(-PI / 2 - 0.25, 4) + sw * G3(0.3, 0.15, 0.05) * bump(PI / 2 - 0.15, 6);   // the ankle: toes hang through the swing, push off at the back, come up for a walker's heel to land
+      up[i] = b - sw * G3(0.35, 0.5, 0.85) * s; fore[i] = up[i] + 0.15 + sw * (G3(0.1, 1.2, 1.45) + G3(0.25, 0.2, 0.3) * (0.5 - 0.5 * s));   // arms against the legs: long and loose walking, elbows bent to a right angle jogging, pumping at a run
+      upR[i] = side * (0.08 + 0.02 * sw * g); foR[i] = -side * G3(0.04, 0.14, 0.1);
+      if (i) { twist = G3(0.1, 0.14, 0.2) * sw * s; turn = -G3(0.06, 0.07, 0.1) * sw * s; sway = -G3(0.02, 0.012, 0.005) * sw * Math.cos(p); hop = sw * G3(0, 0.035, 0.075) * s * s; } }   // right leg forward: right shoulder back, right hip forward; a walker's weight shifts over the standing foot; joggers and runners leave the ground at full stretch
   }
   if (o.rod && o.mode !== 'swim') { up[1] = b + 0.45; fore[1] = up[1] + 1.25; upR[1] = 0.06; foR[1] = -0.16; }   // right forearm out in front, the hand in toward the middle, holding the rod
   const leg = i => { const side = i ? 1 : -1, hipJ = [-side * H.hip * Math.sin(turn), sway + side * H.hip * Math.cos(turn), 0], knee = end(hipJ, H.thigh, thigh[i], thR[i], turn), ankle = end(knee, H.shin, shin[i], shR[i], turn); return { hipJ, knee, ankle }; };
-  if (o.mode === 'stand') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i]))));   // the lowest heel or toe on the ground
+  if (o.mode === 'stand') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i])))) + hop;   // the lowest heel or toe on the ground (or just off it)
   const hip = [0, sway, hipZ], sh = [-Math.sin(b) * H.torso, sway, hipZ + Math.cos(b) * H.torso], arm2 = end(sh, 0.15, b);   // the shoulders: up the (leaning) spine from the hips; arm2: the shoulder joints' height, well below the top of the sloping shoulders
   out.push(['hips', hip[0], hip[1], hip[2], b, 0, turn], ['torso', sh[0], sh[1], sh[2], b, 0, twist], ['head', sh[0], sh[1], sh[2], headP, 0, twist * 0.3]);
   let hand = null;

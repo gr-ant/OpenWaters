@@ -53,7 +53,7 @@
 // ======================================================================
 const CONFIG = {
   // movement (world units are roughly metres; per second)
-  walkSpeed: 2.2, runSpeed: 5.5, swimFactor: 0.5,   // a brisk walk and a run, at a person's pace
+  walkSpeed: 2.2, jogSpeed: 3.8, runSpeed: 5.5, swimFactor: 0.5,   // a person's pace: a brisk walk; holding Run you jog, and after a moment build up to a run
   jumpSpeed: 5.5, boatJumpFactor: 0.55, gravity: 28, eyeHeight: 1.7,   // a jump of about half a metre; off a boat it's a hop over the side (jumpSpeed x boatJumpFactor)
   // looking around
   mouseSensitivity: 0.0025, touchLookSensitivity: 0.0065, mouseDragSensitivity: 0.004, arrowKeyTurnSpeed: 1.8,

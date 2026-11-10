@@ -18,7 +18,7 @@ console.log({ stand: s, parts: stand.parts.length });
 assert.ok(s.hi[2] >= 1.7 && s.hi[2] <= 1.8, `height ${s.hi[2]}`);
 assert.ok(Math.abs(s.lo[2]) < 0.01, `feet at ${s.lo[2]}`);
 assert.ok(s.hi[1] - s.lo[1] < 0.7 && s.hi[0] - s.lo[0] < 0.45, 'about a person wide and deep');
-for (let ph = 0; ph < 6.3; ph += 0.7) { const w = bounds(ctx.humanPose({ mode: 'stand', swing: 1, ph })); assert.ok(Math.abs(w.lo[2]) < 0.03, `running stride ${ph}: feet at ${w.lo[2]}`); }
+for (let ph = 0; ph < 6.3; ph += 0.7) { const w = bounds(ctx.humanPose({ mode: 'stand', swing: 1, ph })); assert.ok(Math.abs(w.lo[2]) < 0.03, `walking stride ${ph}: feet at ${w.lo[2]}`); }
 const sp = ctx.humanPose({ mode: 'swim', ph: 1 }), swim = bounds(sp), hp = sp.parts.find(q => q[0] === 'hips'); assert.ok(Math.abs(sp.head[2] - hp[3]) < 0.05 && sp.head[0] - hp[1] > 0.6, `swimming lies flat, head first: ${sp.head} ${hp}`);
 const sit = ctx.humanPose({ mode: 'sit', hipZ: 0.45 }), st = bounds(sit); assert.ok(Math.abs(st.lo[2]) < 0.05 && st.hi[2] < 1.4, 'seated: feet on the floor, head lower');
 const rod = ctx.humanPose({ mode: 'stand', rod: true }); assert.ok(rod.hand[0] > 0.2 && rod.hand[1] > 0 && rod.hand[2] > 0.9, `rod hand out in front, on the right: ${rod.hand}`);
@@ -31,10 +31,21 @@ for (let ph = 0; ph < 6.3; ph += 0.3) { const q = ctx.humanPose({ mode: 'swim', 
   assert.ok(a.torso[6] > 0.03 && a.hips[6] < -0.01, 'right leg forward: shoulders turn one way, hips the other');
   const feet = []; for (let ph = 0; ph < 6.3; ph += 0.1) feet.push(ctx.humanPose({ mode: 'stand', swing: 0.55, ph }).parts.filter(q => q[0] === 'foot')[1][4]);
   assert.ok(Math.max(...feet) > 0.1 && Math.min(...feet) < -0.2, `the ankle rolls: ${Math.min(...feet)} .. ${Math.max(...feet)}`);
-  let jump = 0, prev = ctx.humanPose({ mode: 'stand', swing: 1, ph: 0 }).parts; for (let ph = 0.02; ph < 6.4; ph += 0.02) { const cur = ctx.humanPose({ mode: 'stand', swing: 1, ph }).parts; cur.forEach((q, n) => { for (let j = 1; j < 7; j++) jump = Math.max(jump, Math.abs(q[j] - prev[n][j])); }); prev = cur; }
+  let jump = 0, prev = ctx.humanPose({ mode: 'stand', swing: 1, gait: 2, ph: 0 }).parts; for (let ph = 0.02; ph < 6.4; ph += 0.02) { const cur = ctx.humanPose({ mode: 'stand', swing: 1, gait: 2, ph }).parts; cur.forEach((q, n) => { for (let j = 1; j < 7; j++) jump = Math.max(jump, Math.abs(q[j] - prev[n][j])); }); prev = cur; }
   assert.ok(jump < 0.06, `no joint jumps during a running stride: ${jump}`); }
 const sw = ph => Object.fromEntries(ctx.humanPose({ mode: 'swim', ph }).parts.map(q => [q[0], q[4] + Math.PI / 2]));   // angles from the body's line
 assert.ok(Math.abs(sw(5.8).upper - Math.PI) < 0.01 && Math.abs(sw(5.8).thigh) < 0.01, 'glide: arms out ahead, legs straight'); assert.ok(sw(2.1).upper < 1.3, 'pull: arms down under the shoulders'); assert.ok(sw(3.7).shin < -0.8 && sw(3.7).thigh > 0.6, 'knees drawn up before the kick');
+// trousers: no skin on the hips or legs, standing or mid frog kick (the legs apart)
+{ const m = ctx.humanParts(shipped, 'temperate', clothes), skinC = [1, 3, 5].map(i => parseInt(shipped.skin.slice(i, i + 2), 16) / 255);
+  for (const pose of [ctx.humanPose({ mode: 'stand' }), ctx.humanPose({ mode: 'swim', ph: 3.6 }), ctx.humanPose({ mode: 'sit', hipZ: 0.45 })]) for (const name of ['hips', 'thigh']) { const v = m[name]; let far = 0, farSkin = 0;
+    for (let i = 0; i < v.length; i += ctx.VS) { const r = Math.hypot(v[i], v[i + 1], Math.min(0, v[i + 2] + 0.02) * 0), isSkin = Math.abs(v[i + 6] - skinC[0]) < 0.01 && Math.abs(v[i + 7] - skinC[1]) < 0.01; if (v[i + 2] > -0.05) { if (isSkin) farSkin = Math.max(farSkin, r); else far = Math.max(far, r); } }
+    assert.ok(farSkin < far - 0.005, `${name}: cloth stands off the skin (${farSkin} < ${far})`); } }
+// three gaits: a walker's arms hang long and a foot is always down; a jogger's elbows are bent; a runner lifts the knee highest and leaves the ground
+{ const G = g => { let elbow = 0, knee = -9, air = 0; for (let ph = 0; ph < 6.3; ph += 0.05) { const P = ctx.humanPose({ mode: 'stand', swing: 1, gait: g, ph }), by = n => P.parts.filter(q => q[0] === n);
+    elbow = Math.max(elbow, by('fore')[0][4] - by('upper')[0][4]); knee = Math.max(knee, by('thigh')[1][4]); air = Math.max(air, bounds(P).lo[2]); } return { elbow, knee, air }; }, w = G(0), j = G(1), r = G(2);
+  assert.ok(w.air < 0.03 && j.air > w.air + 0.02 && r.air > j.air + 0.02,   // (a boot's rounded sole sits a little above the flat one the pose stands on)
+    `walkers stay down, joggers and runners fly: ${w.air} ${j.air} ${r.air}`);
+  assert.ok(w.elbow < 0.7 && j.elbow > 1.3 && r.elbow > 1.5, `elbows: ${w.elbow} ${j.elbow} ${r.elbow}`); assert.ok(w.knee < j.knee - 0.1 && j.knee < r.knee - 0.25, `knee lift: ${w.knee} ${j.knee} ${r.knee}`); }
 // the look is data: angler.json (skin, hair, what's worn per climate and its colours) and clothes.json (every garment's shapes)
 const count = m => Object.values(m).reduce((a, p) => a + p.length, 0), ok = (m, why) => { for (const [name, v] of Object.entries(m)) assert.ok(v.length > 0 && v.every(Number.isFinite), `${why}: ${name}`); };
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(), wear = {};

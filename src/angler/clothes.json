@@ -88,9 +88,10 @@
     } },
     { "id": "trousers", "name": "Trousers", "parts": {
       "hips": [
-        {"blob": [0, 0, 0, 0.134, 0.189, 0.124], "detail": [3, 8], "color": "bottom"}
+        {"blob": [0, 0, 0, 0.146, 0.2, 0.136], "detail": [4, 8], "color": "bottom"}
       ],
       "thigh": [
+        {"blob": [0, 0, 0, 0.104, 0.104, 0.104], "detail": [4, 8], "color": "bottom"},
         {"tube": [0.03, 0.1, -0.4, 0.078], "color": "bottom", "cap": true}
       ],
       "shin": [
@@ -100,9 +101,10 @@
     } },
     { "id": "shorts", "name": "Shorts", "parts": {
       "hips": [
-        {"blob": [0, 0, 0, 0.134, 0.189, 0.124], "detail": [3, 8], "color": "bottom"}
+        {"blob": [0, 0, 0, 0.146, 0.2, 0.136], "detail": [4, 8], "color": "bottom"}
       ],
       "thigh": [
+        {"blob": [0, 0, 0, 0.111, 0.111, 0.111], "detail": [4, 8], "color": "bottom"},
         {"tube": [0.03, 0.108, -0.25, 0.103], "color": "bottom"}
       ]
     } },

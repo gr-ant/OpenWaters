@@ -69,7 +69,9 @@ Object.assign(Engine, {
     const swimSp = (run ? CONFIG.swimSprint : CONFIG.swimSpeed) * Game.speedMultiplier;
     const diving = swim && f !== 0 && (under || P.pitch < -0.45);
     const fwd = diving ? f * Math.cos(P.pitch) : f;
-    const sp = (swim ? swimSp : (run ? CONFIG.runSpeed : CONFIG.walkSpeed) * (1 - 0.55 * wade) * Game.speedMultiplier) * dt;
+    this.runT = run && !swim && (f || s) ? (this.runT || 0) + dt : 0;   // how long you've been running: a jog first, a full run after a second and a half
+    const ramp = clamp(this.runT - 1.5, 0, 1), runSp = CONFIG.jogSpeed + (CONFIG.runSpeed - CONFIG.jogSpeed) * ramp * ramp * (3 - 2 * ramp);
+    const sp = (swim ? swimSp : (run ? runSp : CONFIG.walkSpeed) * (1 - 0.55 * wade) * Game.speedMultiplier) * dt;
     const ca = Math.cos(P.a), sa = Math.sin(P.a), mx = (ca * fwd - sa * s) * sp, my = (sa * fwd + ca * s) * sp;
     const feet = swim ? Math.max(P.z, wl0 - 0.5) : P.z;   // swimming: climb out from the surface, so beaches still let you wade ashore
     const blocked = (x, y, d) => groundAt(x, y) - feet > 0.5 + d * 1.7 || Game._solids.some(fn => fn(x, y, P.z)); // no walking up cliffs (over ~60°, beyond a half-metre step); games can add solid areas
