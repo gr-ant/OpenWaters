@@ -52,7 +52,12 @@ function meshBuilder(smooth = false) { // smooth: round, smooth-shaded blobs (fi
     const X = norm3(cross3(a, w)), Y = cross3(w, X);
     const P = (q, r, k, e) => { const t = k / n * 6.2832, rr = r * (jit ? jit(k % n, e) : 1); return [q[0] + (X[0] * Math.cos(t) + Y[0] * Math.sin(t)) * rr, q[1] + (X[1] * Math.cos(t) + Y[1] * Math.sin(t)) * rr, q[2] + (X[2] * Math.cos(t) + Y[2] * Math.sin(t)) * rr]; };
     const ctr = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2];
-    for (let k = 0; k < n; k++) quad(P(p0, r0, k, 0), P(p0, r0, k + 1, 0), P(p1, r1, k + 1, 1), P(p1, r1, k, 1), col, ctr);
+    if (B.smoothTube) {   // smooth-shaded sides: each corner gets the normal of the round surface there (out from the axis, tipped by the taper)
+      const Nk = k => { const t = k / n * 6.2832, s = (r0 - r1) / L; return norm3([0, 1, 2].map(j => X[j] * Math.cos(t) + Y[j] * Math.sin(t) + w[j] * s)); };
+      for (let k = 0; k < n; k++) { const a = P(p0, r0, k, 0), b = P(p0, r0, k + 1, 0), c = P(p1, r1, k + 1, 1), d = P(p1, r1, k, 1), na = Nk(k), nb = Nk(k + 1);
+        const f = cross3([b[0] - a[0], b[1] - a[1], b[2] - a[2]], [c[0] - a[0], c[1] - a[1], c[2] - a[2]]), out = f[0] * na[0] + f[1] * na[1] + f[2] * na[2] > 0;   // wind so the face points outward (back faces are culled)
+        if (out) { triN(a, b, c, na, nb, nb, col, col, col); triN(a, c, d, na, nb, na, col, col, col); } else { triN(a, c, b, na, nb, nb, col, col, col); triN(a, d, c, na, na, nb, col, col, col); } }
+    } else for (let k = 0; k < n; k++) quad(P(p0, r0, k, 0), P(p0, r0, k + 1, 0), P(p1, r1, k + 1, 1), P(p1, r1, k, 1), col, ctr);
     if (cap) for (let k = 0; k < n; k++) tri(P(p1, r1, k, 1), P(p1, r1, k + 1, 1), p1, col, p0);
   };
   // low-poly ellipsoid (rings x segs), radii rx ry rz, optional per-vertex bump(i,j) and color fn

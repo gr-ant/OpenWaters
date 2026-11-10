@@ -21,7 +21,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
   const skin = rgb(K.skin) || [0.86, 0.66, 0.52], hair = rgb(Hr.color) || [0.34, 0.22, 0.15], top = H.neck + H.head;
   const worn = (Array.isArray(W.wear) ? W.wear : []).map(id => clothes.find(g => g && g.id === id)).filter(Boolean);
   // an oval ring from height z0 (half-width a0 across the shoulders, half-depth c0 front to back) down to z1 (a1, c1): chests and coats aren't round
-  const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 10, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 10 * 6.2832) / (e ? a1 : a0), Math.sin(k / 10 * 6.2832) / (e ? c1 : c0)));
+  const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 20, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 20 * 6.2832) / (e ? a1 : a0), Math.sin(k / 20 * 6.2832) / (e ? c1 : c0)));
   const sh = [G.shoulder + 0.02, 0.105], grow = ([a, c], g) => [a + g, c + g], mix = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
   const sec = z => z > -0.24 ? mix(sh, G.chest, clamp((z + 0.11) / -0.13, 0, 1)) : mix(G.chest, G.waist, clamp((z + 0.24) / (0.24 - H.torso), 0, 1));   // the torso's cross-section z below the shoulders
   const nums = (v, n) => Array.isArray(v) && v.length >= n && v.every(Number.isFinite);
@@ -33,8 +33,10 @@ function humanParts(look, climate = 'temperate', clothes = []) {
     else if (nums(q.oval, 6)) oval(B, q.oval[0], q.oval[3], [q.oval[1], q.oval[2]], [q.oval[4], q.oval[5]], col, !!q.cap);
     else if (nums(q.wrap, 3)) oval(B, q.wrap[0], q.wrap[1], grow(sec(q.wrap[0]), q.wrap[2]), grow(sec(q.wrap[1]), q.wrap[3] ?? q.wrap[2]), col, !!q.cap);
   };
-  // meshBuilder(true): smooth-shaded blobs, so the figure is soft, not faceted
-  const part = (name, body) => { const B = meshBuilder(true); B.mat = MT.GEN; body(B); for (const g of worn) for (const q of (g.parts && g.parts[name]) || []) if (q) shape(B, q); return new Float32Array(B.v); };
+  // meshBuilder(true) and smoothTube: smooth-shaded blobs and tubes, at twice the detail the shapes ask for, so the figure is soft, not faceted
+  const part = (name, body) => { const B = meshBuilder(true), tb = B.tube, bl = B.blob; B.smoothTube = true; B.mat = MT.GEN;
+    B.tube = (p0, p1, r0, r1, n, col, cap, jit) => tb(p0, p1, r0, r1, jit ? n : n * 2, col, cap, jit);   // (an oval's jit counts its own sides)
+    B.blob = (c, rx, ry, rz, rings, segs, ...a) => bl(c, rx, ry, rz, rings * 2, segs * 2, ...a); body(B); for (const g of worn) for (const q of (g.parts && g.parts[name]) || []) if (q) shape(B, q); return new Float32Array(B.v); };
   return {
     head: part('head', B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.058, 0.055, 8, skin, false); B.blob([0.01, 0, top], 0.122, 0.108, H.head, 4, 8, skin);   // a short neck, a good-sized head
       for (const y of [-0.106, 0.106]) B.blob([0, y, top - 0.01], 0.022, 0.017, 0.034, 3, 4, skin);   // ears
