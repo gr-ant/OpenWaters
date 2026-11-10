@@ -29,9 +29,9 @@ const SHOTS = [
     shot.hold({ tod: 0.742, a: Math.PI, pitch: 0.02 }); await shot.wait(6000);` },
   { name: '3-coral-reef', seed: 42, climate: 'tropical', run: `
     const R = CONFIG.islandSize / 2; let best = null;   // round the coast: the thickest coral 4 to 9 m down
-    for (let k = 0; k < 32; k++) { const g = k / 32 * 6.2832, p = Game.findWater('sea', Math.cos(g) * R * 0.7, Math.sin(g) * R * 0.7, 3000); if (!p) continue;
-      for (let d = 6; d < 120; d += 5) { const x = p.x + Math.cos(p.a) * d, y = p.y + Math.sin(p.a) * d, w = Game.waterAt(x, y); if (w.kind !== 'sea' || w.depth < 4 || w.depth > 9) continue;
-        const c = coverAt(x, y, 8, false).coral; if (!best || c > best.c) best = { x, y, a: p.a, c, w }; } }
+    for (let k = 0; k < 16; k++) { const g = k / 16 * 6.2832, p = Game.findWater('sea', Math.cos(g) * R * 0.7, Math.sin(g) * R * 0.7, 3000); if (!p) continue;
+      for (let d = 6; d < 120; d += 8) { const x = p.x + Math.cos(p.a) * d, y = p.y + Math.sin(p.a) * d, w = Game.waterAt(x, y); if (w.kind !== 'sea' || w.depth < 4 || w.depth > 9) continue;
+        const c = coverAt(x, y, 6, false).coral; if (c > 0.9) { best = { x, y, a: p.a, c, w }; break; } if (!best || c > best.c) best = { x, y, a: p.a, c, w }; } if (best && best.c > 0.9) break; }   // (dense enough: stop looking)
     window.shot.best = { c: best.c, d: best.w.depth, x: best.x, y: best.y }; Engine.travel(best.x - Math.cos(best.a) * 60, best.y - Math.sin(best.a) * 60); await shot.wait(1000);   // ashore nearby, so the land around streams in
     const bx = best.x - Math.cos(best.a) * 4, by = best.y - Math.sin(best.a) * 4; Engine.P.x = bx; Engine.P.y = by; const w = Game.waterAt(bx, by);   // a few metres back from it, looking out over it
     shot.hold({ tod: 0.5, z: Math.max(w.ground + 1.5, w.level - 1) - EYE, a: best.a + 0.5, pitch: -0.55 }); await shot.wait(6000);` },
@@ -50,22 +50,29 @@ const SHOTS = [
 ];
 
 async function take(win, s) {
+  const T0 = Date.now(), lap = w => process.env.SHOTS_TIME && console.log(`    ${w}: ${((Date.now() - T0) / 1000).toFixed(1)} s`);
   await win.loadFile(GAME, { query: { shot: s.name }, hash: `seed-${s.seed}&climate-${s.climate}&map` });   // (a new query each time: a changed #hash alone wouldn't reload the page)
-  for (let t = 0; t < 600; t++) { if (await win.webContents.executeJavaScript(`typeof Engine !== 'undefined' && !!Engine.vp && !document.getElementById('loading')`)) break; await new Promise(r => setTimeout(r, 100)); }
+  lap('loaded');
+  for (let t = 0; t < 600; t++) { if (await win.webContents.executeJavaScript(`typeof Engine !== 'undefined' && !document.getElementById('loading')`)) break; await new Promise(r => setTimeout(r, 100)); }   // the island is built (the loading screen goes); the map it opens on is closed below
+  lap('island ready');
   await win.webContents.insertCSS('#hud, #tui, #holderChip, #title, #pauseMenu { display: none !important; }');
   await win.webContents.executeJavaScript(PREP);
   await win.webContents.executeJavaScript(`(async () => { ${s.run} })()`);
   if (process.env.SHOTS_DEBUG) console.log(await win.webContents.executeJavaScript(`JSON.stringify({ best: shot.best, pitch: Engine.P.pitch, t0: Engine.time, climate: CLIMATE.key, hash: location.hash, P: [Engine.P.x, Engine.P.y, Engine.P.z].map(v => +v.toFixed(1)), water: Game.waterAt(Engine.P.x, Engine.P.y).kind, uw: Engine.uw, boat: !!Engine.boat, rod: Engine.ang && Engine.ang.out, phase: Engine.ang && Engine.ang.phase, rig: !!(Engine.ang && Engine.ang.S), msg: Engine.msg })`));
+  lap('scene set');
   const img = await win.webContents.capturePage(); fs.writeFileSync(path.join(OUT, s.name + '.png'), img.toPNG());
-  console.log('  ' + s.name + '.png');
+  lap('saved'); console.log('  ' + s.name + '.png');
 }
 
 app.whenReady().then(async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const want = process.argv.slice(2).filter(a => !a.startsWith('-') && !a.endsWith('.js')), list = want.length ? SHOTS.filter(s => want.some(w => s.name.includes(w))) : SHOTS;
-  const win = new BrowserWindow({ width: W, height: H, show: false, useContentSize: true, webPreferences: { offscreen: true, backgroundThrottling: false } });   // drawn off screen at full speed (a plain hidden window gets only a few frames a second)
-  win.webContents.setFrameRate(60);
-  console.log(`Screenshots to ${OUT}:`); let failed = 0;
-  for (const s of list) { try { await take(win, s); } catch (e) { failed++; console.error('  ' + s.name + ' failed: ' + e.message); } }
+  // a few at once, each in its own window drawn off screen at full speed (a plain hidden window gets only a few frames a second); SHOTS_AT_ONCE to change
+  const queue = [...list], at = Math.max(1, +process.env.SHOTS_AT_ONCE || 3); let failed = 0;
+  console.log(`Screenshots to ${OUT}:`);
+  await Promise.all(Array.from({ length: Math.min(at, queue.length) }, async () => {
+    const win = new BrowserWindow({ width: W, height: H, show: false, useContentSize: true, webPreferences: { offscreen: true, backgroundThrottling: false } }); win.webContents.setFrameRate(60);
+    for (let s; (s = queue.shift());) { try { await take(win, s); } catch (e) { failed++; console.error('  ' + s.name + ' failed: ' + e.message); } }
+    win.destroy(); }));
   app.exit(failed ? 1 : 0);
 });

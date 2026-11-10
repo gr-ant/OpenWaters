@@ -2884,7 +2884,7 @@ const nPat = makeNoise(4242);
 // a whale's or dolphin's flipper: a smooth, flattened paddle swept down and back from the root, tapering to a point;
 // bumpy: the knobs (tubercles) along a humpback's leading edge
 function cetaceanFlipper(M, root, s, len, col, bumpy) {
-  const L = len * 0.95; cetaceanBlade(M, root, norm3([-0.5, s * 0.62, -0.6]), L, u => L * 0.2 * (0.6 + 0.4 * Math.sin(Math.PI * Math.min(1, u * 1.6 + 0.2))) * (1 - u * 0.8), col, bumpy, 0.14);
+  const L = len * 0.95; cetaceanBlade(M, root, norm3([-0.5, s * 0.62, -0.6]), L, u => L * 0.21 * (0.62 + 0.38 * Math.sin(Math.PI * Math.min(1, u * 1.3 + 0.2))) * (1 - u ** 1.6 * 0.82), col, bumpy, 0.14);   // broad well out toward the tip, then a quick taper
 }
 // a solid blade (flipper, fluke) from root along dir for L, chordAt(u) its half-width (0 root .. 1 tip), thin: thickness / width
 function cetaceanBlade(M, root, dir, L, chordAt, col, bumpy, thin) {
@@ -3045,7 +3045,7 @@ function fishMesh(D) {
   if (B.fins.adipose) { const ta = 0.86; M.blob([X(ta), 0, HH(ta) * 0.95 + 0.012], 0.025, 0.006, 0.014, 5, 10, fin); }
   for (const s of [1, -1]) {
     const tpc = hl * 1.05, pc = B.fins.pectoral, pv = clamp(0.5, 0, 1) * B.fins.pelvic;
-    if (B.swim === 'cetacean') cetaceanFlipper(M, [X(tpc), s * HW(tpc) * 0.8, -HH(tpc) * 0.45], s, pc, mix(fin, C.back, 0.75), false);
+    if (B.swim === 'cetacean') cetaceanFlipper(M, [X(tpc), s * HW(tpc) * 0.8, -HH(tpc) * 0.45], s, pc, mix(fin, C.back, 0.75), B.tail.shape === 'flukes' && pc > 0.2);
     else M.tri([X(tpc), s * HW(tpc) * 0.95, -HH(tpc) * 0.3], [X(tpc) - pc * 0.9, s * (HW(tpc) + pc * 0.55), -HH(tpc) * 0.55], [X(tpc) - pc * 0.4, s * HW(tpc) * 0.95, -HH(tpc) * 0.55], fin, [X(tpc), 0, 0]);
     M.tri([X(0.5), s * HW(0.5) * 0.6, -HH(0.5) * 0.85], [X(0.5) - pv * 1.1, s * (HW(0.5) * 0.6 + pv * 0.4), -HH(0.5) - pv * 0.5], [X(0.5) - pv * 0.5, s * HW(0.5) * 0.4, -HH(0.5) * 0.95], fin, [X(0.5), 0, 0]);
   }
