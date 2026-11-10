@@ -24,7 +24,15 @@ const sit = ctx.humanPose({ mode: 'sit', hipZ: 0.45 }), st = bounds(sit); assert
 const rod = ctx.humanPose({ mode: 'stand', rod: true }); assert.ok(rod.hand[0] > 0.2 && rod.hand[1] > 0 && rod.hand[2] > 0.9, `rod hand out in front, on the right: ${rod.hand}`);
 // breaststroke: both arms and both legs move together; arms reach past the head on the glide and point down mid-pull; knees draw up before the kick
 for (let ph = 0; ph < 6.3; ph += 0.3) { const q = ctx.humanPose({ mode: 'swim', ph }).parts, of = n => q.filter(x => x[0] === n); bounds({ parts: q, hand: [0, 0, 0], head: [0, 0, 0] });
-  for (const n of ['upper', 'fore', 'thigh', 'shin']) { const [l, r] = of(n); assert.equal(l[4], r[4], `${n} together at ${ph}`); assert.equal(l[2], -r[2], `${n} mirrored at ${ph}`); } }
+  for (const n of ['upper', 'fore', 'thigh', 'shin', 'foot']) { const [l, r] = of(n); assert.equal(l[4], r[4], `${n} together at ${ph}`); assert.ok(Math.abs(l[2] + r[2]) < 1e-9 && l[5] === -r[5], `${n} mirrored at ${ph}`); } }
+{ const q = ctx.humanPose({ mode: 'swim', ph: 1.1 }).parts.filter(x => x[0] === 'fore'), wide = Math.abs(ctx.humanPlace(q[1], 0, 0, -0.3)[1]); assert.ok(wide > 0.3, `hands sweep wide on the pull: ${wide}`); }
+// walking: the shoulders turn against the hips, each ankle rolls (toes up to land, down to push off), and the pose is continuous round the stride
+{ const at = ph => Object.fromEntries(ctx.humanPose({ mode: 'stand', swing: 0.55, ph }).parts.map(q => [q[0], q])), a = at(Math.PI / 2 + Math.PI);   // the right leg at its furthest forward
+  assert.ok(a.torso[6] > 0.03 && a.hips[6] < -0.01, 'right leg forward: shoulders turn one way, hips the other');
+  const feet = []; for (let ph = 0; ph < 6.3; ph += 0.1) feet.push(ctx.humanPose({ mode: 'stand', swing: 0.55, ph }).parts.filter(q => q[0] === 'foot')[1][4]);
+  assert.ok(Math.max(...feet) > 0.1 && Math.min(...feet) < -0.2, `the ankle rolls: ${Math.min(...feet)} .. ${Math.max(...feet)}`);
+  let jump = 0, prev = ctx.humanPose({ mode: 'stand', swing: 1, ph: 0 }).parts; for (let ph = 0.02; ph < 6.4; ph += 0.02) { const cur = ctx.humanPose({ mode: 'stand', swing: 1, ph }).parts; cur.forEach((q, n) => { for (let j = 1; j < 7; j++) jump = Math.max(jump, Math.abs(q[j] - prev[n][j])); }); prev = cur; }
+  assert.ok(jump < 0.06, `no joint jumps during a running stride: ${jump}`); }
 const sw = ph => Object.fromEntries(ctx.humanPose({ mode: 'swim', ph }).parts.map(q => [q[0], q[4] + Math.PI / 2]));   // angles from the body's line
 assert.ok(Math.abs(sw(5.8).upper - Math.PI) < 0.01 && Math.abs(sw(5.8).thigh) < 0.01, 'glide: arms out ahead, legs straight'); assert.ok(sw(2.1).upper < 1.3, 'pull: arms down under the shoulders'); assert.ok(sw(3.7).shin < -0.8 && sw(3.7).thigh > 0.6, 'knees drawn up before the kick');
 // the look is data: angler.json (skin, hair, what's worn per climate and its colours) and clothes.json (every garment's shapes)

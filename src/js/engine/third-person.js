@@ -32,9 +32,14 @@ Object.assign(Engine, {
       o = { mode: 'swim', tread: !go, body: go ? -Math.PI / 2 + (this.under ? clamp(P.pitch, -1.2, 1.2) : 0) : -0.25, ph: this.hPh }; }
     else { const run = spd > (CONFIG.walkSpeed + CONFIG.runSpeed) / 2 * Game.speedMultiplier * 0.9;
       this.hAmp = (this.hAmp || 0) + ((spd > 0.3 ? (run ? 1 : 0.55) : 0) - (this.hAmp || 0)) * Math.min(1, dt * 8);
-      this.hPh = ((this.hPh || 0) + dist * 6.2832 / (run ? 2.2 : 1.5)) % 6.2832;   // one stride cycle per 1.5 m walking, 2.2 m running
+      this.hPh = ((this.hPh || 0) + dist * 6.2832 / Math.max(1.5, spd / (run ? 2.4 : 1.6))) % 6.2832;   // a stride cycle covers at least 1.5 m, and the legs never turn over faster than 1.6 times a second walking, 2.4 running (you move faster than a person does)
       o = { mode: 'stand', swing: this.hAmp, ph: this.hPh, rod }; }
-    const pose = humanPose(o);
+    const pose = humanPose(o), sm = this.hSm;
+    if (sm && sm.mode === o.mode && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
+      const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
+      pose.parts.forEach((q, n) => { const w = sm.parts[n]; for (let j = 1; j < 4; j++) q[j] = ease(w[j], q[j]); for (let j = 4; j < 7; j++) q[j] = turn(w[j], q[j]); });
+      pose.hand = pose.hand.map((v, j) => ease(sm.hand[j], v)); }
+    this.hSm = { mode: o.mode, parts: pose.parts.map(q => q.slice()), hand: pose.hand.slice() };
     if (o.mode === 'swim') base = P.z + EYE - (o.tread ? 0.12 : 0.3) - pose.head[2];   // head where the first-person eye is (treading water), or lying low in the water swimming
     const c = Math.cos(rot), s = Math.sin(rot), w = q => [P.x + c * q[0] - s * q[1], P.y + s * q[0] + c * q[1], base + q[2]];
     this.hPose = { pose, rot, base, w, hand: w(pose.hand) };
@@ -44,7 +49,7 @@ Object.assign(Engine, {
     const M = this._hParts || (this._hParts = humanParts(BUILTIN.angler[0], CLIMATE.key, (BUILTIN.clothes[0] || {}).clothes)), P = this.P; sample(P.x, P.y); const wl = SW, mk = WATER[SK].murk;
     gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.roll, 0);
     for (const q of hp.pose.parts) { const g = this.tackleGpu('human:' + q[0], () => M[q[0]]), p = hp.w([q[1], q[2], q[3]]);
-      this.upInst(g, [p[0], p[1], p[2], 1, hp.rot, 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); }
-    gl.uniform1f(L.u.fsh, 0);
+      gl.uniform1f(L.u.roll, q[5]); this.upInst(g, [p[0], p[1], p[2], 1, hp.rot + q[6], 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); }   // roll (a limb out to the side), pitch, then the part's own turn on top of your heading
+    gl.uniform1f(L.u.fsh, 0); gl.uniform1f(L.u.roll, 0);
   },
 });

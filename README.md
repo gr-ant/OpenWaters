@@ -128,7 +128,7 @@ How you look in third-person view (H) is data, in `src/angler/`. `src/js/models/
 | …`.wear` | a list of garment ids from `clothes.json`, e.g. `["trousers", "boots", "flannel", "vest", "cap"]` |
 | …`.colors` | the colours those garments ask for by name: `hat`, `top`, `vest`, `gloves`, `bottom`, `feet` (one plain colour per garment for now) |
 
-**`clothes.json`**: every garment (`cap`, `beanie`, `sun_hat`, `flannel`, `vest`, `jacket`, `tank`, `trousers`, `shorts`, `boots`, `sandals`). A garment lists shapes for each body part it covers (`head`, `torso`, `hips`, `upper` and `fore` arm, `thigh`, `shin`; arms and legs are drawn once per side). Numbers are metres in that part's own frame: x forward, y to the right, z up from the joint (parts hang down, so most z are negative; the head goes up from the neck).
+**`clothes.json`**: every garment (`cap`, `beanie`, `sun_hat`, `flannel`, `vest`, `jacket`, `tank`, `trousers`, `shorts`, `boots`, `sandals`). A garment lists shapes for each body part it covers (`head`, `torso`, `hips`, `upper` and `fore` arm, `thigh`, `shin`, `foot`; arms and legs are drawn once per side). Numbers are metres in that part's own frame: x forward, y to the right, z up from the joint (parts hang down, so most z are negative; the head goes up from the neck).
 
 | Shape | Meaning |
 |---|---|

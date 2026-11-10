@@ -2155,7 +2155,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
   const K = Object.assign({}, ANGLER_LOOK, look), Hr = Object.assign({}, ANGLER_LOOK.hair, K.hair), W = (K.outfits || {})[climate] || {}, C = W.colors || {}, G = HUMAN_BUILD, H = HUMAN;
   H.shoulder = G.shoulder; H.hip = G.hip;   // the pose hangs the arms and legs at these widths
   const rgb = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h) ? [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255) : null;
-  const skin = rgb(K.skin) || [0.86, 0.66, 0.52], hair = rgb(Hr.color) || [0.34, 0.22, 0.15], top = H.neck + H.head, fz = -H.shin - H.foot;
+  const skin = rgb(K.skin) || [0.86, 0.66, 0.52], hair = rgb(Hr.color) || [0.34, 0.22, 0.15], top = H.neck + H.head;
   const worn = (Array.isArray(W.wear) ? W.wear : []).map(id => clothes.find(g => g && g.id === id)).filter(Boolean);
   // an oval ring from height z0 (half-width a0 across the shoulders, half-depth c0 front to back) down to z1 (a1, c1): chests and coats aren't round
   const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 10, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 10 * 6.2832) / (e ? a1 : a0), Math.sin(k / 10 * 6.2832) / (e ? c1 : c0)));
@@ -2183,47 +2183,59 @@ function humanParts(look, climate = 'temperate', clothes = []) {
     upper: part('upper', B => { B.blob([0, 0, -0.02], 0.074, 0.074, 0.092, 4, 8, skin); B.tube([0, 0, -0.04], [0, 0, -H.upper], 0.07, 0.056, 8, skin, true); }),   // a tall soft cap for the shoulder (no flat top), the upper arm below it
     fore: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.044, 8, skin, false); B.blob([0, 0, -H.fore - 0.04], 0.044, 0.038, 0.06, 4, 6, skin); }),   // elbow, forearm, hand
     thigh: part('thigh', B => B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.094, 0.072, 8, skin, true)),
-    shin: part('shin', B => { B.blob([0, 0, -0.005], 0.076, 0.074, 0.08, 4, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.shin], 0.072, 0.054, 8, skin, false); B.blob([0.055, 0, fz + 0.055], 0.115, 0.058, 0.04, 4, 8, skin); }),   // knee, shin, foot
+    shin: part('shin', B => { B.blob([0, 0, -0.005], 0.076, 0.074, 0.08, 4, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.shin], 0.072, 0.054, 8, skin, false); }),   // knee, shin
+    foot: part('foot', B => { B.blob([0, 0, 0], 0.056, 0.054, 0.05, 3, 6, skin); B.blob([0.055, 0, -H.foot + 0.055], 0.115, 0.058, 0.04, 4, 8, skin); }),   // ankle, foot (the sole is H.foot below the ankle)
   };
 }
 // A pose: o.mode 'stand' (walking and running too: o.swing 0..1 and o.ph, the stride phase), 'swim' (o.body: body pitch, -pi/2 lying
-// face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet; o.paddle; o.helm). o.rod: the right
-// hand holds a rod out in front. Returns [part, forward, side, up, pitch] per part, the right hand and the head centre, all
-// relative to the feet (standing, sitting) under the body's own heading.
+// face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet;
+// o.paddle; o.helm). o.rod: the right hand holds a rod out in front. Returns the parts as [part, forward, side, up, pitch, roll, yaw],
+// the right hand and the head centre, all relative to the feet (standing, sitting) under the body's own heading. Every part hangs
+// down from its joint, is rolled out to the side (roll, + to the right), pitched forward (pitch), then turned (yaw): the order the
+// lit shader applies them, so a limb can swing sideways and the shoulders can turn against the hips.
 function humanPose(o) {
-  const H = HUMAN, d = (p, L) => [Math.sin(p) * L, -Math.cos(p) * L], ph = o.ph || 0, sw = o.swing || 0, out = [];
-  let b = 0, hipZ = 0, armOut = 0, legOut = 0, headUp = 0; const thigh = [0, 0], shin = [0, 0], up = [0, 0], fore = [0, 0];
-  for (let i = 0; i < 2; i++) { const s = Math.sin(ph + i * Math.PI), c = Math.cos(ph + i * Math.PI);   // i: 0 left, 1 right, half a stride apart
-    if (o.mode === 'swim' && o.tread) { b = o.body ?? -Math.PI / 2;   // treading water: a slow flutter kick, the arms sculling
-      thigh[i] = b + 0.5 * Math.sin(ph * 2 + i * Math.PI); shin[i] = thigh[i] - 0.25; up[i] = b + 1.1 + 0.35 * s; fore[i] = up[i] + 0.25; }
-    else if (o.mode === 'swim') { b = o.body ?? -Math.PI / 2;   // breaststroke: both sides together. Angles from the body's line: 0 trails back to the feet, pi reaches past the head
+  const H = HUMAN, ph = o.ph || 0, sw = o.swing || 0, out = [], PI = Math.PI;
+  const end = (J, L, pitch, roll = 0, yaw = 0) => { const x = L * Math.cos(roll) * Math.sin(pitch), y = L * Math.sin(roll), z = -L * Math.cos(roll) * Math.cos(pitch), c = Math.cos(yaw), q = Math.sin(yaw); return [J[0] + c * x - q * y, J[1] + q * x + c * y, J[2] + z]; };   // a limb's far end
+  let b = 0, hipZ = 0, headP = 0, twist = 0, turn = 0, sway = 0;   // body pitch; head pitch; shoulders' and hips' yaw; a shift over the standing foot
+  const thigh = [0, 0], shin = [0, 0], foot = [0, 0], up = [0, 0], fore = [0, 0], thR = [0, 0], shR = [0, 0], upR = [0, 0], foR = [0, 0];
+  for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, p = ph + i * PI, s = Math.sin(p);   // i: 0 left, 1 right, half a stride apart
+    if (o.mode === 'swim' && o.tread) { b = o.body ?? -PI / 2; headP = b;   // treading water: a slow flutter kick, the arms out to the sides, sculling
+      thigh[i] = b + 0.5 * Math.sin(ph * 2 + i * PI); shin[i] = thigh[i] - 0.25; foot[i] = shin[i] - 0.7; thR[i] = side * 0.15;
+      up[i] = b + 1.1 + 0.35 * s; fore[i] = up[i] + 0.25; upR[i] = side * 0.55; foR[i] = side * 0.35; }
+    else if (o.mode === 'swim') { b = o.body ?? -PI / 2; headP = b + 0.75;   // breaststroke, head up: both sides together. Angles from the body's line: 0 trails back to the feet, pi reaches past the head
       const u = ph / 6.2832 % 1, st = (a, z) => { const t = clamp((u - a) / (z - a), 0, 1); return t * t * (3 - 2 * t); }, mix = (x, y, t) => x + (y - x) * t;
-      const pull = st(0, 0.35), tuck = st(0.35, 0.6), reach = st(0.6, 0.78);   // pull the water back; hands in under the chin as the knees draw up; shoot the arms forward as the legs kick; glide
-      up[i] = b + mix(mix(Math.PI, 1.1, pull), Math.PI, reach); fore[i] = b + mix(mix(Math.PI, 1.1, pull) - 0.45 * Math.sin(Math.PI * pull) + 1.8 * tuck, Math.PI, reach);
-      thigh[i] = b + 0.75 * tuck * (1 - reach); shin[i] = thigh[i] - 1.7 * tuck * (1 - reach);   // heels up to the seat, then the kick straightens them
-      armOut = 0.07 * Math.sin(Math.PI * pull); legOut = 0.09 * tuck * (1 - reach); headUp = 0.75; }   // hands sweep wide on the pull, knees apart for the frog kick, head up out of the water
-    else if (o.mode === 'sit') { b = o.paddle ? -0.12 : 0; hipZ = o.hipZ;
-      thigh[i] = Math.PI / 2 - 0.1; shin[i] = Math.acos(clamp((hipZ - H.foot) / H.shin, 0, 1));   // thighs along the seat, shins down to the floor (straight out in a kayak)
-      up[i] = o.paddle ? 0.75 + 0.4 * s : 0.45; fore[i] = up[i] + (o.paddle ? 0.5 : 0.9); }
-    else { b = -(0.05 * sw + 0.09 * sw * sw);   // leaning into it, more at a run
-      const p = ph + i * Math.PI, bump = (at, k) => ((1 + Math.cos(p - at)) / 2) ** k;   // a smooth rise and fall centred on a point of the stride
-      thigh[i] = b + sw * (0.5 * s + 0.1);   // the thigh swings a little further forward than back
+      const pull = st(0, 0.35), tuck = st(0.35, 0.6), reach = st(0.6, 0.78), frog = tuck * (1 - reach);   // pull the water back; hands in under the chin as the knees draw up; shoot the arms forward as the legs kick; glide
+      up[i] = b + mix(mix(PI, 1.1, pull), PI, reach); fore[i] = b + mix(mix(PI, 1.1, pull) - 0.45 * Math.sin(PI * pull) + 1.8 * tuck, PI, reach);
+      upR[i] = side * (0.08 + 0.8 * Math.sin(PI * pull) * (1 - tuck)); foR[i] = upR[i] * 0.6;   // the hands sweep out wide and round on the pull
+      thigh[i] = b + 0.75 * frog; shin[i] = thigh[i] - 1.7 * frog; thR[i] = side * 0.6 * frog; shR[i] = side * 0.25 * frog; foot[i] = shin[i] - 0.9 * (1 - frog); }   // heels up to the seat, knees apart, then the kick; toes pointed on the glide
+    else if (o.mode === 'sit') { b = o.paddle ? -0.12 : 0; hipZ = o.hipZ; headP = b * 0.4;
+      thigh[i] = PI / 2 - 0.1; shin[i] = Math.acos(clamp((hipZ - H.foot) / H.shin, 0, 1)); foot[i] = shin[i]; thR[i] = side * 0.14;   // thighs along the seat, knees a little apart, shins down to the floor (straight out in a kayak)
+      up[i] = o.paddle ? 0.75 + 0.4 * s : 0.45; fore[i] = up[i] + (o.paddle ? 0.5 : 0.9); upR[i] = side * 0.1; foR[i] = -side * 0.12; }
+    else { b = -(0.05 * sw + 0.09 * sw * sw); headP = b * 0.4;   // leaning into it, more at a run; the head stays more level than the chest
+      const bump = (at, k) => ((1 + Math.cos(p - at)) / 2) ** k;   // a smooth rise and fall centred on a point of the stride
+      thigh[i] = b + sw * (0.5 * s + 0.1); thR[i] = side * 0.03;   // the thigh swings a little further forward than back
       shin[i] = thigh[i] - sw * (1.25 * bump(-0.55, 2) + 0.22 * bump(2.3, 4));   // the knee folds as the leg comes through, and gives a little as the foot takes the weight
-      up[i] = b - 0.55 * sw * s; fore[i] = up[i] + 0.15 + sw * (0.55 + 0.3 * (0.5 - 0.5 * s)); }   // arms swing against the legs, the elbow closing on the way forward
+      foot[i] = 0.6 * (shin[i] - b) * bump(-0.55, 1) - 0.5 * sw * bump(-PI / 2 - 0.25, 4) + 0.3 * sw * bump(PI / 2 - 0.15, 6);   // the ankle: toes hang through the swing, push off at the back, come up for the heel to land
+      up[i] = b - 0.55 * sw * s; fore[i] = up[i] + 0.15 + sw * (0.55 + 0.3 * (0.5 - 0.5 * s)); upR[i] = side * (0.08 + 0.04 * sw); foR[i] = -side * 0.04;   // arms swing against the legs, a little out from the body, the elbow closing on the way forward
+      if (i) { twist = 0.14 * sw * s; turn = -0.07 * sw * s; sway = -0.02 * sw * (1 - 0.4 * sw) * Math.cos(p); } }   // right leg forward: right shoulder back, right hip forward; the weight shifts over the foot on the ground
   }
-  if (o.mode === 'stand') hipZ = Math.max(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => -d(thigh[i], H.thigh)[1] - x * Math.sin(shin[i]) + (H.shin + H.foot) * Math.cos(shin[i]))));   // the lower boot (heel or toe) on the ground
-  if (o.rod && o.mode !== 'swim') { up[1] = b + 0.45; fore[1] = up[1] + 1.25; }   // right forearm out in front, holding the rod
-  const hip = [0, hipZ], sh = [hip[0] - d(b, H.torso)[0], hip[1] - d(b, H.torso)[1]], add = (a, q) => [a[0] + q[0], a[1] + q[1]], arm = add(sh, d(b, 0.15));   // arm: the shoulder joint, well below the top of the sloping shoulders and tucked into the body's side
-  out.push(['hips', hip[0], 0, hip[1], b], ['torso', sh[0], 0, sh[1], b], ['head', sh[0], 0, sh[1], b + headUp]);
+  if (o.rod && o.mode !== 'swim') { up[1] = b + 0.45; fore[1] = up[1] + 1.25; upR[1] = 0.06; foR[1] = -0.16; }   // right forearm out in front, the hand in toward the middle, holding the rod
+  const leg = i => { const side = i ? 1 : -1, hipJ = [-side * H.hip * Math.sin(turn), sway + side * H.hip * Math.cos(turn), 0], knee = end(hipJ, H.thigh, thigh[i], thR[i], turn), ankle = end(knee, H.shin, shin[i], shR[i], turn); return { hipJ, knee, ankle }; };
+  if (o.mode === 'stand') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i]))));   // the lowest heel or toe on the ground
+  const hip = [0, sway, hipZ], sh = [-Math.sin(b) * H.torso, sway, hipZ + Math.cos(b) * H.torso], arm2 = end(sh, 0.15, b);   // the shoulders: up the (leaning) spine from the hips; arm2: the shoulder joints' height, well below the top of the sloping shoulders
+  out.push(['hips', hip[0], hip[1], hip[2], b, 0, turn], ['torso', sh[0], sh[1], sh[2], b, 0, twist], ['head', sh[0], sh[1], sh[2], headP, 0, twist * 0.3]);
   let hand = null;
-  for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, knee = add(hip, d(thigh[i], H.thigh)), elbow = add(arm, d(up[i], H.upper));
-    out.push(['thigh', hip[0], side * H.hip, hip[1], thigh[i]], ['shin', knee[0], side * (H.hip + legOut), knee[1], shin[i]], ['upper', arm[0], side * H.shoulder, arm[1], up[i]], ['fore', elbow[0], side * (H.shoulder + armOut), elbow[1], fore[i]]);
-    if (i) { const h = add(elbow, d(fore[i], H.fore + 0.04)); hand = [h[0], side * H.shoulder, h[1]]; } }
-  const hc = add(sh, [-Math.sin(b) * (H.neck + H.head), Math.cos(b) * (H.neck + H.head)]);
-  return { parts: out, hand, head: [hc[0], 0, hc[1]] };
+  for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, L = leg(i), up3 = v => [v[0], v[1], v[2] + hipZ];
+    const J = [arm2[0] - side * H.shoulder * Math.sin(twist), arm2[1] + side * H.shoulder * Math.cos(twist), arm2[2]], elbow = end(J, H.upper, up[i], upR[i], twist);
+    out.push(['thigh', ...up3(L.hipJ), thigh[i], thR[i], turn], ['shin', ...up3(L.knee), shin[i], shR[i], turn], ['foot', ...up3(L.ankle), foot[i], 0, turn],
+      ['upper', ...J, up[i], upR[i], twist], ['fore', ...elbow, fore[i], foR[i], twist]);
+    if (i) hand = end(elbow, H.fore + 0.04, fore[i], foR[i], twist); }
+  const hc = [sh[0] - Math.sin(b) * (H.neck + H.head), sway, sh[2] + Math.cos(b) * (H.neck + H.head)];
+  return { parts: out, hand, head: hc };
 }
-// one part's vertex (x, y, z in its own frame) in the body's frame: the same pitch the lit shader applies, then the joint offset
-function humanPlace(q, x, y, z) { const cp = Math.cos(q[4]), sp = Math.sin(q[4]); return [q[1] + x * cp - z * sp, q[2] + y, q[3] + x * sp + z * cp]; }
+// one part's vertex (x, y, z in its own frame) in the body's frame: the same roll, pitch and yaw the lit shader applies, then the joint offset
+function humanPlace(q, x, y, z) { const cr = Math.cos(q[5] || 0), sr = Math.sin(q[5] || 0), cp = Math.cos(q[4]), sp = Math.sin(q[4]), cy = Math.cos(q[6] || 0), sy = Math.sin(q[6] || 0);
+  const y1 = y * cr - z * sr, z1 = y * sr + z * cr, x2 = x * cp - z1 * sp, z2 = x * sp + z1 * cp; return [q[1] + cy * x2 - sy * y1, q[2] + sy * x2 + cy * y1, q[3] + z2]; }
 </script>
 <script>
 'use strict';
@@ -6576,9 +6588,14 @@ Object.assign(Engine, {
       o = { mode: 'swim', tread: !go, body: go ? -Math.PI / 2 + (this.under ? clamp(P.pitch, -1.2, 1.2) : 0) : -0.25, ph: this.hPh }; }
     else { const run = spd > (CONFIG.walkSpeed + CONFIG.runSpeed) / 2 * Game.speedMultiplier * 0.9;
       this.hAmp = (this.hAmp || 0) + ((spd > 0.3 ? (run ? 1 : 0.55) : 0) - (this.hAmp || 0)) * Math.min(1, dt * 8);
-      this.hPh = ((this.hPh || 0) + dist * 6.2832 / (run ? 2.2 : 1.5)) % 6.2832;   // one stride cycle per 1.5 m walking, 2.2 m running
+      this.hPh = ((this.hPh || 0) + dist * 6.2832 / Math.max(1.5, spd / (run ? 2.4 : 1.6))) % 6.2832;   // a stride cycle covers at least 1.5 m, and the legs never turn over faster than 1.6 times a second walking, 2.4 running (you move faster than a person does)
       o = { mode: 'stand', swing: this.hAmp, ph: this.hPh, rod }; }
-    const pose = humanPose(o);
+    const pose = humanPose(o), sm = this.hSm;
+    if (sm && sm.mode === o.mode && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
+      const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
+      pose.parts.forEach((q, n) => { const w = sm.parts[n]; for (let j = 1; j < 4; j++) q[j] = ease(w[j], q[j]); for (let j = 4; j < 7; j++) q[j] = turn(w[j], q[j]); });
+      pose.hand = pose.hand.map((v, j) => ease(sm.hand[j], v)); }
+    this.hSm = { mode: o.mode, parts: pose.parts.map(q => q.slice()), hand: pose.hand.slice() };
     if (o.mode === 'swim') base = P.z + EYE - (o.tread ? 0.12 : 0.3) - pose.head[2];   // head where the first-person eye is (treading water), or lying low in the water swimming
     const c = Math.cos(rot), s = Math.sin(rot), w = q => [P.x + c * q[0] - s * q[1], P.y + s * q[0] + c * q[1], base + q[2]];
     this.hPose = { pose, rot, base, w, hand: w(pose.hand) };
@@ -6588,8 +6605,8 @@ Object.assign(Engine, {
     const M = this._hParts || (this._hParts = humanParts(BUILTIN.angler[0], CLIMATE.key, (BUILTIN.clothes[0] || {}).clothes)), P = this.P; sample(P.x, P.y); const wl = SW, mk = WATER[SK].murk;
     gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.roll, 0);
     for (const q of hp.pose.parts) { const g = this.tackleGpu('human:' + q[0], () => M[q[0]]), p = hp.w([q[1], q[2], q[3]]);
-      this.upInst(g, [p[0], p[1], p[2], 1, hp.rot, 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); }
-    gl.uniform1f(L.u.fsh, 0);
+      gl.uniform1f(L.u.roll, q[5]); this.upInst(g, [p[0], p[1], p[2], 1, hp.rot + q[6], 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); }   // roll (a limb out to the side), pitch, then the part's own turn on top of your heading
+    gl.uniform1f(L.u.fsh, 0); gl.uniform1f(L.u.roll, 0);
   },
 });
 </script>
@@ -10740,14 +10757,17 @@ window.addEventListener('DOMContentLoaded', () => {
     { "id": "boots", "name": "Wellingtons", "parts": {
       "shin": [
         {"tube": [-0.15, 0.083, -0.39, 0.074], "color": "feet", "mat": "plain"},
-        {"blob": [0.055, 0, -0.42, 0.13, 0.064, 0.05], "color": "feet", "mat": "plain"},
         {"tube": [-0.14, 0.089, -0.215, 0.088], "color": "feet", "mat": "plain"}
+      ],
+      "foot": [
+        {"blob": [0, 0, 0, 0.076, 0.074, 0.06], "color": "feet", "mat": "plain"},
+        {"blob": [0.055, 0, -0.03, 0.13, 0.064, 0.05], "color": "feet", "mat": "plain"}
       ]
     } },
     { "id": "sandals", "name": "Sandals", "parts": {
-      "shin": [
-        {"blob": [0.055, 0, -0.458, 0.135, 0.066, 0.012], "color": "feet", "mat": "plain"},
-        {"blob": [0.08, 0, -0.4, 0.02, 0.06, 0.03], "detail": [3, 5], "color": "feet", "mat": "plain"}
+      "foot": [
+        {"blob": [0.055, 0, -0.068, 0.135, 0.066, 0.012], "color": "feet", "mat": "plain"},
+        {"blob": [0.08, 0, -0.01, 0.02, 0.06, 0.03], "detail": [3, 5], "color": "feet", "mat": "plain"}
       ]
     } }
   ]
