@@ -8,11 +8,11 @@ Object.assign(Engine, {
   openSpawn(mode) {
     if (this.spawnOpen && this.spawnMode === mode) return this.toggleSpawn(false);
     this.spawnMode = mode; this.spawnTab = mode === 'boats' ? 'boats' : 'fish'; this.spawnSub = this.contextKind(); this.spawnBiome = CLIMATE.key; this.spawnKind = 'all'; this.spawnSel = null;
-    if (this.spawnOpen) this.buildSpawnList(); else this.toggleSpawn(true);
+    if (this.spawnOpen) { this.buildSpawnList(); this.menuFocus = { panel: 'spawn', r: 0, c: -1 }; if (!this.touchUI) this.menuMark('spawn'); } else this.toggleSpawn(true);
   },
   toggleSpawn(open = !this.spawnOpen) {
     const el = document.getElementById('spawn'); if (!el) return; this.spawnOpen = open; el.hidden = !open; if (open) this.spawnOpenT = performance.now();
-    if (open) { if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock(); this.keys = {}; this.buildSpawnList(); if (!this.touchUI) setTimeout(() => document.getElementById('spSearch').focus(), 0); }
+    if (open) { if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock(); this.keys = {}; this.buildSpawnList(); this.menuFocus = { panel: 'spawn', r: 0, c: -1 }; if (!this.touchUI) this.menuMark('spawn'); if (!this.touchUI) setTimeout(() => document.getElementById('spSearch').focus(), 0); }
     else document.activeElement && document.activeElement.blur && document.activeElement.blur();
   },
   setupSpawn() {
