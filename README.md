@@ -63,7 +63,7 @@ src/
     boats.js          boat definitions to hull meshes
     tackle.js         rods, reels, lines, lures, rigs: gear rules, validation, rig stats
     tackle-meshes.js  3D rod, reel, hook, lure, bait, float and sinker meshes
-    fishing/          casting, bites, the fight, tackle box
+    fishing/          casting, bites, the fight, tackle box, nets and traps
     game-api.js       the public Game API
     hud/              on-screen interface, icons, journal, menu keyboard navigation, tutorial
     sounds.js         sound effects synthesized with Web Audio, defined as data

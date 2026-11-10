@@ -24,7 +24,7 @@ Object.assign(Engine, {
     try {
       const seeds = {};
       for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i), m = /^engine-(?:save|fishgone)-(.+)-(\d+)$/.exec(k || ''); if (!m) continue;
+        const k = localStorage.key(i), m = /^engine-(?:save|fishgone|traps)-(.+)-(\d+)$/.exec(k || ''); if (!m) continue;
         let t = 0; try { const d = JSON.parse(localStorage.getItem(k)); t = d.t || Math.max(0, ...Object.values(d).filter(v => typeof v === 'number')); } catch (e) { /* unreadable: oldest */ }
         const id = m[1] + '-' + m[2]; (seeds[id] = seeds[id] || { t: 0, keys: [] }).keys.push(k); seeds[id].t = Math.max(seeds[id].t, t);
       }

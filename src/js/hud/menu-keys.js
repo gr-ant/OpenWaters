@@ -17,18 +17,18 @@ Object.assign(Engine, {
       else if (this.spawnNav || (typing && this.spawnSel)) this.spawnPlace();   // from the search box, Enter takes the top match
       return true;
     }
-    if (k === 'Tab') { const T = ['rigs', 'gear'], cur = this.tackleTab === 'build' ? 'rigs' : this.tackleTab; this.tackleTab = T[(T.indexOf(cur) + (e.shiftKey ? -1 : 1) + T.length) % T.length]; this.tkNav = null; this.tackleRender(); this.navMark(); return true; }
+    if (k === 'Tab') { const T = ['rigs', 'gear', 'traps'], cur = this.tackleTab === 'build' ? 'rigs' : this.tackleTab; this.tackleTab = T[(T.indexOf(cur) + (e.shiftKey ? -1 : 1) + T.length) % T.length]; this.tkNav = null; this.tackleRender(); this.navMark(); return true; }
     if (side) { if (this.tackleTab === 'rigs') { const C = ['all', ...WATER_CATS.map(c => c[0])]; this.rigCat = C[(C.indexOf(this.rigCat) + side + C.length) % C.length]; this.tkNav = null; this.tackleRender(); } return true; }
-    const L = [...document.querySelectorAll('#tkBody [data-rig], #tkBody [data-gear]')]; if (!L.length) return true;
-    let i = L.findIndex(li => (li.dataset.rig || li.dataset.gear) === this.tkNav);
-    if (step) { if (i < 0) i = Math.max(0, L.findIndex(li => li.classList.contains('on'))) - (step > 0 ? 1 : 0); i = clamp(i + step, 0, L.length - 1); this.tkNav = L[i].dataset.rig || L[i].dataset.gear; }
+    const L = [...document.querySelectorAll('#tkBody [data-rig], #tkBody [data-gear], #tkBody [data-trap]')]; if (!L.length) return true;
+    let i = L.findIndex(li => (li.dataset.rig || li.dataset.gear || li.dataset.trap) === this.tkNav);
+    if (step) { if (i < 0) i = Math.max(0, L.findIndex(li => li.classList.contains('on'))) - (step > 0 ? 1 : 0); i = clamp(i + step, 0, L.length - 1); this.tkNav = L[i].dataset.rig || L[i].dataset.gear || L[i].dataset.trap; }
     else if (i >= 0) { this.tackleOpenT = 0; L[i].click(); }   // Enter: tie on the rig / show the gear
     this.navMark(); return true;
   },
   // outline the card the keyboard is on in the tackle box (lists are rebuilt often, so re-applied after each move)
   navMark() {
     for (const li of document.querySelectorAll('#tkBody .nav')) li.classList.remove('nav');
-    const el = this.tkNav && [...document.querySelectorAll('#tkBody [data-rig], #tkBody [data-gear]')].find(li => (li.dataset.rig || li.dataset.gear) === this.tkNav);
+    const el = this.tkNav && [...document.querySelectorAll('#tkBody [data-rig], #tkBody [data-gear], #tkBody [data-trap]')].find(li => (li.dataset.rig || li.dataset.gear || li.dataset.trap) === this.tkNav);
     if (el) { el.classList.add('nav'); el.scrollIntoView({ block: 'nearest' }); }
   },
 });

@@ -11,7 +11,7 @@ Object.assign(Engine, {
     const body = document.getElementById('tkBody'), tabs = document.getElementById('tkTabs'); if (!body) return;
     const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
     const tabOn = this.tackleTab === 'build' ? 'rigs' : this.tackleTab, foot = document.getElementById('tkFoot');
-    tabs.innerHTML = [['rigs', 'Rigs', 'hook'], ['gear', 'Gear', 'gear']].map(([t, l, ic]) => `<button data-tab="${t}" class="${t === tabOn ? 'on' : ''}">${uiIcon('ui.' + ic)}${l}</button>`).join('');
+    tabs.innerHTML = [['rigs', 'Rigs', 'hook'], ['gear', 'Gear', 'gear'], ['traps', 'Nets', 'net']].map(([t, l, ic]) => `<button data-tab="${t}" class="${t === tabOn ? 'on' : ''}">${uiIcon('ui.' + ic)}${l}</button>`).join('');
     const A = this.ang, T = this.tackleTab; foot.innerHTML = ''; foot.hidden = true;
     if (T === 'rigs') {
       // one card per rig: picture, name, what's on the end, line strength and cast; the tied-on one is highlighted
@@ -41,7 +41,7 @@ Object.assign(Engine, {
         for (const g of L) h += `<li data-gear="${esc(g.id)}" class="card slim" title="${esc(g.description)}">${gearIconHTML(g)}<span><b>${esc(g.name)}</b><br><small>${esc(gearSummary(g))}</small></span>${g._custom ? `<i data-forget="${esc(g.id)}" title="Remove">✕</i>` : ''}</li>`;
         h += '</ul>'; }
       body.innerHTML = h + '<footer><label class="tklink">Import gear (.json)<input id="tkFile" type="file" accept=".json,application/json" multiple hidden></label></footer><pre id="tkJson" hidden></pre>';
-    }
+    } else if (T === 'traps') body.innerHTML = this.trapsHTML();   // the cast net, crab pots and lobster cages (fishing/nets-traps.js)
   },
   setupTackle() {
     const el = document.getElementById('tackle'); if (!el) return;
