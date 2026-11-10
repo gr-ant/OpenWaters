@@ -24,18 +24,20 @@ const CONTROL_ACTIONS = [   // [id, canonical code, group, label]
 ].map(([id, canon, group, label]) => ({ id, canon, group, label }));
 const CONTROL_FIXED = new Set(['Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'NumpadEnter', 'Tab', 'KeyN', 'KeyP']);
 const GUPPY = Object.fromEntries(CONTROL_ACTIONS.map(a => [a.id, [a.canon]]));
-Object.assign(GUPPY, { run: ['ShiftLeft', 'ShiftRight'], zoomIn: ['Equal', 'NumpadAdd'], zoomOut: ['Minus', 'NumpadSubtract'] });
+Object.assign(GUPPY, { tackle: ['KeyT'], fastTime: ['KeyO'], run: ['ShiftLeft', 'ShiftRight'],   // T for tackle, so fast time moves to O
+  zoomIn: ['Equal', 'NumpadAdd'], zoomOut: ['Minus', 'NumpadSubtract'] });
 const CONTROL_PRESETS = {
   guppy: { name: 'Guppy', binds: GUPPY },
   pike: { name: 'Pike', binds: { ...GUPPY, bail: ['KeyG', 'Mouse3'], dragDown: ['BracketLeft', 'WheelDown'], dragUp: ['BracketRight', 'WheelUp'],
-    radar: ['Digit2', 'Mouse4'], boats: ['KeyX'], tackle: ['KeyI', 'Tab'] } },
+    radar: ['Digit2', 'Mouse4'], boats: ['KeyB'], tackle: ['KeyT', 'Tab'] } },
 };
 const Controls = {
   KEY: 'embercrown-keys',
   preset: 'guppy', binds: null, phys: null,
   load() {
     let s = null; try { s = JSON.parse(localStorage.getItem(this.KEY)); } catch (_) { /* defaults */ }
-    if (s && s.binds && typeof s.binds === 'object') this.set(s.binds, CONTROL_PRESETS[s.preset] ? s.preset : 'custom', false);
+    if (s && CONTROL_PRESETS[s.preset]) this.usePreset(s.preset, false);   // a named layout takes its current keys (so changed defaults reach everyone); only custom ones are kept as saved
+    else if (s && s.binds && typeof s.binds === 'object') this.set(s.binds, 'custom', false);
     else this.usePreset('guppy', false);
   },
   save() { try { localStorage.setItem(this.KEY, JSON.stringify({ preset: this.preset, binds: this.binds })); } catch (_) { /* session only */ } },

@@ -710,7 +710,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 
    TACKLE & FISHING: every rod, reel, line, leader, hook, sinker, float, bait and lure is a small JSON object, and a
    rig names the pieces it's made of (tackle/README.md). Built-in gear is the <script data-builtin="tackle"> blocks at the end.
-   I opens the tackle box (rigs, a rig builder, all your gear, the catch log); Q takes the rod out; hold R or the mouse
+   T opens the tackle box (rigs, a rig builder, all your gear, the catch log); Q takes the rod out; hold R or the mouse
    to cast and let go to throw; hold R to reel (Shift faster); strike with R when the float goes under; [ ] set drag.
    From the helm of a powered boat the rod goes in a holder and you troll. E keeps a catch, X lets it go.
    H with the line out stands the rod in a rod holder (a spike on the bank, the gunwale afloat); a bell rings at a bite.
@@ -812,18 +812,20 @@ const CONTROL_ACTIONS = [   // [id, canonical code, group, label]
 ].map(([id, canon, group, label]) => ({ id, canon, group, label }));
 const CONTROL_FIXED = new Set(['Escape', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Enter', 'NumpadEnter', 'Tab', 'KeyN', 'KeyP']);
 const GUPPY = Object.fromEntries(CONTROL_ACTIONS.map(a => [a.id, [a.canon]]));
-Object.assign(GUPPY, { run: ['ShiftLeft', 'ShiftRight'], zoomIn: ['Equal', 'NumpadAdd'], zoomOut: ['Minus', 'NumpadSubtract'] });
+Object.assign(GUPPY, { tackle: ['KeyT'], fastTime: ['KeyO'], run: ['ShiftLeft', 'ShiftRight'],   // T for tackle, so fast time moves to O
+  zoomIn: ['Equal', 'NumpadAdd'], zoomOut: ['Minus', 'NumpadSubtract'] });
 const CONTROL_PRESETS = {
   guppy: { name: 'Guppy', binds: GUPPY },
   pike: { name: 'Pike', binds: { ...GUPPY, bail: ['KeyG', 'Mouse3'], dragDown: ['BracketLeft', 'WheelDown'], dragUp: ['BracketRight', 'WheelUp'],
-    radar: ['Digit2', 'Mouse4'], boats: ['KeyX'], tackle: ['KeyI', 'Tab'] } },
+    radar: ['Digit2', 'Mouse4'], boats: ['KeyB'], tackle: ['KeyT', 'Tab'] } },
 };
 const Controls = {
   KEY: 'embercrown-keys',
   preset: 'guppy', binds: null, phys: null,
   load() {
     let s = null; try { s = JSON.parse(localStorage.getItem(this.KEY)); } catch (_) { /* defaults */ }
-    if (s && s.binds && typeof s.binds === 'object') this.set(s.binds, CONTROL_PRESETS[s.preset] ? s.preset : 'custom', false);
+    if (s && CONTROL_PRESETS[s.preset]) this.usePreset(s.preset, false);   // a named layout takes its current keys (so changed defaults reach everyone); only custom ones are kept as saved
+    else if (s && s.binds && typeof s.binds === 'object') this.set(s.binds, 'custom', false);
     else this.usePreset('guppy', false);
   },
   save() { try { localStorage.setItem(this.KEY, JSON.stringify({ preset: this.preset, binds: this.binds })); } catch (_) { /* session only */ } },
@@ -7724,7 +7726,7 @@ Object.assign(Engine, {
     if (on) {
       if (this.boat && this.boatMode !== 'deck' && !this.boatTrolls(this.boat.def)) { this.say(this.touchUI ? 'Tap Stand / Fish to leave the helm first' : `Leave the helm (${Controls.key('helm')}) to fish`, 2.5); return; }
       if (this.swim) { this.say("You can't fish while swimming", 2); return; }
-      if (!A.S) { this.say('No rig: open the tackle box (I) and build one', 3); return; }
+      if (!A.S) { this.say(`No rig: open the tackle box (${Controls.key('tackle')}) and build one`, 3); return; }
       A.out = true; A.phase = 'ready'; A.bendV = 0; A.rope = null; A.dangle = null; A.pitch = -0.9; A.lure = null; A.fish = null;
       if (this.boat && this.boatMode !== 'deck') this.say('Trolling', 2); else this.say(A.rig.name, 1.5);
     } else {
@@ -8402,9 +8404,9 @@ Object.assign(Engine, {
 </script>
 <script>
 'use strict';
-// FISHING: the tackle box panel (I): rigs, the rig builder, gear and the catch log.
+// FISHING: the tackle box panel (T): rigs, the rig builder, gear and the catch log.
 Object.assign(Engine, {
-  // ---- the tackle box (I): rigs, the rig builder, all your gear, and the catch log ----
+  // ---- the tackle box (T): rigs, the rig builder, all your gear, and the catch log ----
   toggleTackle(open = !this.tackleOpen) {
     const el = document.getElementById('tackle'); if (!el) return;
     this.tackleOpen = open; el.hidden = !open; if (open) { this.toggleJournal(false); this.rigCat = this.contextKind(); if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock(); this.tackleOpenT = performance.now(); this.tackleRender(); this.menuFocus = { panel: 'tackle', r: 0, c: -1 }; if (!this.touchUI) this.menuMark('tackle'); }   // the keyboard starts on the top row

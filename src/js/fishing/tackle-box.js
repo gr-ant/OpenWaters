@@ -1,7 +1,7 @@
 'use strict';
-// FISHING: the tackle box panel (I): rigs, the rig builder, gear and the catch log.
+// FISHING: the tackle box panel (T): rigs, the rig builder, gear and the catch log.
 Object.assign(Engine, {
-  // ---- the tackle box (I): rigs, the rig builder, all your gear, and the catch log ----
+  // ---- the tackle box (T): rigs, the rig builder, all your gear, and the catch log ----
   toggleTackle(open = !this.tackleOpen) {
     const el = document.getElementById('tackle'); if (!el) return;
     this.tackleOpen = open; el.hidden = !open; if (open) { this.toggleJournal(false); this.rigCat = this.contextKind(); if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock(); this.tackleOpenT = performance.now(); this.tackleRender(); this.menuFocus = { panel: 'tackle', r: 0, c: -1 }; if (!this.touchUI) this.menuMark('tackle'); }   // the keyboard starts on the top row

@@ -29,7 +29,7 @@ Object.assign(Engine, {
     if (on) {
       if (this.boat && this.boatMode !== 'deck' && !this.boatTrolls(this.boat.def)) { this.say(this.touchUI ? 'Tap Stand / Fish to leave the helm first' : `Leave the helm (${Controls.key('helm')}) to fish`, 2.5); return; }
       if (this.swim) { this.say("You can't fish while swimming", 2); return; }
-      if (!A.S) { this.say('No rig: open the tackle box (I) and build one', 3); return; }
+      if (!A.S) { this.say(`No rig: open the tackle box (${Controls.key('tackle')}) and build one`, 3); return; }
       A.out = true; A.phase = 'ready'; A.bendV = 0; A.rope = null; A.dangle = null; A.pitch = -0.9; A.lure = null; A.fish = null;
       if (this.boat && this.boatMode !== 'deck') this.say('Trolling', 2); else this.say(A.rig.name, 1.5);
     } else {

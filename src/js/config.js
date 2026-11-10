@@ -41,7 +41,7 @@
 
    TACKLE & FISHING: every rod, reel, line, leader, hook, sinker, float, bait and lure is a small JSON object, and a
    rig names the pieces it's made of (tackle/README.md). Built-in gear is the <script data-builtin="tackle"> blocks at the end.
-   I opens the tackle box (rigs, a rig builder, all your gear, the catch log); Q takes the rod out; hold R or the mouse
+   T opens the tackle box (rigs, a rig builder, all your gear, the catch log); Q takes the rod out; hold R or the mouse
    to cast and let go to throw; hold R to reel (Shift faster); strike with R when the float goes under; [ ] set drag.
    From the helm of a powered boat the rod goes in a holder and you troll. E keeps a catch, X lets it go.
    H with the line out stands the rod in a rod holder (a spike on the bank, the gunwale afloat); a bell rings at a bite.
