@@ -9486,7 +9486,7 @@ Object.assign(Engine, {
     return [hand[0] + cy * xr - sy * p[1], hand[1] + sy * xr + cy * p[1], hand[2] + zr];
   },
   reelAnimStep() {
-    const A = this.ang, S = A.S, R = this.reelW || (this.reelW = { crank: 0, last: A.lineOut || 0, tm: this.time, free: 0 });
+    const A = this.ang, S = A.S, R = A.reelW || (A.reelW = { crank: 0, last: A.lineOut || 0, tm: this.time, free: 0 });   // per rod: with a second rod in a holder both are drawn each frame
     const dt = clamp(this.time - R.tm, 0, 0.1); R.tm = this.time;
     const dl = (A.lineOut || 0) - R.last; R.last = A.lineOut || 0;
     if (A.reeling) R.crank += dt * 9.4 * (1 + 0.8 * (this.reelPull || 0)); else if (dl < 0) R.crank += -dl * 0.7;   // radians: about 1.5 turns a second wound, or with the line
