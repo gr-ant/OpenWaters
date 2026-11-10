@@ -21,5 +21,5 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 .ti-primary:hover, .ti-primary:focus-visible { border-color: var(--gold-hi); background: linear-gradient(180deg, rgba(52,82,40,.95), rgba(34,60,28,.95)); }
 .ti-play { font-style: normal; font-size: .62em; color: #e8c46a; }
 .ti-soon { cursor: not-allowed; }
-.ti-foot { position: absolute; left: clamp(28px, 7vw, 130px); bottom: clamp(24px, 6vh, 56px); margin: 0; font: 15px var(--sans); color: rgba(242,230,196,.85); letter-spacing: .3px; }
-@media (max-width: 600px) { #title { padding: 48px 20px 0; background: linear-gradient(180deg, rgba(14,46,30,.92) 0%, rgba(16,52,34,.8) 60%, rgba(18,56,36,.4) 100%); } .ti-card { width: 100%; } .ti-foot { left: 20px; } }
+.ti-foot { position: absolute; right: clamp(20px, 3vw, 48px); bottom: clamp(24px, 6vh, 56px); margin: 0; font: 15px var(--sans); color: rgba(242,230,196,.85); letter-spacing: .3px; }
+@media (max-width: 600px) { #title { padding: 48px 20px 0; background: linear-gradient(180deg, rgba(14,46,30,.92) 0%, rgba(16,52,34,.8) 60%, rgba(18,56,36,.4) 100%); } .ti-card { width: 100%; } .ti-foot { right: 20px; } }
