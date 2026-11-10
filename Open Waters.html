@@ -6935,6 +6935,7 @@ Object.assign(Engine, {
     else if (rod && A.phase === 'flight') o.castF = Math.exp(-(A.t - A.castAt) * 3.2);   // and the follow-through easing off
     if (!rod && this.traps && this.traps.act) Object.assign(o, this.traps.act);   // throwing or hauling a net or a pot (fishing/nets-traps.js)
     if (rod && !A.holder && (A.phase === 'charge' || A.phase === 'fight' || (A.phase === 'flight' && A.t - A.castAt < 0.6) || (A.reelS || 0) > 0.05)) { o.hands2 = true; if (A.reeling || A.phase === 'fight') o.crank = A.crank || 0; }   // both hands to cast; the left one winds
+    if (rod && !A.holder && A.setT !== undefined && A.t - A.setT < 0.9) { const su = A.t - A.setT; o.castW = Math.max(o.castW || 0, 0.75 * (1 - Math.exp(-su * 30)) * Math.exp(-su * 3.5)); o.hands2 = true; }   // setting the hook: both hands, the rod swept up and back
     const pose = humanPose(o), sm = this.hSm;
     if (sm && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
       const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
@@ -7724,7 +7725,7 @@ Object.assign(Engine, {
       if (A.phase === 'water') { tb = Math.min(most, Math.max(A.overS * 1.2, 0.5 * most * A.reelS)) + (S.lure ? 0.025 * S.lure.action * drag * Math.sin(A.t * 42) : 0);   // (a working lure throbs in the tip)
         if (btn) { A.crank = (A.crank || 0) + dt * (7 + 9 * fast); dp = 0.014 * Math.sin(A.crank); dyw = 0.008 * Math.cos(A.crank); }   // the rod rocks a touch with each turn of the handle…
         dp += 0.02 * A.reelS + 0.2 * hard; }   // …and the faster you wind the higher it comes up and the more it bends
-      if (A.phase === 'bite') { if (!(H && H.on)) this.biteStep(dt, press, btn); }   // a fish that set itself on the holder rod is held by rod-holder.js
+      if (A.phase === 'bite') { if (press && !H) A.setT = A.t; if (!(H && H.on)) this.biteStep(dt, press, btn); }   // (A.setT: you struck: the rod sweeps up to set the hook, below)   // a fish that set itself on the holder rod is held by rod-holder.js
       else if ((A.scanT = (A.scanT || 0) - dt) <= 0) { A.scanT = 0.25; this.lureScan(); }
     } else if (A.phase === 'fight') {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
@@ -7736,7 +7737,9 @@ Object.assign(Engine, {
         ty += clamp(Math.atan2(Math.sin(to - ty), Math.cos(to - ty)), -0.75, 0.75) * 0.75 * tight; tp -= 0.16 * tight; } }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
     tp += dp; ty += dyw;
-    const k = 1 - Math.exp(-dt * (A.phase === 'charge' && A.stroke != null ? 24 : A.phase === 'flight' && A.t - A.castAt < 0.5 ? 10 : 7));
+    const su = A.setT === undefined || H || helm ? 9 : A.t - A.setT, strike = su < 0.9 ? (1 - Math.exp(-su * 30)) * Math.exp(-su * 3.5) : 0;   // setting the hook: a sharp sweep up and back, held a moment, then settling into the fight
+    if (strike > 0) { tp += 0.8 * strike; ty += 0.15 * strike; tb = Math.max(tb, 0.95 * (1 - Math.exp(-su * 40)) * Math.exp(-su * 4.5)); }
+    const k = 1 - Math.exp(-dt * (strike > 0.25 ? 26 : A.phase === 'charge' && A.stroke != null ? 24 : A.phase === 'flight' && A.t - A.castAt < 0.5 ? 10 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;
     this.rodFlexStep(dt, tb);
     A.tip = this.rodTip(A);
@@ -9406,7 +9409,7 @@ Object.assign(Engine, {
   // the few controls that matter right now (beside the dock): [key, word]
   contextKeys() {
     const A = this.ang, b = this.boat, out = [], K = id => Controls.key(id), drag = `${K('dragDown')} ${K('dragUp')}`;   // keys as currently bound
-    if (A && A.out && A.phase === 'card') return [[K('keep'), 'Keep'], [K('release'), 'Release']];
+    if (A && A.out && A.phase === 'card') return [];   // the catch card has its own Keep and Release buttons (with their keys): not twice
     if (this.rodInHand()) { const onReel = !this.touchUI && this.showReelKeys !== false && !(b && this.boatMode !== 'deck');   // the bail and drag keys are already shown on the reel itself (hud/reel.js): not twice
       if (A.phase === 'ready') { if (!onReel) out.push([drag, 'Drag']); }
       else if (A.phase === 'water') { out.push([K('run'), 'Reel faster']); if (!onReel) out.push([K('bail'), A.bail ? 'Close bail' : A.S.reel && A.S.reel.kind !== 'spinning' ? 'Free spool' : 'Open bail']); }

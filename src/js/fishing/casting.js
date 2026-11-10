@@ -47,7 +47,7 @@ Object.assign(Engine, {
       if (A.phase === 'water') { tb = Math.min(most, Math.max(A.overS * 1.2, 0.5 * most * A.reelS)) + (S.lure ? 0.025 * S.lure.action * drag * Math.sin(A.t * 42) : 0);   // (a working lure throbs in the tip)
         if (btn) { A.crank = (A.crank || 0) + dt * (7 + 9 * fast); dp = 0.014 * Math.sin(A.crank); dyw = 0.008 * Math.cos(A.crank); }   // the rod rocks a touch with each turn of the handle…
         dp += 0.02 * A.reelS + 0.2 * hard; }   // …and the faster you wind the higher it comes up and the more it bends
-      if (A.phase === 'bite') { if (!(H && H.on)) this.biteStep(dt, press, btn); }   // a fish that set itself on the holder rod is held by rod-holder.js
+      if (A.phase === 'bite') { if (press && !H) A.setT = A.t; if (!(H && H.on)) this.biteStep(dt, press, btn); }   // (A.setT: you struck: the rod sweeps up to set the hook, below)   // a fish that set itself on the holder rod is held by rod-holder.js
       else if ((A.scanT = (A.scanT || 0) - dt) <= 0) { A.scanT = 0.25; this.lureScan(); }
     } else if (A.phase === 'fight') {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
@@ -59,7 +59,9 @@ Object.assign(Engine, {
         ty += clamp(Math.atan2(Math.sin(to - ty), Math.cos(to - ty)), -0.75, 0.75) * 0.75 * tight; tp -= 0.16 * tight; } }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
     tp += dp; ty += dyw;
-    const k = 1 - Math.exp(-dt * (A.phase === 'charge' && A.stroke != null ? 24 : A.phase === 'flight' && A.t - A.castAt < 0.5 ? 10 : 7));
+    const su = A.setT === undefined || H || helm ? 9 : A.t - A.setT, strike = su < 0.9 ? (1 - Math.exp(-su * 30)) * Math.exp(-su * 3.5) : 0;   // setting the hook: a sharp sweep up and back, held a moment, then settling into the fight
+    if (strike > 0) { tp += 0.8 * strike; ty += 0.15 * strike; tb = Math.max(tb, 0.95 * (1 - Math.exp(-su * 40)) * Math.exp(-su * 4.5)); }
+    const k = 1 - Math.exp(-dt * (strike > 0.25 ? 26 : A.phase === 'charge' && A.stroke != null ? 24 : A.phase === 'flight' && A.t - A.castAt < 0.5 ? 10 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;
     this.rodFlexStep(dt, tb);
     A.tip = this.rodTip(A);

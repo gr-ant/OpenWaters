@@ -45,6 +45,7 @@ Object.assign(Engine, {
     else if (rod && A.phase === 'flight') o.castF = Math.exp(-(A.t - A.castAt) * 3.2);   // and the follow-through easing off
     if (!rod && this.traps && this.traps.act) Object.assign(o, this.traps.act);   // throwing or hauling a net or a pot (fishing/nets-traps.js)
     if (rod && !A.holder && (A.phase === 'charge' || A.phase === 'fight' || (A.phase === 'flight' && A.t - A.castAt < 0.6) || (A.reelS || 0) > 0.05)) { o.hands2 = true; if (A.reeling || A.phase === 'fight') o.crank = A.crank || 0; }   // both hands to cast; the left one winds
+    if (rod && !A.holder && A.setT !== undefined && A.t - A.setT < 0.9) { const su = A.t - A.setT; o.castW = Math.max(o.castW || 0, 0.75 * (1 - Math.exp(-su * 30)) * Math.exp(-su * 3.5)); o.hands2 = true; }   // setting the hook: both hands, the rod swept up and back
     const pose = humanPose(o), sm = this.hSm;
     if (sm && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
       const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
