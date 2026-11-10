@@ -17,7 +17,7 @@ Object.assign(Engine, {
     const held = !this.thirdP && this.boat && this.boatMode === 'deck' && !A.holder;   // in your hands on deck: drawn over the boat, so it can't poke through the hull
     if (held) gl.depthRange(0, 0.1);
     one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
-    if (A.holder) { const H = A.holder; one(this.tackleGpu('holder:' + !!H.boat, () => holderMesh(H.up + (H.boat ? 0 : 0.3))), A.hand[0], A.hand[1], A.hand[2], 1, H.yaw, -1e4, 0, 0); }   // the spike or gunwale holder the rod stands in
+    if (A.holder) { const H = A.holder; gl.uniform1f(Lp.u.roll, H.roll || 0); one(this.tackleGpu('holder:' + !!H.boat, () => holderMesh(H.up + (H.boat ? 0 : 0.3))), A.hand[0], A.hand[1], A.hand[2], 1, H.yaw, -1e4, 0, H.tilt || 0); gl.uniform1f(Lp.u.roll, 0); }   // the spike or gunwale holder the rod stands in
     if (held) gl.depthRange(0, 1);
     if (A.phase === 'card') return;
     const endKey = S.lure ? `lure:${S.lure.id}:${rv}` : `bait:${S.bait.id}:${S.hook.id}:${rv}`, endMesh = () => S.lure ? lureMesh(S.lure) : baitMesh(S);

@@ -67,6 +67,12 @@ Math.random = r0; Ang.out = true; Ang.phase = 'water'; Ang.lure = { x: 0, y: 8, 
 const b = E.boat = { x: 0, y: 0, z: 0.1, a: 0, pitch: 0, roll: 0, def: { hull: { length_m: 5 }, _shape: { hb: () => 0.7, gun: () => 0.5 } } };
 key('KeyH'); const B = Ang.holder; A(B.boat === b && B.ly > 0 && Math.abs(B.ly - 0.644) < 1e-9 && B.lz === 0.5 && B.up === 0.3, 'gunwale holder on the lure side');
 b.x = 20; b.a = Math.PI / 2; const h = E.holderHand(B); A(Math.abs(h[0] - (20 - B.ly)) < 1e-9 && Math.abs(B.yaw - (Math.PI / 2 + B.ya)) < 1e-9, 'moves and turns with the boat');
+{ // fixed to the hull: wherever the boat heels and pitches, the holder is the same point of the hull as it's drawn (roll about x, then pitch, then turn)
+  const hull = (q, bb) => { const cr = Math.cos(bb.roll), sr = Math.sin(bb.roll), cp = Math.cos(bb.pitch), sp = Math.sin(bb.pitch), y = q[1] * cr - q[2] * sr, z1 = q[1] * sr + q[2] * cr, x = q[0] * cp - z1 * sp;
+    return [bb.x + Math.cos(bb.a) * x - Math.sin(bb.a) * y, bb.y + Math.sin(bb.a) * x + Math.cos(bb.a) * y, bb.z + q[0] * Math.sin(bb.pitch) + z1 * cp]; };
+  for (const [p, r] of [[0.1, 0], [0, 0.12], [-0.07, -0.09]]) { b.pitch = p; b.roll = r; const s = E.holderHand(B), w = hull([B.lx, B.ly, B.lz + B.up], b);
+    A(Math.hypot(s[0] - w[0], s[1] - w[1], s[2] - w[2]) < 1e-9, 'fixed to the hull at pitch ' + p + ', roll ' + r); A(r === 0 || Math.sign(s[2] - hull([B.lx, B.ly, B.lz + B.up], { ...b, roll: 0 })[2]) === Math.sign(r * B.ly), 'heels the way the hull does'); }
+  b.pitch = b.roll = 0; E.holderHand(B); }
 // aboard, Use is for the boat (leaving it); H picks the rod up; leave the boat and the rod keeps fishing from its holder, the bell and all
 E.P.x = 20; E.P.y = 0.3; E.based = false; A(E.holderNear() && E.contextKeys()[0][0] === 'H', 'aboard: H to pick up'); E.action(); A(E.based && Ang.holder === B, 'Use aboard leaves the boat, the rod stays in its holder');
 E.boat = null; E.P.x = 24; step(0.016); A(Ang.out && Ang.holder === B && !E.rodInHand(), 'ashore: still in the holder');

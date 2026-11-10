@@ -31,8 +31,13 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
 
   Object.assign(Engine, {
     // where the reel seat sits: the holder's top, following the boat it's clamped to
+    // on a boat it's fixed to the hull: placed as the hull is drawn (heeled, then pitched, turned: the lit shader), and tilted with it
     holderHand(H) { const b = H.boat;
-      if (b) { const ca = Math.cos(b.a), sa = Math.sin(b.a); H.x = b.x + ca * H.lx - sa * H.ly; H.y = b.y + sa * H.lx + ca * H.ly; H.z = b.z + H.lz + Math.sin(b.pitch || 0) * H.lx - Math.sin(b.roll || 0) * H.ly; H.yaw = b.a + H.ya; }
+      if (b) { const r = b.roll || 0, p = b.pitch || 0, cr = Math.cos(r), sr = Math.sin(r), cp = Math.cos(p), sp = Math.sin(p), ca = Math.cos(b.a), sa = Math.sin(b.a);
+        const at = (x0, y0, z0) => { const y = y0 * cr - z0 * sr, z1 = y0 * sr + z0 * cr, x = x0 * cp - z1 * sp; return [b.x + ca * x - sa * y, b.y + sa * x + ca * y, b.z + x0 * sp + z1 * cp]; };
+        [H.x, H.y, H.z] = at(H.lx, H.ly, H.lz); H.yaw = b.a + H.ya; const s = at(H.lx, H.ly, H.lz + H.up);
+        const c = Math.cos(H.ya), q = Math.sin(H.ya); H.roll = r * c - p * q; H.tilt = r * q + p * c;   // the boat's heel and trim, about the holder's own axes
+        return s; }
       return [H.x, H.y, H.z + H.up]; },
     holderNear() { const A = this.ang, H = A && A.holder, P = this.P; return !!H && Math.hypot(H.x - P.x, H.y - P.y) < REACH && Math.abs(H.z - P.z) < 2.5; },
     setHolder() {

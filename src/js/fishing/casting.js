@@ -53,7 +53,7 @@ Object.assign(Engine, {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
       tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') { tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1); if (btn) { A.crank = (A.crank || 0) + dt * (5 + 6 * fast); dp = 0.05 * Math.sin(A.crank * 0.6) + 0.12 * fast; } }   // pump and wind: the rod lifts and drops as you gain line
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
-    if (H) { ty = H.yaw; tp = HOLDER_PITCH; if (A.phase === 'bite') tb = 0.2 + 0.12 * Math.sin(A.t * (H.on ? 9 : 16)); }   // standing in the holder; the tip nods while something has the bait
+    if (H) { ty = H.yaw; tp = HOLDER_PITCH + (H.tilt || 0); if (A.phase === 'bite') tb = 0.2 + 0.12 * Math.sin(A.t * (H.on ? 9 : 16)); }   // standing in the holder; the tip nods while something has the bait
     else if (!helm && A.phase !== 'charge') { const aim = this.thirdP ? [P.a - 0.08, clamp(0.55 + 0.35 * P.pitch, 0.15, 1.1)] : this.rodAim(eye); ty = aim[0]; tp = aim[1];
       if (A.phase === 'fight' && A.fish) { const f = A.fish, to = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]), tight = clamp(A.tension / Math.max(0.1, A.dragKg), 0, 1) * (btn ? 1 : 0.5);   // a fish on a tight line pulls the rod round toward itself, most while you wind
         ty += clamp(Math.atan2(Math.sin(to - ty), Math.cos(to - ty)), -0.75, 0.75) * 0.75 * tight; tp -= 0.16 * tight; } }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
@@ -62,7 +62,8 @@ Object.assign(Engine, {
     const su = A.setT === undefined || H || helm ? 9 : A.t - A.setT, strike = su < 0.9 ? (1 - Math.exp(-su * 30)) * Math.exp(-su * 3.5) : 0;   // setting the hook: a sharp sweep up and back, held a moment, then settling into the fight
     if (strike > 0) { tp += 0.8 * strike; ty += 0.15 * strike; tb = Math.max(tb, 0.95 * (1 - Math.exp(-su * 40)) * Math.exp(-su * 4.5)); }
     const k = 1 - Math.exp(-dt * (strike > 0.25 ? 26 : A.phase === 'charge' && A.stroke != null ? 24 : A.phase === 'flight' && A.t - A.castAt < 0.5 ? 10 : 7));
-    A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;
+    if (H && H.boat) { A.pitch = tp; A.yaw = ty; }   // in a boat's holder: fixed to the hull as it turns and rocks
+    else { A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k; }
     this.rodFlexStep(dt, tb);
     A.tip = this.rodTip(A);
     this.dangleStep(dt); this.ropeStep(dt);
