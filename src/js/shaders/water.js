@@ -96,13 +96,16 @@ void main(){
     vec2 cs = caveShade(wp, sun);   // under a cenote's roof: the ceiling, not the sky, is reflected; sunlight only through the opening
     vec3 sky = mix(hor, zen, clamp(R.z * 2.2, 0., 1.)) * (1. - .85 * cs.x);
     float spec = pow(max(dot(R, sun), 0.), 280.) * 3. * (1. - cs.y), fr = .03 + .97 * pow(1. - max(dot(N, V), 0.), 5.);
-    vec3 shallow = mix(vec3(.13, .45, .42), vec3(.22, .3, .12), murk), deep = mix(vec3(.02, .12, .2), vec3(.06, .1, .04), murk);
-    float dd = clamp(dep / (3.5 - 2.5 * murk), 0., 1.);
+    if (toon > 0.) spec = mix(spec, smoothstep(.6, .7, pow(max(dot(R, sun), 0.), 120.)) * 2.4 * (1. - cs.y), toon);   // toon: crisp glitter dashes, a broken column toward the sun
+    vec3 shallow = mix(mix(vec3(.13, .45, .42), vec3(.1, .62, .58), toon), vec3(.22, .3, .12), murk), deep = mix(mix(vec3(.02, .12, .2), vec3(.02, .24, .32), toon), vec3(.06, .1, .04), murk);   // toon: saturated teal
+    float dd = clamp(dep / (3.5 + 2.5 * toon - 2.5 * murk), 0., 1.);   // toon: wider light, see-through shallows
     vec3 body = mix(shallow, deep, sqrt(dd)) * (amb * 1.6 * (1. - .6 * cs.x) + lcol * (.45 + .4 * max(dot(N, sun), 0.)) * (1. - cs.y));
-    vec3 c = mix(body, sky, fr * .9) + lcol * spec * (1. - fm);
+    vec3 c = mix(body, sky, fr * (.9 - .35 * toon)) + lcol * spec * (1. - fm);   // toon: less sky mirrored, so the sea stays teal far out
     float al = max(max(mix(.16 + .55 * murk, .95, smoothstep(0., 1., dd)), .12), fr * .85);
+    if (toon > 0.) { float dash = smoothstep(.05, .14, fr - .03 - .97 * pow(1. - max(V.z, 0.), 5.)) * .55 * toon * (1. - fm); c = mix(c, sky * 1.15 + lcol * .2, dash); al = max(al, dash); }   // toon: light dashes on wave backs tilted to the sky (more fresnel than flat water there)
     c = mix(c, vec3(.92, .96, 1.) * (amb * 1.4 + lcol * .9), fm * .9); al = max(al, fm * .9);
     c += wx.w * .35 * (.4 + fr);   // lightning
+    c = max(mix(vec3(dot(c, vec3(.3, .59, .11))), c, 1. + .2 * toon), 0.);   // toon: richer colour
     if (icy > 0.) { c = mix(c, vec3(.7, .8, .86) * (amb * 1.5 + lcol * .7), icy); al = max(al, icy); }   // thin ice at the freezing edge
     al *= smoothstep(-.08, .03, dep);
     o = vec4(fog(c, wp), al);

@@ -31,15 +31,16 @@ const SKY_FS = `#version 300 es
 precision highp float;
 in vec2 ndc; out vec4 o; uniform vec3 R, U, F, sun, zen, hor, sunc; uniform vec2 tn; uniform float night, t, sset, clouds, stars;
 uniform vec4 wsky; // cloud cover, lightning flash, wind drift, fog
+uniform float toon; // painted look (CONFIG.toon): a big soft sun, a wider glowing horizon, puffy two-tone clouds
 ${NOISE_GLSL}
 float h31(vec3 p){ p = fract(p * vec3(.1031, .1030, .0973)); p += dot(p, p.yzx + 33.33); return fract((p.x + p.y) * p.z); }
 void main(){
   vec3 d = normalize(F + ndc.x*tn.x*R + ndc.y*tn.y*U);
-  vec3 c = mix(hor, zen, clamp(d.z*2.2, 0., 1.));
+  vec3 c = mix(hor, zen, mix(clamp(d.z*2.2, 0., 1.), smoothstep(-.02, .7, d.z), toon));
   if (d.z < 0.) c = hor * (1. + d.z * .5);
   float s = max(dot(d, sun), 0.);
   c += sunc * sset * pow(s, 5.) * .7 * (1. - clamp(d.z * 2., 0., 1.));                        // sunset glow
-  c += vec3(1., .9, .7) * (pow(s, 900.)*6. + pow(s, 24.)*.25) * smoothstep(-.06, .02, sun.z) * (1. - .92 * smoothstep(.55, .9, wsky.x)); // sun
+  c += mix(vec3(1., .9, .7) * (pow(s, 900.)*6. + pow(s, 24.)*.25), vec3(1., .9, .55) * (smoothstep(.99875, .9991, s) * 1.6 + pow(s, 60.) * .45 + pow(s, 8.) * .12), toon) * smoothstep(-.06, .02, sun.z) * (1. - .92 * smoothstep(.55, .9, wsky.x)); // sun (toon: a wide pale-yellow disc with a glow)
   float m = max(dot(d, -sun), 0.);                                                             // moon, opposite the sun
   c += vec3(.85, .9, 1.) * (smoothstep(.99935, .9997, m) * 1.3 + pow(m, 80.) * .08) * night * (1. - .95 * smoothstep(.5, .9, wsky.x));
   if (stars > .5 && night > .01 && d.z > 0. && wsky.x < .85) {
@@ -49,8 +50,14 @@ void main(){
   if (clouds > .5 && d.z > .015) { // drifting cloud layer projected on a plane overhead
     vec2 p = d.xy / d.z * 2.6 + vec2(t * .012, t * .005) * (.5 + 2.5 * wsky.z);
     float n = vn(p) * .55 + vn(p * 2.3 + 3.1) * .3 + vn(p * 5.3 + 7.7) * .15, cv = wsky.x;
-    float k = smoothstep(.56 - .5 * cv, .84 - .3 * cv, n) * smoothstep(.015, .2, d.z);
+    float k = smoothstep(mix(.56 - .5 * cv, .6 - .5 * cv, toon), mix(.84 - .3 * cv, .69 - .38 * cv, toon), n) * smoothstep(.015, .2, d.z);   // toon: crisper puffy edges
     vec3 cc = mix(hor * 1.08 + sunc * sset * .45, vec3(1.), .5 * (1. - night) * (1. - sset) * (1. - .7 * cv));
+    if (toon > 0. && k > 0.) { // toon: two-tone, the side towards the sun lit (salmon at sunset), the far side a cool purple shadow
+      vec2 ps = p + normalize(sun.xy + vec2(1e-4)) * .18; float ns = vn(ps) * .55 + vn(ps * 2.3 + 3.1) * .3 + vn(ps * 5.3 + 7.7) * .15;
+      float lt = smoothstep(-.03, .05, n - ns) * .75 + .25 * (1. - smoothstep(.65, .9, n));   // facing the sun, and thin edges, are lit
+      vec3 tc = mix(mix(vec3(.7, .74, .88), vec3(.56, .42, .64), sset), mix(vec3(1., .98, .95), vec3(1., .64, .48), sset), lt) * (.25 + .75 * max(max(hor.r, hor.g), hor.b));
+      cc = mix(cc, tc, toon * (1. - smoothstep(.5, .9, cv)));
+    }
     cc = mix(cc, hor * .7 + vec3(.015, .018, .03), night * .85);
     cc *= 1. - .35 * smoothstep(.6, 1., cv) * (.6 + .4 * n);   // heavy, dark-bottomed rain clouds
     c = mix(c, cc, k * (.85 + .15 * cv));

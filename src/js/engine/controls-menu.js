@@ -44,6 +44,10 @@ Object.assign(Engine, {
       const show = () => { for (const b of opts) b.setAttribute('aria-checked', +b.dataset.ground === CONFIG.groundCover ? 'true' : 'false'); };
       for (const b of opts) b.onclick = () => { CONFIG.groundCover = +b.dataset.ground; show(); try { localStorage.setItem('embercrown-groundcover', b.dataset.ground); } catch (_) { /* session only */ } };
       show(); }
+    { // painted (toon) look on or off, kept in this browser; the shaders read CONFIG.toon every frame
+      const tc = document.getElementById('setToon');
+      try { const v = localStorage.getItem('embercrown-toon'); if (v !== null) CONFIG.toon = v === '1'; } catch (_) { /* default */ }
+      tc.checked = CONFIG.toon; tc.onchange = () => { CONFIG.toon = tc.checked; this.pauseRedraw = true; try { localStorage.setItem('embercrown-toon', tc.checked ? '1' : '0'); } catch (_) { /* session only */ } }; }
     D.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) this.pauseShow(b.dataset.go); });
     D.addEventListener('keydown', e => {   // ↑ ↓ move between the menu's buttons
       if (this.ksCap || (e.code !== 'ArrowUp' && e.code !== 'ArrowDown')) return;
