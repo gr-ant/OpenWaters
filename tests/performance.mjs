@@ -6,7 +6,9 @@ import { createHash } from 'node:crypto';
 // Optional baseline revision allows a direct differential run against an earlier implementation.
 const revision = process.argv[2];
 const read = p => revision ? execFileSync('git', ['show', `${revision}:${p}`], {maxBuffer: 20e6}).toString() : fs.readFileSync(p, 'utf8');
-const files = ['config', 'world/worldgen', 'world/island', 'engine/shared', 'shaders/lit', 'world/seasons-weather', 'world/water-temp', 'world/water-plants-grid', 'world/habitat', 'world/fish-populations', 'models/mesh-builder', 'models/trees', 'creatures/fish', 'creatures/cephalopods-shellfish', 'creatures/jellies', 'creatures/reptiles-amphibians'];
+// the island is split into world/island-*.js (one world/island.js in older revisions): take them from index.html, in order
+const island = [...read('src/index.html').matchAll(/js\/(world\/island[\w-]*)\.js/g)].map(m => m[1]);
+const files = ['config', 'world/worldgen', ...island, 'engine/shared', 'shaders/lit', 'world/seasons-weather', 'world/water-temp', 'world/water-plants-grid', 'world/habitat', 'world/fish-populations', 'models/mesh-builder', 'models/trees', 'creatures/fish', 'creatures/cephalopods-shellfish', 'creatures/jellies', 'creatures/reptiles-amphibians'];
 // map features are built-in JSON, read at boot in the game (boot.js); older revisions without them get an empty list
 const features = [...read('src/index.html').matchAll(/data-builtin="feature" src="([^"]+)"/g)].map(m => read(`src/${m[1]}`));
 const source = `var BUILTIN = { fish: [], boat: [], tackle: [], feature: [${features.join(',')}] };\n` + files.map(f => read(`src/js/${f}.js`)).join('\n');

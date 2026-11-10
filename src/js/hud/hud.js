@@ -1,5 +1,5 @@
 'use strict';
-// HUD: the on-screen interface as HTML over the game (markup in index.html, look in css/style.css). Setup, icons, minimap frame, pin / big map / help toggles and the per-frame updateHud.
+// HUD: the on-screen interface as HTML over the game (markup in index.html, look in css/). Setup, icons, minimap frame, pin / big map / help toggles and the per-frame updateHud.
 // an icon from UI_ICONS by path ('ui.close', 'dock.boat'); empty if the icon set isn't loaded
 // every copy gets its own gradient / filter ids, so two icons on the page never borrow each other's
 let iconN = 0;

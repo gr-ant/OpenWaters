@@ -45,6 +45,16 @@
     .tui-rail .ic { width:42px; height:34px; }
     .tui-rail button { width:46px; }
   }
+  /* the menu button (top right) fans Settings and the dev tools out to its left */
+  #tui .tui-more { top:6px; right:56px; bottom:auto; transform:none; flex-direction:row-reverse; gap:6px; }
+  #tui .tui-more button { transition:margin .18s ease-out, transform .18s ease-out, opacity .18s; }
+  body:not(.more) #tui .tui-more button { margin-left:-58px; transform:translateX(50px); opacity:0; pointer-events:none; }
+  body.more.touch #hSettings::before { content:'✕'; }
+  @media (prefers-reduced-motion: reduce) { #tui .tui-more button { transition:none; } }
+  @media (orientation: portrait) { body.more.touch #hLoc { visibility:hidden; } }   /* the place name is under the icons */
+  @media (orientation: landscape) and (max-height: 540px) { body.more .tui-rail:not(.tui-more) { visibility:hidden; } }   /* there they take the rail's place along the top */
+</style>
+<style>
   /* ---- shared look: dark forest-green panels, warm gold edges, parchment for what's chosen ---- */
   :root { --pg: rgba(24,34,25,.95); --pg2: #223022; --gold: #c4a86c; --gold-hi: #e8d092; --cream: #f2e9d0; --muted: #b8b196; --parch: #efe2c1; --parch2: #e2d0a4; --ink: #2a2216;
     --serif: Georgia, 'Palatino Linotype', 'Book Antiqua', serif; --sans: system-ui, 'Segoe UI', sans-serif; }
@@ -54,6 +64,8 @@
   .round-x { width: 36px; height: 36px; flex: none; border-radius: 50%; border: 1.5px solid var(--gold); background: #0003; color: var(--cream); padding: 8px; cursor: pointer; }
   .round-x:hover { background: #ffffff14; }
   .round-x svg, .tabs svg, .chev svg, .big svg, .back svg { width: 100%; height: 100%; display: block; }
+</style>
+<style>
   /* tackle box: rigs, the rig builder, gear and the catch journal */
   #tackle { position: fixed; z-index: 4; left: 12px; top: 84px; bottom: 12px; width: min(440px, calc(100vw - 24px)); display: flex; flex-direction: column; padding: 14px 12px 12px; box-sizing: border-box; }
   #tackle[hidden], #catch[hidden] { display: none; }
@@ -130,6 +142,8 @@
   #catch { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }   /* the 3D view keeps animating behind it: a live blur costs every frame */
   #catch #ccTurn { display:block; margin-top:8px; font-size:11px; color:#c8bfa0; } body.touch #catch #ccTurn { display:none; }
   #catch button#ccKeep { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }
+</style>
+<style>
   /* ---- HUD over the game (js/hud.js) ---- */
   /* loading: an ink sketch of the island's bones (drawn before the slow build), a light sweeping over it meanwhile */
   #loading { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; gap: 18px; align-items: center; justify-content: center; background: #0a1418; color: #cfe6ef; font: 18px Georgia, serif; letter-spacing: .5px; }
@@ -245,12 +259,14 @@
   body.touch #hStatus { bottom: auto; top: 98px; left: 12px; right: auto; max-width: calc(100vw - 90px); }
   body.touch #hMsg { bottom: 200px; max-width: calc(100vw - 90px); }
   body.touch #hSettings { top: 10px; right: 10px; width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 0; }
-  body.touch #hSettings::before { content: '❚❚'; font: 700 12px/1 var(--sans); letter-spacing: -1px; color: var(--cream); }
+  body.touch #hSettings::before { content: '☰'; font: 700 18px/1 var(--sans); color: var(--cream); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; } .chips span { padding: 5px 10px; border-radius: 14px; background: #ffffff10; border: 1px solid #d4e4e055; font: 600 14px var(--serif); }
   .detail.build { border: 0; padding: 0 0 6px; } .detail.build b { font-size: 22px; }
   img.snap { width: 100%; height: 100%; object-fit: contain; display: block; }
   img.snap[data-snap] { opacity: 0; }
   #hStIcon img.snap { filter: none; }
+</style>
+<style>
   /* spawn: boats and animals, on the right */
   #spawn { position: fixed; z-index: 4; right: 10px; top: 10px; bottom: 10px; width: min(560px, calc(100vw - 20px)); display: flex; flex-direction: column; padding: 12px 12px 12px; box-sizing: border-box; }
   #spawn[hidden] { display: none; }
@@ -299,6 +315,23 @@
   #spList li.tile { min-height: 0; height: 96px; padding: 6px; justify-content: center; }
   #spList li.tile img.snap { filter: drop-shadow(0 3px 3px #0008); }
   #spawn[data-mode="boats"] .subtabs { gap: 5px; } #spawn[data-mode="boats"] .subtabs button { padding: 4px 11px; }
+  /* spawn filters: labelled rows, icon chips for biome, icon-over-label tiles for habitat, a rule above the list */
+  #spawn:not([data-mode="boats"]) .sp-art { order: 1; margin: -6px 4px -6px auto; width: 120px; height: 64px; opacity: .3; color: var(--cream); filter: none; }
+  #spawn:not([data-mode="boats"]) .round-x { order: 2; }
+  .sp-lbl { display: flex; align-items: center; gap: 10px; margin: 2px 4px 6px; font: 600 12px var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--cream); }
+  .sp-lbl::after { content: ''; flex: 1; height: 1px; background: #d4e4e033; }
+  .sp-lbl[hidden] { display: none; }
+  #spawn .subtabs { justify-content: flex-start; gap: 8px; }
+  #spawn .subtabs button { display: inline-flex; align-items: center; gap: 7px; }
+  #spawn .subtabs button svg { width: 20px; height: 20px; flex: none; display: block; }
+  #spawn .subtabs.hab { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  #spawn .subtabs.hab button { flex-direction: column; gap: 3px; padding: 7px 2px 6px; border-radius: 14px; font-size: 13px; }
+  #spawn .subtabs.hab button svg { width: 24px; height: 24px; }
+  #spawn #spBiome { grid-template-columns: repeat(4, 1fr); }
+  #spList { border-top: 1px solid #d4e4e044; padding-top: 10px; margin-top: 2px; }
+  #spList li.card { min-height: 74px; gap: 16px; }
+</style>
+<style>
   /* the small map only shows when pinned; the pin button sits on the big map */
   body:not(.mini-on) #hMap { display: none; }
   /* the map screen's own icons, top right: a new island and the minimap pin, with the seed under them */
@@ -338,6 +371,8 @@
     #hCond { top: 64px; }   /* under the place name, not beside it */
   }
 
+</style>
+<style>
 /* Pause/settings use the browser's modal focus handling above every game panel. */
 #pauseMenu { width: min(380px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; overflow: hidden; box-sizing: border-box; }
 #pauseMenu[data-page="settings"] { width: min(480px, calc(100vw - 32px)); }
@@ -406,6 +441,8 @@
 #pauseMenu .ks-row button.wait { background: var(--parch); color: var(--ink); }
 #pauseMenu :focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
 #hSettings { position: fixed; top: 13px; right: 52px; pointer-events: auto; border: 1px solid #d4e4e088; border-radius: 9px; background: #182219b8; color: var(--cream); padding: 6px 8px; font: 12px var(--sans); cursor: pointer; }
+</style>
+<style>
 /* ---- start menu: text floating over the scene, no card ---- */
 #title { position: fixed; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: flex-start; padding: 0 0 0 clamp(24px, 8vw, 130px);
   background: radial-gradient(ellipse 55% 70% at 18% 50%, rgba(0,0,0,.28) 0%, rgba(0,0,0,0) 70%); transition: opacity .6s ease; }
@@ -428,6 +465,8 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 .ti-soon { cursor: not-allowed; color: rgba(255,248,232,.35); }
 .ti-foot { margin: 22px 0 0 18px; font: 11px var(--sans); color: rgba(242,230,196,.8); letter-spacing: .4px; }
 @media (max-width: 600px) { #title { justify-content: center; padding: 0; } #tiName { font-size: 48px; } }
+</style>
+<style>
 /* ---- glass menus: tinted with the scene's average colour (boot.js sets --tint), thin light edge ---- */
 :root { --tint: 30 52 58; }
 .panel, #catch { --gold: #a9c9c3; --gold-hi: #f2e9d0; --muted: #b9cbc6;
@@ -525,9 +564,11 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
   <header><span class="sp-art" data-icon="dock.spawn"></span><div class="tk-title"><h2>Spawn</h2><i>A little company on the water.</i></div><button id="spClose" class="round-x" title="Close" data-icon="ui.close"></button></header>
   <label class="search"><span data-icon="ui.search"></span><input id="spSearch" type="search" placeholder="Find a boat or creature…" autocomplete="off"></label>
   <div class="tabs" id="spTabs"></div>
-  <div class="subtabs" id="spKind"></div>
-  <div class="subtabs" id="spBiome"></div>
-  <div class="subtabs" id="spSub"></div>
+  <div class="subtabs hab" id="spKind"></div>
+  <h3 class="sp-lbl">Biome</h3>
+  <div class="subtabs hab" id="spBiome"></div>
+  <h3 class="sp-lbl">Habitat</h3>
+  <div class="subtabs hab" id="spSub"></div>
   <ul id="spList"></ul>
 </div>
 <div id="tackle" class="panel" hidden>
@@ -570,7 +611,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
   </div>
   <div id="hHelp" class="panel" hidden><header><h2>Controls</h2><button class="round-x" data-icon="ui.close" data-help-close></button></header>
     <dl><dt>WASD</dt><dd>move · Shift run · Space jump · C dive</dd><dt>Q</dt><dd>rod out / away</dd><dt>R / mouse</dt><dd>cast (hold, let go) · reel (Shift: faster) · strike</dd><dt>[ ]</dt><dd>drag</dd><dt>G</dt><dd>open / close the bail: line pays out so the lure sinks straight down (reeling closes it)</dd>
-    <dt>E / X</dt><dd>keep / release a catch</dd><dt>I · J · B</dt><dd>tackle box · journal · boats</dd><dt>↑ ↓ · ← → · Tab</dt><dd>in a menu: move · category · tab · Enter chooses</dd><dt>F</dt><dd>use · get in a boat · V helm</dd><dt>3</dt><dd>walk to the nearest water (again for the next kind)</dd>
+    <dt>E / X</dt><dd>keep / release a catch</dd><dt>I · J · B</dt><dd>tackle box · journal · boats</dd><dt>↑ ↓ · ← → · Tab</dt><dd>in a menu: move · category · tab · Enter chooses</dd><dt>F</dt><dd>use · get in a boat · V helm</dd>
     <dt>2</dt><dd>fish radar</dd><dt>M</dt><dd>map · arrows move · W/S zoom · Enter travels to the crosshair</dd><dt>T</dt><dd>hold for fast time · Y season · U weather</dd><dt>Esc</dt><dd>pause · mouse sensitivity</dd><dt>? /</dt><dd>this card</dd></dl><small id="hDebug"></small></div>
   <button id="hSettings" title="Pause and settings (Esc)" aria-label="Pause and settings">Esc</button>
   <button id="hHint" title="Controls (?)">?</button>
@@ -584,6 +625,11 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
     <button data-k="KeyB"><span class="ic" data-icon="dock.boat"></span><b>Boats</b></button>
     <button id="bRod" data-k="KeyQ"><span class="ic" data-icon="dock.rod"></span><b>Rod</b></button>
     <button id="bTorch" data-k="KeyL" hidden><span class="ic" data-icon="dock.torch"></span><b>Light</b></button>
+  </nav>
+  <nav class="tui-rail tui-more" aria-label="Settings and dev tools">
+    <button id="bSet"><span class="ic" data-icon="dock.gear"></span><b>Settings</b></button>
+    <button data-k="Digit1"><span class="ic" data-icon="dock.spawn"></span><b>Spawn</b></button>
+    <button data-k="Digit2"><span class="ic" data-icon="dock.radar"></span><b>Radar</b></button>
   </nav>
   <button id="bUse" class="act a-main" data-k="KeyF">Use</button>
   <button class="act a-jump" data-k="Space" data-hold="1">Jump</button>
@@ -727,7 +773,7 @@ const CONTROL_ACTIONS = [   // [id, canonical code, group, label]
   ['left', 'KeyA', 'Moving', 'Step left · steer left'], ['right', 'KeyD', 'Moving', 'Step right · steer right'],
   ['run', 'ShiftLeft', 'Moving', 'Run · reel faster · boat power'], ['jump', 'Space', 'Moving', 'Jump · swim up'],
   ['dive', 'KeyC', 'Moving', 'Dive · sit / stand on deck'], ['use', 'KeyF', 'Moving', 'Use · board / leave a boat'],
-  ['water', 'Digit3', 'Moving', 'Walk to the nearest water'], ['torch', 'KeyL', 'Moving', 'Dive light (deep water)'],
+  ['torch', 'KeyL', 'Moving', 'Dive light (deep water)'],
   ['rod', 'KeyQ', 'Fishing', 'Rod out / away'], ['cast', 'KeyR', 'Fishing', 'Cast · reel · strike (left mouse too)'],
   ['bail', 'KeyG', 'Fishing', 'Open / close the bail'], ['dragDown', 'BracketLeft', 'Fishing', 'Drag down'], ['dragUp', 'BracketRight', 'Fishing', 'Drag up'],
   ['keep', 'KeyE', 'Fishing', 'Keep a catch'], ['release', 'KeyX', 'Fishing', 'Release a catch'],
@@ -742,7 +788,7 @@ const GUPPY = Object.fromEntries(CONTROL_ACTIONS.map(a => [a.id, [a.canon]]));
 Object.assign(GUPPY, { run: ['ShiftLeft', 'ShiftRight'], zoomIn: ['Equal', 'NumpadAdd'], zoomOut: ['Minus', 'NumpadSubtract'] });
 const CONTROL_PRESETS = {
   guppy: { name: 'Guppy', binds: GUPPY },
-  pike: { name: 'Pike', binds: { ...GUPPY, water: ['KeyZ'], bail: ['KeyG', 'Mouse3'], dragDown: ['BracketLeft', 'WheelDown'], dragUp: ['BracketRight', 'WheelUp'],
+  pike: { name: 'Pike', binds: { ...GUPPY, bail: ['KeyG', 'Mouse3'], dragDown: ['BracketLeft', 'WheelDown'], dragUp: ['BracketRight', 'WheelUp'],
     radar: ['Digit2', 'Mouse4'], boats: ['KeyX'], tackle: ['KeyI', 'Tab'] } },
 };
 const Controls = {
@@ -847,6 +893,9 @@ const hW = e => e * Math.abs(e) * HS;   // signed: negative e is the deep sea fl
 // across it: basins fill to their spill points, flow accumulates from cell to cell, and wherever enough water
 // gathers a creek forms. Creeks merge into rivers, rivers pass through lakes and run to the sea; small hollows hold
 // ponds. At runtime world(x, y) samples that grid and carves the channels and basins at full detail.
+// The stages live in world/island-*.js, loaded in this order: layout (this file: water kinds and names, carveBasin, the land
+// layout and islandBase), sea-depth, glaciers, water (buildIsland), features (sea stacks, cenotes), sample (world(x, y)),
+// water-queries, materials, cache (the lattice cache behind sample()).
 const OCEAN = 0, LAKE = 1, POND = 2, RIVER = 3, CREEK = 4;
 const WATER = [ // per kind: murk (0 clear .. 1 green-brown), wave height, underwater visibility (m), map colour
   { key: 'sea', murk: 0.05, wave: 1.0, vis: 60, map: [0.05, 0.2, 0.46] },
@@ -938,6 +987,9 @@ function islandBase(x, y) {
   if (off <= 20) return hl;
   return hl + (WLW - seaDepth(x, y, off) - hl) * sstep(20, 140, off);
 }
+</script>
+<script>
+'use strict';
 // Depth (m) of the open sea `off` metres from the coast. The coast's distance is one influence: it sets the broad profile by
 // climate (temperate: a shelf to ~130 m, then the continental slope past 1,500 m; arctic: a broad shallow shelf; tropical: a
 // reef flat, a wall, a fore-reef terrace, then the deep). On top of that the floor has its own shape that doesn't follow the
@@ -977,7 +1029,9 @@ function seaDepth(x, y, off) {
   d += 400 * canyon * sstep(100, 400, d);                                                 // canyons cut into the slope
   return Math.max(1, d);
 }
-
+</script>
+<script>
+'use strict';
 // Permanent ice is spatial terrain, independent of seasonal snow (src/features/glaciers.json: how many of each kind, per climate).
 // Laid out once per seed, lazily (after the JSON is read). ice cap: on the summit · valley: a tongue from the summit down a slope ·
 // tidewater: a valley glacier that pushes out past the coast and ends in an ice cliff · piedmont: one that spreads into a broad
@@ -1025,7 +1079,11 @@ function glacierAt(x, y) {
   }
   return best;
 }
-
+</script>
+<script>
+'use strict';
+// The island's water system, built once at load (buildIsland): the terrain grid, basins filled to their spill points, flow
+// accumulation, dug lakes, lakes and ponds, creek and river chains with levels, widths, pools and rapids; bil/inGrid read the grid.
 let ISL = null;
 function buildIsland(diagnostics = false) {
   const t0 = performance.now(), C = 12, half = Math.ceil(CONFIG.islandSize * 0.75 / C) * C, N = Math.round(half * 2 / C) + 1, NN = N * N, ox = -half, oy = -half;
@@ -1269,6 +1327,9 @@ function buildIsland(diagnostics = false) {
 const bil = (A, x, y) => { const I = ISL, gx = (x - I.ox) / I.C, gy = (y - I.oy) / I.C, i = Math.floor(gx), j = Math.floor(gy), fx = gx - i, fy = gy - j, k = j * I.N + i;
   return (A[k] * (1 - fx) + A[k + 1] * fx) * (1 - fy) + (A[k + I.N] * (1 - fx) + A[k + I.N + 1] * fx) * fy; };
 const inGrid = (x, y) => { const I = ISL, gx = (x - I.ox) / I.C, gy = (y - I.oy) / I.C; return gx >= 0 && gy >= 0 && gx < I.N - 1 && gy < I.N - 1; };
+</script>
+<script>
+'use strict';
 // ---- map features defined in src/features/*.json; the "type" picks the shape code, the file sets where, how often and how big ----
 // stacks: clusters of sheer rock pillars offshore with a grassy top. Laid out once per seed from the base terrain.
 let STACKS = null, STK_T = 0;   // STK_T: top height of the stack found by the last stackS()
@@ -1347,6 +1408,10 @@ function cenoteRamp(x, y) {
 }
 // how much (x, y) is the ramp's floor, 0..1 (its flanks fade out wider the deeper the cut); hb: the ground without the ramp
 function rampW(r, hb) { const cut = Math.max(0, hb - r.z); return (1 - sstep(r.c.rw, r.c.rw + 3 + cut * 1.6, r.b)) * sstep(r.c.ra0 - 6, r.c.ra0, r.a) * (1 - sstep(r.c.rlen - 8, r.c.rlen, r.a)); }
+</script>
+<script>
+'use strict';
+// The world at a point, at runtime: landH (grid plus fine bumps and sea stacks), nearby channels, ponds in hollows, world(x, y).
 // terrain before channels and ponds: the grid plus fine bumps kept off the shores, then any sea stack standing on it
 function landH(x, y) { const g = landH0(x, y), s = stackS(x, y); return s > 0 ? g + Math.max(0, STK_T - g) * s : g; }
 function landH0(x, y) {
@@ -1443,6 +1508,10 @@ function world(x, y) {
   return clamp(Math.sign(h) * Math.sqrt(Math.abs(h) / HS), -4, 1);   // below 0 = sea floor deeper than 16 m (hW keeps the sign)
 }
 const elev = (x, y) => world(x, y);
+</script>
+<script>
+'use strict';
+// Questions about the water at a point: flowAt (current), waterInfo (name, kind, depth, murk...), findWater (a bank spot), standZ.
 // current at a point: [vx, vy, speed] in m/s — down the channel, faster where it drops
 function flowAt(x, y, kind) {
   if (kind === LAKE) { const wa = ENV.windDir ?? 0.8, s = 0.02 + 0.06 * ENV.wind; return [Math.cos(wa) * s, Math.sin(wa) * s, s]; }   // gentle wind drift
@@ -1483,7 +1552,10 @@ function findWater(kind, x0, y0, maxR = 4000) {
 }
 // where a player stands at (x, y): on the ground, or floating with their head above deep water
 function standZ(x, y) { sample(x, y); const g = hW(SE), fz = SW - CONFIG.eyeHeight + 0.28; return g < fz ? fz : g; }
-
+</script>
+<script>
+'use strict';
+// Ground materials (MATS, recoloured by the climate) and material(): which one a point of terrain gets.
 // Materials: chars ordered dark -> bright
 const DEEP = 0, SHALLOW = 1, SAND = 2, PLAIN = 3, FOREST = 4, ROCK = 5, ALPINE = 6, SNOW = 7, GLACIER = 8, BRIDGE = 9;
 const MATS = [
@@ -1509,7 +1581,9 @@ function material(e, m, x, y) {
   if (e < 0.85) return m < 0.5 ? ROCK : ALPINE;
   return m < 0.5 ? SNOW : GLACIER;
 }
-
+</script>
+<script>
+'use strict';
 // ---- Procedural evaluation cache: lattice chunks around the player, bilinear sampled ----
 // Per lattice point: elevation, moisture, water level, water kind
 const SP = 2, CHK = 64, LS = 5, cache = new Map();   // per point: elevation, moisture, water level, kind, rapids
@@ -1584,7 +1658,6 @@ function sample(x, y) {
 }
 function surfAt(x, y) { sample(x, y); const h = hW(SE); return h < SW ? SW : h; }   // ground, or the water surface over it
 function groundAt(x, y) { sample(x, y); return hW(SE); }
-
 </script>
 <script>
 'use strict';
@@ -4026,6 +4099,7 @@ const Engine = {
     if (code === 'KeyQ' && !e.repeat) this.toggleRod();                                          // rod out / away
     if ((code === 'BracketLeft' || code === 'BracketRight') && this.ang && this.ang.S) this.setDrag(this.ang.dragKg * (code === 'BracketRight' ? 1.15 : 1 / 1.15));
     if (code === 'KeyF' && !e.repeat) this.action();
+    if (code === 'Space' && !e.repeat && this.boat) this.leaveBoat(true);                        // jump out of the boat
     if (code === 'KeyL' && !e.repeat) this.toggleTorch();                                        // the dive light, when you're deep
     if (code === 'KeyG' && !e.repeat) this.toggleBail();                                          // open / close the reel's bail
     if (code === 'Equal' || code === 'NumpadAdd') this.zoom(0.5);
@@ -4229,7 +4303,10 @@ Object.assign(Engine, {
     document.getElementById('mouseSensitivity').addEventListener('input', e => this.setMouseSensitivity(Number(e.target.value) / 100));
     document.getElementById('resetMouseSensitivity').onclick = () => this.setMouseSensitivity(1);
     document.getElementById('resumeGame').onclick = () => this.togglePause(false, true);
-    document.getElementById('hSettings').onclick = () => this.togglePause(true);
+    { const more = on => { document.body.classList.toggle('more', on); document.getElementById('hSettings').setAttribute('aria-expanded', document.body.classList.contains('more')); };
+      document.getElementById('hSettings').onclick = () => this.touchUI ? more() : this.togglePause(true);   // touch: it fans out Settings and the dev tools (#tui .tui-more) instead
+      document.getElementById('bSet').onclick = () => { more(false); this.togglePause(true); this.titleSettings = true; this.pauseShow('settings'); };   // straight to Settings; Back closes it (as from the start menu)
+      document.querySelector('.tui-more [data-k="Digit1"]').addEventListener('click', () => more(false)); }   // the spawn panel covers them
     dialog.addEventListener('cancel', e => { e.preventDefault(); if (this.pausePage && this.pausePage !== 'main') this.pauseShow('main'); else this.togglePause(false); });   // Esc: back a page, then resume
     dialog.addEventListener('close', () => { if (this.pauseOpen) this.togglePause(false); });
     let wasLocked = document.pointerLockElement === this.ov;
@@ -4357,7 +4434,6 @@ Object.assign(Engine, {
     const dl = document.querySelector('#hHelp dl'); if (!dl) return;
     const K = id => `<b>${Controls.keys(id).replace(/</g, '&lt;')}</b>`, rows = [
       [`${Controls.key('forward')} ${Controls.key('left')} ${Controls.key('back')} ${Controls.key('right')}`, `move · ${K('run')} run · ${K('jump')} jump / up · ${K('dive')} dive · ${K('use')} use`],
-      [Controls.keys('water'), 'walk to the nearest water (again for the next kind)'],
       [Controls.keys('rod'), 'rod out / away'], [`${Controls.keys('cast')} / mouse`, `cast (hold, let go) · reel (${K('run')} faster) · strike`],
       [Controls.keys('bail'), 'open / close the bail (reeling closes it) · before a cast: drop it straight down'], [`${Controls.keys('dragDown')} · ${Controls.keys('dragUp')}`, 'drag down · up'],
       [`${Controls.keys('keep')} · ${Controls.keys('release')}`, 'keep · release a catch'],
@@ -4955,11 +5031,15 @@ Object.assign(Engine, {
   boardBoat(b) {
     this.boat = b; this.boatMode = 'drive'; this.boatSit = true; this.tuiState = null; this.P.vz = 0;   // the fish radar stays as you left it (key 2): boarding, as travel does, must not switch it on
     const dh = b.a - this.P.a; this.P.a = b.a; this.P.pitch = -0.1; this.seatBoat(b);
-    this.say(`${b.def.name}: ${this.touchUI ? 'joystick' : 'W/S'} ${['outboard', 'inboard'].includes(b.def.propulsion.type) ? 'throttle' : b.def.propulsion.type === 'oars' ? 'row' : b.def.propulsion.type === 'pedal' ? 'pedal' : 'paddle'}, ${this.touchUI ? 'left/right' : 'A/D'} steer · ${this.touchUI ? 'Use' : 'F'} to get out`, 5);
+    this.say(`${b.def.name}: ${this.touchUI ? 'joystick' : 'W/S'} ${['outboard', 'inboard'].includes(b.def.propulsion.type) ? 'throttle' : b.def.propulsion.type === 'oars' ? 'row' : b.def.propulsion.type === 'pedal' ? 'pedal' : 'paddle'}, ${this.touchUI ? 'left/right' : 'A/D'} steer · ${this.touchUI ? 'Jump' : 'Space'} to jump out`, 5);
     Game.emit('boardBoat', b);
   },
-  leaveBoat() {
+  leaveBoat(jump) {
     const b = this.boat; if (!b) return; const P = this.P, D = b.def; this.boat = null; this.boatMode = 'drive'; b.v = 0;
+    if (jump) {   // over the side the way you're facing: clear of the hull, then the usual fall (into the water, or onto the bank)
+      const ca = Math.cos(P.a), sa = Math.sin(P.a); let d = 0.6; while (d < D.hull.length_m + 1 && this.boatOver(b, P.x + ca * (d - 0.5), P.y + sa * (d - 0.5))) d += 0.2;
+      P.x += ca * d; P.y += sa * d; P.vz = CONFIG.jumpSpeed; Game.emit('leaveBoat', b); return;
+    }
     // step ashore if there's dry land close by, otherwise slip into the water beside the boat
     let best = null, bd = 1e9;
     for (let r = 1; r <= 7 && !best; r += 0.75) for (let k = 0; k < 16; k++) { const a = k / 16 * 6.2832, x = b.x + Math.cos(a) * (r + D.hull.beam_m / 2), y = b.y + Math.sin(a) * (r + D.hull.beam_m / 2); sample(x, y);
@@ -5060,6 +5140,29 @@ Object.assign(Engine, {
     const decked = (H.decks && (t > 1 - (H.decks.bow || 0) || t < (H.decks.stern || 0))) || (H.cockpit && (t < H.cockpit[0] || t > H.cockpit[1]));
     return decked ? S.gun(t) + 0.04 : H.floor_m;
   },
+  // a world point in the boat's frame: along, across, up, and t (0 the stern .. 1 the bow)
+  boatLocal(b, x, y, z = 0, o = []) { const dx = x - b.x, dy = y - b.y, ca = Math.cos(b.a), sa = Math.sin(b.a), lx = ca * dx + sa * dy, ly = ca * dy - sa * dx;
+    o[0] = lx; o[1] = ly; o[2] = z - b.z - Math.sin(b.pitch) * lx + Math.sin(b.roll) * ly; o[3] = lx / b.def.hull.length_m + 0.5; return o; },
+  boatOver(b, x, y) { const q = this.boatLocal(b, x, y); return q[3] > 0 && q[3] < 1 && Math.abs(q[1]) < b.def._shape.hb(q[3]); },
+  // push a point of the fishing line (p[j..j+2], and its last position in o) out of the hull: over the gunwale, round the side or under the keel,
+  // whichever is nearest. True if it was inside
+  boatLineOut(b, p, j, o) {
+    if (Math.abs(p[j] - b.x) > b.def.hull.length_m || Math.abs(p[j + 1] - b.y) > b.def.hull.length_m) return false;
+    const q = this.boatLocal(b, p[j], p[j + 1], p[j + 2], this._bq || (this._bq = [])), t = q[3]; if (t <= 0 || t >= 1) return false;
+    const S = b.def._shape, side = S.hb(t) - Math.abs(q[1]) + 0.02, up = S.gun(t) + 0.02 - q[2], down = q[2] + S.keel(t) + 0.02; if (side <= 0.02 || up <= 0.02 || down <= 0.02) return false;
+    const k = q[1] < 0 ? -side : side, d = up <= side && up <= down ? [0, 0, up] : down <= side ? [0, 0, -down] : [-Math.sin(b.a) * k, Math.cos(b.a) * k, 0];
+    for (let c = 0; c < 3; c++) { p[j + c] += d[c]; if (o) o[j + c] += d[c]; }   // moved, not thrown: no speed added
+    return true;
+  },
+  // does the hull hide a point from an eye on board (e: the eye in the boat's frame)? For the line, which is drawn on the overlay with no depth test.
+  // shortcut: knows the hull, floor and decks, not a console or wheelhouse; draw the line in GL if it shows across those
+  boatHides(b, e, x, y, z) {
+    const D = b.def, S = D._shape, L = D.hull.length_m, q = this.boatLocal(b, x, y, z, this._bq || (this._bq = []));
+    const over = (lx, ly) => { const t = lx / L + 0.5; return t > 0 && t < 1 && Math.abs(ly) < S.hb(t); };
+    if (over(q[0], q[1])) return q[2] < this.boatDeckZ(D, q[0], q[1]);   // under your feet
+    let lo = 0, hi = 1; for (let i = 0; i < 10; i++) { const m = (lo + hi) / 2; if (over(e[0] + (q[0] - e[0]) * m, e[1] + (q[1] - e[1]) * m)) lo = m; else hi = m; }   // where the sight line crosses the side
+    return e[2] + (q[2] - e[2]) * hi < S.gun(clamp((e[0] + (q[0] - e[0]) * hi) / L + 0.5, 0, 1));   // below the gunwale there: behind the hull
+  },
   toggleBoatMode() {
     const b = this.boat; if (!b) return; const D = b.def, S = D._shape, t = clamp(D.crew.seat_at, 0, 1);
     if (this.boatMode === 'deck') { this.boatMode = 'drive'; this.seatBoat(b); this.say('At the helm', 1.5); this.updateTui(); return; }
@@ -5095,7 +5198,7 @@ Object.assign(Engine, {
 'use strict';
 // Engine: the spawn picker panel (B boats, 1 animals).
 // the kinds of wildlife (chips under the Wildlife tab)
-const WILD_KINDS = [['all', 'All'], ['shell', 'Shellfish'], ['jelly', 'Jellies'], ['mammal', 'Mammals'], ['herp', 'Reptiles & amphibians'], ['bird', 'Birds']];
+const WILD_KINDS = [['all', 'All', 'infinity'], ['shell', 'Shellfish', 'shell'], ['jelly', 'Jellies', 'jelly'], ['mammal', 'Mammals', 'whale'], ['herp', 'Reptiles', 'frog', 'Reptiles & amphibians'], ['bird', 'Birds', 'heron']];
 Object.assign(Engine, {
   // ---- spawn picker (K, or the Spawn button) ----
   // B: boats; 1 (a secret): fish and wildlife. Both open on the water you're nearest.
@@ -5139,7 +5242,7 @@ Object.assign(Engine, {
     const boatsMode = this.spawnMode === 'boats', panel = document.getElementById('spawn'), tabs = document.getElementById('spTabs');
     if (panel.dataset.mode !== this.spawnMode) {   // header and search follow the mode
       panel.dataset.mode = this.spawnMode;
-      panel.querySelector('.sp-art').innerHTML = uiIcon(boatsMode ? 'dock.boat' : 'dock.spawn');
+      panel.querySelector('.sp-art').innerHTML = uiIcon(boatsMode ? 'dock.boat' : 'ui.fish');
       panel.querySelector('h2').textContent = boatsMode ? 'Boats' : 'Spawn';
       panel.querySelector('.tk-title i').textContent = boatsMode ? 'Pick a boat for the water.' : 'A little company on the water.';
       document.getElementById('spSearch').placeholder = boatsMode ? 'Find a boat…' : 'Find a creature…';
@@ -5147,10 +5250,11 @@ Object.assign(Engine, {
     tabs.hidden = boatsMode;
     tabs.innerHTML = boatsMode ? '' : [['fish', 'Fish', 'fish'], ['wild', 'Wildlife', 'heron']].map(([k, l, ic]) => `<button data-tab="${k}" class="${k === this.spawnTab ? 'on' : ''}">${uiIcon('ui.' + ic)}${l}</button>`).join('');
     const kinds = document.getElementById('spKind'); kinds.hidden = this.spawnTab !== 'wild';
-    kinds.innerHTML = kinds.hidden ? '' : WILD_KINDS.map(([k, l]) => `<button data-kind="${k}" class="${k === this.spawnKind ? 'on' : ''}">${l}</button>`).join('');
-    const bio = document.getElementById('spBiome'); bio.hidden = boatsMode;
-    bio.innerHTML = boatsMode ? '' : [['all', 'All biomes'], ...Object.entries(CLIMATES).map(([k, C]) => [k, C.name])].map(([k, l]) => `<button data-biome="${k}" class="${k === this.spawnBiome ? 'on' : ''}">${l}</button>`).join('');
-    document.getElementById('spSub').innerHTML = catChips(this.spawnSub, 'data-sub');
+    kinds.innerHTML = kinds.hidden ? '' : WILD_KINDS.map(([k, l, ic, full]) => `<button data-kind="${k}" class="${k === this.spawnKind ? 'on' : ''}" title="${full || l}">${uiIcon('ui.' + ic)}${l}</button>`).join('');
+    const bio = document.getElementById('spBiome'); bio.hidden = bio.previousElementSibling.hidden = boatsMode;
+    const bioIcon = { all: 'globe', temperate: 'pine', arctic: 'peaks', tropical: 'palm' };
+    bio.innerHTML = boatsMode ? '' : [['all', 'All biomes'], ...Object.entries(CLIMATES).map(([k, C]) => [k, C.name])].map(([k, l]) => `<button data-biome="${k}" class="${k === this.spawnBiome ? 'on' : ''}">${bioIcon[k] ? uiIcon('ui.' + bioIcon[k]) : ''}${l}</button>`).join('');
+    document.getElementById('spSub').innerHTML = catChips(this.spawnSub, 'data-sub', true);
     const items = this.spawnItems(), boats = this.spawnTab === 'boats';
     if (!items.some(D => D.id === this.spawnSel)) { this.spawnSel = items.length ? items[0].id : null; this.spawnNav = false; }
     ul.classList.toggle('grid', boats);   // boats: picture tiles, the name on hover
@@ -6823,7 +6927,10 @@ function gearSummary(d) {
 // can this animal be caught on hook and line? Mammals and turtles aren't fished for; shellfish don't bite.
 const fishCatchable = D => !D._air && !D._herp && !['turtle', 'bivalve', 'snail', 'crab', 'lobster', 'shrimp', 'jelly'].includes(D.body.plan);
 const baitThief = D => ['crab', 'lobster', 'shrimp', 'snail'].includes(D.body.plan);   // they pick a hook clean
-
+</script>
+<script>
+'use strict';
+// Tackle meshes: the 3D rod with its guides and line, the reel and its moving parts, hooks, lures, baits, floats and sinkers.
 // ---- tackle meshes (model units are metres; x points along the rod / the way the lure faces) ----
 // the rod's bent shape in its own plane: points [x, z] from the butt to the tip
 const ROD_BEND_STEPS = 32;
@@ -7187,6 +7294,7 @@ Object.assign(Engine, {
     R.carry += Math.min(Math.max(dt, 0), 0.1);
     const steps = Math.floor((R.carry + 1e-9) / h); R.carry -= steps * h;
     const floats = S.line.material !== 'fluoro', wind = ENV.wind * 0.3, wa = ENV.windDir ?? 0.8;
+    const hull = this.boat && !this.boatLineOut(this.boat, end.slice(), 0) ? this.boat : null;   // the line can't pass through your boat (a lure brought in under the hull: leave its line be)
     for (let st = 0; st < steps; st++) {
       const t = (st + 1) / steps, tip = T.map((v, k) => R.tip[k] + (v - R.tip[k]) * t), tail = end.map((v, k) => R.end[k] + (v - R.end[k]) * t);
       const seg = Math.max(len, Math.hypot(...tail.map((v, k) => v - tip[k]))) / (N - 1);
@@ -7225,7 +7333,7 @@ Object.assign(Engine, {
         }
         // Project collisions after constraints too: tightening must not push the
         // line back through the ground, and contact must not create bounce energy.
-        for (let i = 1; i < N - 1; i++) p[i * 3 + 2] = Math.max(p[i * 3 + 2], R.g[i] + 0.01);
+        for (let i = 1; i < N - 1; i++) { if (hull && (it & 3) === 3) this.boatLineOut(hull, p, i * 3, o); p[i * 3 + 2] = Math.max(p[i * 3 + 2], R.g[i] + 0.01); }
       }
       for (let i = 1; i < N - 1; i++) if (p[i * 3 + 2] <= R.g[i] + 0.011) {
         const j = i * 3; o[j] = p[j] - (p[j] - o[j]) * 0.7; o[j + 1] = p[j + 1] - (p[j + 1] - o[j + 1]) * 0.7; o[j + 2] = p[j + 2];
@@ -7619,7 +7727,10 @@ Object.assign(Engine, {
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
     const one = (g, x, y, z, s, rot, wl, mk, pitch) => { this.upInst(g, [x, y, z, s, rot, 0.5, wl, mk, 0, pitch]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); };
     const lvl = rodBendLevel(A.bend), rk = `rod:${A.rigId}:${rv}:${lvl}`;
+    const held = this.boat && this.boatMode === 'deck';   // in your hands on deck: drawn over the boat, so it can't poke through the hull
+    if (held) gl.depthRange(0, 0.1);
     one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
+    if (held) gl.depthRange(0, 1);
     if (A.phase === 'card') return;
     const endKey = S.lure ? `lure:${S.lure.id}:${rv}` : `bait:${S.bait.id}:${S.hook.id}:${rv}`, endMesh = () => S.lure ? lureMesh(S.lure) : baitMesh(S);
     const sc = (x, y, z, k = 6) => clamp(Math.hypot(x - E[0], y - E[1], z - E[2]) / k, 1, 9);   // a touch bigger far away, so you can follow it
@@ -7658,11 +7769,19 @@ Object.assign(Engine, {
     const n = R.p.length / 3, Q = [], wet = [];
     for (let k = 0; k < n; k++) { Q.push(this.project(R.p[k * 3], R.p[k * 3 + 1], R.p[k * 3 + 2])); wet.push(R.p[k * 3 + 2] < R.wl[k] - 0.01); }
     const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    // aboard: the same curve in short straight bits, leaving out those the hull hides
+    const bt = this.boat, be = bt && this.boatLocal(bt, ...E);
+    const bez = (k, u) => { const a = Math.max(k - 1, 0) * 3, q = k * 3, b = Math.min(k + 1, n - 1) * 3, w0 = (1 - u) * (1 - u) / 2, w2 = u * u / 2, w1 = 1 - w0 - w2; return [0, 1, 2].map(i => R.p[a + i] * w0 + R.p[q + i] * w1 + R.p[b + i] * w2); };
+    const bits = bt && Q.map((_, k) => { const out = []; let a = this.project(...bez(k, 0));
+      for (let i = 1; i <= 4; i++) { const b = this.project(...bez(k, i / 4)); if (a && b && !this.boatHides(bt, be, ...bez(k, (i - 0.5) / 4))) out.push(a, b); a = b; } return out; });
     for (const pass of [0, 1]) for (let k = 0; k < n; k++) {   // piece k: from halfway to the previous point, bending through point k, to halfway to the next
       const q = Q[k], qa = k > 0 ? Q[k - 1] : q, qb = k < n - 1 ? Q[k + 1] : q; if (!q || !qa || !qb) continue;
       const from = mid(qa, q), to = mid(q, qb), under = wet[k], lw = under ? 0.5 : px(R.p[k * 3], R.p[k * 3 + 1], R.p[k * 3 + 2]);
       c.strokeStyle = pass ? `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${under ? 0.025 : 0.7})` : `rgba(0,0,0,${under ? 0 : 0.18})`;
-      c.lineWidth = pass ? lw : lw + 1.2; c.beginPath(); c.moveTo(from[0], from[1]); c.quadraticCurveTo(q[0], q[1], to[0], to[1]); c.stroke();
+      c.lineWidth = pass ? lw : lw + 1.2; c.beginPath();
+      if (bits) for (let i = 0; i < bits[k].length; i += 2) { c.moveTo(bits[k][i][0], bits[k][i][1]); c.lineTo(bits[k][i + 1][0], bits[k][i + 1][1]); }
+      else { c.moveTo(from[0], from[1]); c.quadraticCurveTo(q[0], q[1], to[0], to[1]); }
+      c.stroke();
     }
     if (!L && A.dangle) {   // hanging under the tip: float → sinker → bait, straight because the weight pulls it tight
       const D = A.dangle, T0 = R.p.slice((n - 1) * 3), b = [D.x, D.y, D.z + 0.02];
@@ -7932,11 +8051,13 @@ const Game = {
 </script>
 <script>
 'use strict';
-// UI_ICONS — inline SVG icon set for the storybook-styled HUD (no external assets).
+// UI_ICONS — inline SVG icon set for the storybook-styled HUD (no external assets): the shared
+// object and drawing helpers. icons-ui.js adds ui.*, icons-dock.js dock.*, icons-tackle.js lure/bait/float.
 // ui.*: 24x24 currentColor line icons (pines/sprig/reeds are decorative); dock.*: 96x72
 // illustrated app icons; lure()/bait() 120x80, float() 80x80. Each call to lure/bait/float
 // gets fresh gradient ids so many copies can share a page.
-const UI_ICONS = (() => {
+const UI_ICONS = {};
+const ICON_KIT = (() => {
   const OL = '#2a2018';
   let seq = 0;
   const ids = () => { const k = ++seq; return s => `ui${k}${s}`; };
@@ -7960,6 +8081,219 @@ const UI_ICONS = (() => {
   // single hook: eye at origin, shank length L downward, point curls back up on +x side
   const hook1 = (x, y, a = 0, L = 20, s = 1) => `<g transform="translate(${x} ${y}) rotate(${a}) scale(${s})">${ring(0, 0, 2.4)}${metal(`M0 2.4V${L}C0 ${L + 11} 14 ${L + 11} 14 ${L - 3}l-2.6 3`)}</g>`;
   const eye = (x, y, r, iris = '#f3d36a') => `<circle cx="${x}" cy="${y}" r="${r}" fill="${iris}" stroke="${OL}" stroke-width="1.4"/><circle cx="${x + r * .1}" cy="${y + r * .05}" r="${r * .52}" fill="#1a1410"/><circle cx="${x - r * .25}" cy="${y - r * .3}" r="${r * .22}" fill="#fff"/>`;
+  return { OL, ids, svg, col, shade, lg, rg, shadow, gloss, metal, ring, treble, hook1, eye };
+})();
+</script>
+<script>
+'use strict';
+// UI_ICONS.ui — 24x24 currentColor line icons for menus and the HUD (pines/sprig/reeds are decorative).
+UI_ICONS.ui = (() => {
+  const { OL, ids, svg, lg, rg, shadow } = ICON_KIT;
+  const L = body => svg('0 0 24 24', `<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</g>`);
+  const cog = (() => { let d = ''; for (let i = 0; i < 16; i++) { const a = (i * 22.5 - 5.6) * Math.PI / 180, r = i % 2 ? 7 : 9.4, a2 = a + 11.25 * Math.PI / 180; d += `${i ? 'L' : 'M'}${(12 + r * Math.cos(a)).toFixed(2)} ${(12 + r * Math.sin(a)).toFixed(2)}L${(12 + r * Math.cos(a2)).toFixed(2)} ${(12 + r * Math.sin(a2)).toFixed(2)}`; } return d + 'Z'; })();
+  const cloudD = 'M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9a4.5 4.5 0 0 1 0 9Z';
+  const I = ids();
+  const tree = (x, b, h, w) => {
+    let r = '', l = '';
+    for (let i = 0; i < 3; i++) { const y = b - h * .18 - (2 - i) * h * .24, hw = w / 2 * (.55 + .225 * i); r += `L${(x + hw).toFixed(1)} ${y.toFixed(1)}L${(x + hw * .4).toFixed(1)} ${(y - h * .07).toFixed(1)}`; l = `L${(x - hw * .4).toFixed(1)} ${(y - h * .07).toFixed(1)}L${(x - hw).toFixed(1)} ${y.toFixed(1)}` + l; }
+    const top = b - h, ty = b - h * .18;
+    return `<rect x="${x - 2}" y="${ty - 2}" width="4" height="${h * .18 + 2}" fill="#5a3a22" stroke="${OL}" stroke-width="1.2"/><path d="M${x} ${top}${r.replace(/L[^L]*$/, '')}${l.replace(/^L[^L]*/, '')}Z" fill="url(#${I('t')})" stroke="${OL}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  };
+  const needles = []; for (let t = .08; t < .95; t += .055) { const x = 8 + 50 * t, y = 58 - 50 * t; needles.push(`M${x.toFixed(1)} ${y.toFixed(1)}l${(-3 + 12 * (1 - t * .3)).toFixed(1)} ${(-5 + 4).toFixed(1)}M${x.toFixed(1)} ${y.toFixed(1)}l${-5} ${(-11 * (1 - t * .3)).toFixed(1)}`); }
+  return {
+    hook: L('<circle cx="15" cy="3.6" r="1.7"/><path d="M15 5.3V15a5 5 0 0 1-10 0v-3l3 2.6"/>'),
+    gear: L(`<path d="${cog}"/><circle cx="12" cy="12" r="2.8"/>`),
+    book: L('<path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5ZM12 6.5V19"/>'),
+    pad: L('<path d="M7 7h10a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.4 2.4 0 0 1-4.1 1.1L14 15.5h-4l-2.4 2.4a2.4 2.4 0 0 1-4.1-1.1l-.9-4.4A4.5 4.5 0 0 1 7 7Z"/><path d="M8 10v3M6.5 11.5h3"/><circle cx="15.5" cy="10.8" r=".5" fill="currentColor"/><circle cx="17" cy="12.6" r=".5" fill="currentColor"/>'),
+    close: L('<path d="M6 6l12 12M18 6L6 18"/>'),
+    cast: L('<path d="M3 21L13 7"/><path d="M13 7c4-2 7 .5 6.5 4.5"/><path d="M19.5 11.5V16a2.2 2.2 0 0 1-4.4 0"/><path d="M11 9.5l2-2.5"/>'),
+    reel: L('<circle cx="11" cy="13" r="5.5"/><circle cx="11" cy="13" r="1.4"/><path d="M11 7.5V4h6"/><path d="M15 16.5l4 3"/>'),
+    bite: L('<path d="M12 5v4"/><path d="M8.5 9h7l-1.2 4.5a2.5 2.5 0 0 1-4.6 0Z"/><path d="M3 17c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 3-1.2 4.5 0"/><path d="M5 21c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0"/>'),
+    chevron: L('<path d="M9 5l7 7-7 7"/>'),
+    wrench: L('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8Z"/>'),
+    moon: L('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/>'),
+    sun: L('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>'),
+    cloud: L(`<path d="${cloudD}"/>`),
+    rain: L(`<path d="${cloudD}" transform="translate(0 -4)"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>`),
+    windArrow: L('<path d="M12 20.5V4M6 10l6-6 6 6"/>'),
+    compass: svg('0 0 24 24', '<path d="M9 10V2.5l6 7.5V2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12.5l-3.6 9 3.6-2.6 3.6 2.6Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>'),
+    pines: svg('0 0 64 48', `<defs>${lg(I('t'), [[0, '#5f8a4c'], [.5, '#33583a'], [1, '#1c3424']], 1, 0)}${shadow(I('s'))}</defs><ellipse cx="32" cy="44" rx="28" ry="3" fill="#1c3424" opacity=".45"/><g filter="url(#${I('s')})">${tree(15, 44, 30, 20)}${tree(49, 44, 32, 21)}${tree(32, 45, 42, 27)}</g>`),
+    sprig: svg('0 0 64 64', `<defs>${rg(I('c'), [[0, '#b07a48'], [.6, '#7a4a26'], [1, '#4a2a16']], .4, .35, .7)}${shadow(I('s'))}</defs><g filter="url(#${I('s')})" stroke-linecap="round">
+<path d="M6 60L60 6" stroke="${OL}" stroke-width="4"/><path d="M6 60L60 6" stroke="#7a4e2c" stroke-width="2.2"/>
+<path d="${needles.join('')}" stroke="#1f3a26" stroke-width="2.4" fill="none"/><path d="${needles.join('')}" stroke="#4f7d48" stroke-width="1.2" fill="none" transform="translate(.4 -.4)"/>
+<path d="M27 39L24 44" stroke="#5a3a22" stroke-width="2"/>
+<g transform="rotate(25 20 50)"><ellipse cx="20" cy="50" rx="9.5" ry="13" fill="url(#${I('c')})" stroke="${OL}" stroke-width="1.6"/>
+<path d="M13 45q3.5 3 7 0q3.5 3 7 0M12.5 50q3.75 3 7.5 0q3.75 3 7.5 0M13 55q3.5 3 7 0q3.5 3 7 0M15 59.5q2.5 2 5 0q2.5 2 5 0" stroke="#3a2010" stroke-width="1.1" fill="none"/>
+<path d="M16 43q2-2 4-1.5" stroke="#e0b080" stroke-width="1" fill="none" opacity=".7"/></g></g>`),
+    search: L('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L20.5 20.5"/>'),
+    waves: L('<path d="M2.5 7.5c2-1.6 3.8-1.6 5.8 0s3.8 1.6 5.8 0 3.8-1.6 5.8 0M2.5 12.5c2-1.6 3.8-1.6 5.8 0s3.8 1.6 5.8 0 3.8-1.6 5.8 0M2.5 17.5c2-1.6 3.8-1.6 5.8 0s3.8 1.6 5.8 0 3.8-1.6 5.8 0"/>'),
+    // biomes and habitats (spawn filters)
+    globe: L('<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M4.5 7.5h15M4.5 16.5h15"/>'),
+    pine: L('<path d="M12 3L8 8h2.5L7 13h3l-4 5h12l-4-5h3l-3.5-5H16Z"/><path d="M12 18v3"/>'),
+    peaks: L('<path d="M2.5 19l6-10 3.5 5 3-4 6.5 9"/><path d="M6.6 12.2l1.9 1 1.4-1.6"/>'),
+    palm: L('<path d="M12 21c0-4.5.4-8.5 1-12"/><path d="M13 9C11 6 8 5.5 4.5 7c3 0 5.5 1 8.5 2Z"/><path d="M13 9c2-3 5-3.5 8.5-2-3 0-5.5 1-8.5 2Z"/><path d="M13 9c-.6-3 .4-5 2.4-6.5M13 9c-3-.6-5.6 1.2-6.8 4.2M13 9c3-.3 5.4 1.6 6 4.6"/>'),
+    shell: L('<path d="M12 20L4 10a8 8 0 0 1 16 0Z"/><path d="M12 20L8 5.5M12 20V4.5M12 20l4-14.5"/><path d="M10 20h4v1.5h-4Z"/>'),
+    jelly: L('<path d="M4 12a8 7 0 0 1 16 0Z"/><path d="M7 12c0 3-1 5 0 8M10.5 12c0 3 1 5 0 8M13.5 12c0 3-1 5 0 8M17 12c0 3 1 5 0 8"/>'),
+    whale: L('<path d="M2.5 13C2.5 9.5 5.5 7.5 10 7.5c4.5 0 7 3 8.8 5.1L20.5 9l1 4.5 1 1.5-3.5-.4C16.5 17 13 18 9.5 18 5 18 2.5 16 2.5 13Z"/><path d="M3 14.2h4.5M9.5 16.5l1.5 2.5M8 5.5c0-1.5-1-2.5-2-3M8 5.5c0-1.5 1-2.5 2-3"/><circle cx="6" cy="11.6" r=".5" fill="currentColor"/>'),
+    frog: L('<circle cx="8.5" cy="7.5" r="2.2"/><circle cx="15.5" cy="7.5" r="2.2"/><path d="M6.5 9.5C4.5 11 4 14 6 16.5c3.5 2 8.5 2 12 0 2-2.5 1.5-5.5-.5-7"/><path d="M9.5 13c1.5 1 3.5 1 5 0"/><path d="M6 16.5L3 19.5M18 16.5l3 3"/>'),
+    infinity: L('<path d="M12 12c-2-3-4-4.5-6-4.5a4.5 4.5 0 0 0 0 9c2 0 4-1.5 6-4.5s4-4.5 6-4.5a4.5 4.5 0 0 1 0 9c-2 0-4-1.5-6-4.5Z"/>'),
+    pond: L('<path d="M3 19.5c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0"/><path d="M10 16V8M12.5 16V4.5M15 16V9M7.5 16c0-3-1-5-3-6M16.5 16c0-3 1-5 3-6"/>'),
+    river: L('<path d="M3 5c7 0 10 2.5 6.5 6S10 18 17 19.5"/><path d="M8.5 4c6 0 8.5 3 5.2 7s-1.2 7 7.3 8"/>'),
+    creek: L('<ellipse cx="7.5" cy="16.5" rx="4" ry="3"/><ellipse cx="16.5" cy="16.5" rx="4" ry="3"/><circle cx="8" cy="7.5" r="2.6"/><ellipse cx="15.5" cy="8" rx="3.5" ry="2.6"/>'),
+    sea: L('<path d="M3 17c2-6 7-10 12-10 3 0 5 2 5 4-1.5-1-3.5-1-4.5.5S15 15 17 16"/><path d="M3 20.5c2-1 4-1 6 0s4 1 6 0 4-1 6 0"/>'),
+    fish: L('<path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/>'),
+    wild1: svg('0 0 36 24', '<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(6 0)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><path d="M3 21c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0 4 1.4 6 0" opacity=".5"/></g>'),
+    wild2: svg('0 0 36 24', '<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(1 -1) scale(.72)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><g transform="translate(16 7) scale(.72)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><path d="M3 22c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0 4 1.4 6 0" opacity=".5"/></g>'),
+    wild3: svg('0 0 36 24', '<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0 0) scale(.55)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><g transform="translate(14 -1) scale(.55)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><g transform="translate(5 8) scale(.55)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><g transform="translate(20 8) scale(.55)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><path d="M3 22c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0 4 1.4 6 0" opacity=".5"/></g>'),
+    heron: L('<path d="M2.5 5.4L8 4.6"/><circle cx="9.4" cy="4.8" r="1.4" fill="currentColor"/><path d="M10.4 5.8C11.2 7.4 9.6 9 9.4 10.6 9.2 12 10 12.8 11 13"/><path d="M11 13c1.6-1.4 5-1.6 7.2-.2l2.6 2.4c-2.6.6-5.4.6-7.8-.4-1-.4-1.6-1-2-1.8Z"/><path d="M14.4 15.6l-1 6.4M16.4 15.6l1.2 6.4M12 22h2.6M16.4 22h2.6"/>'),
+    check: svg('0 0 24 24', '<path d="M4.5 12.5l5 5L19.5 6.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'),
+    reeds: svg('0 0 48 64', '<g fill="none" stroke="currentColor" stroke-linecap="round" opacity=".55"><path d="M10 64C10 46 8 30 3 16" stroke-width="1.6"/><path d="M19 64C19 44 21 26 26 10" stroke-width="1.8"/><path d="M30 64C30 50 34 38 44 28" stroke-width="1.4"/><path d="M14 64C16 52 22 44 31 40C25 48 21 55 20 64Z" fill="currentColor" stroke-width=".8"/><path d="M38 64C37 56 39 50 45 44" stroke-width="1.2"/></g><rect x="23.6" y="4" width="5" height="13" rx="2.5" transform="rotate(14 26 10)" fill="currentColor" opacity=".55"/>'),
+  };
+})();
+</script>
+<script>
+'use strict';
+// UI_ICONS.dock — the big painted 96x72 pictures on the shortcut dock and panel headers.
+UI_ICONS.dock = (() => {
+  const { OL, ids, svg, lg, rg, shadow } = ICON_KIT;
+  const I = ids();
+  const S = ids();
+  const boatArt = (J, tf = '', defs = '', back = '', front = '') => svg('0 0 96 72', `<defs>${lg(J('w'), [[0, '#e0965a'], [.5, '#b8642e'], [1, '#7a3c1a']])}${lg(J('i'), [[0, '#5a3016'], [1, '#8a4e26']])}${lg(J('h2o'), [[0, '#6aa8c8'], [1, '#2a5a7a']])}${shadow(J('s'))}${defs}</defs>
+<ellipse cx="48" cy="58" rx="45" ry="10" fill="url(#${J('h2o')})" opacity=".9"/>${back}<g filter="url(#${J('s')})" stroke-linejoin="round" stroke-linecap="round" transform="${tf}">
+<path d="M58 14L36 50" stroke="${OL}" stroke-width="4"/><path d="M58 14L36 50" stroke="#c88a50" stroke-width="2"/>
+<path d="M6 32C30 27 64 24 90 24C66 36 30 38 6 32Z" fill="url(#${J('i')})" stroke="${OL}" stroke-width="1.6"/>
+<path d="M30 33L34 29M56 31L58 27" stroke="#3a1e0c" stroke-width="2.4"/>
+<path d="M6 32C30 38 64 37 90 24C86 42 76 53 58 56H30C16 54 9 45 6 32Z" fill="url(#${J('w')})" stroke="${OL}" stroke-width="2"/>
+<path d="M9 40C32 45 64 43 86 34M14 48C34 51 62 50 80 43" fill="none" stroke="#6a3416" stroke-width="1.2" opacity=".7"/>
+<path d="M8 34C30 39 62 38 88 27" fill="none" stroke="#f4c08a" stroke-width="1.4" opacity=".7"/>
+<path d="M36 50L30 60L35 62L40 52Z" fill="#c88a50" stroke="${OL}" stroke-width="1.4"/></g>
+<path d="M10 56C20 53 30 59 40 56S60 53 70 56S84 59 90 56C88 64 70 68 48 68S8 64 10 56Z" fill="#3f7a9a" opacity=".85"/>
+<path d="M16 60C24 58 30 61 38 59M56 61C64 59 70 62 78 60" fill="none" stroke="#cfe8f4" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>${front}`);
+  const cattail = (x, b, h, lean) => `<path d="M${x} ${b}Q${x} ${b - h * .6} ${x + lean} ${b - h}" fill="none" stroke="#4e6a32" stroke-width="1.6" stroke-linecap="round"/><rect x="${x + lean * .75 - 2.2}" y="${b - h * .82 - 6}" width="4.4" height="12" rx="2.2" transform="rotate(${lean * 2} ${x + lean * .75} ${b - h * .82})" fill="url(#${S('ct')})" stroke="${OL}" stroke-width="1.2"/>`;
+  const lures = (x, y, n, w) => { const cs = ['#d84a2a', '#e8c040', '#4a8ac0', '#f08a30', '#c0d8a0', '#b04a8a']; let s = ''; for (let i = 0; i < n; i++) { const cx = x + w / n * (i + .5); s += `<ellipse cx="${cx.toFixed(1)}" cy="${y}" rx="${(w / n * .32).toFixed(1)}" ry="2.6" transform="rotate(${i % 2 ? -18 : 14} ${cx.toFixed(1)} ${y})" fill="${cs[(i + n) % cs.length]}" stroke="${OL}" stroke-width=".9"/><circle cx="${(cx - w / n * .16).toFixed(1)}" cy="${y - .4}" r=".7" fill="${OL}"/>`; } return s; };
+  const tray = (x, y, w, n) => `<rect x="${x}" y="${y}" width="${w}" height="9" rx="1.5" fill="#173022" stroke="${OL}" stroke-width="1.4"/>${lures(x + 1, y + 4.6, n, w - 2)}<rect x="${x}" y="${y + 6}" width="${w}" height="6.5" rx="1.5" fill="url(#${I('g')})" stroke="${OL}" stroke-width="1.6"/>${Array.from({ length: n - 1 }, (_, i) => `<path d="M${(x + w / n * (i + 1)).toFixed(1)} ${y + 1}v5" stroke="#3f6a46" stroke-width="1"/>`).join('')}<path d="M${x + 2} ${y + 7.6}H${x + w - 2}" stroke="#a8d090" stroke-width="1" opacity=".5"/>`;
+  const fern = []; for (let i = 0; i < 7; i++) { const t = i / 7, x = 70 - t * 4 + t * t * 6, y = 52 - t * 30, l = 7 - i * .7; fern.push(`<ellipse cx="${(x - l * .7).toFixed(1)}" cy="${(y - 1).toFixed(1)}" rx="${(l * .6).toFixed(1)}" ry="1.6" transform="rotate(-25 ${(x - l * .7).toFixed(1)} ${(y - 1).toFixed(1)})"/><ellipse cx="${(x + l * .7).toFixed(1)}" cy="${(y - 1).toFixed(1)}" rx="${(l * .6).toFixed(1)}" ry="1.6" transform="rotate(25 ${(x + l * .7).toFixed(1)} ${(y - 1).toFixed(1)})"/>`); }
+  const R = ids(), M = ids();
+  const pine = (x, b, h) => `<path d="M${x} ${b - h}L${x + h * .42} ${b - h * .2}H${x - h * .42}Z" fill="#4e7a3a" stroke="${OL}" stroke-width="1.1"/><path d="M${x} ${b - h * .2}V${b}" stroke="${OL}" stroke-width="1.4"/>`;
+  return {
+    rod: svg('0 0 96 72', `<defs>${lg(R('k'), [[0, '#f0d29a'], [.5, '#c8945a'], [1, '#8a5a30']])}${lg(R('b'), [[0, '#6a8ab0'], [.45, '#2c4a70'], [1, '#14243a']])}${lg(R('r'), [[0, '#d8dde2'], [.5, '#8a929a'], [1, '#4a5056']])}${shadow(R('s'))}</defs>
+<ellipse cx="78" cy="62" rx="12" ry="3" fill="#6aa8c8" opacity=".5"/><path d="M70 62C74 60 82 60 86 62" fill="none" stroke="#cfe8f4" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>
+<path d="M80.5 12V52" stroke="#eef1f4" stroke-width=".9" opacity=".9"/>
+<g filter="url(#${R('s')})" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(6 64) rotate(-35) scale(1.05 1.35)">
+<path d="M44-2.4L87-.7V.7L44 2.4Z" fill="url(#${R('b')})" stroke="${OL}" stroke-width="1.4"/>
+${[[54, 4.2, 2.2], [68, 3.2, 1.7], [80, 2.4, 1.3]].map(([x, h, r]) => `<path d="M${x} 1.5L${x} ${h + 1}" stroke="${OL}" stroke-width="1.6"/><circle cx="${x}" cy="${h + 1 + r}" r="${r}" fill="none" stroke="${OL}" stroke-width="1.5"/><circle cx="${x}" cy="${h + 1 + r}" r="${r}" fill="none" stroke="#c8cdd2" stroke-width=".6"/>`).join('')}
+<path d="M30 9L54 ${4.2 + 1 + 2.2}" stroke="#eef1f4" stroke-width=".6" opacity=".8"/>
+<rect x="-1" y="-4.2" width="5" height="8.4" rx="2" fill="#3a2a1e" stroke="${OL}" stroke-width="1.5"/>
+<rect x="4" y="-4" width="22" height="8" rx="3" fill="url(#${R('k')})" stroke="${OL}" stroke-width="1.6"/>
+<rect x="26" y="-3" width="10" height="6" rx="1" fill="url(#${R('r')})" stroke="${OL}" stroke-width="1.4"/>
+<rect x="36" y="-3.2" width="9" height="6.4" rx="2.4" fill="url(#${R('k')})" stroke="${OL}" stroke-width="1.5"/>
+<path d="M7-2H23M38-1.8H43" stroke="#fff" stroke-width="1" opacity=".45"/>
+<g fill="#7a5228" opacity=".5"><circle cx="9" cy="1" r=".6"/><circle cx="14" cy="-.6" r=".6"/><circle cx="19" cy="1.4" r=".6"/><circle cx="23" cy="-1" r=".5"/><circle cx="40" cy="1" r=".5"/></g>
+<path d="M31 3V7" stroke="${OL}" stroke-width="3.4"/><path d="M31 3V7" stroke="#9aa0a6" stroke-width="1.6"/>
+<path d="M23 8H37L36 15H24Z" fill="url(#${R('r')})" stroke="${OL}" stroke-width="1.6"/><rect x="25" y="15" width="10" height="4" rx="1.2" fill="#b83a2a" stroke="${OL}" stroke-width="1.3"/>
+<path d="M25 10.5H35" stroke="#fff" stroke-width="1" opacity=".55"/>
+<path d="M23 12L18 13L17 18" fill="none" stroke="${OL}" stroke-width="2.6"/><path d="M23 12L18 13L17 18" fill="none" stroke="#c8cdd2" stroke-width="1.1"/><ellipse cx="17" cy="19.5" rx="2" ry="2.6" fill="#3a2a1e" stroke="${OL}" stroke-width="1.1"/></g>
+<g transform="translate(80.5 54) scale(1.15)"><path d="M0-12V-6" stroke="${OL}" stroke-width="2.6"/><path d="M0-12V-6" stroke="#f4f4f0" stroke-width="1.2"/>
+<path d="M-6 0A6 6 0 0 1 6 0Z" fill="#e8322a" stroke="${OL}" stroke-width="1.6"/><path d="M-6 0A6 6 0 0 0 6 0Z" fill="#f4f4f0" stroke="${OL}" stroke-width="1.6"/><path d="M-6 0H6" stroke="${OL}" stroke-width="1"/><ellipse cx="-2.4" cy="-3" rx="1.8" ry="1" transform="rotate(-30 -2.4 -3)" fill="#fff" opacity=".75"/></g></g>`),
+    // a folded trail map: aged parchment in three panels (the middle one in the fold's shadow), a deep blue lake
+    // fed by a winding river, woods, a dashed trail looping the shore, a compass rose and a red X
+    torch: (() => { const T = ids(); return svg('0 0 96 72', `<defs>${lg(T('b'), [[0, '#ffe066'], [.5, '#f2b632'], [1, '#a86d12']])}${lg(T('g'), [[0, '#3a3a40'], [1, '#121216']])}${lg(T('beam'), [[0, '#fff6c0', .85], [1, '#fff6c0', 0]], 1, 0)}${shadow(T('s'))}</defs>
+<path d="M60 26L96 8V64L60 46Z" fill="url(#${T('beam')})"/>
+<g filter="url(#${T('s')})"><rect x="6" y="28" width="26" height="16" rx="6" fill="url(#${T('g')})" stroke="${OL}" stroke-width="2"/>
+<path d="M30 24H50C56 24 58 27 58 30V42C58 45 56 48 50 48H30Z" fill="url(#${T('b')})" stroke="${OL}" stroke-width="2"/>
+<path d="M34 28H48" stroke="#fff5c8" stroke-width="2" stroke-linecap="round" opacity=".7"/><path d="M14 33H24" stroke="#8a8a94" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+<ellipse cx="59" cy="36" rx="4" ry="12" fill="#d9f2ff" stroke="${OL}" stroke-width="2"/><ellipse cx="59" cy="36" rx="1.6" ry="6" fill="#fff"/></g>`); })(),
+    map: svg('0 0 96 72', `<defs>${lg(M('p1'), [[0, '#f3e4bf'], [1, '#dcc290']], 1, 1)}${lg(M('p2'), [[0, '#d9c08c'], [1, '#b99c66']], 1, 0)}${lg(M('p3'), [[0, '#fbf1d6'], [1, '#e6d2a2']], 1, 1)}
+${rg(M('w'), [[0, '#9fd6ee'], [.55, '#4a92c0'], [1, '#235a86']], .42, .4, .62)}${rg(M('age'), [[0, '#fff', 0], [.7, '#8a5a24', 0], [1, '#6a4014', .45]], .5, .5, .72)}
+<clipPath id="${M('c')}"><path d="M5 17L34 10L62 17L91 10V59L62 66L34 59L5 66Z"/></clipPath>${shadow(M('s'))}</defs>
+<ellipse cx="48" cy="67" rx="43" ry="4" fill="#000" opacity=".3"/><g filter="url(#${M('s')})" stroke-linejoin="round" stroke-linecap="round">
+<path d="M5 17L34 10V59L5 66Z" fill="url(#${M('p1')})"/><path d="M34 10L62 17V66L34 59Z" fill="url(#${M('p2')})"/><path d="M62 17L91 10V59L62 66Z" fill="url(#${M('p3')})"/>
+<g clip-path="url(#${M('c')})">
+<path d="M3 44C10 38 20 40 24 48C28 56 18 66 3 66Z" fill="#6f9a4c" opacity=".55"/><path d="M93 12C84 12 74 16 76 24C78 30 88 30 93 28Z" fill="#6f9a4c" opacity=".55"/>
+<path d="M66 50C72 46 84 47 92 52V62H64Z" fill="#6f9a4c" opacity=".5"/>
+<path d="M93 46C86 44 82 50 76 46C70 42 62 50 52 46" fill="none" stroke="#2c5a7e" stroke-width="3"/><path d="M93 46C86 44 82 50 76 46C70 42 62 50 52 46" fill="none" stroke="#6fb4dc" stroke-width="1.6"/>
+<path d="M30 46C30 41 34 37 40 37C47 37 52 40 52 45C52 50 46 53 40 53C34 53 30 51 30 46Z" fill="#e8d49a" stroke="#c9ad6a" stroke-width="2.6"/>
+<path d="M30 46C30 41 34 37 40 37C47 37 52 40 52 45C52 50 46 53 40 53C34 53 30 51 30 46Z" fill="url(#${M('w')})" stroke="#1f4766" stroke-width="1.4"/>
+<path d="M34 42C36 40 40 39 43 39.5" fill="none" stroke="#f2fbff" stroke-width="1.3" opacity=".85"/>
+<path d="M66 40C66 37 69 35 72 35C75 35 77 37 77 39.5C77 42 74 44 71 44C68 44 66 42.5 66 40Z" fill="url(#${M('w')})" stroke="#1f4766" stroke-width="1.2"/>
+<path d="M40 23L45 15L50 23Z" fill="#b8a07a" stroke="#6a4a2a" stroke-width="1"/><path d="M47 23L53 13L59 23Z" fill="#c8b08a" stroke="#6a4a2a" stroke-width="1"/><path d="M51.6 15.6L53 13L54.6 15.8Z" fill="#fff"/>
+<path d="M22 30C28 26 36 27 40 31M60 46C64 50 70 52 76 50M44 58C50 60 56 60 60 57" fill="none" stroke="#a88a5a" stroke-width=".8" opacity=".7"/>
+<path d="M20 36C24 33 30 33 33 36" fill="none" stroke="#a88a5a" stroke-width=".8" opacity=".6"/>
+<path d="M14 60C18 50 22 44 28 42M53 47C58 44 62 42 66 41M77 41C82 36 82 30 76 26C70 22 60 24 52 24M40 37C40 32 36 30 30 32" fill="none" stroke="#fff5dc" stroke-width="3" opacity=".45"/>
+<path d="M14 60C18 50 22 44 28 42M53 47C58 44 62 42 66 41M77 41C82 36 82 30 76 26C70 22 60 24 52 24M40 37C40 32 36 30 30 32" fill="none" stroke="#7a3a14" stroke-width="1.8" stroke-dasharray="2.8 2.2"/>
+${pine(12, 48, 9)}${pine(19, 52, 7)}${pine(24, 22, 7)}${pine(83, 22, 8)}${pine(78, 52, 9)}${pine(86, 56, 7)}${pine(60, 34, 6)}
+<g transform="translate(14 26)"><circle r="6" fill="#f6ead0" stroke="#5a3a1c" stroke-width="1.1"/><path d="M0 -5L1.6 0L0 5L-1.6 0Z" fill="#5a3a1c"/><path d="M0 -5L1.6 0H-1.6Z" fill="#c8322a"/><path d="M-5 0L0 1.3L5 0L0 -1.3Z" fill="#8a6a44" opacity=".8"/></g>
+<path d="M80 26L85 31M85 26L80 31" stroke="${OL}" stroke-width="4"/><path d="M80 26L85 31M85 26L80 31" stroke="#e03a28" stroke-width="2.4"/>
+<rect x="0" y="0" width="96" height="72" fill="url(#${M('age')})"/>
+<path d="M34 10L62 17V66L34 59Z" fill="#3a2410" opacity=".1"/>
+</g>
+<path d="M34 10V59" stroke="#fff6dc" stroke-width="1.4" opacity=".7"/><path d="M62 17V66" stroke="#4a3018" stroke-width="1.4" opacity=".55"/>
+<path d="M5 17L34 10L62 17L91 10V59L62 66L34 59L5 66Z" fill="none" stroke="${OL}" stroke-width="2.3"/>
+<path d="M8 19L32 13.5M64 19L88 13.5" stroke="#fff" stroke-width="1.2" opacity=".55"/></g>`),
+    tackleBox: svg('0 0 96 72', `<defs>${lg(I('g'), [[0, '#78a65c'], [.45, '#4c7a44'], [1, '#26442c']])}${lg(I('l'), [[0, '#2e5236'], [1, '#1c3424']])}${lg(I('b'), [[0, '#6e9a54'], [.4, '#467340'], [1, '#22402a']])}${shadow(I('s'))}</defs>
+<ellipse cx="48" cy="66" rx="40" ry="4" fill="#000" opacity=".25"/><g filter="url(#${I('s')})" stroke-linejoin="round">
+<path d="M40 7C40 2 56 2 56 7" fill="none" stroke="${OL}" stroke-width="3.4"/><path d="M40 7C40 2 56 2 56 7" fill="none" stroke="#9aa0a6" stroke-width="1.6"/>
+<path d="M18 40L23 7H73L78 40Z" fill="url(#${I('l')})" stroke="${OL}" stroke-width="2"/><path d="M24 36L27 11H69L72 36Z" fill="#14281a" opacity=".6"/>
+<path d="M22 42L14 30M74 42L82 28" stroke="#8a9096" stroke-width="2" stroke-linecap="round"/>
+${tray(4, 26, 42, 4)}${tray(50, 22, 42, 4)}${tray(24, 34, 48, 5)}
+<rect x="16" y="44" width="64" height="22" rx="3" fill="url(#${I('b')})" stroke="${OL}" stroke-width="2"/>
+<path d="M19 48H77" stroke="#b8e09a" stroke-width="1.2" opacity=".45" stroke-linecap="round"/><path d="M16 52H80" stroke="${OL}" stroke-width="1" opacity=".4"/>
+<rect x="43" y="47" width="10" height="9" rx="1.5" fill="#d8b04a" stroke="${OL}" stroke-width="1.4"/><circle cx="48" cy="51.5" r="1.4" fill="${OL}"/>
+<circle cx="21" cy="61" r="1.2" fill="#c0c8b0"/><circle cx="75" cy="61" r="1.2" fill="#c0c8b0"/></g>`),
+    journal: svg('0 0 96 72', `<defs>${lg(I('pl'), [[0, '#f6eed6'], [.75, '#eadbb4'], [1, '#c9b48a']], 1, 0)}${lg(I('pr'), [[0, '#c9b48a'], [.25, '#eadbb4'], [1, '#f6eed6']], 1, 0)}${lg(I('c'), [[0, '#7a4a2a'], [1, '#4a2a16']])}${shadow(I('s'))}</defs>
+<ellipse cx="48" cy="66" rx="42" ry="4" fill="#000" opacity=".25"/><g filter="url(#${I('s')})" stroke-linejoin="round">
+<path d="M4 20C22 13 38 14 48 20C58 14 74 13 92 20V63C74 57 58 58 48 64C38 58 22 57 4 63Z" fill="url(#${I('c')})" stroke="${OL}" stroke-width="2"/>
+<path d="M8 16C24 10 38 11 48 18V59C38 53 24 52 8 57Z" fill="url(#${I('pl')})" stroke="${OL}" stroke-width="1.6"/>
+<path d="M88 16C72 10 58 11 48 18V59C58 53 72 52 88 57Z" fill="url(#${I('pr')})" stroke="${OL}" stroke-width="1.6"/>
+<path d="M14 24C24 21 34 21 42 25M14 30C24 27 34 27 42 31M14 36C24 33 34 33 42 37M14 42C22 39 30 39 36 42" fill="none" stroke="#8a7458" stroke-width="1.2" stroke-linecap="round" opacity=".75"/>
+<path d="M70 54C66 44 66 32 72 20" fill="none" stroke="#4e6a32" stroke-width="1.4" stroke-linecap="round"/><g fill="#6a8a44" stroke="#3e5a2a" stroke-width=".5" opacity=".95">${fern.join('')}</g>
+<path d="M50 18V66L53 62L56 66V20" fill="#b83a2a" stroke="${OL}" stroke-width="1.2"/></g>`),
+    boat: boatArt(I),
+    // a small island in a blue sea: sand, a grassy hump and two pines
+    island: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#8fd0ee'], [.6, '#3f88b8'], [1, '#1d4f7c']], .5, .55, .6)}${lg(P('g'), [[0, '#8cc45e'], [1, '#3d6e34']])}${shadow(P('s'))}</defs>
+<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 54C66 52 76 56 86 52" fill="none" stroke="#dff3ff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
+<g filter="url(#${P('s')})"><path d="M18 46C24 36 36 32 48 34C62 36 74 36 80 46C72 52 24 52 18 46Z" fill="#e8d6a2" stroke="${OL}" stroke-width="1.8"/>
+<path d="M26 44C32 34 44 30 54 33C64 36 70 40 72 44C62 48 36 48 26 44Z" fill="url(#${P('g')})" stroke="${OL}" stroke-width="1.4"/>${pine(40, 36, 20)}${pine(56, 38, 15)}</g>`); })(),
+    // the same island, tropical: turquoise shallows, pale sand and a leaning palm
+    islandTropical: (() => { const P = ids(), frond = (x, y, a, L) => `<path d="M${x} ${y}q${Math.cos(a) * L * .5} ${Math.sin(a) * L * .5 - 6} ${Math.cos(a) * L} ${Math.sin(a) * L}q${-Math.cos(a) * L * .45} ${-Math.sin(a) * L * .2 + 2} ${-Math.cos(a) * L} ${-Math.sin(a) * L}Z" fill="#5aa63e" stroke="${OL}" stroke-width="1.1" stroke-linejoin="round"/>`;
+      return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#9ff0e6'], [.5, '#3fc0c8'], [1, '#1a6f9c']], .5, .55, .6)}${lg(P('g'), [[0, '#a8d86a'], [1, '#4e8a3a']])}${shadow(P('s'))}</defs>
+<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 54C66 52 76 56 86 52" fill="none" stroke="#f0fffc" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>
+<g filter="url(#${P('s')})"><path d="M16 46C22 36 36 32 48 34C62 36 76 36 82 46C72 53 22 53 16 46Z" fill="#f4e6b8" stroke="${OL}" stroke-width="1.8"/>
+<path d="M34 44C38 38 48 36 56 38C62 40 66 42 66 44C58 47 40 47 34 44Z" fill="url(#${P('g')})" stroke="${OL}" stroke-width="1.3"/>
+<path d="M46 42C46 32 49 22 55 14" fill="none" stroke="${OL}" stroke-width="4" stroke-linecap="round"/><path d="M46 42C46 32 49 22 55 14" fill="none" stroke="#a07a4a" stroke-width="2.2" stroke-linecap="round"/>
+${frond(55, 14, -2.6, 16)}${frond(55, 14, -0.4, 16)}${frond(55, 14, 0.5, 13)}${frond(55, 14, -1.6, 12)}${frond(55, 14, 2.4, 13)}<circle cx="53.5" cy="17" r="2" fill="#7a5a2a" stroke="${OL}" stroke-width=".8"/></g>`); })(),
+    // the same island, arctic: dark cold water, a snowy hump with a dark pine, an iceberg alongside
+    islandArctic: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#a8c8dc'], [.6, '#4a7494'], [1, '#1e3a56']], .5, .55, .6)}${lg(P('i'), [[0, '#ffffff'], [1, '#c4dcec']])}${lg(P('b'), [[0, '#eaf8ff'], [1, '#8cc4e4']], 1, 1)}${shadow(P('s'))}</defs>
+<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 56C66 54 76 58 86 54" fill="none" stroke="#e6f4ff" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>
+<g filter="url(#${P('s')})"><path d="M14 46C20 34 32 28 44 30C58 32 68 36 72 46C62 52 22 52 14 46Z" fill="#8a8a86" stroke="${OL}" stroke-width="1.8"/>
+<path d="M20 43C26 33 36 29 46 31C56 33 64 37 66 43C56 47 30 47 20 43Z" fill="url(#${P('i')})" stroke="${OL}" stroke-width="1.3"/>${pine(34, 40, 14)}<path d="M34 28.5L37 35H31Z" fill="#fff" opacity=".85"/>
+<path d="M70 52L74 40L80 36L86 44L88 52Z" fill="url(#${P('b')})" stroke="${OL}" stroke-width="1.5" stroke-linejoin="round"/><path d="M75 40L78 49" stroke="#9cc8e2" stroke-width="1.2" stroke-linecap="round"/></g>`); })(),
+    // a trail map held by a red pushpin
+    pin: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${lg(P('p'), [[0, '#f6e8c4'], [1, '#d9c08c']], 1, 1)}${rg(P('l'), [[0, '#9fd6ee'], [.6, '#4a92c0'], [1, '#235a86']], .45, .4, .6)}${lg(P('h'), [[0, '#ff7a6a'], [1, '#b8261c']])}${shadow(P('s'))}</defs>
+<g filter="url(#${P('s')})"><path d="M14 14L82 10L84 60L16 64Z" fill="url(#${P('p')})" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>
+<path d="M30 38C30 30 40 26 50 30C60 34 64 42 56 48C46 54 30 48 30 38Z" fill="url(#${P('l')})" stroke="${OL}" stroke-width="1.2"/><path d="M22 54C32 50 40 52 50 50C60 48 68 44 78 44" fill="none" stroke="#b8503a" stroke-width="1.4" stroke-dasharray="3 2.5"/>
+${pine(68, 30, 10)}${pine(24, 26, 9)}<path d="M48 12V32" stroke="${OL}" stroke-width="3"/><path d="M48 12V32" stroke="#c0c8b0" stroke-width="1.2"/>
+<path d="M39 10H57L54 3H42Z" fill="url(#${P('h')})" stroke="${OL}" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="48" cy="10" rx="9" ry="2.4" fill="#e04a3a" stroke="${OL}" stroke-width="1.2"/></g>`); })(),
+    gear: (() => { const G = ids(); let d = ''; for (let i = 0; i < 16; i++) { const r = i % 2 ? 19 : 26; for (const a of [i * 22.5 - 6, i * 22.5 + 6]) d += `${d ? 'L' : 'M'}${(48 + r * Math.cos(a * Math.PI / 180)).toFixed(1)} ${(36 + r * Math.sin(a * Math.PI / 180)).toFixed(1)}`; }
+      return svg('0 0 96 72', `<defs>${lg(G('m'), [[0, '#eef1f4'], [.5, '#a2a9b0'], [1, '#565c64']])}${shadow(G('s'))}</defs><g filter="url(#${G('s')})" stroke-linejoin="round">
+<path d="${d}Z" fill="url(#${G('m')})" stroke="${OL}" stroke-width="2.2"/><circle cx="48" cy="36" r="14" fill="none" stroke="#fff" stroke-width="1.4" opacity=".5"/>
+<circle cx="48" cy="36" r="8" fill="#22302a" stroke="${OL}" stroke-width="2.2"/></g>`); })(),
+    // a fish finder: a green scope with its sweep and a fish on it
+    radar: (() => { const G = ids(); return svg('0 0 96 72', `<defs>${rg(G('g'), [[0, '#4c9a68'], [1, '#12301f']], .5, .5, .6)}${lg(G('w'), [[0, '#c8ffd8', .7], [1, '#c8ffd8', 0]], 1, 1)}${shadow(G('s'))}</defs><g filter="url(#${G('s')})">
+<circle cx="48" cy="36" r="30" fill="#c8a45a" stroke="${OL}" stroke-width="2"/><circle cx="48" cy="36" r="25.5" fill="url(#${G('g')})" stroke="${OL}" stroke-width="1.8"/></g>
+<path d="M48 36V10.5A25.5 25.5 0 0 1 73.5 36Z" fill="url(#${G('w')})"/><g fill="none" stroke="#9fe8b4" stroke-width="1.2" opacity=".65"><circle cx="48" cy="36" r="8.5"/><circle cx="48" cy="36" r="17"/><path d="M48 10.5V61.5M22.5 36H73.5"/></g>
+<path d="M27 46C30 42 36 41 40 44L43 41.5V50.5L40 48C36 51 30 50 27 46Z" fill="#f6e08a" stroke="${OL}" stroke-width="1.3" stroke-linejoin="round"/><circle cx="59" cy="26" r="2.4" fill="#f6e08a" stroke="${OL}" stroke-width="1"/>`); })(),
+    spawn: boatArt(S, 'translate(4 13) scale(.72)', lg(S('ct'), [[0, '#9a5a2e'], [.5, '#6a3a1c'], [1, '#3e200e']], 1, 0),
+      `<g>${cattail(78, 60, 40, 3)}${cattail(86, 62, 30, 4)}</g><path d="M71 62C72 50 74 42 70 30M92 62C92 52 94 46 96 40" fill="none" stroke="#6a8a44" stroke-width="1.6" stroke-linecap="round"/>`,
+      `${cattail(73, 63, 30, -2)}<path d="M77 63C77 56 79 50 83 46" fill="none" stroke="#6a8a44" stroke-width="1.6" stroke-linecap="round"/>`),
+  };
+})();
+</script>
+<script>
+'use strict';
+// UI_ICONS.lure / .bait / .float — painted tackle pictures (lures and baits 120x80, floats 80x80).
+(() => {
+  const { OL, ids, svg, col, shade, lg, rg, shadow, gloss, metal, ring, treble, hook1, eye } = ICON_KIT;
 
   // ---------- lures ----------
   const LURE_DEF = { body: '#c9d3b0', back: '#2c5d3a', belly: '#f2eedd', accent: '#d84a2a', blade: '#d8dde0' };
@@ -8145,181 +8479,7 @@ ${eye(20, 35, 2.6, '#2a1a12')}</g>`;
 <g filter="url(#${I('s')})" transform="translate(4 0)">${hook1(54, 12, 0, 46, 1)}${k(46, 30, -20)}${k(62, 34, 25)}${k(48, 50, 5)}${k(66, 54, -35)}</g>`;
   }
 
-  return {
-    ui: (() => {
-      const L = body => svg('0 0 24 24', `<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</g>`);
-      const cog = (() => { let d = ''; for (let i = 0; i < 16; i++) { const a = (i * 22.5 - 5.6) * Math.PI / 180, r = i % 2 ? 7 : 9.4, a2 = a + 11.25 * Math.PI / 180; d += `${i ? 'L' : 'M'}${(12 + r * Math.cos(a)).toFixed(2)} ${(12 + r * Math.sin(a)).toFixed(2)}L${(12 + r * Math.cos(a2)).toFixed(2)} ${(12 + r * Math.sin(a2)).toFixed(2)}`; } return d + 'Z'; })();
-      const cloudD = 'M7 18a4 4 0 0 1-.6-7.95A5.5 5.5 0 0 1 17 9a4.5 4.5 0 0 1 0 9Z';
-      const I = ids();
-      const tree = (x, b, h, w) => {
-        let r = '', l = '';
-        for (let i = 0; i < 3; i++) { const y = b - h * .18 - (2 - i) * h * .24, hw = w / 2 * (.55 + .225 * i); r += `L${(x + hw).toFixed(1)} ${y.toFixed(1)}L${(x + hw * .4).toFixed(1)} ${(y - h * .07).toFixed(1)}`; l = `L${(x - hw * .4).toFixed(1)} ${(y - h * .07).toFixed(1)}L${(x - hw).toFixed(1)} ${y.toFixed(1)}` + l; }
-        const top = b - h, ty = b - h * .18;
-        return `<rect x="${x - 2}" y="${ty - 2}" width="4" height="${h * .18 + 2}" fill="#5a3a22" stroke="${OL}" stroke-width="1.2"/><path d="M${x} ${top}${r.replace(/L[^L]*$/, '')}${l.replace(/^L[^L]*/, '')}Z" fill="url(#${I('t')})" stroke="${OL}" stroke-width="1.6" stroke-linejoin="round"/>`;
-      };
-      const needles = []; for (let t = .08; t < .95; t += .055) { const x = 8 + 50 * t, y = 58 - 50 * t; needles.push(`M${x.toFixed(1)} ${y.toFixed(1)}l${(-3 + 12 * (1 - t * .3)).toFixed(1)} ${(-5 + 4).toFixed(1)}M${x.toFixed(1)} ${y.toFixed(1)}l${-5} ${(-11 * (1 - t * .3)).toFixed(1)}`); }
-      return {
-        hook: L('<circle cx="15" cy="3.6" r="1.7"/><path d="M15 5.3V15a5 5 0 0 1-10 0v-3l3 2.6"/>'),
-        gear: L(`<path d="${cog}"/><circle cx="12" cy="12" r="2.8"/>`),
-        book: L('<path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5ZM12 6.5V19"/>'),
-        pad: L('<path d="M7 7h10a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.4 2.4 0 0 1-4.1 1.1L14 15.5h-4l-2.4 2.4a2.4 2.4 0 0 1-4.1-1.1l-.9-4.4A4.5 4.5 0 0 1 7 7Z"/><path d="M8 10v3M6.5 11.5h3"/><circle cx="15.5" cy="10.8" r=".5" fill="currentColor"/><circle cx="17" cy="12.6" r=".5" fill="currentColor"/>'),
-        close: L('<path d="M6 6l12 12M18 6L6 18"/>'),
-        cast: L('<path d="M3 21L13 7"/><path d="M13 7c4-2 7 .5 6.5 4.5"/><path d="M19.5 11.5V16a2.2 2.2 0 0 1-4.4 0"/><path d="M11 9.5l2-2.5"/>'),
-        reel: L('<circle cx="11" cy="13" r="5.5"/><circle cx="11" cy="13" r="1.4"/><path d="M11 7.5V4h6"/><path d="M15 16.5l4 3"/>'),
-        bite: L('<path d="M12 5v4"/><path d="M8.5 9h7l-1.2 4.5a2.5 2.5 0 0 1-4.6 0Z"/><path d="M3 17c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 3-1.2 4.5 0"/><path d="M5 21c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0"/>'),
-        chevron: L('<path d="M9 5l7 7-7 7"/>'),
-        wrench: L('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8Z"/>'),
-        moon: L('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/>'),
-        sun: L('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>'),
-        cloud: L(`<path d="${cloudD}"/>`),
-        rain: L(`<path d="${cloudD}" transform="translate(0 -4)"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>`),
-        windArrow: L('<path d="M12 20.5V4M6 10l6-6 6 6"/>'),
-        compass: svg('0 0 24 24', '<path d="M9 10V2.5l6 7.5V2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12.5l-3.6 9 3.6-2.6 3.6 2.6Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>'),
-        pines: svg('0 0 64 48', `<defs>${lg(I('t'), [[0, '#5f8a4c'], [.5, '#33583a'], [1, '#1c3424']], 1, 0)}${shadow(I('s'))}</defs><ellipse cx="32" cy="44" rx="28" ry="3" fill="#1c3424" opacity=".45"/><g filter="url(#${I('s')})">${tree(15, 44, 30, 20)}${tree(49, 44, 32, 21)}${tree(32, 45, 42, 27)}</g>`),
-        sprig: svg('0 0 64 64', `<defs>${rg(I('c'), [[0, '#b07a48'], [.6, '#7a4a26'], [1, '#4a2a16']], .4, .35, .7)}${shadow(I('s'))}</defs><g filter="url(#${I('s')})" stroke-linecap="round">
-<path d="M6 60L60 6" stroke="${OL}" stroke-width="4"/><path d="M6 60L60 6" stroke="#7a4e2c" stroke-width="2.2"/>
-<path d="${needles.join('')}" stroke="#1f3a26" stroke-width="2.4" fill="none"/><path d="${needles.join('')}" stroke="#4f7d48" stroke-width="1.2" fill="none" transform="translate(.4 -.4)"/>
-<path d="M27 39L24 44" stroke="#5a3a22" stroke-width="2"/>
-<g transform="rotate(25 20 50)"><ellipse cx="20" cy="50" rx="9.5" ry="13" fill="url(#${I('c')})" stroke="${OL}" stroke-width="1.6"/>
-<path d="M13 45q3.5 3 7 0q3.5 3 7 0M12.5 50q3.75 3 7.5 0q3.75 3 7.5 0M13 55q3.5 3 7 0q3.5 3 7 0M15 59.5q2.5 2 5 0q2.5 2 5 0" stroke="#3a2010" stroke-width="1.1" fill="none"/>
-<path d="M16 43q2-2 4-1.5" stroke="#e0b080" stroke-width="1" fill="none" opacity=".7"/></g></g>`),
-        search: L('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3L20.5 20.5"/>'),
-        waves: L('<path d="M2.5 7.5c2-1.6 3.8-1.6 5.8 0s3.8 1.6 5.8 0 3.8-1.6 5.8 0M2.5 12.5c2-1.6 3.8-1.6 5.8 0s3.8 1.6 5.8 0 3.8-1.6 5.8 0M2.5 17.5c2-1.6 3.8-1.6 5.8 0s3.8 1.6 5.8 0 3.8-1.6 5.8 0"/>'),
-        fish: L('<path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/>'),
-        wild1: svg('0 0 36 24', '<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(6 0)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><path d="M3 21c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0 4 1.4 6 0" opacity=".5"/></g>'),
-        wild2: svg('0 0 36 24', '<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(1 -1) scale(.72)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><g transform="translate(16 7) scale(.72)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><path d="M3 22c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0 4 1.4 6 0" opacity=".5"/></g>'),
-        wild3: svg('0 0 36 24', '<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0 0) scale(.55)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><g transform="translate(14 -1) scale(.55)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><g transform="translate(5 8) scale(.55)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><g transform="translate(20 8) scale(.55)"><path d="M3 12c3-4.5 9.5-6 14-1.8L21 7v10l-4-3.2C12.5 18 6 16.5 3 12Z"/><circle cx="7.4" cy="11" r=".6" fill="currentColor"/><path d="M11 9.2c.8 1.8.8 3.8 0 5.6"/></g><path d="M3 22c2-1.4 4-1.4 6 0s4 1.4 6 0 4-1.4 6 0 4 1.4 6 0" opacity=".5"/></g>'),
-        heron: L('<path d="M2.5 5.4L8 4.6"/><circle cx="9.4" cy="4.8" r="1.4" fill="currentColor"/><path d="M10.4 5.8C11.2 7.4 9.6 9 9.4 10.6 9.2 12 10 12.8 11 13"/><path d="M11 13c1.6-1.4 5-1.6 7.2-.2l2.6 2.4c-2.6.6-5.4.6-7.8-.4-1-.4-1.6-1-2-1.8Z"/><path d="M14.4 15.6l-1 6.4M16.4 15.6l1.2 6.4M12 22h2.6M16.4 22h2.6"/>'),
-        check: svg('0 0 24 24', '<path d="M4.5 12.5l5 5L19.5 6.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'),
-        reeds: svg('0 0 48 64', '<g fill="none" stroke="currentColor" stroke-linecap="round" opacity=".55"><path d="M10 64C10 46 8 30 3 16" stroke-width="1.6"/><path d="M19 64C19 44 21 26 26 10" stroke-width="1.8"/><path d="M30 64C30 50 34 38 44 28" stroke-width="1.4"/><path d="M14 64C16 52 22 44 31 40C25 48 21 55 20 64Z" fill="currentColor" stroke-width=".8"/><path d="M38 64C37 56 39 50 45 44" stroke-width="1.2"/></g><rect x="23.6" y="4" width="5" height="13" rx="2.5" transform="rotate(14 26 10)" fill="currentColor" opacity=".55"/>'),
-      };
-    })(),
-
-    dock: (() => {
-      const I = ids();
-      const S = ids();
-      const boatArt = (J, tf = '', defs = '', back = '', front = '') => svg('0 0 96 72', `<defs>${lg(J('w'), [[0, '#e0965a'], [.5, '#b8642e'], [1, '#7a3c1a']])}${lg(J('i'), [[0, '#5a3016'], [1, '#8a4e26']])}${lg(J('h2o'), [[0, '#6aa8c8'], [1, '#2a5a7a']])}${shadow(J('s'))}${defs}</defs>
-<ellipse cx="48" cy="58" rx="45" ry="10" fill="url(#${J('h2o')})" opacity=".9"/>${back}<g filter="url(#${J('s')})" stroke-linejoin="round" stroke-linecap="round" transform="${tf}">
-<path d="M58 14L36 50" stroke="${OL}" stroke-width="4"/><path d="M58 14L36 50" stroke="#c88a50" stroke-width="2"/>
-<path d="M6 32C30 27 64 24 90 24C66 36 30 38 6 32Z" fill="url(#${J('i')})" stroke="${OL}" stroke-width="1.6"/>
-<path d="M30 33L34 29M56 31L58 27" stroke="#3a1e0c" stroke-width="2.4"/>
-<path d="M6 32C30 38 64 37 90 24C86 42 76 53 58 56H30C16 54 9 45 6 32Z" fill="url(#${J('w')})" stroke="${OL}" stroke-width="2"/>
-<path d="M9 40C32 45 64 43 86 34M14 48C34 51 62 50 80 43" fill="none" stroke="#6a3416" stroke-width="1.2" opacity=".7"/>
-<path d="M8 34C30 39 62 38 88 27" fill="none" stroke="#f4c08a" stroke-width="1.4" opacity=".7"/>
-<path d="M36 50L30 60L35 62L40 52Z" fill="#c88a50" stroke="${OL}" stroke-width="1.4"/></g>
-<path d="M10 56C20 53 30 59 40 56S60 53 70 56S84 59 90 56C88 64 70 68 48 68S8 64 10 56Z" fill="#3f7a9a" opacity=".85"/>
-<path d="M16 60C24 58 30 61 38 59M56 61C64 59 70 62 78 60" fill="none" stroke="#cfe8f4" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>${front}`);
-      const cattail = (x, b, h, lean) => `<path d="M${x} ${b}Q${x} ${b - h * .6} ${x + lean} ${b - h}" fill="none" stroke="#4e6a32" stroke-width="1.6" stroke-linecap="round"/><rect x="${x + lean * .75 - 2.2}" y="${b - h * .82 - 6}" width="4.4" height="12" rx="2.2" transform="rotate(${lean * 2} ${x + lean * .75} ${b - h * .82})" fill="url(#${S('ct')})" stroke="${OL}" stroke-width="1.2"/>`;
-      const lures = (x, y, n, w) => { const cs = ['#d84a2a', '#e8c040', '#4a8ac0', '#f08a30', '#c0d8a0', '#b04a8a']; let s = ''; for (let i = 0; i < n; i++) { const cx = x + w / n * (i + .5); s += `<ellipse cx="${cx.toFixed(1)}" cy="${y}" rx="${(w / n * .32).toFixed(1)}" ry="2.6" transform="rotate(${i % 2 ? -18 : 14} ${cx.toFixed(1)} ${y})" fill="${cs[(i + n) % cs.length]}" stroke="${OL}" stroke-width=".9"/><circle cx="${(cx - w / n * .16).toFixed(1)}" cy="${y - .4}" r=".7" fill="${OL}"/>`; } return s; };
-      const tray = (x, y, w, n) => `<rect x="${x}" y="${y}" width="${w}" height="9" rx="1.5" fill="#173022" stroke="${OL}" stroke-width="1.4"/>${lures(x + 1, y + 4.6, n, w - 2)}<rect x="${x}" y="${y + 6}" width="${w}" height="6.5" rx="1.5" fill="url(#${I('g')})" stroke="${OL}" stroke-width="1.6"/>${Array.from({ length: n - 1 }, (_, i) => `<path d="M${(x + w / n * (i + 1)).toFixed(1)} ${y + 1}v5" stroke="#3f6a46" stroke-width="1"/>`).join('')}<path d="M${x + 2} ${y + 7.6}H${x + w - 2}" stroke="#a8d090" stroke-width="1" opacity=".5"/>`;
-      const fern = []; for (let i = 0; i < 7; i++) { const t = i / 7, x = 70 - t * 4 + t * t * 6, y = 52 - t * 30, l = 7 - i * .7; fern.push(`<ellipse cx="${(x - l * .7).toFixed(1)}" cy="${(y - 1).toFixed(1)}" rx="${(l * .6).toFixed(1)}" ry="1.6" transform="rotate(-25 ${(x - l * .7).toFixed(1)} ${(y - 1).toFixed(1)})"/><ellipse cx="${(x + l * .7).toFixed(1)}" cy="${(y - 1).toFixed(1)}" rx="${(l * .6).toFixed(1)}" ry="1.6" transform="rotate(25 ${(x + l * .7).toFixed(1)} ${(y - 1).toFixed(1)})"/>`); }
-      const R = ids(), M = ids();
-      const pine = (x, b, h) => `<path d="M${x} ${b - h}L${x + h * .42} ${b - h * .2}H${x - h * .42}Z" fill="#4e7a3a" stroke="${OL}" stroke-width="1.1"/><path d="M${x} ${b - h * .2}V${b}" stroke="${OL}" stroke-width="1.4"/>`;
-      return {
-        rod: svg('0 0 96 72', `<defs>${lg(R('k'), [[0, '#f0d29a'], [.5, '#c8945a'], [1, '#8a5a30']])}${lg(R('b'), [[0, '#6a8ab0'], [.45, '#2c4a70'], [1, '#14243a']])}${lg(R('r'), [[0, '#d8dde2'], [.5, '#8a929a'], [1, '#4a5056']])}${shadow(R('s'))}</defs>
-<ellipse cx="78" cy="62" rx="12" ry="3" fill="#6aa8c8" opacity=".5"/><path d="M70 62C74 60 82 60 86 62" fill="none" stroke="#cfe8f4" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>
-<path d="M80.5 12V52" stroke="#eef1f4" stroke-width=".9" opacity=".9"/>
-<g filter="url(#${R('s')})" stroke-linejoin="round" stroke-linecap="round"><g transform="translate(6 64) rotate(-35) scale(1.05 1.35)">
-<path d="M44-2.4L87-.7V.7L44 2.4Z" fill="url(#${R('b')})" stroke="${OL}" stroke-width="1.4"/>
-${[[54, 4.2, 2.2], [68, 3.2, 1.7], [80, 2.4, 1.3]].map(([x, h, r]) => `<path d="M${x} 1.5L${x} ${h + 1}" stroke="${OL}" stroke-width="1.6"/><circle cx="${x}" cy="${h + 1 + r}" r="${r}" fill="none" stroke="${OL}" stroke-width="1.5"/><circle cx="${x}" cy="${h + 1 + r}" r="${r}" fill="none" stroke="#c8cdd2" stroke-width=".6"/>`).join('')}
-<path d="M30 9L54 ${4.2 + 1 + 2.2}" stroke="#eef1f4" stroke-width=".6" opacity=".8"/>
-<rect x="-1" y="-4.2" width="5" height="8.4" rx="2" fill="#3a2a1e" stroke="${OL}" stroke-width="1.5"/>
-<rect x="4" y="-4" width="22" height="8" rx="3" fill="url(#${R('k')})" stroke="${OL}" stroke-width="1.6"/>
-<rect x="26" y="-3" width="10" height="6" rx="1" fill="url(#${R('r')})" stroke="${OL}" stroke-width="1.4"/>
-<rect x="36" y="-3.2" width="9" height="6.4" rx="2.4" fill="url(#${R('k')})" stroke="${OL}" stroke-width="1.5"/>
-<path d="M7-2H23M38-1.8H43" stroke="#fff" stroke-width="1" opacity=".45"/>
-<g fill="#7a5228" opacity=".5"><circle cx="9" cy="1" r=".6"/><circle cx="14" cy="-.6" r=".6"/><circle cx="19" cy="1.4" r=".6"/><circle cx="23" cy="-1" r=".5"/><circle cx="40" cy="1" r=".5"/></g>
-<path d="M31 3V7" stroke="${OL}" stroke-width="3.4"/><path d="M31 3V7" stroke="#9aa0a6" stroke-width="1.6"/>
-<path d="M23 8H37L36 15H24Z" fill="url(#${R('r')})" stroke="${OL}" stroke-width="1.6"/><rect x="25" y="15" width="10" height="4" rx="1.2" fill="#b83a2a" stroke="${OL}" stroke-width="1.3"/>
-<path d="M25 10.5H35" stroke="#fff" stroke-width="1" opacity=".55"/>
-<path d="M23 12L18 13L17 18" fill="none" stroke="${OL}" stroke-width="2.6"/><path d="M23 12L18 13L17 18" fill="none" stroke="#c8cdd2" stroke-width="1.1"/><ellipse cx="17" cy="19.5" rx="2" ry="2.6" fill="#3a2a1e" stroke="${OL}" stroke-width="1.1"/></g>
-<g transform="translate(80.5 54) scale(1.15)"><path d="M0-12V-6" stroke="${OL}" stroke-width="2.6"/><path d="M0-12V-6" stroke="#f4f4f0" stroke-width="1.2"/>
-<path d="M-6 0A6 6 0 0 1 6 0Z" fill="#e8322a" stroke="${OL}" stroke-width="1.6"/><path d="M-6 0A6 6 0 0 0 6 0Z" fill="#f4f4f0" stroke="${OL}" stroke-width="1.6"/><path d="M-6 0H6" stroke="${OL}" stroke-width="1"/><ellipse cx="-2.4" cy="-3" rx="1.8" ry="1" transform="rotate(-30 -2.4 -3)" fill="#fff" opacity=".75"/></g></g>`),
-        // a folded trail map: aged parchment in three panels (the middle one in the fold's shadow), a deep blue lake
-        // fed by a winding river, woods, a dashed trail looping the shore, a compass rose and a red X
-        torch: (() => { const T = ids(); return svg('0 0 96 72', `<defs>${lg(T('b'), [[0, '#ffe066'], [.5, '#f2b632'], [1, '#a86d12']])}${lg(T('g'), [[0, '#3a3a40'], [1, '#121216']])}${lg(T('beam'), [[0, '#fff6c0', .85], [1, '#fff6c0', 0]], 1, 0)}${shadow(T('s'))}</defs>
-<path d="M60 26L96 8V64L60 46Z" fill="url(#${T('beam')})"/>
-<g filter="url(#${T('s')})"><rect x="6" y="28" width="26" height="16" rx="6" fill="url(#${T('g')})" stroke="${OL}" stroke-width="2"/>
-<path d="M30 24H50C56 24 58 27 58 30V42C58 45 56 48 50 48H30Z" fill="url(#${T('b')})" stroke="${OL}" stroke-width="2"/>
-<path d="M34 28H48" stroke="#fff5c8" stroke-width="2" stroke-linecap="round" opacity=".7"/><path d="M14 33H24" stroke="#8a8a94" stroke-width="2" stroke-linecap="round" opacity=".8"/>
-<ellipse cx="59" cy="36" rx="4" ry="12" fill="#d9f2ff" stroke="${OL}" stroke-width="2"/><ellipse cx="59" cy="36" rx="1.6" ry="6" fill="#fff"/></g>`); })(),
-        map: svg('0 0 96 72', `<defs>${lg(M('p1'), [[0, '#f3e4bf'], [1, '#dcc290']], 1, 1)}${lg(M('p2'), [[0, '#d9c08c'], [1, '#b99c66']], 1, 0)}${lg(M('p3'), [[0, '#fbf1d6'], [1, '#e6d2a2']], 1, 1)}
-${rg(M('w'), [[0, '#9fd6ee'], [.55, '#4a92c0'], [1, '#235a86']], .42, .4, .62)}${rg(M('age'), [[0, '#fff', 0], [.7, '#8a5a24', 0], [1, '#6a4014', .45]], .5, .5, .72)}
-<clipPath id="${M('c')}"><path d="M5 17L34 10L62 17L91 10V59L62 66L34 59L5 66Z"/></clipPath>${shadow(M('s'))}</defs>
-<ellipse cx="48" cy="67" rx="43" ry="4" fill="#000" opacity=".3"/><g filter="url(#${M('s')})" stroke-linejoin="round" stroke-linecap="round">
-<path d="M5 17L34 10V59L5 66Z" fill="url(#${M('p1')})"/><path d="M34 10L62 17V66L34 59Z" fill="url(#${M('p2')})"/><path d="M62 17L91 10V59L62 66Z" fill="url(#${M('p3')})"/>
-<g clip-path="url(#${M('c')})">
-<path d="M3 44C10 38 20 40 24 48C28 56 18 66 3 66Z" fill="#6f9a4c" opacity=".55"/><path d="M93 12C84 12 74 16 76 24C78 30 88 30 93 28Z" fill="#6f9a4c" opacity=".55"/>
-<path d="M66 50C72 46 84 47 92 52V62H64Z" fill="#6f9a4c" opacity=".5"/>
-<path d="M93 46C86 44 82 50 76 46C70 42 62 50 52 46" fill="none" stroke="#2c5a7e" stroke-width="3"/><path d="M93 46C86 44 82 50 76 46C70 42 62 50 52 46" fill="none" stroke="#6fb4dc" stroke-width="1.6"/>
-<path d="M30 46C30 41 34 37 40 37C47 37 52 40 52 45C52 50 46 53 40 53C34 53 30 51 30 46Z" fill="#e8d49a" stroke="#c9ad6a" stroke-width="2.6"/>
-<path d="M30 46C30 41 34 37 40 37C47 37 52 40 52 45C52 50 46 53 40 53C34 53 30 51 30 46Z" fill="url(#${M('w')})" stroke="#1f4766" stroke-width="1.4"/>
-<path d="M34 42C36 40 40 39 43 39.5" fill="none" stroke="#f2fbff" stroke-width="1.3" opacity=".85"/>
-<path d="M66 40C66 37 69 35 72 35C75 35 77 37 77 39.5C77 42 74 44 71 44C68 44 66 42.5 66 40Z" fill="url(#${M('w')})" stroke="#1f4766" stroke-width="1.2"/>
-<path d="M40 23L45 15L50 23Z" fill="#b8a07a" stroke="#6a4a2a" stroke-width="1"/><path d="M47 23L53 13L59 23Z" fill="#c8b08a" stroke="#6a4a2a" stroke-width="1"/><path d="M51.6 15.6L53 13L54.6 15.8Z" fill="#fff"/>
-<path d="M22 30C28 26 36 27 40 31M60 46C64 50 70 52 76 50M44 58C50 60 56 60 60 57" fill="none" stroke="#a88a5a" stroke-width=".8" opacity=".7"/>
-<path d="M20 36C24 33 30 33 33 36" fill="none" stroke="#a88a5a" stroke-width=".8" opacity=".6"/>
-<path d="M14 60C18 50 22 44 28 42M53 47C58 44 62 42 66 41M77 41C82 36 82 30 76 26C70 22 60 24 52 24M40 37C40 32 36 30 30 32" fill="none" stroke="#fff5dc" stroke-width="3" opacity=".45"/>
-<path d="M14 60C18 50 22 44 28 42M53 47C58 44 62 42 66 41M77 41C82 36 82 30 76 26C70 22 60 24 52 24M40 37C40 32 36 30 30 32" fill="none" stroke="#7a3a14" stroke-width="1.8" stroke-dasharray="2.8 2.2"/>
-${pine(12, 48, 9)}${pine(19, 52, 7)}${pine(24, 22, 7)}${pine(83, 22, 8)}${pine(78, 52, 9)}${pine(86, 56, 7)}${pine(60, 34, 6)}
-<g transform="translate(14 26)"><circle r="6" fill="#f6ead0" stroke="#5a3a1c" stroke-width="1.1"/><path d="M0 -5L1.6 0L0 5L-1.6 0Z" fill="#5a3a1c"/><path d="M0 -5L1.6 0H-1.6Z" fill="#c8322a"/><path d="M-5 0L0 1.3L5 0L0 -1.3Z" fill="#8a6a44" opacity=".8"/></g>
-<path d="M80 26L85 31M85 26L80 31" stroke="${OL}" stroke-width="4"/><path d="M80 26L85 31M85 26L80 31" stroke="#e03a28" stroke-width="2.4"/>
-<rect x="0" y="0" width="96" height="72" fill="url(#${M('age')})"/>
-<path d="M34 10L62 17V66L34 59Z" fill="#3a2410" opacity=".1"/>
-</g>
-<path d="M34 10V59" stroke="#fff6dc" stroke-width="1.4" opacity=".7"/><path d="M62 17V66" stroke="#4a3018" stroke-width="1.4" opacity=".55"/>
-<path d="M5 17L34 10L62 17L91 10V59L62 66L34 59L5 66Z" fill="none" stroke="${OL}" stroke-width="2.3"/>
-<path d="M8 19L32 13.5M64 19L88 13.5" stroke="#fff" stroke-width="1.2" opacity=".55"/></g>`),
-        tackleBox: svg('0 0 96 72', `<defs>${lg(I('g'), [[0, '#78a65c'], [.45, '#4c7a44'], [1, '#26442c']])}${lg(I('l'), [[0, '#2e5236'], [1, '#1c3424']])}${lg(I('b'), [[0, '#6e9a54'], [.4, '#467340'], [1, '#22402a']])}${shadow(I('s'))}</defs>
-<ellipse cx="48" cy="66" rx="40" ry="4" fill="#000" opacity=".25"/><g filter="url(#${I('s')})" stroke-linejoin="round">
-<path d="M40 7C40 2 56 2 56 7" fill="none" stroke="${OL}" stroke-width="3.4"/><path d="M40 7C40 2 56 2 56 7" fill="none" stroke="#9aa0a6" stroke-width="1.6"/>
-<path d="M18 40L23 7H73L78 40Z" fill="url(#${I('l')})" stroke="${OL}" stroke-width="2"/><path d="M24 36L27 11H69L72 36Z" fill="#14281a" opacity=".6"/>
-<path d="M22 42L14 30M74 42L82 28" stroke="#8a9096" stroke-width="2" stroke-linecap="round"/>
-${tray(4, 26, 42, 4)}${tray(50, 22, 42, 4)}${tray(24, 34, 48, 5)}
-<rect x="16" y="44" width="64" height="22" rx="3" fill="url(#${I('b')})" stroke="${OL}" stroke-width="2"/>
-<path d="M19 48H77" stroke="#b8e09a" stroke-width="1.2" opacity=".45" stroke-linecap="round"/><path d="M16 52H80" stroke="${OL}" stroke-width="1" opacity=".4"/>
-<rect x="43" y="47" width="10" height="9" rx="1.5" fill="#d8b04a" stroke="${OL}" stroke-width="1.4"/><circle cx="48" cy="51.5" r="1.4" fill="${OL}"/>
-<circle cx="21" cy="61" r="1.2" fill="#c0c8b0"/><circle cx="75" cy="61" r="1.2" fill="#c0c8b0"/></g>`),
-        journal: svg('0 0 96 72', `<defs>${lg(I('pl'), [[0, '#f6eed6'], [.75, '#eadbb4'], [1, '#c9b48a']], 1, 0)}${lg(I('pr'), [[0, '#c9b48a'], [.25, '#eadbb4'], [1, '#f6eed6']], 1, 0)}${lg(I('c'), [[0, '#7a4a2a'], [1, '#4a2a16']])}${shadow(I('s'))}</defs>
-<ellipse cx="48" cy="66" rx="42" ry="4" fill="#000" opacity=".25"/><g filter="url(#${I('s')})" stroke-linejoin="round">
-<path d="M4 20C22 13 38 14 48 20C58 14 74 13 92 20V63C74 57 58 58 48 64C38 58 22 57 4 63Z" fill="url(#${I('c')})" stroke="${OL}" stroke-width="2"/>
-<path d="M8 16C24 10 38 11 48 18V59C38 53 24 52 8 57Z" fill="url(#${I('pl')})" stroke="${OL}" stroke-width="1.6"/>
-<path d="M88 16C72 10 58 11 48 18V59C58 53 72 52 88 57Z" fill="url(#${I('pr')})" stroke="${OL}" stroke-width="1.6"/>
-<path d="M14 24C24 21 34 21 42 25M14 30C24 27 34 27 42 31M14 36C24 33 34 33 42 37M14 42C22 39 30 39 36 42" fill="none" stroke="#8a7458" stroke-width="1.2" stroke-linecap="round" opacity=".75"/>
-<path d="M70 54C66 44 66 32 72 20" fill="none" stroke="#4e6a32" stroke-width="1.4" stroke-linecap="round"/><g fill="#6a8a44" stroke="#3e5a2a" stroke-width=".5" opacity=".95">${fern.join('')}</g>
-<path d="M50 18V66L53 62L56 66V20" fill="#b83a2a" stroke="${OL}" stroke-width="1.2"/></g>`),
-        boat: boatArt(I),
-        // a small island in a blue sea: sand, a grassy hump and two pines
-        island: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#8fd0ee'], [.6, '#3f88b8'], [1, '#1d4f7c']], .5, .55, .6)}${lg(P('g'), [[0, '#8cc45e'], [1, '#3d6e34']])}${shadow(P('s'))}</defs>
-<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 54C66 52 76 56 86 52" fill="none" stroke="#dff3ff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
-<g filter="url(#${P('s')})"><path d="M18 46C24 36 36 32 48 34C62 36 74 36 80 46C72 52 24 52 18 46Z" fill="#e8d6a2" stroke="${OL}" stroke-width="1.8"/>
-<path d="M26 44C32 34 44 30 54 33C64 36 70 40 72 44C62 48 36 48 26 44Z" fill="url(#${P('g')})" stroke="${OL}" stroke-width="1.4"/>${pine(40, 36, 20)}${pine(56, 38, 15)}</g>`); })(),
-        // the same island, tropical: turquoise shallows, pale sand and a leaning palm
-        islandTropical: (() => { const P = ids(), frond = (x, y, a, L) => `<path d="M${x} ${y}q${Math.cos(a) * L * .5} ${Math.sin(a) * L * .5 - 6} ${Math.cos(a) * L} ${Math.sin(a) * L}q${-Math.cos(a) * L * .45} ${-Math.sin(a) * L * .2 + 2} ${-Math.cos(a) * L} ${-Math.sin(a) * L}Z" fill="#5aa63e" stroke="${OL}" stroke-width="1.1" stroke-linejoin="round"/>`;
-          return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#9ff0e6'], [.5, '#3fc0c8'], [1, '#1a6f9c']], .5, .55, .6)}${lg(P('g'), [[0, '#a8d86a'], [1, '#4e8a3a']])}${shadow(P('s'))}</defs>
-<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 54C66 52 76 56 86 52" fill="none" stroke="#f0fffc" stroke-width="1.4" stroke-linecap="round" opacity=".85"/>
-<g filter="url(#${P('s')})"><path d="M16 46C22 36 36 32 48 34C62 36 76 36 82 46C72 53 22 53 16 46Z" fill="#f4e6b8" stroke="${OL}" stroke-width="1.8"/>
-<path d="M34 44C38 38 48 36 56 38C62 40 66 42 66 44C58 47 40 47 34 44Z" fill="url(#${P('g')})" stroke="${OL}" stroke-width="1.3"/>
-<path d="M46 42C46 32 49 22 55 14" fill="none" stroke="${OL}" stroke-width="4" stroke-linecap="round"/><path d="M46 42C46 32 49 22 55 14" fill="none" stroke="#a07a4a" stroke-width="2.2" stroke-linecap="round"/>
-${frond(55, 14, -2.6, 16)}${frond(55, 14, -0.4, 16)}${frond(55, 14, 0.5, 13)}${frond(55, 14, -1.6, 12)}${frond(55, 14, 2.4, 13)}<circle cx="53.5" cy="17" r="2" fill="#7a5a2a" stroke="${OL}" stroke-width=".8"/></g>`); })(),
-        // the same island, arctic: dark cold water, a snowy hump with a dark pine, an iceberg alongside
-        islandArctic: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${rg(P('w'), [[0, '#a8c8dc'], [.6, '#4a7494'], [1, '#1e3a56']], .5, .55, .6)}${lg(P('i'), [[0, '#ffffff'], [1, '#c4dcec']])}${lg(P('b'), [[0, '#eaf8ff'], [1, '#8cc4e4']], 1, 1)}${shadow(P('s'))}</defs>
-<ellipse cx="48" cy="44" rx="44" ry="22" fill="url(#${P('w')})" stroke="${OL}" stroke-width="2"/><path d="M12 48C22 46 30 50 40 48M58 56C66 54 76 58 86 54" fill="none" stroke="#e6f4ff" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>
-<g filter="url(#${P('s')})"><path d="M14 46C20 34 32 28 44 30C58 32 68 36 72 46C62 52 22 52 14 46Z" fill="#8a8a86" stroke="${OL}" stroke-width="1.8"/>
-<path d="M20 43C26 33 36 29 46 31C56 33 64 37 66 43C56 47 30 47 20 43Z" fill="url(#${P('i')})" stroke="${OL}" stroke-width="1.3"/>${pine(34, 40, 14)}<path d="M34 28.5L37 35H31Z" fill="#fff" opacity=".85"/>
-<path d="M70 52L74 40L80 36L86 44L88 52Z" fill="url(#${P('b')})" stroke="${OL}" stroke-width="1.5" stroke-linejoin="round"/><path d="M75 40L78 49" stroke="#9cc8e2" stroke-width="1.2" stroke-linecap="round"/></g>`); })(),
-        // a trail map held by a red pushpin
-        pin: (() => { const P = ids(); return svg('0 0 96 72', `<defs>${lg(P('p'), [[0, '#f6e8c4'], [1, '#d9c08c']], 1, 1)}${rg(P('l'), [[0, '#9fd6ee'], [.6, '#4a92c0'], [1, '#235a86']], .45, .4, .6)}${lg(P('h'), [[0, '#ff7a6a'], [1, '#b8261c']])}${shadow(P('s'))}</defs>
-<g filter="url(#${P('s')})"><path d="M14 14L82 10L84 60L16 64Z" fill="url(#${P('p')})" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>
-<path d="M30 38C30 30 40 26 50 30C60 34 64 42 56 48C46 54 30 48 30 38Z" fill="url(#${P('l')})" stroke="${OL}" stroke-width="1.2"/><path d="M22 54C32 50 40 52 50 50C60 48 68 44 78 44" fill="none" stroke="#b8503a" stroke-width="1.4" stroke-dasharray="3 2.5"/>
-${pine(68, 30, 10)}${pine(24, 26, 9)}<path d="M48 12V32" stroke="${OL}" stroke-width="3"/><path d="M48 12V32" stroke="#c0c8b0" stroke-width="1.2"/>
-<path d="M39 10H57L54 3H42Z" fill="url(#${P('h')})" stroke="${OL}" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="48" cy="10" rx="9" ry="2.4" fill="#e04a3a" stroke="${OL}" stroke-width="1.2"/></g>`); })(),
-        spawn: boatArt(S, 'translate(4 13) scale(.72)', lg(S('ct'), [[0, '#9a5a2e'], [.5, '#6a3a1c'], [1, '#3e200e']], 1, 0),
-          `<g>${cattail(78, 60, 40, 3)}${cattail(86, 62, 30, 4)}</g><path d="M71 62C72 50 74 42 70 30M92 62C92 52 94 46 96 40" fill="none" stroke="#6a8a44" stroke-width="1.6" stroke-linecap="round"/>`,
-          `${cattail(73, 63, 30, -2)}<path d="M77 63C77 56 79 50 83 46" fill="none" stroke="#6a8a44" stroke-width="1.6" stroke-linecap="round"/>`),
-      };
-    })(),
-
+  Object.assign(UI_ICONS, {
     lure(style, colors) {
       const c = colors || {}, k = {}, I = ids();
       for (const n in LURE_DEF) k[n] = col(c[n], LURE_DEF[n]);
@@ -8352,7 +8512,7 @@ ${pine(68, 30, 10)}${pine(24, 26, 9)}<path d="M48 12V32" stroke="${OL}" stroke-w
 <g clip-path="url(#${I('c')})"><rect x="0" y="0" width="80" height="44" fill="${t}"/><rect x="0" y="44" width="80" height="40" fill="${b}"/><path d="M14 43C24 49 56 49 66 43V46C56 52 24 52 14 46Z" fill="${shade(b, -.35)}" opacity=".6"/><circle cx="40" cy="44" r="23" fill="url(#${I('h')})"/></g>
 <circle cx="40" cy="44" r="23" fill="none" stroke="${OL}" stroke-width="2"/><ellipse cx="31" cy="33" rx="6" ry="3.5" transform="rotate(-35 31 33)" fill="#fff" opacity=".7"/></g>`);
     },
-  };
+  });
 })();
 </script>
 <script>
@@ -8384,7 +8544,8 @@ function rigWaters(r, S) {
     return m >= 0.4; }));
   rigWaterMemo.set(key, out); return out;
 }
-const catChips = (cur, attr) => [['all', 'All'], ...WATER_CATS].map(([k, l]) => `<button ${attr}="${k}" class="${k === cur ? 'on' : ''}">${l}</button>`).join('');
+const WATER_ICONS = { all: 'infinity', lake: 'waves', pond: 'pond', river: 'river', creek: 'creek', sea: 'sea' };
+const catChips = (cur, attr, icons) => [['all', 'All'], ...WATER_CATS].map(([k, l]) => `<button ${attr}="${k}" class="${k === cur ? 'on' : ''}">${icons ? uiIcon('ui.' + WATER_ICONS[k]) : ''}${l}</button>`).join('');
 </script>
 <script>
 'use strict';
@@ -8517,7 +8678,7 @@ Object.assign(Engine, {
 </script>
 <script>
 'use strict';
-// HUD: the on-screen interface as HTML over the game (markup in index.html, look in css/style.css). Setup, icons, minimap frame, pin / big map / help toggles and the per-frame updateHud.
+// HUD: the on-screen interface as HTML over the game (markup in index.html, look in css/). Setup, icons, minimap frame, pin / big map / help toggles and the per-frame updateHud.
 // an icon from UI_ICONS by path ('ui.close', 'dock.boat'); empty if the icon set isn't loaded
 // every copy gets its own gradient / filter ids, so two icons on the page never borrow each other's
 let iconN = 0;
@@ -8634,7 +8795,7 @@ Object.assign(Engine, {
 'use strict';
 // The reel on the 3D rod comes alive while you fish: the handle turns as you wind (or the line pays out), the spinning
 // bail flips open, a baitcaster's thumb bar sinks / a conventional's free-spool lever flips while line runs free, the
-// line on the spool thins as it goes out, and the drag knob / star / lever turns with the setting. Meshes come from reelPartMesh (js/tackle.js).
+// line on the spool thins as it goes out, and the drag knob / star / lever turns with the setting. Meshes come from reelPartMesh (js/tackle-meshes.js).
 Object.assign(Engine, {
   // a point on the rod (rod-local metres) in the world: the rod mesh's own transform, pitch then yaw, from the hand
   rodPoint(A, p, hand = A.hand) {
@@ -8698,7 +8859,7 @@ Object.assign(Engine, {
     if (b) {
       if (this.boatMode === 'deck') out.push([K('helm'), 'Helm'], [K('dive'), this.boatSit ? 'Stand' : 'Sit']);
       else out.push([`${K('forward')} ${K('back')}`, 'Throttle'], [`${K('left')} ${K('right')}`, 'Steer'], [K('helm'), 'Stand']);
-      out.push([K('use'), 'Get out']);
+      out.push([K('jump'), 'Jump out']);
     } else if (this.nearBoat()) out.push([K('use'), 'Board']);
     else if (this.swim || this.uw) out.push([K('jump'), 'Up'], [K('dive'), 'Dive']);
     return out.slice(0, 4);
@@ -8894,11 +9055,13 @@ Game.registerSound = (name, def) => Sounds.register(name, def);
 //     Game.addPerchProvider('posts', (x, y, R, bird) => [ { kind: 'post', x, y, z, pose: 'stand', key: 'post:1' } ])
 //     Game.perchesNear(x, y, 60, ['tree', 'rock'])   -> spots
 //
-//  SPECIES: Game.registerBird(def) — see DEFAULTS and the gull and pelican below for every field. Look (colours, proportions), flight (speed, wingbeat,
+//  SPECIES: Game.registerBird(def) — see DEFAULTS below and the gull and pelican in birds/species.js for every field. Look (colours, proportions), flight (speed, wingbeat,
 //  glide / flap bouts, turn rate, altitude, circling radius), habitat (flock size by water kind), landing preferences by
 //  perch kind, shyness, time on a perch, night roosting, voice. The mesh is built from the look with prebuilt wing poses.
 //     Game.birds (live list), Game.spawnBird('herring_gull', x, y, { state: 'fly' | 'float' }), Game.birdCalls = false to hush
 //     Game.on('birdLand' | 'birdTakeoff', (bird, spot) => {}), Game.on('birdDive', (bird, x, y) => {})
+//  Files: birds/birds.js (this: the model, voices, perches, species defaults, behaviour, drawing), birds/species.js (the
+//  built-in species), birds/game-api.js (the Game hooks).
 // ======================================================================
 const Birds = globalThis.Birds = (() => {
   const TAU = Math.PI * 2, rnd = Math.random, wrap = a => { a = (a + Math.PI) % TAU; return a < 0 ? a + Math.PI : a - Math.PI; };
@@ -9428,9 +9591,12 @@ const Birds = globalThis.Birds = (() => {
   };
   return G;
 })();
-
+</script>
+<script>
+'use strict';
+// Built-in bird species, as data (Birds.register): the herring gull, the brown pelican, the Atlantic puffin.
 // ---------------- species: the herring gull ----------------
-// Copy this to add another bird: change the look, flight, habitat and landing tastes (see DEFAULTS in Birds above).
+// Copy this to add another bird: change the look, flight, habitat and landing tastes (see DEFAULTS in birds/birds.js).
 Birds.register({
   id: 'herring_gull', name: 'Herring gull', scale: [0.9, 1.1],
   habitat: { sea: 9, lake: 4, river: 4, pond: 2 },
@@ -9502,7 +9668,10 @@ Birds.register({
       wingTop: [0.07, 0.07, 0.08], wingEdge: [0.1, 0.1, 0.11], wingTip: [0.05, 0.05, 0.06], wingUnder: [0.3, 0.3, 0.32], wingUnderTip: [0.12, 0.12, 0.13] },
   },
 });
-
+</script>
+<script>
+'use strict';
+// The birds' Game API: the live list, registering and spawning birds, perch providers, and the game events that drive them.
 // ---------------- Game API ----------------
 Game.birdCalls = false;   // Settings → Animal sounds turns them on
 Object.defineProperty(Game, 'birds', { get: () => Birds.list });
@@ -9529,16 +9698,7 @@ Game.on('catch', () => Birds.excite());
   post.mat = MT.LAMP; post.tube([0, 0, 2.05], [0, 0, 2.4], 0.14, 0.14, 6, [1.7, 1.3, 0.7], true);
   Game.registerMesh('lantern', post.done());
 
-  // 1-5 (or the touch Water button, cycling) walk you to the nearest bank of each kind of water
-  const CYCLE = ['lake', 'pond', 'river', 'creek', 'sea'];
-  let next = 0;
-  const go = kind => {
-    Game.say(`Looking for the nearest ${kind}…`, 1);
-    setTimeout(() => { const p = Game.travelToWater(kind); Game.say(p ? Game.waterAt(p.wx, p.wy).name : `No ${kind} within 4 km`, 3); }, 30);
-  };
   Game.on('key', code => {
-    if (code === 'Digit3') { go(CYCLE[next]);   // 3: walk to the nearest lake, then pond, river…  (1 is the spawn menu)
-      next = (next + 1) % CYCLE.length; }
     if (code === 'Digit2') { Game.fishFinder = !Game.fishFinder; Game.say(Game.fishFinder ? 'Fish radar on' : 'Fish radar off', 1);
       const b = document.querySelector('#tui [data-k="Digit2"]'); if (b) b.classList.toggle('lit', Game.fishFinder); }   // the touch button stays lit while it's on
     if (code === 'KeyY') { const S = Game.setSeason(SEASONS[(Math.floor(ENV.yf * 4) + 1) % 4]); Game.say(`It's ${S} now`, 2); }
@@ -9559,8 +9719,8 @@ Game.on('catch', () => Birds.excite());
     const bt = Engine.boat;
     if (bt) { const w = Game.waterAt(P.x, P.y), deck = Engine.boatMode === 'deck', T = Engine.touchUI;
       t = T ? `${bt.def.name}  ·  ${deck ? (Engine.boatSit ? 'sitting' : 'standing') : (bt.speed * 1.944).toFixed(1) + ' kn'}  ·  ${w.depth.toFixed(1)} m deep`
-        : deck ? `${bt.def.name}  ·  ${Engine.boatSit ? 'sitting' : 'standing'}  ·  ${w.name}  ·  ${w.depth.toFixed(1)} m deep  ·  ${Controls.key('helm')} to drive  ·  ${Controls.key('use')} to get out`
-        : `${bt.def.name}  ·  ${(bt.speed * 1.944).toFixed(1)} kn  ·  ${w.name}  ·  ${w.depth.toFixed(1)} m deep  ·  ${Controls.key('helm')} to leave the helm  ·  ${Controls.key('use')} to get out`; }
+        : deck ? `${bt.def.name}  ·  ${Engine.boatSit ? 'sitting' : 'standing'}  ·  ${w.name}  ·  ${w.depth.toFixed(1)} m deep  ·  ${Controls.key('helm')} to drive  ·  ${Controls.key('jump')} to jump out`
+        : `${bt.def.name}  ·  ${(bt.speed * 1.944).toFixed(1)} kn  ·  ${w.name}  ·  ${w.depth.toFixed(1)} m deep  ·  ${Controls.key('helm')} to leave the helm  ·  ${Controls.key('jump')} to jump out`; }
     else if (Engine.nearBoat()) t = `${Engine.nearBoat().def.name}  ·  ${Engine.touchUI ? 'Use' : 'F'} to get in`;
     if (t) {} else
     if (Game.underwater) { const w = Game.waterAt(P.x, P.y); t = `${w.name}  ·  ${(w.level - eye).toFixed(1)} m down  ·  bottom ${w.depth.toFixed(1)} m`; }

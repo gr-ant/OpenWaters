@@ -53,11 +53,15 @@ Object.assign(Engine, {
   boardBoat(b) {
     this.boat = b; this.boatMode = 'drive'; this.boatSit = true; this.tuiState = null; this.P.vz = 0;   // the fish radar stays as you left it (key 2): boarding, as travel does, must not switch it on
     const dh = b.a - this.P.a; this.P.a = b.a; this.P.pitch = -0.1; this.seatBoat(b);
-    this.say(`${b.def.name}: ${this.touchUI ? 'joystick' : 'W/S'} ${['outboard', 'inboard'].includes(b.def.propulsion.type) ? 'throttle' : b.def.propulsion.type === 'oars' ? 'row' : b.def.propulsion.type === 'pedal' ? 'pedal' : 'paddle'}, ${this.touchUI ? 'left/right' : 'A/D'} steer · ${this.touchUI ? 'Use' : 'F'} to get out`, 5);
+    this.say(`${b.def.name}: ${this.touchUI ? 'joystick' : 'W/S'} ${['outboard', 'inboard'].includes(b.def.propulsion.type) ? 'throttle' : b.def.propulsion.type === 'oars' ? 'row' : b.def.propulsion.type === 'pedal' ? 'pedal' : 'paddle'}, ${this.touchUI ? 'left/right' : 'A/D'} steer · ${this.touchUI ? 'Jump' : 'Space'} to jump out`, 5);
     Game.emit('boardBoat', b);
   },
-  leaveBoat() {
+  leaveBoat(jump) {
     const b = this.boat; if (!b) return; const P = this.P, D = b.def; this.boat = null; this.boatMode = 'drive'; b.v = 0;
+    if (jump) {   // over the side the way you're facing: clear of the hull, then the usual fall (into the water, or onto the bank)
+      const ca = Math.cos(P.a), sa = Math.sin(P.a); let d = 0.6; while (d < D.hull.length_m + 1 && this.boatOver(b, P.x + ca * (d - 0.5), P.y + sa * (d - 0.5))) d += 0.2;
+      P.x += ca * d; P.y += sa * d; P.vz = CONFIG.jumpSpeed; Game.emit('leaveBoat', b); return;
+    }
     // step ashore if there's dry land close by, otherwise slip into the water beside the boat
     let best = null, bd = 1e9;
     for (let r = 1; r <= 7 && !best; r += 0.75) for (let k = 0; k < 16; k++) { const a = k / 16 * 6.2832, x = b.x + Math.cos(a) * (r + D.hull.beam_m / 2), y = b.y + Math.sin(a) * (r + D.hull.beam_m / 2); sample(x, y);

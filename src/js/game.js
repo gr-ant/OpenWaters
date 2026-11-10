@@ -10,16 +10,7 @@
   post.mat = MT.LAMP; post.tube([0, 0, 2.05], [0, 0, 2.4], 0.14, 0.14, 6, [1.7, 1.3, 0.7], true);
   Game.registerMesh('lantern', post.done());
 
-  // 1-5 (or the touch Water button, cycling) walk you to the nearest bank of each kind of water
-  const CYCLE = ['lake', 'pond', 'river', 'creek', 'sea'];
-  let next = 0;
-  const go = kind => {
-    Game.say(`Looking for the nearest ${kind}…`, 1);
-    setTimeout(() => { const p = Game.travelToWater(kind); Game.say(p ? Game.waterAt(p.wx, p.wy).name : `No ${kind} within 4 km`, 3); }, 30);
-  };
   Game.on('key', code => {
-    if (code === 'Digit3') { go(CYCLE[next]);   // 3: walk to the nearest lake, then pond, river…  (1 is the spawn menu)
-      next = (next + 1) % CYCLE.length; }
     if (code === 'Digit2') { Game.fishFinder = !Game.fishFinder; Game.say(Game.fishFinder ? 'Fish radar on' : 'Fish radar off', 1);
       const b = document.querySelector('#tui [data-k="Digit2"]'); if (b) b.classList.toggle('lit', Game.fishFinder); }   // the touch button stays lit while it's on
     if (code === 'KeyY') { const S = Game.setSeason(SEASONS[(Math.floor(ENV.yf * 4) + 1) % 4]); Game.say(`It's ${S} now`, 2); }
@@ -40,8 +31,8 @@
     const bt = Engine.boat;
     if (bt) { const w = Game.waterAt(P.x, P.y), deck = Engine.boatMode === 'deck', T = Engine.touchUI;
       t = T ? `${bt.def.name}  ·  ${deck ? (Engine.boatSit ? 'sitting' : 'standing') : (bt.speed * 1.944).toFixed(1) + ' kn'}  ·  ${w.depth.toFixed(1)} m deep`
-        : deck ? `${bt.def.name}  ·  ${Engine.boatSit ? 'sitting' : 'standing'}  ·  ${w.name}  ·  ${w.depth.toFixed(1)} m deep  ·  ${Controls.key('helm')} to drive  ·  ${Controls.key('use')} to get out`
-        : `${bt.def.name}  ·  ${(bt.speed * 1.944).toFixed(1)} kn  ·  ${w.name}  ·  ${w.depth.toFixed(1)} m deep  ·  ${Controls.key('helm')} to leave the helm  ·  ${Controls.key('use')} to get out`; }
+        : deck ? `${bt.def.name}  ·  ${Engine.boatSit ? 'sitting' : 'standing'}  ·  ${w.name}  ·  ${w.depth.toFixed(1)} m deep  ·  ${Controls.key('helm')} to drive  ·  ${Controls.key('jump')} to jump out`
+        : `${bt.def.name}  ·  ${(bt.speed * 1.944).toFixed(1)} kn  ·  ${w.name}  ·  ${w.depth.toFixed(1)} m deep  ·  ${Controls.key('helm')} to leave the helm  ·  ${Controls.key('jump')} to jump out`; }
     else if (Engine.nearBoat()) t = `${Engine.nearBoat().def.name}  ·  ${Engine.touchUI ? 'Use' : 'F'} to get in`;
     if (t) {} else
     if (Game.underwater) { const w = Game.waterAt(P.x, P.y); t = `${w.name}  ·  ${(w.level - eye).toFixed(1)} m down  ·  bottom ${w.depth.toFixed(1)} m`; }

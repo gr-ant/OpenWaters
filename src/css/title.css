@@ -1,0 +1,22 @@
+/* ---- start menu: text floating over the scene, no card ---- */
+#title { position: fixed; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: flex-start; padding: 0 0 0 clamp(24px, 8vw, 130px);
+  background: radial-gradient(ellipse 55% 70% at 18% 50%, rgba(0,0,0,.28) 0%, rgba(0,0,0,0) 70%); transition: opacity .6s ease; }
+#title[hidden] { display: none; }
+#title.leaving { opacity: 0; pointer-events: none; }
+body.title-loading #loading { z-index: 3; } body.title-loading #loading > * { visibility: hidden; }   /* the menu stays up while a new island is shaped */
+#title.busy .ti-menu { opacity: .45; pointer-events: none; } #title.busy .ti-sub { color: var(--gold-hi); }
+body.title-on #hud, body.title-on #tui, body.title-on #overlay { visibility: hidden !important; }
+.ti-card { position: relative; width: min(340px, calc(100vw - 40px)); color: #fff8e8; font-family: var(--serif);
+  text-shadow: 0 1px 2px rgba(0,0,0,.75), 0 2px 18px rgba(0,0,0,.55); }
+.ti-kicker { margin: 0 0 4px; font: italic 16px var(--serif); color: #f2e6c4; letter-spacing: .5px; }
+#tiName { margin: 0; font: 400 64px/1 var(--serif); letter-spacing: -.5px; color: #fffaf0; }
+.ti-sub { margin: 10px 0 26px; font: 14px var(--sans); color: #f2e6c4; min-height: 1em; }
+.ti-menu { display: flex; flex-direction: column; gap: 4px; }
+.ti-item { position: relative; display: flex; align-items: center; width: 100%; padding: 8px 0 8px 18px; text-align: left; font: 600 26px var(--serif); color: #fff8e8;
+  background: transparent; border: 0; cursor: pointer; text-shadow: inherit; transition: color .15s, transform .15s; }
+button.ti-item::before { content: '›'; position: absolute; left: 0; opacity: 0; color: var(--gold-hi); transition: opacity .15s; }
+button.ti-item:hover, button.ti-item:focus-visible { color: var(--gold-hi); transform: translateX(4px); outline: none; }
+button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1; }
+.ti-soon { cursor: not-allowed; color: rgba(255,248,232,.35); }
+.ti-foot { margin: 22px 0 0 18px; font: 11px var(--sans); color: rgba(242,230,196,.8); letter-spacing: .4px; }
+@media (max-width: 600px) { #title { justify-content: center; padding: 0; } #tiName { font-size: 48px; } }

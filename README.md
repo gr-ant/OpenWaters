@@ -50,7 +50,8 @@ Push to the `desktop` branch (`git push origin main:desktop`) and GitHub builds 
 build.py              inlines src/ into "Open Waters.html"
 src/
   index.html          page markup, plus the list of every script and data file, in load order
-  css/style.css       main styles (css/tutorial.css: the tutorial card)
+  css/                styles, one file per part of the screen (glass.css last: the glass theme over them all;
+                      tutorial.css: the tutorial card)
   js/
     config.js         engine overview and CONFIG (tuning knobs)
     controls.js       rebindable keys and presets
@@ -60,12 +61,13 @@ src/
     creatures/        fish, cephalopods and shellfish, reptiles and amphibians
     engine/           the Engine object: loop, rendering, chunks, map, inventory, boats, fish behaviour, touch
     boats.js          boat definitions to hull meshes
-    tackle.js         rods, reels, lines, lures, rigs
+    tackle.js         rods, reels, lines, lures, rigs: gear rules, validation, rig stats
+    tackle-meshes.js  3D rod, reel, hook, lure, bait, float and sinker meshes
     fishing/          casting, bites, the fight, tackle box
     game-api.js       the public Game API
     hud/              on-screen interface, icons, journal, menu keyboard navigation, tutorial
     sounds.js         sound effects synthesized with Web Audio, defined as data
-    birds.js          birds: flight, landing, perching, swimming; species are data
+    birds/            birds: flight, landing, perching, swimming; species are data
     game.js           game-specific setup on top of the API
     urchin.js         music synthesizer (see Music below)
     boot.js           reads the built-in data and starts the game

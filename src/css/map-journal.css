@@ -1,0 +1,39 @@
+  /* the small map only shows when pinned; the pin button sits on the big map */
+  body:not(.mini-on) #hMap { display: none; }
+  /* the map screen's own icons, top right: a new island and the minimap pin, with the seed under them */
+  #hMapBtns { display: none; position: absolute; right: 14px; top: 14px; flex-direction: column; align-items: flex-end; gap: 10px; }
+  #hud.off > #hMapBtns { display: flex !important; }
+  #hMapBtns button { pointer-events: auto; }
+  #hSeed.armed > span { filter: drop-shadow(0 0 7px #ff7a4a) drop-shadow(0 3px 3px #000b); } #hSeed.armed kbd { background: #a03c28ee; }
+  #hPin.on kbd { background: #5d6e3cee; }
+  #hBiomes { position: absolute; right: 76px; top: -6px; display: flex; gap: 6px; padding: 8px 10px 6px; border-radius: 14px; background: #1c261dd8; border: 1.5px solid #d4e4e066; box-shadow: 0 4px 14px #0008; }
+  #hBiomes[hidden] { display: none; }
+  #hBiomes button { width: 76px; height: 72px; } #hBiomes button > span { inset: 0 0 18px; }
+  #hBiomes small { position: absolute; left: 0; right: 0; bottom: 0; font: 600 12px var(--serif); color: var(--cream); text-align: center; }
+  #hBiomes button.on small { color: var(--gold-hi); }
+  #hSeedInfo { font: 11px monospace; color: #ffe9b0cc; text-align: right; white-space: nowrap; }
+  body.touch #hMapBtns { top: 60px; right: 8px; }
+  body.mini-on #hHint { top: calc(18px + clamp(200px, 18vw, 300px) * 0.75 + 14px); }   /* under the pinned minimap */
+  /* the journal: its own popup, same place and look as the tackle box */
+  #journal { position: fixed; z-index: 4; left: 12px; top: 84px; bottom: 12px; width: min(440px, calc(100vw - 24px)); display: flex; flex-direction: column; padding: 14px 12px 12px; box-sizing: border-box; }
+  #journal[hidden] { display: none; }
+  #journal > header { display: flex; gap: 10px; align-items: center; padding: 0 2px 12px; }
+  #journal .tk-sprig { width: 70px; height: 54px; }
+  #jnBody { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 2px 8px; scrollbar-width: thin; scrollbar-color: #d4e4e066 transparent; }
+  #jnBody ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  #jnBody li.card { display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px 4px; border-radius: 12px; border: 1px solid #d4e4e055; background: #ffffff06; }
+  #jnBody li.card .ri.wide { width: 150px; height: 56px; } #jnBody li .tx { display: flex; flex-direction: column; } #jnBody li b { font: 700 18px var(--serif); } #jnBody li small { color: #d8cfb4; font-size: 13px; }
+  #jnBody li.slim-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-bottom: 1px solid #d4e4e033; font: 15px var(--serif); }
+  #jnBody h4 { margin: 12px 4px 6px; font: 700 15px var(--serif); color: var(--gold-hi); }
+  .jn-empty { text-align: center; padding: 40px 10px; color: var(--muted); font: italic 17px var(--serif); } .jn-empty svg { width: 160px; height: 120px; opacity: .8; }
+  /* below ~1050px the status chip on the right would meet the centred key chips: it moves up above the bottom row */
+  @media (max-width: 1050px) { #hStatus { bottom: 60px; } #hDepth { bottom: 120px; } #hMsg { bottom: 160px; } }
+  /* narrow windows: everything shrinks a little */
+  @media (max-width: 1150px) {
+    #hDock { gap: 4px; } #hDock button { width: 52px; height: 42px; } #hDock button kbd { min-width: 18px; height: 18px; font-size: 11px; }
+    #hKeys { gap: 4px; } .hk { font-size: 12px; padding: 3px 7px 3px 4px; } .hk kbd { min-width: 18px; height: 18px; font-size: 11px; }
+    #hCond { font-size: 16px; padding: 5px 14px; gap: 8px; } #hLoc b { font-size: 22px; } #hLoc span#hLocSub { font-size: 15px; } #hLoc .pines { width: 50px; height: 38px; }
+    #hMap { width: 180px; }
+    #hCond { top: 64px; }   /* under the place name, not beside it */
+  }
+

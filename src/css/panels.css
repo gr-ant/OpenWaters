@@ -1,0 +1,9 @@
+  /* ---- shared look: dark forest-green panels, warm gold edges, parchment for what's chosen ---- */
+  :root { --pg: rgba(24,34,25,.95); --pg2: #223022; --gold: #c4a86c; --gold-hi: #e8d092; --cream: #f2e9d0; --muted: #b8b196; --parch: #efe2c1; --parch2: #e2d0a4; --ink: #2a2216;
+    --serif: Georgia, 'Palatino Linotype', 'Book Antiqua', serif; --sans: system-ui, 'Segoe UI', sans-serif; }
+  .panel { background: linear-gradient(180deg, rgba(34,46,33,.96), var(--pg)); border: 2px solid var(--gold); border-radius: 18px; color: var(--cream);
+    box-shadow: 0 10px 40px #000a, inset 0 0 0 1px #0006, inset 0 1px 0 #ffffff14; font: 14px/1.3 var(--sans); }
+  .panel h2 { margin: 0; font: 700 26px/1.1 var(--serif); color: var(--cream); letter-spacing: .2px; }
+  .round-x { width: 36px; height: 36px; flex: none; border-radius: 50%; border: 1.5px solid var(--gold); background: #0003; color: var(--cream); padding: 8px; cursor: pointer; }
+  .round-x:hover { background: #ffffff14; }
+  .round-x svg, .tabs svg, .chev svg, .big svg, .back svg { width: 100%; height: 100%; display: block; }

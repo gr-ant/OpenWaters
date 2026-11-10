@@ -126,6 +126,7 @@ Object.assign(Engine, {
     R.carry += Math.min(Math.max(dt, 0), 0.1);
     const steps = Math.floor((R.carry + 1e-9) / h); R.carry -= steps * h;
     const floats = S.line.material !== 'fluoro', wind = ENV.wind * 0.3, wa = ENV.windDir ?? 0.8;
+    const hull = this.boat && !this.boatLineOut(this.boat, end.slice(), 0) ? this.boat : null;   // the line can't pass through your boat (a lure brought in under the hull: leave its line be)
     for (let st = 0; st < steps; st++) {
       const t = (st + 1) / steps, tip = T.map((v, k) => R.tip[k] + (v - R.tip[k]) * t), tail = end.map((v, k) => R.end[k] + (v - R.end[k]) * t);
       const seg = Math.max(len, Math.hypot(...tail.map((v, k) => v - tip[k]))) / (N - 1);
@@ -164,7 +165,7 @@ Object.assign(Engine, {
         }
         // Project collisions after constraints too: tightening must not push the
         // line back through the ground, and contact must not create bounce energy.
-        for (let i = 1; i < N - 1; i++) p[i * 3 + 2] = Math.max(p[i * 3 + 2], R.g[i] + 0.01);
+        for (let i = 1; i < N - 1; i++) { if (hull && (it & 3) === 3) this.boatLineOut(hull, p, i * 3, o); p[i * 3 + 2] = Math.max(p[i * 3 + 2], R.g[i] + 0.01); }
       }
       for (let i = 1; i < N - 1; i++) if (p[i * 3 + 2] <= R.g[i] + 0.011) {
         const j = i * 3; o[j] = p[j] - (p[j] - o[j]) * 0.7; o[j + 1] = p[j + 1] - (p[j + 1] - o[j + 1]) * 0.7; o[j + 2] = p[j + 2];

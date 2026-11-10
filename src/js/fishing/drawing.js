@@ -14,7 +14,10 @@ Object.assign(Engine, {
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
     const one = (g, x, y, z, s, rot, wl, mk, pitch) => { this.upInst(g, [x, y, z, s, rot, 0.5, wl, mk, 0, pitch]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); };
     const lvl = rodBendLevel(A.bend), rk = `rod:${A.rigId}:${rv}:${lvl}`;
+    const held = this.boat && this.boatMode === 'deck';   // in your hands on deck: drawn over the boat, so it can't poke through the hull
+    if (held) gl.depthRange(0, 0.1);
     one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
+    if (held) gl.depthRange(0, 1);
     if (A.phase === 'card') return;
     const endKey = S.lure ? `lure:${S.lure.id}:${rv}` : `bait:${S.bait.id}:${S.hook.id}:${rv}`, endMesh = () => S.lure ? lureMesh(S.lure) : baitMesh(S);
     const sc = (x, y, z, k = 6) => clamp(Math.hypot(x - E[0], y - E[1], z - E[2]) / k, 1, 9);   // a touch bigger far away, so you can follow it
@@ -53,11 +56,19 @@ Object.assign(Engine, {
     const n = R.p.length / 3, Q = [], wet = [];
     for (let k = 0; k < n; k++) { Q.push(this.project(R.p[k * 3], R.p[k * 3 + 1], R.p[k * 3 + 2])); wet.push(R.p[k * 3 + 2] < R.wl[k] - 0.01); }
     const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    // aboard: the same curve in short straight bits, leaving out those the hull hides
+    const bt = this.boat, be = bt && this.boatLocal(bt, ...E);
+    const bez = (k, u) => { const a = Math.max(k - 1, 0) * 3, q = k * 3, b = Math.min(k + 1, n - 1) * 3, w0 = (1 - u) * (1 - u) / 2, w2 = u * u / 2, w1 = 1 - w0 - w2; return [0, 1, 2].map(i => R.p[a + i] * w0 + R.p[q + i] * w1 + R.p[b + i] * w2); };
+    const bits = bt && Q.map((_, k) => { const out = []; let a = this.project(...bez(k, 0));
+      for (let i = 1; i <= 4; i++) { const b = this.project(...bez(k, i / 4)); if (a && b && !this.boatHides(bt, be, ...bez(k, (i - 0.5) / 4))) out.push(a, b); a = b; } return out; });
     for (const pass of [0, 1]) for (let k = 0; k < n; k++) {   // piece k: from halfway to the previous point, bending through point k, to halfway to the next
       const q = Q[k], qa = k > 0 ? Q[k - 1] : q, qb = k < n - 1 ? Q[k + 1] : q; if (!q || !qa || !qb) continue;
       const from = mid(qa, q), to = mid(q, qb), under = wet[k], lw = under ? 0.5 : px(R.p[k * 3], R.p[k * 3 + 1], R.p[k * 3 + 2]);
       c.strokeStyle = pass ? `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${under ? 0.025 : 0.7})` : `rgba(0,0,0,${under ? 0 : 0.18})`;
-      c.lineWidth = pass ? lw : lw + 1.2; c.beginPath(); c.moveTo(from[0], from[1]); c.quadraticCurveTo(q[0], q[1], to[0], to[1]); c.stroke();
+      c.lineWidth = pass ? lw : lw + 1.2; c.beginPath();
+      if (bits) for (let i = 0; i < bits[k].length; i += 2) { c.moveTo(bits[k][i][0], bits[k][i][1]); c.lineTo(bits[k][i + 1][0], bits[k][i + 1][1]); }
+      else { c.moveTo(from[0], from[1]); c.quadraticCurveTo(q[0], q[1], to[0], to[1]); }
+      c.stroke();
     }
     if (!L && A.dangle) {   // hanging under the tip: float → sinker → bait, straight because the weight pulls it tight
       const D = A.dangle, T0 = R.p.slice((n - 1) * 3), b = [D.x, D.y, D.z + 0.02];

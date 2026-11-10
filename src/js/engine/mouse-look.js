@@ -55,7 +55,10 @@ Object.assign(Engine, {
     document.getElementById('mouseSensitivity').addEventListener('input', e => this.setMouseSensitivity(Number(e.target.value) / 100));
     document.getElementById('resetMouseSensitivity').onclick = () => this.setMouseSensitivity(1);
     document.getElementById('resumeGame').onclick = () => this.togglePause(false, true);
-    document.getElementById('hSettings').onclick = () => this.togglePause(true);
+    { const more = on => { document.body.classList.toggle('more', on); document.getElementById('hSettings').setAttribute('aria-expanded', document.body.classList.contains('more')); };
+      document.getElementById('hSettings').onclick = () => this.touchUI ? more() : this.togglePause(true);   // touch: it fans out Settings and the dev tools (#tui .tui-more) instead
+      document.getElementById('bSet').onclick = () => { more(false); this.togglePause(true); this.titleSettings = true; this.pauseShow('settings'); };   // straight to Settings; Back closes it (as from the start menu)
+      document.querySelector('.tui-more [data-k="Digit1"]').addEventListener('click', () => more(false)); }   // the spawn panel covers them
     dialog.addEventListener('cancel', e => { e.preventDefault(); if (this.pausePage && this.pausePage !== 'main') this.pauseShow('main'); else this.togglePause(false); });   // Esc: back a page, then resume
     dialog.addEventListener('close', () => { if (this.pauseOpen) this.togglePause(false); });
     let wasLocked = document.pointerLockElement === this.ov;

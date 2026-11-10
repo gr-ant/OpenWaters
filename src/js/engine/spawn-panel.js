@@ -1,7 +1,7 @@
 'use strict';
 // Engine: the spawn picker panel (B boats, 1 animals).
 // the kinds of wildlife (chips under the Wildlife tab)
-const WILD_KINDS = [['all', 'All'], ['shell', 'Shellfish'], ['jelly', 'Jellies'], ['mammal', 'Mammals'], ['herp', 'Reptiles & amphibians'], ['bird', 'Birds']];
+const WILD_KINDS = [['all', 'All', 'infinity'], ['shell', 'Shellfish', 'shell'], ['jelly', 'Jellies', 'jelly'], ['mammal', 'Mammals', 'whale'], ['herp', 'Reptiles', 'frog', 'Reptiles & amphibians'], ['bird', 'Birds', 'heron']];
 Object.assign(Engine, {
   // ---- spawn picker (K, or the Spawn button) ----
   // B: boats; 1 (a secret): fish and wildlife. Both open on the water you're nearest.
@@ -45,7 +45,7 @@ Object.assign(Engine, {
     const boatsMode = this.spawnMode === 'boats', panel = document.getElementById('spawn'), tabs = document.getElementById('spTabs');
     if (panel.dataset.mode !== this.spawnMode) {   // header and search follow the mode
       panel.dataset.mode = this.spawnMode;
-      panel.querySelector('.sp-art').innerHTML = uiIcon(boatsMode ? 'dock.boat' : 'dock.spawn');
+      panel.querySelector('.sp-art').innerHTML = uiIcon(boatsMode ? 'dock.boat' : 'ui.fish');
       panel.querySelector('h2').textContent = boatsMode ? 'Boats' : 'Spawn';
       panel.querySelector('.tk-title i').textContent = boatsMode ? 'Pick a boat for the water.' : 'A little company on the water.';
       document.getElementById('spSearch').placeholder = boatsMode ? 'Find a boat…' : 'Find a creature…';
@@ -53,10 +53,11 @@ Object.assign(Engine, {
     tabs.hidden = boatsMode;
     tabs.innerHTML = boatsMode ? '' : [['fish', 'Fish', 'fish'], ['wild', 'Wildlife', 'heron']].map(([k, l, ic]) => `<button data-tab="${k}" class="${k === this.spawnTab ? 'on' : ''}">${uiIcon('ui.' + ic)}${l}</button>`).join('');
     const kinds = document.getElementById('spKind'); kinds.hidden = this.spawnTab !== 'wild';
-    kinds.innerHTML = kinds.hidden ? '' : WILD_KINDS.map(([k, l]) => `<button data-kind="${k}" class="${k === this.spawnKind ? 'on' : ''}">${l}</button>`).join('');
-    const bio = document.getElementById('spBiome'); bio.hidden = boatsMode;
-    bio.innerHTML = boatsMode ? '' : [['all', 'All biomes'], ...Object.entries(CLIMATES).map(([k, C]) => [k, C.name])].map(([k, l]) => `<button data-biome="${k}" class="${k === this.spawnBiome ? 'on' : ''}">${l}</button>`).join('');
-    document.getElementById('spSub').innerHTML = catChips(this.spawnSub, 'data-sub');
+    kinds.innerHTML = kinds.hidden ? '' : WILD_KINDS.map(([k, l, ic, full]) => `<button data-kind="${k}" class="${k === this.spawnKind ? 'on' : ''}" title="${full || l}">${uiIcon('ui.' + ic)}${l}</button>`).join('');
+    const bio = document.getElementById('spBiome'); bio.hidden = bio.previousElementSibling.hidden = boatsMode;
+    const bioIcon = { all: 'globe', temperate: 'pine', arctic: 'peaks', tropical: 'palm' };
+    bio.innerHTML = boatsMode ? '' : [['all', 'All biomes'], ...Object.entries(CLIMATES).map(([k, C]) => [k, C.name])].map(([k, l]) => `<button data-biome="${k}" class="${k === this.spawnBiome ? 'on' : ''}">${bioIcon[k] ? uiIcon('ui.' + bioIcon[k]) : ''}${l}</button>`).join('');
+    document.getElementById('spSub').innerHTML = catChips(this.spawnSub, 'data-sub', true);
     const items = this.spawnItems(), boats = this.spawnTab === 'boats';
     if (!items.some(D => D.id === this.spawnSel)) { this.spawnSel = items.length ? items[0].id : null; this.spawnNav = false; }
     ul.classList.toggle('grid', boats);   // boats: picture tiles, the name on hover

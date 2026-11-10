@@ -1,7 +1,7 @@
 'use strict';
 // The reel on the 3D rod comes alive while you fish: the handle turns as you wind (or the line pays out), the spinning
 // bail flips open, a baitcaster's thumb bar sinks / a conventional's free-spool lever flips while line runs free, the
-// line on the spool thins as it goes out, and the drag knob / star / lever turns with the setting. Meshes come from reelPartMesh (js/tackle.js).
+// line on the spool thins as it goes out, and the drag knob / star / lever turns with the setting. Meshes come from reelPartMesh (js/tackle-meshes.js).
 Object.assign(Engine, {
   // a point on the rod (rod-local metres) in the world: the rod mesh's own transform, pitch then yaw, from the hand
   rodPoint(A, p, hand = A.hand) {

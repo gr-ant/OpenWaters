@@ -1,0 +1,121 @@
+  /* ---- HUD over the game (js/hud.js) ---- */
+  /* loading: an ink sketch of the island's bones (drawn before the slow build), a light sweeping over it meanwhile */
+  #loading { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; gap: 18px; align-items: center; justify-content: center; background: #0a1418; color: #cfe6ef; font: 18px Georgia, serif; letter-spacing: .5px; }
+  .ld-sketch { position: relative; width: min(600px, 80vmin); aspect-ratio: 1; overflow: hidden; border-radius: 50%; }
+  .ld-sketch canvas { position: static; display: block; width: 100%; height: 100%; }   /* not the full-screen canvas rule */
+  .ld-sketch i { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 35%, #cfe6ef22 50%, transparent 65%); animation: ld-sweep 2.2s linear infinite; }
+  @keyframes ld-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  #loading span { animation: ld-pulse 1.6s ease-in-out infinite; }
+  @keyframes ld-pulse { 50% { opacity: .55; } }
+  #hud { position: fixed; inset: 0; z-index: 3; pointer-events: none; color: var(--cream); font: 14px/1.3 var(--sans); }
+  #hud.off > * { display: none !important; }   /* the big map is up */
+  #hud button, #hud .panel { pointer-events: auto; }
+  #hud svg { display: block; width: 100%; height: 100%; }
+  .hud-text, #hLoc, #hMapName { text-shadow: 0 1px 3px #000, 0 0 10px #000a; }
+  /* where you are */
+  #hLoc { position: absolute; left: 22px; top: 8px; display: flex; gap: 12px; align-items: center; }
+  #hLoc .pines { width: 66px; height: 50px; flex: none; filter: drop-shadow(0 2px 3px #000a); }
+  #hLoc b { display: block; font: 700 28px/1.1 var(--serif); }
+  #hLoc span#hLocSub { display: block; font: 19px/1.25 var(--serif); }
+  #hLoc small { display: block; font: 12.5px var(--sans); color: #d4e9ef; margin-top: 2px; max-width: 46vw; }
+  #hLoc small:empty { display: none; }
+  /* time and weather pill */
+  #hCond { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 7px 22px; border-radius: 22px;
+    background: rgba(20,26,20,.82); border: 2px solid var(--gold); box-shadow: 0 4px 16px #0008; font: 600 20px var(--serif); white-space: nowrap; }
+  #hCond .sep { width: 1px; align-self: stretch; background: #c4a86c88; }
+  #hSky, #hWindArrow { width: 22px; height: 22px; display: inline-block; }
+  #hWind { display: flex; align-items: center; gap: 6px; }
+  /* minimap frame (the map itself is painted on the canvas underneath, inside this box) */
+  #hMap { position: absolute; right: 18px; top: 18px; width: clamp(200px, 18vw, 300px); aspect-ratio: 4 / 3; border-radius: 18px; border: 3px solid var(--gold-hi);
+    box-shadow: 0 6px 22px #000a, inset 0 0 0 1px #0007, inset 0 0 18px #0006; box-sizing: border-box; }
+  #hMapName { position: absolute; left: 14px; top: 10px; font: 700 18px var(--serif); }
+  #hMap .north { position: absolute; right: 8px; top: 8px; width: 34px; height: 34px; padding: 5px; box-sizing: border-box; border-radius: 50%; background: #1a2219cc; color: #f4ecd4; }
+  #hScale { position: absolute; left: 14px; bottom: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; font: 600 13px var(--serif); text-shadow: 0 1px 2px #000; }
+  #hScale b { order: -1; padding-left: 6px; } #hScale i { display: block; height: 6px; border: 2px solid #f4ecd4; border-top: 0; box-sizing: border-box; filter: drop-shadow(0 1px 1px #000); }
+  /* fishing status */
+  #hStatus { position: absolute; right: 12px; bottom: 20px; display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px 5px; max-width: calc(100vw - 24px); box-sizing: border-box;
+    border-radius: 12px; background: rgba(20,26,20,.78); border: 1px solid #c4a86c88; font: 600 14px var(--serif); color: var(--cream); white-space: nowrap; }   /* a chip, like the key hints */
+  #hStatus[hidden] { display: none; }
+  /* where the hook or lure hangs: a slim water column, surface to seabed, with fish nearby marked at their depths */
+  #hDepth { position: absolute; right: 12px; bottom: 80px;   /* just above the fishing status chip */
+    display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 12px;
+    background: rgba(20,26,20,.78); border: 1px solid #c4a86c88; font: 600 11px var(--serif); color: var(--cream); white-space: nowrap; }
+  #hDepth[hidden] { display: none; } body.touch #hDepth { bottom: auto; top: 160px; left: 12px; right: auto; }   /* touch: under the status chip, which sits top left */
+  #hDepth small { font: inherit; opacity: .8; }
+  #hDepth .dg-track { position: relative; width: 22px; height: 160px; margin: 2px 0;   /* a ruler: a line down the middle, end caps and a tick every tenth */
+    background: linear-gradient(#f4ecd4, #f4ecd4) center / 2px 100% no-repeat, repeating-linear-gradient(#f4ecd4aa 0 1px, transparent 1px 10%) center / 10px calc(100% + 1px) no-repeat;
+    border-top: 2px solid #f4ecd4; border-bottom: 2px solid #8a6a3a; }
+  #hDepth .dg-line { position: absolute; left: 50%; top: 0; width: 1px; margin-left: 3px; background: #9fd6ee; height: 0; }
+  #hDepth .dg-mark { position: absolute; left: 50%; top: 0; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--gold-hi); border: 1.5px solid #2a2018; box-shadow: 0 0 6px #ffd27a99; }
+  #hDepth .dg-mark span { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); padding: 1px 5px; border-radius: 6px; background: rgba(20,26,20,.85); font: 600 12px var(--serif); }
+  #hReelKeys { position: fixed; inset: 0; pointer-events: none; }
+  #hReelKeys[hidden], body.touch #hReelKeys { display: none; }
+  #hReelKeys .rk { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 5px; padding: 2px 8px 2px 3px; border-radius: 10px; white-space: nowrap;
+    background: rgba(20,26,20,.72); border: 1px solid #c4a86c88; color: var(--cream); font: italic 600 13px var(--serif); box-shadow: 0 2px 6px #0007; }
+  #hReelKeys .rk kbd { min-width: 20px; height: 20px; font-size: 12px; font-style: normal; }
+  #hReelKeys .rk b { font-weight: 600; }
+  #hStatus.alert { border-color: #f0c040; box-shadow: 0 0 0 1px #f0c04055; }
+  #hStIcon { width: 22px; height: 22px; flex: none; filter: drop-shadow(0 1px 1px #000a); }
+  #hStIcon:empty { display: none; }
+  .st-text { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+  #hStTitle { font: 700 14px/1.2 var(--serif); }
+  #hStSub { font: 12px var(--sans); color: #d6d0bb; }
+  #hStBar { position: absolute; left: 8px; right: 8px; bottom: 1px; height: 3px; border-radius: 2px; background: #ffffff1c; }   /* a thin line along the chip's foot */
+  #hStBar i { display: block; height: 100%; border-radius: 2px; transition: width .08s linear; }
+  #hStBar::after { content: ''; position: absolute; left: var(--mark, -10%); top: -2px; width: 2px; height: 7px; background: #9ad8ff; }
+  #hStBar[hidden] { display: none; }
+  .st-act { display: flex; align-items: center; gap: 6px; padding-left: 10px; border-left: 1px solid #c4a86c88; }
+  .st-act kbd { min-width: 22px; height: 22px; font-size: 12px; }
+  .ai { display: inline-block; width: 20px; height: 20px; margin-right: 2px; color: var(--gold-hi); }
+  /* a bite: the chip glows gold and the float icon bobs (a nibble: just the bob, gently) */
+  #hStatus.bite { border-color: var(--gold-hi); animation: st-bite .45s ease-in-out infinite alternate; }
+  @keyframes st-bite { from { box-shadow: 0 0 0 0 #e8d09200; } to { box-shadow: 0 0 0 4px #e8d09266, 0 0 14px #e8d09255; } }
+  #hStatus.bite #hStIcon, #hStatus.nibble #hStIcon { color: var(--gold-hi); animation: st-bob .35s ease-in-out infinite alternate; }
+  #hStatus.nibble #hStIcon { animation-duration: .8s; }
+  @keyframes st-bob { to { transform: translateY(3px); } }
+  #hStatus.nokey .st-act { display: none; }
+  kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; padding: 0 5px; box-sizing: border-box; border: 1.5px solid #e8dcc0; border-radius: 6px;
+    font: 700 15px var(--serif); color: var(--cream); background: #0004; box-shadow: inset 0 -2px 0 #0006; }
+  kbd:empty { display: none; }
+  /* messages */
+  #hMsg { position: absolute; left: 50%; bottom: 122px; transform: translateX(-50%); max-width: min(720px, calc(100vw - 40px)); padding: 7px 18px; border-radius: 14px; text-align: center;
+    background: rgba(20,26,20,.82); border: 1.5px solid #c4a86caa; font: 600 16px var(--serif); color: var(--cream); box-shadow: 0 4px 14px #0008; transition: opacity .2s; }
+  #hMsg:empty { display: none; }
+  /* shortcut dock: small pictures with their key on top, then the controls that matter right now */
+  #hDock { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; align-items: flex-end; }
+  #hDock button, #hMapBtns button { position: relative; width: 64px; height: 50px; background: none; border: 0; padding: 0; cursor: pointer; }
+  #hDock button > span, #hMapBtns button > span { position: absolute; inset: 0; filter: drop-shadow(0 3px 3px #000b); transition: transform .12s; }
+  #hDock button:hover > span, #hMapBtns button:hover > span { transform: translateY(-2px) scale(1.05); }
+  #hDock button:focus-visible, #hMapBtns button:focus-visible, .tui-rail button:focus-visible, #tui .act:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3px; border-radius: 12px; }
+  #hDock button kbd, #hMapBtns button kbd { position: absolute; right: 2px; bottom: 0; min-width: 22px; height: 22px; font-size: 13px; background: #1c261dee; }
+  /* the controls that matter right now: small chips in the middle of the bottom edge */
+  #hKeys { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; gap: 6px; }
+  .hk { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 5px; border-radius: 12px; background: rgba(20,26,20,.78); border: 1px solid #c4a86c88;
+    font: 600 14px var(--serif); color: var(--cream); white-space: nowrap; }
+  .hk kbd { min-width: 22px; height: 22px; font-size: 12px; }
+  /* controls card */
+  #hHelp { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(560px, calc(100vw - 24px)); padding: 16px 20px; box-sizing: border-box; }
+  #hHelp[hidden] { display: none; }
+  #hHelp header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  #hHelp dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: 14px; }
+  #hHelp dt { font: 700 14px var(--serif); color: var(--gold-hi); text-align: right; } #hHelp dd { margin: 0; color: #e4dcc4; }
+  #hHelp small { display: block; margin-top: 12px; color: var(--muted); font: 12px ui-monospace, monospace; }
+  #hHint { position: absolute; right: 14px; top: 14px; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--gold); background: rgba(20,26,20,.7); color: var(--cream); font: 700 16px var(--serif); cursor: pointer; opacity: .75; }
+  #hHint:hover { opacity: 1; }
+  /* touch screens keep their own buttons: no dock or hint, and their top row sits under the place name */
+  body.touch #hDock, body.touch #hKeys, body.touch #hHint { display: none; }
+  body.touch #spawn { width: calc(100vw - 20px); } body.touch .ri.wide { width: 120px; } body.touch .sp-art { display: none; }
+  body.touch #hLoc b { font-size: 20px; } body.touch #hLoc span#hLocSub { font-size: 14px; } body.touch #hLoc .pines { width: 44px; height: 34px; }
+  body.touch #hLoc { left: 12px; top: 8px; gap: 8px; }
+  body.touch #hCond { left: 14px; top: 58px; transform: none; font-size: 13px; gap: 8px; padding: 4px 12px; border-width: 1.5px; }
+  body.touch #hMap { width: 132px; top: 58px; right: 10px; border-width: 2px; }
+  body.mini-on.touch .tui-rail { top: auto; bottom: calc(50% - 230px); transform: none; }
+  body.touch #hStatus { bottom: auto; top: 98px; left: 12px; right: auto; max-width: calc(100vw - 90px); }
+  body.touch #hMsg { bottom: 200px; max-width: calc(100vw - 90px); }
+  body.touch #hSettings { top: 10px; right: 10px; width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 0; }
+  body.touch #hSettings::before { content: '☰'; font: 700 18px/1 var(--sans); color: var(--cream); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; } .chips span { padding: 5px 10px; border-radius: 14px; background: #ffffff10; border: 1px solid #d4e4e055; font: 600 14px var(--serif); }
+  .detail.build { border: 0; padding: 0 0 6px; } .detail.build b { font-size: 22px; }
+  img.snap { width: 100%; height: 100%; object-fit: contain; display: block; }
+  img.snap[data-snap] { opacity: 0; }
+  #hStIcon img.snap { filter: none; }

@@ -26,4 +26,5 @@ function rigWaters(r, S) {
     return m >= 0.4; }));
   rigWaterMemo.set(key, out); return out;
 }
-const catChips = (cur, attr) => [['all', 'All'], ...WATER_CATS].map(([k, l]) => `<button ${attr}="${k}" class="${k === cur ? 'on' : ''}">${l}</button>`).join('');
+const WATER_ICONS = { all: 'infinity', lake: 'waves', pond: 'pond', river: 'river', creek: 'creek', sea: 'sea' };
+const catChips = (cur, attr, icons) => [['all', 'All'], ...WATER_CATS].map(([k, l]) => `<button ${attr}="${k}" class="${k === cur ? 'on' : ''}">${icons ? uiIcon('ui.' + WATER_ICONS[k]) : ''}${l}</button>`).join('');

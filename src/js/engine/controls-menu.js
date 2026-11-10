@@ -87,7 +87,6 @@ Object.assign(Engine, {
     const dl = document.querySelector('#hHelp dl'); if (!dl) return;
     const K = id => `<b>${Controls.keys(id).replace(/</g, '&lt;')}</b>`, rows = [
       [`${Controls.key('forward')} ${Controls.key('left')} ${Controls.key('back')} ${Controls.key('right')}`, `move · ${K('run')} run · ${K('jump')} jump / up · ${K('dive')} dive · ${K('use')} use`],
-      [Controls.keys('water'), 'walk to the nearest water (again for the next kind)'],
       [Controls.keys('rod'), 'rod out / away'], [`${Controls.keys('cast')} / mouse`, `cast (hold, let go) · reel (${K('run')} faster) · strike`],
       [Controls.keys('bail'), 'open / close the bail (reeling closes it) · before a cast: drop it straight down'], [`${Controls.keys('dragDown')} · ${Controls.keys('dragUp')}`, 'drag down · up'],
       [`${Controls.keys('keep')} · ${Controls.keys('release')}`, 'keep · release a catch'],

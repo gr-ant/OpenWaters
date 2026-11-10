@@ -26,6 +26,7 @@ const Engine = {
     if (code === 'KeyQ' && !e.repeat) this.toggleRod();                                          // rod out / away
     if ((code === 'BracketLeft' || code === 'BracketRight') && this.ang && this.ang.S) this.setDrag(this.ang.dragKg * (code === 'BracketRight' ? 1.15 : 1 / 1.15));
     if (code === 'KeyF' && !e.repeat) this.action();
+    if (code === 'Space' && !e.repeat && this.boat) this.leaveBoat(true);                        // jump out of the boat
     if (code === 'KeyL' && !e.repeat) this.toggleTorch();                                        // the dive light, when you're deep
     if (code === 'KeyG' && !e.repeat) this.toggleBail();                                          // open / close the reel's bail
     if (code === 'Equal' || code === 'NumpadAdd') this.zoom(0.5);

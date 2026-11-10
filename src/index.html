@@ -4,7 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Open Waters</title>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/page-touch.css">
+<link rel="stylesheet" href="css/panels.css">
+<link rel="stylesheet" href="css/tackle.css">
+<link rel="stylesheet" href="css/hud.css">
+<link rel="stylesheet" href="css/spawn.css">
+<link rel="stylesheet" href="css/map-journal.css">
+<link rel="stylesheet" href="css/pause.css">
+<link rel="stylesheet" href="css/title.css">
+<link rel="stylesheet" href="css/glass.css">
 </head>
 <body>
 <div id="loading"><div class="ld-sketch"><canvas width="440" height="440"></canvas><i></i></div><span>Shaping the island…</span></div>
@@ -77,9 +85,11 @@
   <header><span class="sp-art" data-icon="dock.spawn"></span><div class="tk-title"><h2>Spawn</h2><i>A little company on the water.</i></div><button id="spClose" class="round-x" title="Close" data-icon="ui.close"></button></header>
   <label class="search"><span data-icon="ui.search"></span><input id="spSearch" type="search" placeholder="Find a boat or creature…" autocomplete="off"></label>
   <div class="tabs" id="spTabs"></div>
-  <div class="subtabs" id="spKind"></div>
-  <div class="subtabs" id="spBiome"></div>
-  <div class="subtabs" id="spSub"></div>
+  <div class="subtabs hab" id="spKind"></div>
+  <h3 class="sp-lbl">Biome</h3>
+  <div class="subtabs hab" id="spBiome"></div>
+  <h3 class="sp-lbl">Habitat</h3>
+  <div class="subtabs hab" id="spSub"></div>
   <ul id="spList"></ul>
 </div>
 <div id="tackle" class="panel" hidden>
@@ -122,7 +132,7 @@
   </div>
   <div id="hHelp" class="panel" hidden><header><h2>Controls</h2><button class="round-x" data-icon="ui.close" data-help-close></button></header>
     <dl><dt>WASD</dt><dd>move · Shift run · Space jump · C dive</dd><dt>Q</dt><dd>rod out / away</dd><dt>R / mouse</dt><dd>cast (hold, let go) · reel (Shift: faster) · strike</dd><dt>[ ]</dt><dd>drag</dd><dt>G</dt><dd>open / close the bail: line pays out so the lure sinks straight down (reeling closes it)</dd>
-    <dt>E / X</dt><dd>keep / release a catch</dd><dt>I · J · B</dt><dd>tackle box · journal · boats</dd><dt>↑ ↓ · ← → · Tab</dt><dd>in a menu: move · category · tab · Enter chooses</dd><dt>F</dt><dd>use · get in a boat · V helm</dd><dt>3</dt><dd>walk to the nearest water (again for the next kind)</dd>
+    <dt>E / X</dt><dd>keep / release a catch</dd><dt>I · J · B</dt><dd>tackle box · journal · boats</dd><dt>↑ ↓ · ← → · Tab</dt><dd>in a menu: move · category · tab · Enter chooses</dd><dt>F</dt><dd>use · get in a boat · V helm</dd>
     <dt>2</dt><dd>fish radar</dd><dt>M</dt><dd>map · arrows move · W/S zoom · Enter travels to the crosshair</dd><dt>T</dt><dd>hold for fast time · Y season · U weather</dd><dt>Esc</dt><dd>pause · mouse sensitivity</dd><dt>? /</dt><dd>this card</dd></dl><small id="hDebug"></small></div>
   <button id="hSettings" title="Pause and settings (Esc)" aria-label="Pause and settings">Esc</button>
   <button id="hHint" title="Controls (?)">?</button>
@@ -137,6 +147,11 @@
     <button id="bRod" data-k="KeyQ"><span class="ic" data-icon="dock.rod"></span><b>Rod</b></button>
     <button id="bTorch" data-k="KeyL" hidden><span class="ic" data-icon="dock.torch"></span><b>Light</b></button>
   </nav>
+  <nav class="tui-rail tui-more" aria-label="Settings and dev tools">
+    <button id="bSet"><span class="ic" data-icon="dock.gear"></span><b>Settings</b></button>
+    <button data-k="Digit1"><span class="ic" data-icon="dock.spawn"></span><b>Spawn</b></button>
+    <button data-k="Digit2"><span class="ic" data-icon="dock.radar"></span><b>Radar</b></button>
+  </nav>
   <button id="bUse" class="act a-main" data-k="KeyF">Use</button>
   <button class="act a-jump" data-k="Space" data-hold="1">Jump</button>
   <button class="act a-dive" data-k="KeyC" data-hold="1">Dive</button>
@@ -150,7 +165,15 @@
 <script src="js/config.js"></script>
 <script src="js/controls.js"></script>
 <script src="js/world/worldgen.js"></script>
-<script src="js/world/island.js"></script>
+<script src="js/world/island-layout.js"></script>
+<script src="js/world/island-sea-depth.js"></script>
+<script src="js/world/island-glaciers.js"></script>
+<script src="js/world/island-water.js"></script>
+<script src="js/world/island-features.js"></script>
+<script src="js/world/island-sample.js"></script>
+<script src="js/world/island-water-queries.js"></script>
+<script src="js/world/island-materials.js"></script>
+<script src="js/world/island-cache.js"></script>
 <script src="js/engine/shared.js"></script>
 <script src="js/shaders/lit.js"></script>
 <script src="js/shaders/water.js"></script>
@@ -198,6 +221,7 @@
 <script src="js/engine/overlay.js"></script>
 <script src="js/engine/map.js"></script>
 <script src="js/tackle.js"></script>
+<script src="js/tackle-meshes.js"></script>
 <script src="js/fishing/angler.js"></script>
 <script src="js/fishing/casting.js"></script>
 <script src="js/fishing/bites.js"></script>
@@ -205,7 +229,10 @@
 <script src="js/fishing/drawing.js"></script>
 <script src="js/fishing/tackle-box.js"></script>
 <script src="js/game-api.js"></script>
-<script src="js/hud/icons.js"></script>
+<script src="js/hud/icons-kit.js"></script>
+<script src="js/hud/icons-ui.js"></script>
+<script src="js/hud/icons-dock.js"></script>
+<script src="js/hud/icons-tackle.js"></script>
 <script src="js/hud/water-categories.js"></script>
 <script src="js/hud/snapshots.js"></script>
 <script src="js/hud/hud.js"></script>
@@ -214,7 +241,9 @@
 <script src="js/hud/journal.js"></script>
 <script src="js/hud/menu-keys.js"></script>
 <script src="js/sounds.js"></script>
-<script src="js/birds.js"></script>
+<script src="js/birds/birds.js"></script>
+<script src="js/birds/species.js"></script>
+<script src="js/birds/game-api.js"></script>
 <script src="js/game.js"></script>
 <link rel="stylesheet" href="css/tutorial.css">
 <script src="js/hud/tutorial.js"></script>

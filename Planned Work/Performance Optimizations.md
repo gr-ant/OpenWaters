@@ -36,7 +36,7 @@ Prepare upcoming grids through the budgeted streamer, or generate only the exact
 
 Validate sampled results against the current implementation and measure frame-time spikes during movement, travel, long casts, and animal roaming.
 
-Relevant code: [terrain cache](../src/js/world/island.js), [terrain streaming](../src/js/engine/update.js), [animal decisions](../src/js/engine/fish-behaviour.js).
+Relevant code: [terrain cache](../src/js/world/island-cache.js), [terrain streaming](../src/js/engine/update.js), [animal decisions](../src/js/engine/fish-behaviour.js).
 
 ## 2. Use indexed meshes for animals and broadleaf trees
 
@@ -95,7 +95,7 @@ Birds currently upload instance data and draw individually. Grouping by species 
 
 The sampled scene had only four birds, so this was not a major cost there. Validate flight, swimming, perching, and moving-boat poses, and benchmark larger flocks before prioritizing it.
 
-Relevant code: [bird rendering](../src/js/birds.js), [lit vertex shader](../src/js/shaders/lit.js).
+Relevant code: [bird rendering](../src/js/birds/birds.js), [lit vertex shader](../src/js/shaders/lit.js).
 
 ## Existing optimizations to preserve
 

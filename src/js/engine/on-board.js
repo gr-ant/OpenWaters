@@ -17,6 +17,29 @@ Object.assign(Engine, {
     const decked = (H.decks && (t > 1 - (H.decks.bow || 0) || t < (H.decks.stern || 0))) || (H.cockpit && (t < H.cockpit[0] || t > H.cockpit[1]));
     return decked ? S.gun(t) + 0.04 : H.floor_m;
   },
+  // a world point in the boat's frame: along, across, up, and t (0 the stern .. 1 the bow)
+  boatLocal(b, x, y, z = 0, o = []) { const dx = x - b.x, dy = y - b.y, ca = Math.cos(b.a), sa = Math.sin(b.a), lx = ca * dx + sa * dy, ly = ca * dy - sa * dx;
+    o[0] = lx; o[1] = ly; o[2] = z - b.z - Math.sin(b.pitch) * lx + Math.sin(b.roll) * ly; o[3] = lx / b.def.hull.length_m + 0.5; return o; },
+  boatOver(b, x, y) { const q = this.boatLocal(b, x, y); return q[3] > 0 && q[3] < 1 && Math.abs(q[1]) < b.def._shape.hb(q[3]); },
+  // push a point of the fishing line (p[j..j+2], and its last position in o) out of the hull: over the gunwale, round the side or under the keel,
+  // whichever is nearest. True if it was inside
+  boatLineOut(b, p, j, o) {
+    if (Math.abs(p[j] - b.x) > b.def.hull.length_m || Math.abs(p[j + 1] - b.y) > b.def.hull.length_m) return false;
+    const q = this.boatLocal(b, p[j], p[j + 1], p[j + 2], this._bq || (this._bq = [])), t = q[3]; if (t <= 0 || t >= 1) return false;
+    const S = b.def._shape, side = S.hb(t) - Math.abs(q[1]) + 0.02, up = S.gun(t) + 0.02 - q[2], down = q[2] + S.keel(t) + 0.02; if (side <= 0.02 || up <= 0.02 || down <= 0.02) return false;
+    const k = q[1] < 0 ? -side : side, d = up <= side && up <= down ? [0, 0, up] : down <= side ? [0, 0, -down] : [-Math.sin(b.a) * k, Math.cos(b.a) * k, 0];
+    for (let c = 0; c < 3; c++) { p[j + c] += d[c]; if (o) o[j + c] += d[c]; }   // moved, not thrown: no speed added
+    return true;
+  },
+  // does the hull hide a point from an eye on board (e: the eye in the boat's frame)? For the line, which is drawn on the overlay with no depth test.
+  // shortcut: knows the hull, floor and decks, not a console or wheelhouse; draw the line in GL if it shows across those
+  boatHides(b, e, x, y, z) {
+    const D = b.def, S = D._shape, L = D.hull.length_m, q = this.boatLocal(b, x, y, z, this._bq || (this._bq = []));
+    const over = (lx, ly) => { const t = lx / L + 0.5; return t > 0 && t < 1 && Math.abs(ly) < S.hb(t); };
+    if (over(q[0], q[1])) return q[2] < this.boatDeckZ(D, q[0], q[1]);   // under your feet
+    let lo = 0, hi = 1; for (let i = 0; i < 10; i++) { const m = (lo + hi) / 2; if (over(e[0] + (q[0] - e[0]) * m, e[1] + (q[1] - e[1]) * m)) lo = m; else hi = m; }   // where the sight line crosses the side
+    return e[2] + (q[2] - e[2]) * hi < S.gun(clamp((e[0] + (q[0] - e[0]) * hi) / L + 0.5, 0, 1));   // below the gunwale there: behind the hull
+  },
   toggleBoatMode() {
     const b = this.boat; if (!b) return; const D = b.def, S = D._shape, t = clamp(D.crew.seat_at, 0, 1);
     if (this.boatMode === 'deck') { this.boatMode = 'drive'; this.seatBoat(b); this.say('At the helm', 1.5); this.updateTui(); return; }

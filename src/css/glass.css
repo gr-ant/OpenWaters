@@ -1,0 +1,24 @@
+/* ---- glass menus: tinted with the scene's average colour (boot.js sets --tint), thin light edge ---- */
+:root { --tint: 30 52 58; }
+.panel, #catch { --gold: #a9c9c3; --gold-hi: #f2e9d0; --muted: #b9cbc6;
+  background: rgb(var(--tint) / .74); -webkit-backdrop-filter: blur(16px) saturate(1.15); backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid #ffffff40; border-radius: 26px; box-shadow: 0 18px 50px #0006, inset 0 1px 0 #ffffff1a; transition: background-color 1.2s; }
+#pauseMenu::backdrop { background: #0000002e; }
+.pm-mark { display: block; margin-bottom: 4px; color: var(--gold); font: 300 30px/1 var(--sans); }
+.pm-title { padding: 28px 28px 22px; margin: 0 30px; border-bottom: 1px solid #ffffff2a; }
+.pm-title small { color: var(--gold); font-size: 13px; letter-spacing: 6px; }
+.pm-title h2 { font-size: 54px; color: var(--cream); }
+.pm-title p { color: var(--cream); font: 16px var(--sans); opacity: .9; }
+.pm-menu { padding: 22px 22px 22px; }
+#pauseMenu .pm-item { justify-content: flex-start; gap: 18px; padding: 15px 22px; background: #ffffff0f; border: 1px solid #ffffff14; border-radius: 12px; font: 600 19px var(--sans); }
+#pauseMenu .pm-item:hover, #pauseMenu .pm-item:focus-visible { background: #ffffff1f; border-color: #ffffff38; }
+#pauseMenu .pm-primary { background: var(--cream); color: #1d2c2c; border-color: transparent; box-shadow: 0 4px 14px #0004; font-size: 21px; }
+#pauseMenu .pm-primary:hover, #pauseMenu .pm-primary:focus-visible { background: #fff7e2; }
+#pauseMenu .pm-item kbd { right: 14px; padding: 5px 10px; border: 0; border-radius: 7px; background: #00000022; opacity: .8; font-size: 13px; }
+.pm-ic { width: 24px; height: 24px; flex: none; color: var(--cream); } .pm-ic svg { width: 100%; height: 100%; display: block; }
+.pm-foot-note { margin: 0 30px; padding: 16px 0 22px; border-top: 1px solid #ffffff2a; color: var(--muted); font-size: 13px; letter-spacing: 1.5px; }
+.pm-bar, .pm-foot { border-color: #ffffff2a; }
+#pauseMenu[data-page="main"] { width: min(420px, calc(100vw - 32px)); }
+#spBiome[hidden], #spKind[hidden] { display: none; }
+#pauseMenu .pm-item:focus-visible::before { content: none; }   /* the lit border shows focus; the arrow overlapped the label */
+#pauseMenu .pm-primary kbd { background: #1d2c2c1a; color: #1d2c2c; opacity: .75; }

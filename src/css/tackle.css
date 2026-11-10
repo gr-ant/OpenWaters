@@ -1,0 +1,76 @@
+  /* tackle box: rigs, the rig builder, gear and the catch journal */
+  #tackle { position: fixed; z-index: 4; left: 12px; top: 84px; bottom: 12px; width: min(440px, calc(100vw - 24px)); display: flex; flex-direction: column; padding: 14px 12px 12px; box-sizing: border-box; }
+  #tackle[hidden], #catch[hidden] { display: none; }
+  #tackle > header { display: flex; gap: 10px; align-items: center; padding: 0 2px 12px; }
+  .tk-sprig { width: 62px; height: 62px; flex: none; margin: -6px -2px -6px -4px; } .tk-sprig svg { width: 100%; height: 100%; }
+  .tk-title { flex: 1; } .tk-title i { display: block; margin-top: 3px; font: italic 15px var(--serif); color: var(--muted); }
+  #tackle .tabs { display: flex; gap: 8px; padding: 0 2px 12px; }
+  #tackle .tabs button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 6px; border-radius: 10px; border: 1.5px solid #d4e4e099;
+    background: #0002; color: var(--cream); font: 600 16px var(--serif); cursor: pointer; }
+  #tackle .tabs button svg { width: 20px; height: 20px; flex: none; }
+  #tackle .tabs button:hover { background: #ffffff10; }
+  #tackle .tabs button.on { background: linear-gradient(180deg, #f7ecd0, var(--parch2)); color: var(--ink); border-color: var(--gold-hi); box-shadow: 0 2px 6px #0006; }
+  #tkBody { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 2px 6px 8px; margin: 0 -4px; -webkit-user-select: text; user-select: text; scrollbar-width: thin; scrollbar-color: #d4e4e066 transparent; }
+  #tkBody ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  #tkBody li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; cursor: pointer; border: 1px solid #d4e4e055; background: #ffffff06; }
+  #tkBody li:hover { background: #ffffff10; border-color: #d4e4e099; }
+  #tkBody li.card { min-height: 84px; padding: 6px 10px 6px 6px; }
+  #tkBody li.card.slim { min-height: 0; padding: 4px 10px 4px 4px; }
+  #tkBody li.card.on { background: linear-gradient(180deg, #f6ebcf, var(--parch2)); color: var(--ink); border-color: var(--gold-hi); box-shadow: 0 3px 10px #0007; margin: 0 -4px; }
+  #tkBody li.bad { opacity: .55; }
+  #tkBody li .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  #tkBody li b { font: 700 19px/1.15 var(--serif); }
+  #tkBody li.slim b, #tkBody .journal b { font-size: 15px; }
+  #tkBody li small { color: #d8cfb4; font-size: 13.5px; }
+  #tkBody li small.end { color: #c4bc9f; font-size: 13px; }
+  #tkBody li.on small { color: #4a3f2c; } #tkBody li.on small.end { color: #6a5d44; }
+  #tkBody li > small { margin-left: auto; text-align: right; }
+  #tkBody li i { font-style: normal; color: #ff9a8a; padding: 2px 6px; }
+  .badge { font: 600 12px var(--sans); font-style: normal; color: #f2ecd8; background: #5d6e3c; border: 1px solid #3f4c27; padding: 3px 9px; border-radius: 8px; align-self: flex-start; margin-top: 12px; white-space: nowrap; }
+  .chev { width: 18px; height: 18px; flex: none; color: var(--cream); opacity: .85; } li.on .chev { color: var(--ink); }
+  .sw { width: 16px; height: 16px; border-radius: 50%; flex: none; border: 1px solid #0006; margin: 0 6px; }
+  .ri { width: 116px; height: 72px; flex: none; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 3px 3px #0007); }
+  .slim .ri { width: 64px; height: 42px; }
+  .ri > svg { width: 100%; height: 100%; }
+  .ri.duo { position: relative; } .ri.duo .ri-f { position: absolute; left: -2px; top: -2px; width: 52px; height: 64px; } .ri.duo .ri-b { position: absolute; right: -2px; bottom: 0; width: 84px; height: 54px; }
+  .ri.duo svg { width: 100%; height: 100%; }
+  #tkBody h3 { margin: 6px 4px 8px; font: 700 20px var(--serif); }
+  #tkBody h4 { margin: 12px 4px 6px; font: 700 15px var(--serif); color: var(--gold-hi); }
+  #tkBody footer { padding: 10px 4px; font-size: 12.5px; color: var(--muted); }
+  #tkBody .tklink { color: var(--gold-hi); text-decoration: underline; cursor: pointer; }
+  #tkBody pre { margin: 6px 0; padding: 8px; background: #0008; border-radius: 8px; font: 11px/1.35 ui-monospace, monospace; white-space: pre-wrap; max-height: 260px; overflow: auto; }
+  .back { display: inline-flex; align-items: center; gap: 4px; background: none; border: 0; color: var(--gold-hi); font: 600 14px var(--serif); cursor: pointer; padding: 2px 4px; }
+  .back svg { width: 14px; height: 14px; transform: scaleX(-1); }
+  /* the tied-on rig on parchment, and the rig builder button */
+  #tkFoot { margin: 8px 0 0; }
+  #tkFoot[hidden] { display: none; }
+  .detail { display: flex; gap: 10px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #8a744a55; position: relative; }
+  .detail .ri { width: 120px; height: 84px; } .detail .ri.duo .ri-f { width: 58px; height: 74px; } .detail .ri.duo .ri-b { width: 88px; height: 58px; }
+  .detail b { display: block; font: 700 20px var(--serif); } .detail i { display: block; font: italic 14px/1.3 var(--serif); color: #4a3f2c; margin-top: 3px; }
+  .detail .reeds { position: absolute; right: -6px; bottom: 4px; width: 42px; height: 60px; color: #8a7a52; opacity: .5; pointer-events: none; } .detail .reeds svg { width: 100%; height: 100%; }
+  .tkdrag { margin: 8px 2px; font-size: 13px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: inherit; }
+  .tkdrag input { flex: 1; min-width: 110px; accent-color: #5d6e3c; }
+  .big { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 11px; border-radius: 12px; cursor: pointer; border: 1.5px solid #2c3a1e;
+    background: linear-gradient(180deg, #4f6a37, #34492a); color: #f4ecd4; font: 700 20px var(--serif); box-shadow: inset 0 1px 0 #ffffff33, 0 3px 6px #0006; }
+  .big:hover { filter: brightness(1.1); } .big svg { width: 24px; height: 24px; flex: none; }
+  .tkform { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 8px 10px; padding: 4px 2px; }
+  .tkform label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+  .tkform select, .tkform input { width: 100%; box-sizing: border-box; padding: 7px; border-radius: 8px; border: 1px solid #d4e4e077; background: #0007; color: var(--cream); font: 13px var(--sans); min-width: 0; }
+  .tkor { grid-column: 1 / -1; font: italic 13px var(--serif); color: var(--gold-hi); margin-top: 4px; }
+  .tkstats { margin: 10px 0; padding: 10px 12px; background: #ffffff0c; border: 1px solid #d4e4e044; border-radius: 10px; font-size: 13px; line-height: 1.6; }
+  .tkstats.bad { color: #ffb0a0; }
+  .tkwarn { margin: 0 2px 8px; font-size: 12.5px; color: #ffd890; line-height: 1.45; }
+  .tkbtns { display: flex; gap: 8px; padding: 6px 0; }
+  .tkbtns button { flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid var(--gold); background: #0003; color: var(--cream); font: 600 15px var(--serif); cursor: pointer; }
+  .tkbtns button:first-child:not(:disabled) { background: linear-gradient(180deg, #4f6a37, #34492a); }
+  .tkbtns button:disabled { opacity: .4; }
+  /* the catch: name, size and keep / release over the fish held up in front of you */
+  #catch { position:fixed; z-index:4; left:50%; bottom:28px; transform:translateX(-50%); min-width:min(300px, calc(100vw - 24px)); padding:12px 16px; text-align:center;
+    background:linear-gradient(180deg, rgba(34,46,33,.96), rgba(24,34,25,.95)); border:2px solid var(--gold); border-radius:18px; color:#f3ead0; font:14px/1.35 system-ui, sans-serif; box-shadow:0 10px 40px #000a; }
+  #catch b { display:block; font:700 24px Georgia, serif; color:var(--cream); }
+  #catch i { display:block; font-size:12px; color:#c8bfa0; margin-bottom:6px; }
+  #ccSize { font-size:16px; } #ccNote { font-size:12.5px; color:#9ad8ff; margin:4px 0 10px; }
+  #catch button { background:#0003; border:1.5px solid var(--gold); color:#fff; border-radius:16px; padding:8px 18px; margin:0 4px; font:600 14px system-ui, sans-serif; cursor:pointer; }
+  #catch { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }   /* the 3D view keeps animating behind it: a live blur costs every frame */
+  #catch #ccTurn { display:block; margin-top:8px; font-size:11px; color:#c8bfa0; } body.touch #catch #ccTurn { display:none; }
+  #catch button#ccKeep { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }

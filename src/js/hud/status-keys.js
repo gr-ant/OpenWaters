@@ -13,7 +13,7 @@ Object.assign(Engine, {
     if (b) {
       if (this.boatMode === 'deck') out.push([K('helm'), 'Helm'], [K('dive'), this.boatSit ? 'Stand' : 'Sit']);
       else out.push([`${K('forward')} ${K('back')}`, 'Throttle'], [`${K('left')} ${K('right')}`, 'Steer'], [K('helm'), 'Stand']);
-      out.push([K('use'), 'Get out']);
+      out.push([K('jump'), 'Jump out']);
     } else if (this.nearBoat()) out.push([K('use'), 'Board']);
     else if (this.swim || this.uw) out.push([K('jump'), 'Up'], [K('dive'), 'Dive']);
     return out.slice(0, 4);
