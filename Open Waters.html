@@ -4902,7 +4902,7 @@ Object.assign(Engine, {
 'use strict';
 // Engine: the message line (say), particle spawning and drawing.
 Object.assign(Engine, {
-  say(t, secs = 2.5) { this.msg = t; this.msgT = secs; },
+  say(t, secs = 2.5) { this.msg = t; this.msgT = Math.max(0.8, Math.min(secs * 0.5, 0.7 + String(t).length * 0.03, 2.5)); },   // on screen briefly: half the time asked for, no longer than it takes to read, 2.5 s at most
   spawn(k, x, y, z, vx, vy, vz, life, sz, extra) {
     if (this.parts.length >= 6000) return;
     const q = { k, x, y, z, vx, vy, vz, life, max: life, s: sz, seed: Math.random() * 100 };
