@@ -70,10 +70,14 @@ function boatMesh(D) {
   const P = (t, s, sd) => { const [y, z] = S.sec(t, s); return [S.x(t), sd * y, z]; };
   // outer skin (antifouling below the waterline)
   M.mat = MT.GEN;
-  for (let i = 0; i < NT; i++) for (let j = 0; j < NS; j++) for (const sd of [1, -1]) {
-    const t0 = i / NT, t1 = (i + 1) / NT, s0 = j / NS, s1 = (j + 1) / NS, a = P(t0, s0, sd), b = P(t1, s0, sd), c = P(t1, s1, sd), e = P(t0, s1, sd);
-    const col = (a[2] + c[2]) / 2 < wl ? below : C.hull; M.quad(a, b, c, e, col, [a[0], 0, 0.3]);
-  }
+  // each panel is cut along the waterline, so the antifouling meets the topsides in a clean line, not a staircase of whole panels
+  const sWl = t => { let lo = 0, hi = 1; for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < wl) lo = m; else hi = m; } return (lo + hi) / 2; };
+  for (let i = 0; i < NT; i++) { const t0 = i / NT, t1 = (i + 1) / NT, w0 = sWl(t0), w1 = sWl(t1);
+    for (let j = 0; j < NS; j++) for (const sd of [1, -1]) {
+      const s0 = j / NS, s1 = (j + 1) / NS, m0 = clamp(w0, s0, s1), m1 = clamp(w1, s0, s1);
+      if (m0 > s0 || m1 > s0) M.quad(P(t0, s0, sd), P(t1, s0, sd), P(t1, m1, sd), P(t0, m0, sd), below, [S.x(t0), 0, 0.3]);
+      if (m0 < s1 || m1 < s1) M.quad(P(t0, m0, sd), P(t1, m1, sd), P(t1, s1, sd), P(t0, s1, sd), C.hull, [S.x(t0), 0, 0.3]);
+    } }
   // inside: walls down to the floor, the floor, and the rim along the gunwale
   const inner = (t, sd, z) => { let y = 0; for (let k = 0; k <= 20; k++) { const [yy, zz] = S.sec(t, k / 20); if (zz >= z) { y = yy; break; } y = yy; } return [S.x(t), sd * Math.max(0, y - th), z]; };
   for (let i = 0; i < NT; i++) {
@@ -126,12 +130,6 @@ function boatMesh(D) {
     for (let k = 0; k < 3; k++) { const a = k * 2.09; M.blob([x - 0.12 * sc, Math.cos(a) * 0.07 * sc, -S.keel(0) - 0.25 * sc + Math.sin(a) * 0.07 * sc], 0.01, 0.06 * sc, 0.03 * sc, 2, 6, [0.6, 0.6, 0.62]); } }
   if (F.trolling_motor) { const x = S.x(0.97), g = S.gun(0.97); M.mat = MT.METAL; M.tube([x, 0, g + 0.15], [x + 0.05, 0, -0.4], 0.015, 0.015, 5, [0.2, 0.2, 0.22]); M.blob([x + 0.05, 0, -0.42], 0.1, 0.04, 0.04, 3, 8, [0.15, 0.15, 0.17]); M.blob([x, 0, g + 0.17], 0.08, 0.06, 0.05, 3, 8, [0.15, 0.15, 0.17]); }
   for (let k = 0; k < (F.rod_holders | 0); k++) { const t = 0.15 + 0.12 * (k >> 1), sd = k % 2 ? 1 : -1, x = S.x(t), y = sd * (S.hb(t) - 0.03), g = S.gun(t); M.mat = MT.METAL; M.tube([x, y, g - 0.08], [x - 0.04, y + sd * 0.02, g + 0.06], 0.02, 0.02, 5, [0.8, 0.8, 0.82], true); }
-  if (F.paddle === 'oars') { const t = clamp(D.crew.seat_at + 0.08, 0, 0.9), x = S.x(t), g = S.gun(t), w = S.hb(t);   // a pair of oars in their rowlocks
-    M.mat = MT.WOOD; for (const sd of [1, -1]) { M.tube([x + 0.5, sd * (w - 0.6), g + 0.12], [x - 0.9, sd * (w + 1.1), g - 0.15], 0.02, 0.018, 5, C.trim); M.blob([x - 0.95, sd * (w + 1.15), g - 0.17], 0.25, 0.06, 0.012, 3, 8, C.accent); } }
-  else if (F.paddle) { const dbl = F.paddle === 'double', t = clamp(D.crew.seat_at + 0.15, 0, 0.9), x = S.x(t), z = (dbl ? S.gun(t) + 0.08 : fz + 0.04), len = dbl ? 2.2 : 1.4;   // a paddle lying across / along the boat
-    M.mat = MT.WOOD; M.tube([x - (dbl ? 0 : len / 2), dbl ? -len / 2 : 0.12, z], [x + (dbl ? 0 : len / 2), dbl ? len / 2 : 0.12, z], 0.015, 0.015, 5, C.trim);
-    const blade = (p, d) => M.blob(p, d ? 0.05 : 0.22, d ? 0.22 : 0.05, 0.012, 3, 8, C.accent);
-    if (dbl) { blade([x, -len / 2, z], true); blade([x, len / 2, z], true); } else blade([x + len / 2, 0.12, z], false); }
   if (F.cabin) { const t0 = F.cabin.from ?? 0.45, t1 = F.cabin.to ?? 0.8, h = F.cabin.height ?? 1.1; M.mat = MT.GEN;   // a small wheelhouse
     const x0 = S.x(t0), x1 = S.x(t1), w = Math.min(S.hb(t0), S.hb(t1)) * 0.85, z0 = fz, z1 = fz + h;
     // each wall is a sill, a header and two posts round an open window, so you can see out from the helm inside
@@ -140,14 +138,58 @@ function boatMesh(D) {
       for (const [u0, u1, za, zb] of [[0, 1, z0, zs], [0, 1, zt, z1], [0, 0.1, zs, zt], [0.9, 1, zs, zt]])
         M.quad(L(p, q, u0, za), L(p, q, u1, za), L(p, q, u1, zb), L(p, q, u0, zb), C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
     M.quad([x0 - 0.05, -w - 0.05, z1], [x1 + 0.05, -w - 0.05, z1], [x1 + 0.05, w + 0.05, z1], [x0 - 0.05, w + 0.05, z1], C.trim, [x0, 0, 0]); }
+  D._hullN = M.v.length / VS;   // the hull's own vertices; the oars / paddle (at rest) follow, for the menu picture
+  const O = D._oars = boatOars(D, S, C); if (O) { const m = new Float32Array(O.mesh.length); for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(D, O, 0, 0, sd, false, O.m); oarXform(O.mesh, O.m, m); for (const v of m) M.v.push(v); } }
   return new Float32Array(M.v);
+}
+// ---- oars and paddles: one small mesh about its pivot (a rowlock, the paddler's lower hand, the middle of a kayak paddle), posed every frame ----
+function boatOars(D, S, C) {
+  const F = D.features, kind = F.paddle === 'oars' ? 'oars' : F.paddle === 'double' ? 'double' : F.paddle ? 'single' : ''; if (!kind) return null;
+  const M = meshBuilder(); M.mat = MT.WOOD;
+  if (kind === 'oars') { M.tube([0, -0.55, 0], [0, 1.3, 0], 0.02, 0.018, 5, C.trim); M.blob([0, 1.47, 0], 0.012, 0.24, 0.07, 3, 8, C.accent); }   // shaft out along +y, handle inboard
+  else if (kind === 'double') { M.tube([0, -1.1, 0], [0, 1.1, 0], 0.015, 0.015, 5, C.trim); for (const sd of [1, -1]) M.blob([0, sd * 1.12, 0], 0.012, 0.22, 0.08, 3, 8, C.accent); }
+  else { M.tube([0, 0, -0.45], [0, 0, 0.75], 0.015, 0.015, 5, C.trim); M.blob([0, 0, 0.78], 0.02, 0.06, 0.02, 2, 6, C.trim); M.blob([0, 0, -0.62], 0.012, 0.09, 0.2, 3, 8, C.accent); }   // grip up, blade down
+  return { kind, mesh: new Float32Array(M.v), live: ['paddle', 'double_paddle', 'oars'].includes(D.propulsion.type), m: new Float32Array(12) };   // live: worked from the helm (a pedal kayak's paddle stays stowed)
+}
+// pose of one oar / paddle in the boat's frame (out: 3x3 rotation, column-major, then the pivot): ph the stroke phase, k how hard you're
+// pulling (0..1), sd the side (oars: +1 starboard, -1 port), live false: stowed. Blade in the water while sin(ph) > 0, sweeping aft.
+function oarPose(D, O, ph, k, sd, live, out) {
+  const S = D._shape || hullShape(D.hull), H = D.hull, ts = clamp(D.crew.seat_at, 0, 1), dr = sstep(-0.3, 0.3, Math.sin(ph)), c = Math.cos(ph);
+  const rx = a => [1, 0, 0, 0, Math.cos(a), Math.sin(a), 0, -Math.sin(a), Math.cos(a)], ry = a => [Math.cos(a), 0, -Math.sin(a), 0, 1, 0, Math.sin(a), 0, Math.cos(a)], rz = a => [Math.cos(a), Math.sin(a), 0, -Math.sin(a), Math.cos(a), 0, 0, 0, 1];
+  const mm = (A, B) => { const R = []; for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) R[j * 3 + i] = A[i] * B[j * 3] + A[3 + i] * B[j * 3 + 1] + A[6 + i] * B[j * 3 + 2]; return R; };
+  let R, T;
+  if (O.kind === 'oars') { const t = clamp(ts + 0.08, 0, 0.9), g = S.gun(t), din = Math.asin(clamp((g + 0.12) / 1.47, 0, 0.9));   // dipped just enough to bury the blade
+    const th = live ? 0.65 * k * c : -1.1, dip = live ? din - 0.25 + 0.25 * dr * Math.min(1, k * 2) : 0.12;   // stowed: trailing aft along the hull
+    R = mm(rz(-th), rx(-dip)); T = [S.x(t), S.hb(t), g + 0.05]; }
+  else if (O.kind === 'double') { const t = clamp(ts + (live ? 0 : 0.15), 0, 0.9), g = S.gun(t);
+    R = live ? mm(rz(-0.5 * k * c), rx(-0.62 * k * Math.sin(ph))) : ry(Math.PI / 2); T = live ? [S.x(t) + 0.45, 0, g + 0.22] : [S.x(t), 0, g + 0.08]; }
+  else { const t = clamp(ts + (live ? 0 : 0.15), 0, 0.9), g = S.gun(t);   // single blade on the starboard side: reach forward, pull aft, lift and feather out
+    R = live ? mm(rx(0.15 + 0.5 * (1 - dr * k)), ry(-0.35 * k * c)) : ry(Math.PI / 2);
+    T = live ? [S.x(t) + 0.3 + 0.32 * k * c, S.hb(t) + 0.07, g + 0.12 + 0.3 * (1 - dr * k)] : [S.x(t), 0.12, H.floor_m + 0.04]; }
+  for (let i = 0; i < 9; i++) out[i] = R[i] * (i % 3 === 1 ? sd : 1); out[9] = T[0]; out[10] = sd * T[1]; out[11] = T[2];   // the port side is the mirror image
+  return out;
+}
+// the oar mesh (src) posed by m into dst: positions and normals
+function oarXform(src, m, dst) {
+  for (let o = 0; o < src.length; o += VS) { const x = src[o], y = src[o + 1], z = src[o + 2], nx = src[o + 3], ny = src[o + 4], nz = src[o + 5];
+    dst[o] = m[0] * x + m[3] * y + m[6] * z + m[9]; dst[o + 1] = m[1] * x + m[4] * y + m[7] * z + m[10]; dst[o + 2] = m[2] * x + m[5] * y + m[8] * z + m[11];
+    dst[o + 3] = m[0] * nx + m[3] * ny + m[6] * nz; dst[o + 4] = m[1] * nx + m[4] * ny + m[7] * nz; dst[o + 5] = m[2] * nx + m[5] * ny + m[8] * nz;
+    for (let q = 6; q < VS; q++) dst[o + q] = src[o + q]; }
+  return dst;
+}
+// where the water must not show: the hull's half-beam at the waterline and at the gunwale, 12 stations stern to bow (for the water shader)
+function hullWaterTable(H, S) {
+  const tab = new Float32Array(24);
+  for (let i = 0; i < 12; i++) { const t = i / 11; let lo = 0, hi = 1; for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < 0) lo = m; else hi = m; }
+    tab[i] = S.sec(t, lo)[0]; tab[12 + i] = S.hb(t); }
+  return tab;
 }
 const BoatDB = {
   list: [], byId: {}, gpu: [],
   register(raw, { quiet = false } = {}) {
     const r = validateBoat(raw);
     if (!r.def) { if (!quiet) console.warn('Boat rejected:', raw && raw.id, r.errors); return r; }
-    const d = r.def; d._mesh = boatMesh(d); d._shape = hullShape(d.hull);
+    const d = r.def; d._shape = hullShape(d.hull); d._mesh = boatMesh(d); d._wtab = hullWaterTable(d.hull, d._shape); d._fb = (d._shape.gun(0.25) + d._shape.gun(0.5) + d._shape.gun(0.75)) / 3;
     const old = this.byId[d.id]; if (old) { const i = this.list.indexOf(old); this.list[i] = d; if (this.gpu[i]) this.gpu[i].stale = true; } else this.list.push(d);
     this.byId[d.id] = d; if (r.warnings.length && !quiet) console.info(`Boat "${d.id}" notes:`, r.warnings); return r;
   },

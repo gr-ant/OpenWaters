@@ -145,15 +145,21 @@ Object.assign(Engine, {
       gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (this.boats.length) { // boats: one draw each (they pitch and heel on their own)
-      gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]);
+      gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.hull, 1);
       for (const b of this.boats) {
         if (Math.abs(b.x - E[0]) > 900 || Math.abs(b.y - E[1]) > 900) continue;
         const i = BoatDB.list.indexOf(b.def); let g = BoatDB.gpu[i];
         if (!g || g.stale) { if (g) { gl.deleteVertexArray(g.vao); gl.deleteBuffer(g.ib); gl.deleteBuffer(g.vb); } const ib = gl.createBuffer(), vb = this.vbo(b.def._mesh); g = BoatDB.gpu[i] = { vao: this.litVao(vb, VB, ib, 40), ib, vb, n: b.def._mesh.length / VS }; }
         gl.uniform1f(L.u.roll, b.roll || 0);
-        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1);
+        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.def._oars ? b.def._hullN : g.n, 1);
+        const O = b.def._oars; if (O && (b.oarOn || b.oarWas)) {   // oars / paddle in the stroke: posed on the CPU (a few hundred vertices) into their own buffer, drawn with the hull's instance
+          if (!g.oar) { g.oar = { vb: gl.createBuffer(), data: new Float32Array(O.mesh.length * (O.kind === 'oars' ? 2 : 1)) }; g.oar.vao = this.litVao(g.oar.vb, VB, g.ib, 40); }
+          const n = O.mesh.length; let o = 0; for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(b.def, O, b.oarPh ? b.oarPh[sd > 0 ? 0 : 1] : 0, b.oarOn ? b.oarK || 0 : 0, sd, !!b.oarOn, O.m); oarXform(O.mesh, O.m, g.oar.data.subarray(o, o + n)); o += n; }
+          gl.bindBuffer(gl.ARRAY_BUFFER, g.oar.vb); gl.bufferData(gl.ARRAY_BUFFER, g.oar.data, gl.STREAM_DRAW); gl.bindVertexArray(g.oar.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, o / VS, 1);
+        } else if (O) gl.drawArraysInstanced(gl.TRIANGLES, b.def._hullN, g.n - b.def._hullN, 1);   // stowed: they're in the boat's own mesh
+        b.oarWas = b.oarOn;
       }
-      gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0);
+      gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0); gl.uniform1f(L.u.hull, 0);
     }
     if (globalThis.Birds) Birds.draw(this, gl, L, E);   // birds: in the air, on the water, on perches and boats
     if (this.ang && this.ang.out) { this.drawTackle(gl, L, E); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
@@ -197,6 +203,13 @@ Object.assign(Engine, {
       if (R.length > 8) R.sort((a, b) => a.d2 - b.d2);
       rp.fill(0); for (let i = 0; i < Math.min(8, R.length); i++) { const r = R[i]; rp[i * 4] = r.x; rp[i * 4 + 1] = r.y; rp[i * 4 + 2] = r.t; rp[i * 4 + 3] = r.s; }
       gl.uniform4fv(Wt.u['rip[0]'], rp); }
+    { // the 4 nearest boats: no water surface drawn inside their hulls
+      const hu = this.hulUni || (this.hulUni = new Float32Array(48)), ht = this.hbtUni || (this.hbtUni = new Float32Array(96)), bs = this._hulB || (this._hulB = []); bs.length = 0;
+      for (const b of this.boats) { b.d2 = (b.x - E[0]) ** 2 + (b.y - E[1]) ** 2; if (b.d2 < 300 * 300) bs.push(b); }
+      if (bs.length > 4) bs.sort((a, b) => a.d2 - b.d2);
+      const n = Math.min(4, bs.length);
+      for (let i = 0; i < n; i++) { const b = bs[i], D = b.def; hu.set([b.x, b.y, Math.cos(b.a), Math.sin(b.a), D.hull.length_m, b.z, Math.sin(b.pitch || 0), Math.sin(b.roll || 0), D._fb, D.hull.draft_m, 0, 0], i * 12); ht.set(D._wtab, i * 24); }
+      gl.uniform1i(Wt.u.nh, n); if (n) { gl.uniform4fv(Wt.u['hul[0]'], hu); gl.uniform4fv(Wt.u['hbt[0]'], ht); } }
     for (let i = 0; i < visible.length; i += 2) { const w = visible[i].water; if (w) { gl.bindVertexArray(w.vao); gl.drawElements(gl.TRIANGLES, w.count, gl.UNSIGNED_SHORT, 0); } }
     this.drawParticles(vp, Hh, ty, E, 1);   // particles on the camera's side of the water surface go on top of it
     if (!uw && ENV.rain > 0.03) { // rain or snow falling around you

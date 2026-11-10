@@ -52,12 +52,12 @@ Object.assign(Engine, {
   },
   boardBoat(b) {
     this.boat = b; this.boatMode = 'drive'; this.boatSit = true; this.tuiState = null; this.P.vz = 0;   // the fish radar stays as you left it (key 2): boarding, as travel does, must not switch it on
-    const dh = b.a - this.P.a; this.P.a = b.a; this.P.pitch = -0.1; this.seatBoat(b);
+    const dh = b.a - this.P.a; this.P.a = b.a; this.P.pitch = -0.1; this.seatBoat(b); this.boatKick(b, -1.2, Math.random() < 0.5 ? 0.6 : -0.6);   // stepping in: it dips and wobbles
     this.say(`${b.def.name}: ${this.touchUI ? 'joystick' : 'W/S'} ${['outboard', 'inboard'].includes(b.def.propulsion.type) ? 'throttle' : b.def.propulsion.type === 'oars' ? 'row' : b.def.propulsion.type === 'pedal' ? 'pedal' : 'paddle'}, ${this.touchUI ? 'left/right' : 'A/D'} steer · ${this.touchUI ? 'Jump' : 'Space'} to jump out`, 5);
     Game.emit('boardBoat', b);
   },
   leaveBoat(jump) {
-    const b = this.boat; if (!b) return; const P = this.P, D = b.def; this.boat = null; this.boatMode = 'drive'; b.v = 0;
+    const b = this.boat; if (!b) return; const P = this.P, D = b.def; this.boat = null; this.boatMode = 'drive'; b.v = 0; b.oarOn = false; this.boatKick(b, jump ? -1.5 : 0.8, jump ? 0.8 : 0.4);
     if (jump) {   // over the side the way you're facing: clear of the hull, then the usual fall (into the water, or onto the bank)
       const ca = Math.cos(P.a), sa = Math.sin(P.a); let d = 0.6; while (d < D.hull.length_m + 1 && this.boatOver(b, P.x + ca * (d - 0.5), P.y + sa * (d - 0.5))) d += 0.2;
       P.x += ca * d; P.y += sa * d; P.vz = CONFIG.jumpSpeed; Game.emit('leaveBoat', b); return;
@@ -87,10 +87,11 @@ Object.assign(Engine, {
     // the current carries it; then move if the hull still floats there (bow and centre)
     const fl = flowAt(b.x, b.y, b.kd), drift = Hd.current_drift * (seat ? 1 : 0.6);
     const nx = b.x + (Math.cos(b.a) * b.v + fl[0] * drift) * dt, ny = b.y + (Math.sin(b.a) * b.v + fl[1] * drift) * dt, dir = Math.sign(b.v || 1);
-    const need = H.draft_m + 0.05, bowNow = this.boatDepth(b.x + Math.cos(b.a) * L * 0.48 * dir, b.y + Math.sin(b.a) * L * 0.48 * dir), bowNew = this.boatDepth(nx + Math.cos(b.a) * L * 0.48 * dir, ny + Math.sin(b.a) * L * 0.48 * dir);
-    const ok = this.boatDepth(nx, ny) >= need * 0.8 && (bowNew >= need * 0.6 || bowNew > bowNow);   // you can always back off or head for deeper water
+    let hit = null; const need = H.draft_m + 0.05, bowNow = this.boatDepth(b.x + Math.cos(b.a) * L * 0.48 * dir, b.y + Math.sin(b.a) * L * 0.48 * dir), bowNew = this.boatDepth(nx + Math.cos(b.a) * L * 0.48 * dir, ny + Math.sin(b.a) * L * 0.48 * dir);
+    const ok = this.boatDepth(nx, ny) >= need * 0.8 && (bowNew >= need * 0.6 || bowNew > bowNow) && !(hit = this.boatHits(b, nx, ny));   // you can always back off or head for deeper water; boats don't pass through each other
     if (ok && this.pastEdge(nx, ny) && Math.hypot(nx, ny) > Math.hypot(b.x, b.y)) { this.edgeWarn(); b.v *= 0.5; b.v = Math.min(b.v, 0.3); }   // the edge of the sea: no further out
     else if (ok) { b.x = nx; b.y = ny; }
+    else if (hit) { hit.x += Math.cos(b.a) * b.v * 0.4 * dt; hit.y += Math.sin(b.a) * b.v * 0.4 * dt; if (Math.abs(b.v) > 1) this.boatKick(b, -0.5, 1); b.v *= -0.3; }   // bumped another boat: nudge it, bounce off
     else { if (Math.abs(b.v) > 1.2 && performance.now() - (this.groundT || 0) > 2500) { this.groundT = performance.now(); this.say('Aground', 1.2); this.addRipple(b.x, b.y, 0.8); } b.v *= -0.15; }
     // ride the swell: height from the middle, pitch and heel from the ends and sides; motorboats lift their bow at speed
     const ca = Math.cos(b.a), sa = Math.sin(b.a), hw = H.beam_m / 2, soft = 1 - 0.6 * clamp(Hd.stability, 0, 1);
@@ -98,9 +99,17 @@ Object.assign(Engine, {
     const zl = this.swellAt(b.x - sa * hw, b.y + ca * hw, b.kd), zr = this.swellAt(b.x + sa * hw, b.y - ca * hw, b.kd);
     b.z = SW + (zb + zs + zl + zr) / 4;
     const plane = motor ? sstep(0.25, 0.6, b.v / Pr.max_speed_ms) * (1 - sstep(0.75, 1, b.v / Pr.max_speed_ms) * 0.5) : 0;
-    b.pitch += (Math.atan2(zb - zs, L) * (0.6 + soft) + 0.07 * plane - b.pitch) * Math.min(1, dt * 4);
-    b.roll += (Math.atan2(zl - zr, H.beam_m) * soft * 1.4 - dyaw / Math.max(dt, 1e-3) * 0.12 * clamp(b.v / 3, -1, 1) - b.roll) * Math.min(1, dt * 3);
-    b.z += plane * 0.08;
+    b.sp = (b.sp ?? b.pitch) + (Math.atan2(zb - zs, L) * (0.6 + soft) + 0.07 * plane - (b.sp ?? b.pitch)) * Math.min(1, dt * 4);
+    b.sr = (b.sr ?? b.roll) + (Math.atan2(zl - zr, H.beam_m) * soft * 1.4 - dyaw / Math.max(dt, 1e-3) * 0.12 * clamp(b.v / 3, -1, 1) - (b.sr ?? b.roll)) * Math.min(1, dt * 3);
+    // oars and paddles: the stroke runs with what you ask of it (each oar on its own, so A/D pulls one and backs the other)
+    const O = D._oars, row = seat && O && O.live; b.oarOn = row;
+    if (row) { const ph = b.oarPh || (b.oarPh = [0, 0]), rate = 6.2832 * (0.45 + 0.55 * clamp(Math.abs(b.v) / Pr.max_speed_ms, 0, 1));
+      for (const i of [0, 1]) { const e = O.kind === 'oars' ? clamp(f - (i ? -1 : 1) * s * 0.6, -1, 1) : f || Math.abs(s) * 0.6; ph[i] += dt * rate * Math.sign(e) * (0.5 + 0.5 * Math.abs(e)); }
+      b.oarK = (b.oarK || 0) + ((f || s ? 1 : 0) - (b.oarK || 0)) * Math.min(1, dt * 3); }
+    const stroke = row ? (O.kind === 'double' ? -Math.sin(b.oarPh[0]) : O.kind === 'single' ? -sstep(-0.3, 0.3, Math.sin(b.oarPh[0])) : 0) * b.oarK * 0.25 : 0;   // a paddle stroke rolls a light hull toward its side
+    this.boatRock(b, dt, seat ? null : this.boatLX, this.boatLY, stroke);
+    b.pitch = b.sp + b.rock[1]; b.roll = b.sr + b.rock[0];
+    b.z += plane * 0.08 + b.rock[2];
     if (seat) this.seatBoat(b);
     // wake, spray, and the noise that frightens fish
     const sp = Math.abs(b.v);
@@ -108,6 +117,12 @@ Object.assign(Engine, {
     if (sp > 2.5) this.emitN(sp * 6, dt, () => { const sd = Math.random() < 0.5 ? 1 : -1, bx = b.x + ca * L * 0.38 - sa * sd * hw * 0.8, by = b.y + sa * L * 0.38 + ca * sd * hw * 0.8;
       this.spawn(DROP, bx, by, b.wl + 0.05, -sa * sd * this.rnd(0.5, 1.5) - ca * sp * 0.2, ca * sd * this.rnd(0.5, 1.5) - sa * sp * 0.2, this.rnd(0.8, 1.8), this.rnd(0.4, 0.8), 0.04); });
     if (motor && sp > 0.5) this.emitN(sp * 4, dt, () => this.spawn(MIST, b.x - ca * L * 0.55, b.y - sa * L * 0.55, b.wl + 0.05, -ca * 1.5, -sa * 1.5, 0.3, this.rnd(0.6, 1.2), 0.25));
+    // the prop throws water: a fan of spray up and astern and a churn of foam, with the throttle (some even standing still), more with speed
+    const thr = motor && seat ? Math.abs(f) * (run ? 1 : 0.7) : 0;
+    if (thr > 0.05) { const px = b.x - ca * (L / 2 + 0.15), py = b.y - sa * (L / 2 + 0.15), back = Math.sign(f) * (1.5 + sp * 0.5), big = clamp(Math.log10(D.features.motor ? D.features.motor.hp ?? 25 : 150) / 2.3, 0.4, 1.2);
+      this.emitN(thr * big * (30 + 8 * sp), dt, () => { const sd = this.rnd(-1, 1); this.spawn(DROP, px - sa * sd * 0.25, py + ca * sd * 0.25, b.wl + 0.05, -ca * back * this.rnd(0.6, 1.2) - sa * sd * 0.9, -sa * back * this.rnd(0.6, 1.2) + ca * sd * 0.9, this.rnd(1.2, 3.2) * (0.6 + 0.6 * thr) * big, this.rnd(0.4, 0.9), this.rnd(0.03, 0.06)); });
+      this.emitN(thr * big * (10 + 2 * sp), dt, () => this.spawn(MIST, px + this.rnd(-0.3, 0.3) - ca * this.rnd(0, 1.5), py + this.rnd(-0.3, 0.3) - sa * this.rnd(0, 1.5), b.wl + 0.04, -ca * back * 0.4, -sa * back * 0.4, 0.05, this.rnd(1.2, 2.2), this.rnd(0.3, 0.55) * big, { g: 0 }));
+      if ((this.propT = (this.propT || 0) - dt) <= 0) { this.propT = 0.25; this.addRipple(px, py, 0.3 + 0.5 * thr); } }
     if ((this.boatNoiseT = (this.boatNoiseT || 0) - dt) <= 0) { this.boatNoiseT = 0.3; const n = Pr.noise * (motor ? 0.4 + sp / Pr.max_speed_ms : sp / Math.max(0.5, Pr.max_speed_ms)); if (n > 0.04) this.disturb(b.x, b.y, n * 1.6); }
     b.speed = sp;
     return b.wl;

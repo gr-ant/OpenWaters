@@ -110,6 +110,7 @@ in vec3 wp; in vec3 wn; in vec3 col; in vec2 tuv; in float mt; in vec3 tp; in ve
 uniform float night, emk, time; uniform vec4 fl[8]; uniform int nfl; uniform vec3 lcol, amb;
 uniform vec4 seasA, seasB; // seasB: snow cover, wetness, lightning flash
 uniform float clr;   // > 0: see-through (jellies), more solid where seen edge-on; 0 (unset) is opaque
+uniform float hull;  // drawing a boat: only what's below its own waterline (model z < 0) is under water, never the floor inside
 ${FOG_GLSL}
 ${NOISE_GLSL}
 ${CAUSTIC_GLSL}
@@ -140,10 +141,10 @@ vec3 surface(vec3 c, vec3 N, int id, inout float spec, inout float em){
     float st = smoothstep(.5, .2, abs(N.z)), w = smoothstep(.35, .65, abs(N.x) / (abs(N.x) + abs(N.y) + 1e-4));
     return c * mix(terrK(P.xz, P.z, st, fw), terrK(P.yz, P.z, st, fw), w);
   }
-  if (id == 2) { // wood: boards with grain and dark seams
-    float bw = .24, b = floor(q.x / bw), fx = fract(q.x / bw);
-    float g = vn(vec2(q.x * 28., q.y * 1.4 + b * 7.)) * .6 + vn(vec2(q.x * 80., q.y * 3.5 + b)) * .4;
-    float seam = smoothstep(0., .07, fx) * smoothstep(1., .93, fx);
+  if (id == 2) { // wood: boards with grain and dark seams; grain and seams finer than a pixel fade to their average (no shimmer on far rails and planks)
+    float bw = .24, b = floor(q.x / bw), fx = fract(q.x / bw), fw = length(fwidth(P));
+    float g = af(vn(vec2(q.x * 28., q.y * 1.4 + b * 7.)), fw * 28.) * .6 + af(vn(vec2(q.x * 80., q.y * 3.5 + b)), fw * 80.) * .4;
+    float seam = mix(.93, smoothstep(0., .07, fx) * smoothstep(1., .93, fx), smoothstep(.6, .25, fw * 60.));
     if (abs(N.z) > .7) seam = 1.;
     return c * (.85 + .3 * h21(vec2(b, 3.))) * (.72 + .45 * g) * (.55 + .45 * seam);
   }
@@ -160,10 +161,10 @@ vec3 surface(vec3 c, vec3 N, int id, inout float spec, inout float em){
     float f = vn(vec2(q.x * 16., q.y * 1.3)) * .7 + vn(vec2(q.x * 40., q.y * 4.)) * .3;
     return c * (.64 + .50 * f);
   }
-  if (id == 8) return c * (.94 + .06 * vn(q * 45.)); // cloth / skin: smooth with a faint weave
+  if (id == 8) return c * (.94 + .06 * af(vn(q * 45.), length(fwidth(P)) * 45.)); // cloth / skin: smooth with a faint weave
   if (id == 9) { em = 1.; return c; } // crystals glow
   if (id == 11) { em = night; return mix(c * .45, c, night); } // lamp glass
-  if (id == 12) { spec = 1.2; return c * (.9 + .1 * vn(q * 30.)); } // metal
+  if (id == 12) { spec = 1.2; return c * (.9 + .1 * af(vn(q * 30.), length(fwidth(P)) * 30.)); } // metal
   return c;
 }
 vec3 fireLight(vec3 N){ // up to 8 flickering warm lights (xyz, intensity)
@@ -191,6 +192,7 @@ void main(){
   c += bc * fireLight(N);
   c += bc * seasB.z * vec3(.7, .75, 1.) * (.5 + .5 * max(N.z, 0.));   // lightning
   float wd = wv.x - wp.z; // depth below the local water surface
+  if (hull > .5) wd = min(wd, -tp.z);
   if (wd > 0.) { // underwater: tinted, dimmed with depth, dappled by caustics
     float mk = wv.y;
     vec3 tint = mix(vec3(.36, .68, .72), vec3(.5, .55, .25), mk);

@@ -20,11 +20,24 @@ uniform vec4 ice; // ice on lakes, on ponds; snow lying on it; arctic pack ice o
 ${FOG_GLSL}
 ${NOISE_GLSL}
 ${CAVE_GLSL}
+// boats (up to 4): x, y, cos/sin heading · length, z, sin pitch, sin roll · freeboard, draft; then half-beams at the waterline and the gunwale, 12 stations each
+uniform vec4 hul[12]; uniform vec4 hbt[24]; uniform int nh;
+float hbAt(int base, int k){ return dot(hbt[base + k / 4], vec4(equal(ivec4(k % 4), ivec4(0, 1, 2, 3)))); }
+bool inHull(vec3 p){   // is this bit of water inside a hull? (then it isn't drawn: no water sloshing over the floor)
+  for (int i = 0; i < 4; i++) { if (i >= nh) break;
+    vec4 A = hul[i * 3], B = hul[i * 3 + 1], C = hul[i * 3 + 2]; vec2 d = p.xy - A.xy; float lx = dot(d, A.zw), ly = d.y * A.z - d.x * A.w, t = lx / B.x + .5;
+    if (t <= 0. || t >= 1.) continue;
+    float f = t * 11.; int k = min(int(f), 10); f -= float(k);
+    float w = mix(hbAt(i * 6, k), hbAt(i * 6, k + 1), f), g = mix(hbAt(i * 6 + 3, k), hbAt(i * 6 + 3, k + 1), f), lz = p.z - B.y - B.z * lx - B.w * ly;
+    if (abs(ly) < (lz < 0. ? w * max(0., 1. + lz / C.y) : mix(w, g, min(lz / C.x, 1.))) + .015) return true; }
+  return false;
+}
 float hgt(vec2 q){ return vn(q) * .6 + vn(q * 2.3 + 4.1) * .4; }
 vec2 grd(vec2 q){ float h = hgt(q); return vec2(hgt(q + vec2(.12, 0.)) - h, hgt(q + vec2(0., .12)) - h) / .12; }
 void main(){
   float dep = prp.x, foam = prp.y, murk = prp.z, wav = prp.w * (.55 + 1.1 * wx.y);
   if (wkd > 2.5) murk += wx.z * .55;   // streams run muddy after rain
+  if (nh > 0 && inHull(wp)) discard;
   vec2 q = wp.xy;
   // metres of water under one pixel: detail finer than that aliases into stripes far off, so fade it (aa(freq in rad/m))
   vec2 fq2 = fwidth(q); float px = max(fq2.x, fq2.y);
