@@ -67,7 +67,13 @@
           <button type="button" role="radio" data-ground="2" aria-checked="true"><b>Full</b><small>lush meadows</small></button>
         </div>
       </div>
-      <label class="pm-check"><input id="setToon" type="checkbox" checked> <span>Painted look<small>Soft banded light, warm sunsets and richer colour. Off is the original, more realistic look.</small></span></label>
+      <div class="pm-wild" role="radiogroup" aria-labelledby="lookTitle">
+        <div class="pm-wild-head"><b id="lookTitle">Look</b><small>Painted: soft banded light, warm sunsets and richer colour. Legacy: the original look.</small></div>
+        <div class="pm-wild-opts">
+          <button type="button" role="radio" data-look="painted" aria-checked="true"><b>Painted</b><small>soft light, rich colour</small></button>
+          <button type="button" role="radio" data-look="legacy" aria-checked="false"><b>Legacy</b><small>the original</small></button>
+        </div>
+      </div>
       <label class="pm-check"><input id="setReelKeys" type="checkbox" checked> <span>Show controls on the reel<small>Key labels pinned to the handle, bail and drag while you fish.</small></span></label>
       <label class="pm-check"><input id="setMusic" type="checkbox"> <span>Music<small>A calm, looping soundtrack.</small></span></label>
       <label class="pm-check"><input id="setAnimals" type="checkbox"> <span>Animal sounds<small>Birds calling around you.</small></span></label>
@@ -263,6 +269,8 @@
 <!-- Walking trails and signposts are disabled for now. -->
 <script src="js/boot.js"></script>
 <!-- built-in fish species, boats and tackle: one JSON block each, the same format as files you drop onto the game -->
+<script type="application/json" data-builtin="look" src="looks/painted.json"></script>
+<script type="application/json" data-builtin="look" src="looks/legacy.json"></script>
 <script type="application/json" data-builtin="angler" src="angler/angler.json"></script>
 <script type="application/json" data-builtin="clothes" src="angler/clothes.json"></script>
 <script type="application/json" data-builtin="feature" src="features/sea_stacks.json"></script>

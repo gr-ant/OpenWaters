@@ -76,7 +76,7 @@ const CONFIG = {
   windSway: 1,                        // tree sway strength, 0 = still
   groundCover: (() => { try { return matchMedia('(pointer: coarse)').matches ? 1 : 2; } catch (e) { return 2; } })(),   // grass, flowers, ferns, bushes, moss on land: 0 off · 1 light (touch default) · 2 full
   lanternAtNight: true,               // soft light around the player after dark
-  toon: true,                         // painted storybook look: banded light, warm sun and cool purple shadows, richer colour, puffy two-tone clouds, teal water (false = the original look; Settings)
+  look: 'painted',                    // graphics look, one of src/looks/*.json: 'painted' (banded light, warm sun and cool purple shadows, richer colour, puffy clouds, teal water) or 'legacy' (the original); Settings
   // inventory & pickups
   inventorySlotsPerLevel: 5, stackSize: 10, collectRange: 3,
   saveProgress: true,                 // remember inventory and taken pickups in this browser (per seed)

@@ -560,7 +560,13 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
           <button type="button" role="radio" data-ground="2" aria-checked="true"><b>Full</b><small>lush meadows</small></button>
         </div>
       </div>
-      <label class="pm-check"><input id="setToon" type="checkbox" checked> <span>Painted look<small>Soft banded light, warm sunsets and richer colour. Off is the original, more realistic look.</small></span></label>
+      <div class="pm-wild" role="radiogroup" aria-labelledby="lookTitle">
+        <div class="pm-wild-head"><b id="lookTitle">Look</b><small>Painted: soft banded light, warm sunsets and richer colour. Legacy: the original look.</small></div>
+        <div class="pm-wild-opts">
+          <button type="button" role="radio" data-look="painted" aria-checked="true"><b>Painted</b><small>soft light, rich colour</small></button>
+          <button type="button" role="radio" data-look="legacy" aria-checked="false"><b>Legacy</b><small>the original</small></button>
+        </div>
+      </div>
       <label class="pm-check"><input id="setReelKeys" type="checkbox" checked> <span>Show controls on the reel<small>Key labels pinned to the handle, bail and drag while you fish.</small></span></label>
       <label class="pm-check"><input id="setMusic" type="checkbox"> <span>Music<small>A calm, looping soundtrack.</small></span></label>
       <label class="pm-check"><input id="setAnimals" type="checkbox"> <span>Animal sounds<small>Birds calling around you.</small></span></label>
@@ -739,7 +745,7 @@ const CONFIG = {
   windSway: 1,                        // tree sway strength, 0 = still
   groundCover: (() => { try { return matchMedia('(pointer: coarse)').matches ? 1 : 2; } catch (e) { return 2; } })(),   // grass, flowers, ferns, bushes, moss on land: 0 off · 1 light (touch default) · 2 full
   lanternAtNight: true,               // soft light around the player after dark
-  toon: true,                         // painted storybook look: banded light, warm sun and cool purple shadows, richer colour, puffy two-tone clouds, teal water (false = the original look; Settings)
+  look: 'painted',                    // graphics look, one of src/looks/*.json: 'painted' (banded light, warm sun and cool purple shadows, richer colour, puffy clouds, teal water) or 'legacy' (the original); Settings
   // inventory & pickups
   inventorySlotsPerLevel: 5, stackSize: 10, collectRange: 3,
   saveProgress: true,                 // remember inventory and taken pickups in this browser (per seed)
@@ -1769,9 +1775,9 @@ void main(){
   } else { tp = p; wv = vec3(twl, tmk, 1.); }
   wp = q; wn = m; tuv = uv; gl_Position = vp * vec4(q, 1.);
 }`;
-// underwater: fog thickens exponentially into the water colour; toon (painted look, CONFIG.toon): the haze builds up sooner, for stronger aerial perspective
-const FOG_GLSL = `uniform vec3 cam, sun, fogc; uniform float far, uwf, toon;
-vec3 fog(vec3 c, vec3 wp){ float d = length(wp - cam) / far; return mix(c, fogc, uwf > .5 ? 1. - exp(-d * 3.2) : clamp(d*d*1.3 + toon * .6 * d * (1. - d), 0., 1.)); }`;
+// underwater: fog thickens exponentially into the water colour; lk_haze (the look's haze, src/looks/*.json): it builds up sooner, for stronger aerial perspective
+const FOG_GLSL = `uniform vec3 cam, sun, fogc; uniform float far, uwf, lk_haze;
+vec3 fog(vec3 c, vec3 wp){ float d = length(wp - cam) / far; return mix(c, fogc, uwf > .5 ? 1. - exp(-d * 3.2) : clamp(d*d*1.3 + lk_haze * .6 * d * (1. - d), 0., 1.)); }`;
 // light focused by surface ripples onto whatever lies underwater
 const CAUSTIC_GLSL = `float caustic(vec2 uv, float tm){
   vec2 p = mod(uv * 6.28318, 6.28318) - 250., i = p; float c = 1.;
@@ -1807,6 +1813,7 @@ uniform vec4 seasA, seasB; // seasB: snow cover, wetness, lightning flash
 uniform float clr;   // > 0: see-through (jellies), more solid where seen edge-on; 0 (unset) is opaque
 uniform float hull;  // drawing a boat: only what's below its own waterline (model z < 0) is under water, never the floor inside
 ${FOG_GLSL}
+uniform float lk_grain, lk_grass, lk_bands, lk_rim, lk_saturation;   // the look's effects (src/looks/*.json), 0 = the original
 ${NOISE_GLSL}
 ${CAUSTIC_GLSL}
 ${CAVE_GLSL}
@@ -1871,10 +1878,10 @@ void main(){
   vec3 N = normalize(wn); float spec = 0., em = 0.;
   if (wv.z > .5 && N.z < .62) { vec3 Nf = normalize(cross(dFdx(wp), dFdy(wp))); if (dot(Nf, N) < 0.) Nf = -Nf; N = normalize(mix(N, Nf, smoothstep(.62, .35, N.z))); }   // steep terrain: faceted, like fractured rock, not draped cloth
   vec3 bc = surface(col, N, int(mt + .5), spec, em);
-  { int sid = int(mt + .5); if (sid != 9 && sid != 11) bc = mix(bc, col, toon * .5); }   // toon: half the procedural grain, flatter cleaner colour (not glowing crystals or lamp glass)
+  { int sid = int(mt + .5); if (sid != 9 && sid != 11) bc = mix(bc, col, lk_grain * .5); }   // painted: half the procedural grain, flatter cleaner colour (not glowing crystals or lamp glass)
   { // seasons: dormant grass browns, snow settles on what faces up, rain darkens
     float above = (wv.z < .5 && wv.x == 0.) || wv.x - wp.z < -.04 ? 1. : 0., id = mt + .5;
-    if (wv.z > .5 && above > 0.) { float gr = clamp((bc.g - max(bc.r, bc.b)) * 7., 0., 1.); bc = mix(bc, vec3(dot(bc, vec3(.5, .4, .1))) * vec3(1.18, 1., .62), gr * seasA.w * .8); bc *= mix(vec3(1.), vec3(1.06, 1.14, .78), toon * gr * (1. - seasA.w)); }   // toon: green grass goes a brighter yellow-green
+    if (wv.z > .5 && above > 0.) { float gr = clamp((bc.g - max(bc.r, bc.b)) * 7., 0., 1.); bc = mix(bc, vec3(dot(bc, vec3(.5, .4, .1))) * vec3(1.18, 1., .62), gr * seasA.w * .8); bc *= mix(vec3(1.), vec3(1.06, 1.14, .78), lk_grass * gr * (1. - seasA.w)); }   // painted: green grass goes a brighter yellow-green
     float up = wv.z > .5 ? smoothstep(.5, .85, N.z) : (id > 5.5 && id < 7.5 ? smoothstep(.1, .55, N.z) : 0.);
     float sn = 0.;
     if (seasB.x > 0.) sn = seasB.x * up * smoothstep(.15, .45, vn(wp.xy * .4) * .55 + vn(wp.xy * 2.1) * .25 + seasB.x * .55) * above;
@@ -1882,12 +1889,12 @@ void main(){
   }
   vec2 cs = caveShade(wp, sun);
   float d = max(dot(N, sun), 0.);
-  d = mix(d, smoothstep(0., .12, d) * .6 + smoothstep(.38, .5, d) * .4, toon) * (1. - cs.y); spec *= 1. - cs.y;   // toon: two soft bands (shade, lit, full sun) instead of a smooth falloff
+  d = mix(d, smoothstep(0., .12, d) * .6 + smoothstep(.38, .5, d) * .4, lk_bands) * (1. - cs.y); spec *= 1. - cs.y;   // painted: two soft bands (shade, lit, full sun) instead of a smooth falloff
   vec3 a = amb * (.75 + .5 * (.5 + .5 * N.z)) * (1. - .6 * cs.x);
   vec3 c = bc * (a + lcol * d);
   if (spec > 0.) { vec3 V = normalize(cam - wp), H = normalize(sun + V); c += lcol * spec * pow(max(dot(N, H), 0.), 60.) * .8; }
   c += bc * fireLight(N);
-  if (toon > 0. && wv.z < .5) c += bc * (lcol * .6 + amb * .4) * pow(1. - abs(dot(N, normalize(cam - wp))), 3.) * smoothstep(-.3, .3, dot(N, sun)) * .5 * toon;   // toon: soft sunlit rim on trees, boats, people (not terrain: far ground is all grazing angles)
+  if (lk_rim > 0. && wv.z < .5) c += bc * (lcol * .6 + amb * .4) * pow(1. - abs(dot(N, normalize(cam - wp))), 3.) * smoothstep(-.3, .3, dot(N, sun)) * .5 * lk_rim;   // painted: soft sunlit rim on trees, boats, people (not terrain: far ground is all grazing angles)
   c += bc * seasB.z * vec3(.7, .75, 1.) * (.5 + .5 * max(N.z, 0.));   // lightning
   float wd = wv.x - wp.z; // depth below the local water surface
   if (hull > .5) wd = min(wd, -tp.z);
@@ -1898,7 +1905,7 @@ void main(){
     c = c * mix(vec3(1.), tint, clamp(.2 + wd * .2, 0., .9)) * exp(-wd * (.03 + .15 * mk));
     c += lcol * cs * (bc * .9 + .06) * (.35 + .65 * max(N.z, 0.)) * .9;
   } else if (wv.z > .5 && wd > -.45) c *= mix(.62, 1., -wd / .45); // wet band just above the waterline
-  c = max(mix(vec3(dot(c, vec3(.3, .59, .11))), c, 1. + .28 * toon), 0.);   // toon: richer colour
+  c = max(mix(vec3(dot(c, vec3(.3, .59, .11))), c, 1. + .28 * lk_saturation), 0.);   // painted: richer colour
   o = vec4(fog(mix(c, bc, em * emk), wp), clr < .01 ? 1. : mix(1. - clr, 1., pow(1. - abs(dot(N, normalize(cam - wp))), 2.) * .7));
 }`;
 </script>
@@ -1923,6 +1930,7 @@ uniform float t; uniform vec3 lcol, amb, zen, hor; uniform vec4 rip[8];
 uniform vec4 wx; // weather: rain, wind, stream turbidity, lightning
 uniform vec4 ice; // ice on lakes, on ponds; snow lying on it; arctic pack ice on the sea
 ${FOG_GLSL}
+uniform float lk_water, lk_saturation;   // the look's effects (src/looks/*.json), 0 = the original
 ${NOISE_GLSL}
 ${CAVE_GLSL}
 // boats (up to 4): x, y, cos/sin heading · length, z, sin pitch, sin roll · freeboard, draft; then half-beams at the waterline and the gunwale, 12 stations each
@@ -2001,16 +2009,16 @@ void main(){
     vec2 cs = caveShade(wp, sun);   // under a cenote's roof: the ceiling, not the sky, is reflected; sunlight only through the opening
     vec3 sky = mix(hor, zen, clamp(R.z * 2.2, 0., 1.)) * (1. - .85 * cs.x);
     float spec = pow(max(dot(R, sun), 0.), 280.) * 3. * (1. - cs.y), fr = .03 + .97 * pow(1. - max(dot(N, V), 0.), 5.);
-    if (toon > 0.) spec = mix(spec, smoothstep(.6, .7, pow(max(dot(R, sun), 0.), 120.)) * 2.4 * (1. - cs.y), toon);   // toon: crisp glitter dashes, a broken column toward the sun
-    vec3 shallow = mix(mix(vec3(.13, .45, .42), vec3(.1, .62, .58), toon), vec3(.22, .3, .12), murk), deep = mix(mix(vec3(.02, .12, .2), vec3(.02, .24, .32), toon), vec3(.06, .1, .04), murk);   // toon: saturated teal
-    float dd = clamp(dep / (3.5 + 2.5 * toon - 2.5 * murk), 0., 1.);   // toon: wider light, see-through shallows
+    if (lk_water > 0.) spec = mix(spec, smoothstep(.6, .7, pow(max(dot(R, sun), 0.), 120.)) * 2.4 * (1. - cs.y), lk_water);   // painted: crisp glitter dashes, a broken column toward the sun
+    vec3 shallow = mix(mix(vec3(.13, .45, .42), vec3(.1, .62, .58), lk_water), vec3(.22, .3, .12), murk), deep = mix(mix(vec3(.02, .12, .2), vec3(.02, .24, .32), lk_water), vec3(.06, .1, .04), murk);   // painted: saturated teal
+    float dd = clamp(dep / (3.5 + 2.5 * lk_water - 2.5 * murk), 0., 1.);   // painted: wider light, see-through shallows
     vec3 body = mix(shallow, deep, sqrt(dd)) * (amb * 1.6 * (1. - .6 * cs.x) + lcol * (.45 + .4 * max(dot(N, sun), 0.)) * (1. - cs.y));
-    vec3 c = mix(body, sky, fr * (.9 - .35 * toon)) + lcol * spec * (1. - fm);   // toon: less sky mirrored, so the sea stays teal far out
+    vec3 c = mix(body, sky, fr * (.9 - .35 * lk_water)) + lcol * spec * (1. - fm);   // painted: less sky mirrored, so the sea stays teal far out
     float al = max(max(mix(.16 + .55 * murk, .95, smoothstep(0., 1., dd)), .12), fr * .85);
-    if (toon > 0.) { float dash = smoothstep(.05, .14, fr - .03 - .97 * pow(1. - max(V.z, 0.), 5.)) * .55 * toon * (1. - fm); c = mix(c, sky * 1.15 + lcol * .2, dash); al = max(al, dash); }   // toon: light dashes on wave backs tilted to the sky (more fresnel than flat water there)
+    if (lk_water > 0.) { float dash = smoothstep(.05, .14, fr - .03 - .97 * pow(1. - max(V.z, 0.), 5.)) * .55 * lk_water * (1. - fm); c = mix(c, sky * 1.15 + lcol * .2, dash); al = max(al, dash); }   // painted: light dashes on wave backs tilted to the sky (more fresnel than flat water there)
     c = mix(c, vec3(.92, .96, 1.) * (amb * 1.4 + lcol * .9), fm * .9); al = max(al, fm * .9);
     c += wx.w * .35 * (.4 + fr);   // lightning
-    c = max(mix(vec3(dot(c, vec3(.3, .59, .11))), c, 1. + .2 * toon), 0.);   // toon: richer colour
+    c = max(mix(vec3(dot(c, vec3(.3, .59, .11))), c, 1. + .2 * lk_saturation), 0.);   // painted: richer colour
     if (icy > 0.) { c = mix(c, vec3(.7, .8, .86) * (amb * 1.5 + lcol * .7), icy); al = max(al, icy); }   // thin ice at the freezing edge
     al *= smoothstep(-.08, .03, dep);
     o = vec4(fog(c, wp), al);
@@ -2072,16 +2080,16 @@ const SKY_FS = `#version 300 es
 precision highp float;
 in vec2 ndc; out vec4 o; uniform vec3 R, U, F, sun, zen, hor, sunc; uniform vec2 tn; uniform float night, t, sset, clouds, stars;
 uniform vec4 wsky; // cloud cover, lightning flash, wind drift, fog
-uniform float toon; // painted look (CONFIG.toon): a big soft sun, a wider glowing horizon, puffy two-tone clouds
+uniform float lk_skyGradient, lk_sun, lk_clouds; // the look's effects (src/looks/*.json): a wider glowing horizon, a big soft sun, puffy two-tone clouds; 0 = the original
 ${NOISE_GLSL}
 float h31(vec3 p){ p = fract(p * vec3(.1031, .1030, .0973)); p += dot(p, p.yzx + 33.33); return fract((p.x + p.y) * p.z); }
 void main(){
   vec3 d = normalize(F + ndc.x*tn.x*R + ndc.y*tn.y*U);
-  vec3 c = mix(hor, zen, mix(clamp(d.z*2.2, 0., 1.), smoothstep(-.02, .7, d.z), toon));
+  vec3 c = mix(hor, zen, mix(clamp(d.z*2.2, 0., 1.), smoothstep(-.02, .7, d.z), lk_skyGradient));
   if (d.z < 0.) c = hor * (1. + d.z * .5);
   float s = max(dot(d, sun), 0.);
   c += sunc * sset * pow(s, 5.) * .7 * (1. - clamp(d.z * 2., 0., 1.));                        // sunset glow
-  c += mix(vec3(1., .9, .7) * (pow(s, 900.)*6. + pow(s, 24.)*.25), vec3(1., .9, .55) * (smoothstep(.99875, .9991, s) * 1.6 + pow(s, 60.) * .45 + pow(s, 8.) * .12), toon) * smoothstep(-.06, .02, sun.z) * (1. - .92 * smoothstep(.55, .9, wsky.x)); // sun (toon: a wide pale-yellow disc with a glow)
+  c += mix(vec3(1., .9, .7) * (pow(s, 900.)*6. + pow(s, 24.)*.25), vec3(1., .9, .55) * (smoothstep(.99875, .9991, s) * 1.6 + pow(s, 60.) * .45 + pow(s, 8.) * .12), lk_sun) * smoothstep(-.06, .02, sun.z) * (1. - .92 * smoothstep(.55, .9, wsky.x)); // sun (painted: a wide pale-yellow disc with a glow)
   float m = max(dot(d, -sun), 0.);                                                             // moon, opposite the sun
   c += vec3(.85, .9, 1.) * (smoothstep(.99935, .9997, m) * 1.3 + pow(m, 80.) * .08) * night * (1. - .95 * smoothstep(.5, .9, wsky.x));
   if (stars > .5 && night > .01 && d.z > 0. && wsky.x < .85) {
@@ -2091,13 +2099,13 @@ void main(){
   if (clouds > .5 && d.z > .015) { // drifting cloud layer projected on a plane overhead
     vec2 p = d.xy / d.z * 2.6 + vec2(t * .012, t * .005) * (.5 + 2.5 * wsky.z);
     float n = vn(p) * .55 + vn(p * 2.3 + 3.1) * .3 + vn(p * 5.3 + 7.7) * .15, cv = wsky.x;
-    float k = smoothstep(mix(.56 - .5 * cv, .6 - .5 * cv, toon), mix(.84 - .3 * cv, .69 - .38 * cv, toon), n) * smoothstep(.015, .2, d.z);   // toon: crisper puffy edges
+    float k = smoothstep(mix(.56 - .5 * cv, .6 - .5 * cv, lk_clouds), mix(.84 - .3 * cv, .69 - .38 * cv, lk_clouds), n) * smoothstep(.015, .2, d.z);   // painted: crisper puffy edges
     vec3 cc = mix(hor * 1.08 + sunc * sset * .45, vec3(1.), .5 * (1. - night) * (1. - sset) * (1. - .7 * cv));
-    if (toon > 0. && k > 0.) { // toon: two-tone, the side towards the sun lit (salmon at sunset), the far side a cool purple shadow
+    if (lk_clouds > 0. && k > 0.) { // painted: two-tone, the side towards the sun lit (salmon at sunset), the far side a cool purple shadow
       vec2 ps = p + normalize(sun.xy + vec2(1e-4)) * .18; float ns = vn(ps) * .55 + vn(ps * 2.3 + 3.1) * .3 + vn(ps * 5.3 + 7.7) * .15;
       float lt = smoothstep(-.03, .05, n - ns) * .75 + .25 * (1. - smoothstep(.65, .9, n));   // facing the sun, and thin edges, are lit
       vec3 tc = mix(mix(vec3(.7, .74, .88), vec3(.56, .42, .64), sset), mix(vec3(1., .98, .95), vec3(1., .64, .48), sset), lt) * (.25 + .75 * max(max(hor.r, hor.g), hor.b));
-      cc = mix(cc, tc, toon * (1. - smoothstep(.5, .9, cv)));
+      cc = mix(cc, tc, lk_clouds * (1. - smoothstep(.5, .9, cv)));
     }
     cc = mix(cc, hor * .7 + vec3(.015, .018, .03), night * .85);
     cc *= 1. - .35 * smoothstep(.6, 1., cv) * (.6 + .4 * n);   // heavy, dark-bottomed rain clouds
@@ -4799,10 +4807,12 @@ Object.assign(Engine, {
       const show = () => { for (const b of opts) b.setAttribute('aria-checked', +b.dataset.ground === CONFIG.groundCover ? 'true' : 'false'); };
       for (const b of opts) b.onclick = () => { CONFIG.groundCover = +b.dataset.ground; show(); try { localStorage.setItem('embercrown-groundcover', b.dataset.ground); } catch (_) { /* session only */ } };
       show(); }
-    { // painted (toon) look on or off, kept in this browser; the shaders read CONFIG.toon every frame
-      const tc = document.getElementById('setToon');
-      try { const v = localStorage.getItem('embercrown-toon'); if (v !== null) CONFIG.toon = v === '1'; } catch (_) { /* default */ }
-      tc.checked = CONFIG.toon; tc.onchange = () => { CONFIG.toon = tc.checked; this.pauseRedraw = true; try { localStorage.setItem('embercrown-toon', tc.checked ? '1' : '0'); } catch (_) { /* session only */ } }; }
+    { // the graphics look (src/looks/*.json), kept in this browser; the sky and shaders read it every frame
+      const opts = [...D.querySelectorAll('[data-look]')];
+      try { const v = localStorage.getItem('embercrown-look'); if (v && BUILTIN.look.some(l => l.id === v)) CONFIG.look = v; } catch (_) { /* default */ }
+      const show = () => { for (const b of opts) b.setAttribute('aria-checked', b.dataset.look === CONFIG.look ? 'true' : 'false'); };
+      for (const b of opts) b.onclick = () => { CONFIG.look = b.dataset.look; show(); this.pauseRedraw = true; try { localStorage.setItem('embercrown-look', CONFIG.look); } catch (_) { /* session only */ } };
+      show(); }
     D.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) this.pauseShow(b.dataset.go); });
     D.addEventListener('keydown', e => {   // ↑ ↓ move between the menu's buttons
       if (this.ksCap || (e.code !== 'ArrowUp' && e.code !== 'ArrowDown')) return;
@@ -6657,18 +6667,22 @@ Object.assign(Engine, {
 'use strict';
 // Engine: sun, moon, sky colours and light for the time of day, and the clock text.
 Object.assign(Engine, {
+  // the graphics look chosen in Settings (CONFIG.look), one of src/looks/*.json; the first one if that's missing
+  look() { const L = BUILTIN.look; return L.find(l => l.id === CONFIG.look) || L[0]; },
+  // each of the look's effects strengths (0..1) goes to the shader uniform lk_<name>, where that shader uses it
+  lookUniforms(gl, u) { const E = this.look().effects; for (const k in E) if (u['lk_' + k]) gl.uniform1f(u['lk_' + k], E[k]); },
   // sun, moon, sky colours and light for the current time of day (tod: 0..1, 0.5 = noon)
   skyState() {
     const ang = (this.tod - 0.25) * 6.2832, sun = norm3([Math.cos(ang), -0.45 * Math.sin(ang) - 0.25, 0.92 * Math.sin(ang)]);
     const sm = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
     const day = sm(-0.06, 0.2, sun[2]), night = 1 - sm(-0.18, 0.02, sun[2]), sset = clamp(1 - Math.abs(sun[2] - 0.03) / 0.24, 0, 1);
     const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
-    const T = CONFIG.toon;   // painted look: a richer blue overhead, a lavender haze low down, a pink-orange horizon under a purple sky at sunset
-    let zen = mix([0.012, 0.018, 0.045], T ? [0.19, 0.4, 0.78] : [0.16, 0.34, 0.68], day), hor = mix([0.035, 0.05, 0.095], T ? [0.72, 0.76, 0.94] : [0.66, 0.79, 0.92], day);
-    zen = mix(zen, T ? [0.42, 0.3, 0.6] : [0.2, 0.22, 0.42], sset * (T ? 0.7 : 0.5)); hor = mix(hor, T ? [1.0, 0.6, 0.46] : [0.98, 0.56, 0.32], sset * (T ? 0.85 : 0.7));
+    const K = this.look().sky;   // the look's colours: overhead, low down, at sunset
+    let zen = mix([0.012, 0.018, 0.045], K.zenith, day), hor = mix([0.035, 0.05, 0.095], K.horizon, day);
+    zen = mix(zen, K.sunsetZenith, sset * K.sunsetZenithMix); hor = mix(hor, K.sunsetHorizon, sset * K.sunsetHorizonMix);
     const sunUp = sun[2] > -0.02, key = sunUp ? sun : norm3([-sun[0], -sun[1], -sun[2]]);
-    let lcol = sunUp ? mix(T ? [0.88, 0.8, 0.66] : [0.8, 0.78, 0.72], [1.0, 0.55, 0.3], sset * 0.8).map(c => c * day) : [0.17 * night, 0.19 * night, 0.3 * night];
-    let amb = mix(mix([0.075, 0.085, 0.14], T ? [0.27, 0.28, 0.38] : [0.3, 0.31, 0.34], day), T ? [0.3, 0.22, 0.36] : [0.32, 0.24, 0.24], sset * (T ? 0.4 : 0.25) * day);   // toon: shadows go cool and purple, not grey
+    let lcol = sunUp ? mix(K.sunlight, [1.0, 0.55, 0.3], sset * 0.8).map(c => c * day) : [0.17 * night, 0.19 * night, 0.3 * night];
+    let amb = mix(mix([0.075, 0.085, 0.14], K.shade, day), K.sunsetShade, sset * K.sunsetShadeMix * day);
     // weather: cloud dims the sun and greys the sky; fog and rain wash the colour out
     const cv = ENV.cloud, grey = [0.5, 0.53, 0.57].map(v => v * (0.15 + 0.85 * day) * (1 - 0.35 * ENV.rain));
     zen = mix(zen, grey.map(v => v * 0.85), sstep(0.3, 1, cv) * 0.9); hor = mix(hor, grey, sstep(0.3, 1, cv) * 0.8);
@@ -6676,7 +6690,7 @@ Object.assign(Engine, {
     const dim = 1 - 0.68 * sstep(0.35, 1, cv); lcol = lcol.map(c => c * dim);
     amb = mix(amb, grey.map(v => v * 0.62), sstep(0.4, 1, cv) * 0.5 * day);
     if (ENV.flash > 0) { amb = amb.map(v => v + ENV.flash * 0.35); }
-    return { sun, key, zen, hor, lcol, amb, night, sset, day, sunc: T ? [1.0, 0.55, 0.42] : [1.0, 0.5, 0.25] };
+    return { sun, key, zen, hor, lcol, amb, night, sset, day, sunc: K.sunsetGlow };
   },
   clock() { const h = (this.tod * 24) % 24; return `${String(h | 0).padStart(2, '0')}:${String((h % 1) * 60 | 0).padStart(2, '0')}`; },
 });
@@ -6723,7 +6737,7 @@ Object.assign(Engine, {
       gl.uniform3fv(sk.u.sun, S.sun); gl.uniform3fv(sk.u.zen, S.zen); gl.uniform3fv(sk.u.hor, S.hor); gl.uniform3fv(sk.u.sunc, S.sunc);
       gl.uniform1f(sk.u.night, S.night); gl.uniform1f(sk.u.sset, S.sset); gl.uniform1f(sk.u.t, this.time);
       gl.uniform1f(sk.u.stars, CONFIG.stars ? 1 : 0); gl.uniform1f(sk.u.clouds, CONFIG.clouds ? 1 : 0);
-      gl.uniform4f(sk.u.wsky, ENV.cloud, ENV.flash, ENV.wind, ENV.fog); gl.uniform1f(sk.u.toon, CONFIG.toon ? 1 : 0);
+      gl.uniform4f(sk.u.wsky, ENV.cloud, ENV.flash, ENV.wind, ENV.fog); this.lookUniforms(gl, sk.u);
       gl.bindVertexArray(this.fsVao); gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.depthMask(true); gl.clear(gl.DEPTH_BUFFER_BIT);
     }
@@ -6733,7 +6747,7 @@ Object.assign(Engine, {
     // terrain, bridges, trees
     const L = this.lit; gl.useProgram(L.p);
     gl.uniformMatrix4fv(L.u.vp, false, vp); gl.uniform3fv(L.u.cam, E); gl.uniform3fv(L.u.sun, SUN); gl.uniform3fv(L.u.fogc, HORZ); gl.uniform1f(L.u.far, FOGD); gl.uniform1f(L.u.uwf, uw ? 1 : 0);
-    gl.uniform3fv(L.u.lcol, S.lcol); gl.uniform3fv(L.u.amb, S.amb); gl.uniform1f(L.u.night, S.night); gl.uniform1f(L.u.emk, 1); gl.uniform1f(L.u.toon, CONFIG.toon ? 1 : 0);
+    gl.uniform3fv(L.u.lcol, S.lcol); gl.uniform3fv(L.u.amb, S.amb); gl.uniform1f(L.u.night, S.night); gl.uniform1f(L.u.emk, 1); this.lookUniforms(gl, L.u);
     gl.uniform1f(L.u.time, this.time); gl.uniform1f(L.u.sway, 0); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     gl.uniform1f(L.u.inst, 0); gl.uniform1f(L.u.pscale, 1); gl.uniform1f(L.u.dry, 0);
     gl.uniform4f(L.u.seasA, ENV.leaf, ENV.autumn, ENV.young, ENV.dormant); gl.uniform4f(L.u.seasB, ENV.snowCover, ENV.wet, ENV.flash * 0.8, 0);
@@ -6879,7 +6893,7 @@ Object.assign(Engine, {
     const Wt = this.water; gl.useProgram(Wt.p); this.caveUniforms(gl, Wt, E);
     gl.uniformMatrix4fv(Wt.u.vp, false, vp); gl.uniform1f(Wt.u.far, FOGD); gl.uniform1f(Wt.u.uwf, uw ? 1 : 0);
     gl.uniform3fv(Wt.u.cam, E); gl.uniform3fv(Wt.u.sun, S.sun[2] > -0.05 ? S.sun : SUN); gl.uniform3fv(Wt.u.fogc, HORZ); gl.uniform1f(Wt.u.t, this.time);
-    gl.uniform3fv(Wt.u.lcol, S.lcol); gl.uniform3fv(Wt.u.amb, S.amb); gl.uniform3fv(Wt.u.zen, S.zen); gl.uniform3fv(Wt.u.hor, S.hor); gl.uniform1f(Wt.u.toon, CONFIG.toon ? 1 : 0);
+    gl.uniform3fv(Wt.u.lcol, S.lcol); gl.uniform3fv(Wt.u.amb, S.amb); gl.uniform3fv(Wt.u.zen, S.zen); gl.uniform3fv(Wt.u.hor, S.hor); this.lookUniforms(gl, Wt.u);
     gl.uniform1f(Wt.u.wnd, ENV.wind); gl.uniform4f(Wt.u.wx, ENV.snowing ? 0 : ENV.rain, ENV.wind, ENV.turb, ENV.flash * 0.8);
     gl.uniform4f(Wt.u.ice, ENV.iceLake, ENV.icePond, ENV.snowCover, ENV.iceSea);
     { const rp = this.ripUni || (this.ripUni = new Float32Array(32)), T = this.time, R = this.ripples;   // the 8 nearest live ripples, no per-frame arrays
@@ -11455,7 +11469,7 @@ globalThis.Urchin = {
 // built-in fish, boats and tackle: <script type="application/json" data-builtin="fish|boat|tackle"> blocks at the end of this
 // file, one per definition; they're parsed at boot, after the loading screen has painted (parsing hundreds of KB of JSON is quick,
 // but parsing it as JavaScript object literals before the page could draw was not)
-const BUILTIN = { fish: [], boat: [], tackle: [], feature: [], boatparts: [], angler: [], clothes: [] };   // feature: map features (src/features/*.json); boatparts: boats/parts.json; angler, clothes: your look in third person (src/angler/*.json)
+const BUILTIN = { fish: [], boat: [], tackle: [], feature: [], boatparts: [], angler: [], clothes: [], look: [] };   // feature: map features (src/features/*.json); boatparts: boats/parts.json; angler, clothes: your look in third person (src/angler/*.json); look: graphics looks (src/looks/*.json)
 function readBuiltins() {
   for (const el of document.querySelectorAll('script[data-builtin]')) {
     try { BUILTIN[el.dataset.builtin].push(JSON.parse(el.textContent)); } catch (e) { console.error('Bad built-in', el.dataset.builtin, 'JSON:', e.message); }
@@ -11514,6 +11528,48 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <!-- built-in fish species, boats and tackle: one JSON block each, the same format as files you drop onto the game -->
+<script type="application/json" data-builtin="look">
+{
+  "id": "painted",
+  "name": "Painted",
+  "blurb": "soft light, rich colour",
+  "sky": {
+    "zenith": [0.19, 0.4, 0.78],
+    "horizon": [0.72, 0.76, 0.94],
+    "sunsetZenith": [0.42, 0.3, 0.6], "sunsetZenithMix": 0.7,
+    "sunsetHorizon": [1.0, 0.6, 0.46], "sunsetHorizonMix": 0.85,
+    "sunlight": [0.88, 0.8, 0.66],
+    "shade": [0.27, 0.28, 0.38],
+    "sunsetShade": [0.3, 0.22, 0.36], "sunsetShadeMix": 0.4,
+    "sunsetGlow": [1.0, 0.55, 0.42]
+  },
+  "effects": {
+    "bands": 1, "rim": 1, "grain": 1, "grass": 1, "saturation": 1, "haze": 1,
+    "skyGradient": 1, "sun": 1, "clouds": 1, "water": 1
+  }
+}
+</script>
+<script type="application/json" data-builtin="look">
+{
+  "id": "legacy",
+  "name": "Legacy",
+  "blurb": "the original, more realistic look",
+  "sky": {
+    "zenith": [0.16, 0.34, 0.68],
+    "horizon": [0.66, 0.79, 0.92],
+    "sunsetZenith": [0.2, 0.22, 0.42], "sunsetZenithMix": 0.5,
+    "sunsetHorizon": [0.98, 0.56, 0.32], "sunsetHorizonMix": 0.7,
+    "sunlight": [0.8, 0.78, 0.72],
+    "shade": [0.3, 0.31, 0.34],
+    "sunsetShade": [0.32, 0.24, 0.24], "sunsetShadeMix": 0.25,
+    "sunsetGlow": [1.0, 0.5, 0.25]
+  },
+  "effects": {
+    "bands": 0, "rim": 0, "grain": 0, "grass": 0, "saturation": 0, "haze": 0,
+    "skyGradient": 0, "sun": 0, "clouds": 0, "water": 0
+  }
+}
+</script>
 <script type="application/json" data-builtin="angler">
 {
   "schema": "embercrown-angler/1",

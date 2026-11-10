@@ -1,0 +1,19 @@
+{
+  "id": "legacy",
+  "name": "Legacy",
+  "blurb": "the original, more realistic look",
+  "sky": {
+    "zenith": [0.16, 0.34, 0.68],
+    "horizon": [0.66, 0.79, 0.92],
+    "sunsetZenith": [0.2, 0.22, 0.42], "sunsetZenithMix": 0.5,
+    "sunsetHorizon": [0.98, 0.56, 0.32], "sunsetHorizonMix": 0.7,
+    "sunlight": [0.8, 0.78, 0.72],
+    "shade": [0.3, 0.31, 0.34],
+    "sunsetShade": [0.32, 0.24, 0.24], "sunsetShadeMix": 0.25,
+    "sunsetGlow": [1.0, 0.5, 0.25]
+  },
+  "effects": {
+    "bands": 0, "rim": 0, "grain": 0, "grass": 0, "saturation": 0, "haze": 0,
+    "skyGradient": 0, "sun": 0, "clouds": 0, "water": 0
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "id": "painted",
+  "name": "Painted",
+  "blurb": "soft light, rich colour",
+  "sky": {
+    "zenith": [0.19, 0.4, 0.78],
+    "horizon": [0.72, 0.76, 0.94],
+    "sunsetZenith": [0.42, 0.3, 0.6], "sunsetZenithMix": 0.7,
+    "sunsetHorizon": [1.0, 0.6, 0.46], "sunsetHorizonMix": 0.85,
+    "sunlight": [0.88, 0.8, 0.66],
+    "shade": [0.27, 0.28, 0.38],
+    "sunsetShade": [0.3, 0.22, 0.36], "sunsetShadeMix": 0.4,
+    "sunsetGlow": [1.0, 0.55, 0.42]
+  },
+  "effects": {
+    "bands": 1, "rim": 1, "grain": 1, "grass": 1, "saturation": 1, "haze": 1,
+    "skyGradient": 1, "sun": 1, "clouds": 1, "water": 1
+  }
+}
