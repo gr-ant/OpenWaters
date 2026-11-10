@@ -42,7 +42,7 @@ Object.assign(Engine, {
     const pose = humanPose(o), sm = this.hSm;
     if (sm && sm.mode === o.mode && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
       const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
-      pose.parts.forEach((q, n) => { const w = sm.parts[n]; for (let j = 1; j < 4; j++) q[j] = ease(w[j], q[j]); for (let j = 4; j < 7; j++) q[j] = turn(w[j], q[j]); });
+      pose.parts.forEach((q, n) => { const w = sm.parts[n]; for (let j = 1; j < 3; j++) q[j] = ease(w[j], q[j]); q[3] = w[3] + (q[3] - w[3]) * Math.min(1, dt * 60); for (let j = 4; j < 7; j++) q[j] = turn(w[j], q[j]); });   // (height follows faster: the rise and fall of each step should show)
       pose.hand = pose.hand.map((v, j) => ease(sm.hand[j], v)); }
     this.hSm = { mode: o.mode, parts: pose.parts.map(q => q.slice()), hand: pose.hand.slice() };
     if (o.mode === 'swim') base = P.z + EYE - (o.tread ? 0.12 : 0.3) - pose.head[2];   // head where the first-person eye is (treading water), or lying low in the water swimming
