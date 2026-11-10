@@ -2309,7 +2309,7 @@ function humanPose(o) {
   if (o.rod && o.mode !== 'swim') { const w = clamp(o.castW || 0, 0, 1), f = clamp(o.castF || 0, 0, 1);   // right forearm out in front, the hand in toward the middle, holding the rod
     up[1] = b + 0.45 + 0.75 * w + 0.45 * f; fore[1] = up[1] + 1.25 + 0.9 * w - 0.75 * f; upR[1] = 0.06 + 0.5 * w + 0.12 * f; foR[1] = -0.16 + 0.35 * w;   // casting (o.castW wound back 0..1, o.castF following through 0..1): the arm lifts back and out to the right, then reaches forward
     twist += 0.32 * w - 0.22 * f; if (o.mode === 'stand') b -= 0.08 * f; }   // the shoulders turn with it, and he leans into the throw
-  twist += o.twist || 0; sway += o.lean || 0;   // o.twist: the shoulders turned (+ the left one forward); o.lean: the body shifted toward the right (+), e.g. over a paddle
+  twist += o.twist || 0; sway += o.lean || 0; b -= o.stoop || 0;   // o.twist: the shoulders turned (+ the left one forward); o.lean: the body shifted toward the right (+), e.g. over a paddle; o.stoop: leaning forward (radians), e.g. to a wheel
   const leg = i => { const side = i ? 1 : -1, hipJ = [-side * H.hip * Math.sin(turn), sway + side * H.hip * Math.cos(turn), 0], knee = end(hipJ, H.thigh, thigh[i], thR[i], turn), ankle = end(knee, H.shin, shin[i], shR[i], turn); return { hipJ, knee, ankle }; };
   if (o.mode === 'jump') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i]))));   // in the air the lowest heel or toe is where your feet are
   const hip = [0, sway, hipZ], sh = [-Math.sin(b) * H.torso, sway, hipZ + Math.cos(b) * H.torso], arm2 = end(sh, 0.15, b);   // the shoulders: up the (leaning) spine from the hips; arm2: the shoulder joints' height, well below the top of the sloping shoulders
@@ -4254,7 +4254,6 @@ function boatMesh(D) {
     M.mat = MT.PLASTER; const box = (x0, x1, ya, yb, za, zb, col) => { const y0 = ya + oy, y1 = yb + oy; M.quad([x0, y0, zb], [x1, y0, zb], [x1, y1, zb], [x0, y1, zb], col, [x0, 0, -9]);
       for (const [p, q] of [[[x0, y0], [x1, y0]], [[x1, y0], [x1, y1]], [[x1, y1], [x0, y1]], [[x0, y1], [x0, y0]]]) M.quad([p[0], p[1], za], [q[0], q[1], za], [q[0], q[1], zb], [p[0], p[1], zb], col, [(x0 + x1) / 2, (y0 + y1) / 2, (za + zb) / 2]); };
     const scr = F.console.screen ?? 0.3; box(x - 0.3, x + 0.25, -w, w, z0, z0 + h, C.deck); M.mat = MT.GLASS; M.quad([x + 0.25, oy - w, z0 + h], [x + 0.25 + scr * 0.25, oy - w, z0 + h + scr], [x + 0.25 + scr * 0.25, oy + w, z0 + h + scr], [x + 0.25, oy + w, z0 + h], [0.6, 0.75, 0.85], [x - 1, 0, 0]);
-    M.mat = MT.METAL; M.tube([x - 0.05, oy, z0 + h + 0.02], [x - 0.15, oy, z0 + h + 0.12], 0.012, 0.012, 5, [0.2, 0.2, 0.22]); M.blob([x - 0.16, oy, z0 + h + 0.13], 0.11, 0.11, 0.015, 2, 10, [0.15, 0.15, 0.16]);   // wheel
     if (F.fish_finder) { const fw = Math.min(0.09, w * 0.5); M.mat = MT.GLOW; M.quad([x + 0.12, oy - fw, z0 + h + 0.01], [x + 0.12, oy + fw, z0 + h + 0.01], [x + 0.16, oy + fw, z0 + h + 0.11], [x + 0.16, oy - fw, z0 + h + 0.11], [0.25, 0.75, 0.9], [x - 1, 0, 0]); } }
   else if (F.fish_finder) { const t = clamp(D.crew.seat_at + 0.1, 0, 0.95), x = S.x(t), g = S.gun(t); M.mat = MT.GLOW; M.quad([x, -0.08, g + 0.04], [x, 0.08, g + 0.04], [x + 0.03, 0.08, g + 0.16], [x + 0.03, -0.08, g + 0.16], [0.3, 0.9, 1.1], [x - 1, 0, 0]); }
   const motorAt = [];
@@ -4275,7 +4274,8 @@ function boatMesh(D) {
         M.quad(L(p, q, u0, za), L(p, q, u1, za), L(p, q, u1, zb), L(p, q, u0, zb), C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
     M.quad([x0 - 0.05, -w - 0.05, z1], [x1 + 0.05, -w - 0.05, z1], [x1 + 0.05, w + 0.05, z1], [x0 - 0.05, w + 0.05, z1], C.trim, [x0, 0, 0]); }
   if (typeof boatDetail === 'function') boatDetail(D, S, M, C, { inner, P, fz, decked, motors: motorAt });   // trim and fittings (boat-detail.js)
-  D._hullN = M.v.length / VS;   // the hull's own vertices; the oars / paddle (at rest) follow, for the menu picture
+  D._hullN = M.v.length / VS;   // the hull's own vertices; the wheel and throttle lever, then the oars / paddle (at rest) follow, for the menu picture
+  D._helmN = 0; if (D._helm) { for (const v of D._helm.wheel) M.v.push(v); for (const v of D._helm.lever) M.v.push(v); D._helmN = (D._helm.wheel.length + D._helm.lever.length) / VS; }
   const O = D._oars = boatOars(D, S, C); if (O) { const m = new Float32Array(O.mesh.length); for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(D, O, 0, 0, sd, false, O.m); oarXform(O.mesh, O.m, m); for (const v of m) M.v.push(v); } }
   return new Float32Array(M.v);
 }
@@ -4306,6 +4306,17 @@ function oarPose(D, O, ph, k, sd, live, out) {
   for (let i = 0; i < 9; i++) out[i] = R[i] * (i % 3 === 1 ? sd : 1); out[9] = T[0]; out[10] = sd * T[1]; out[11] = T[2];   // the port side is the mirror image
   return out;
 }
+// the wheel turned by ang (radians, + clockwise as the helmsman sees it: to starboard) and the throttle lever pushed by thr (-1 astern .. 1 full ahead), into dst
+function helmPose(D, ang, thr, dst) {
+  const W = D._helm, rot = (src, c, n, a, o) => { const co = Math.cos(a), si = Math.sin(a);   // about the axis n through c (Rodrigues)
+    const R = (x, y, z, out, k) => { const d = n[0] * x + n[1] * y + n[2] * z; out[k] = x * co + (n[1] * z - n[2] * y) * si + n[0] * d * (1 - co); out[k + 1] = y * co + (n[2] * x - n[0] * z) * si + n[1] * d * (1 - co); out[k + 2] = z * co + (n[0] * y - n[1] * x) * si + n[2] * d * (1 - co); };
+    for (let i = 0; i < src.length; i += VS) { R(src[i] - c[0], src[i + 1] - c[1], src[i + 2] - c[2], dst, o + i); dst[o + i] += c[0]; dst[o + i + 1] += c[1]; dst[o + i + 2] += c[2]; R(src[i + 3], src[i + 4], src[i + 5], dst, o + i + 3); for (let q = 6; q < VS; q++) dst[o + i + q] = src[i + q]; } };
+  rot(W.wheel, W.c, W.n, -ang, 0); rot(W.lever, W.lp, [0, 1, 0], thr * 0.55, W.wheel.length);   // the lever leans forward (about the boat's y axis) for ahead
+  return dst;
+}
+// a point on the wheel's rim at angle a (0 = starboard, pi/2 = top, as the helmsman sees it) once turned by ang; the throttle knob pushed by thr: boat frame
+function helmGrip(D, ang, a) { const W = D._helm, t = a - ang; return [0, 1, 2].map(j => W.c[j] + (W.u[j] * Math.cos(t) + W.v[j] * Math.sin(t)) * W.r); }
+function leverGrip(D, thr) { const W = D._helm, p = W.lp, b = thr * 0.55, dx = -0.075, dz = 0.165; return [p[0] + dx * Math.cos(b) + dz * Math.sin(b), p[1], p[2] - dx * Math.sin(b) + dz * Math.cos(b)]; }
 // the oar mesh (src) posed by m into dst: positions and normals
 function oarXform(src, m, dst) {
   for (let o = 0; o < src.length; o += VS) { const x = src[o], y = src[o + 1], z = src[o + 2], nx = src[o + 3], ny = src[o + 4], nz = src[o + 5];
@@ -4409,6 +4420,12 @@ function boatDetail(D, S, M, C, X) {
     for (const [p, q] of [[[x0, y0], [x1, y0]], [[x1, y0], [x1, y1]], [[x1, y1], [x0, y1]], [[x0, y1], [x0, y0]]]) M.quad([p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1], col, c); };
   // a ring of rod: centre c, radius r, in the plane spanned by unit vectors u and v
   const ring = (c, r, u, v, th, col, n = 16) => { for (let i = 0; i < n; i++) { const a0 = i / n * TAU, a1 = (i + 1) / n * TAU, at = a => [c[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * r, c[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * r, c[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * r]; rod(at(a0), at(a1), th, col); } };
+  // the wheel (centre wc) and throttle lever (pivot lp): their own small meshes in D._helm, turned and pushed as you drive (helmPose, boats.js)
+  const part = fn => { const keep = M, B = meshBuilder(true); B.mat = keep.mat; M = B; fn(); M = keep; return new Float32Array(B.v); };
+  const helm = (wc, lp) => { const u = [0, 1, 0], v = [-0.42, 0, 0.91], r = 0.15;
+    D._helm = { c: wc, u, v, n: norm3(cross3(u, v)), r, lp,
+      wheel: part(() => { ring(wc, r, u, v, 0.012, dark, 12); for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 0.5; rod(wc, [wc[0] + v[0] * Math.sin(a) * r, wc[1] + Math.cos(a) * r, wc[2] + v[2] * Math.sin(a) * r], 0.009, steel, 3); } }),
+      lever: part(() => { rod(lp, [lp[0] - 0.07, lp[1], lp[2] + 0.15], 0.012, steel); M.blob([lp[0] - 0.075, lp[1], lp[2] + 0.165], 0.022, 0.022, 0.025, 3, 6, dark); }) }; };
   // where the waterline meets the hull at station t (s along the section, 0 keel .. 1 gunwale)
   const sAt = (t, z) => { let lo = 0, hi = 1; for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < z) lo = m; else hi = m; } return (lo + hi) / 2; };
 
@@ -4460,10 +4477,8 @@ function boatDetail(D, S, M, C, X) {
 
   // ---- the helm ----
   if (F.console) { const cs = F.console, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), h = cs.height ?? 0.95, top = fz + h, scr = cs.screen ?? 0.3;
-    M.mat = MT.METAL; const wc = [x - 0.2, oy, top - 0.1], u = [0, 1, 0], v = [-0.42, 0, 0.91];   // a spoked wheel, raked back on the aft face
-    ring(wc, 0.15, u, v, 0.012, dark, 12); for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 0.5; rod(wc, [wc[0] + v[0] * Math.sin(a) * 0.15, wc[1] + Math.cos(a) * 0.15, wc[2] + v[2] * Math.sin(a) * 0.15], 0.009, steel, 3); }
-    rod([x - 0.3, oy, top - 0.14], wc, 0.02, steel);
-    rod([x - 0.05, oy + w * 0.75, top], [x - 0.12, oy + w * 0.75, top + 0.15], 0.012, steel); M.blob([x - 0.125, oy + w * 0.75, top + 0.165], 0.022, 0.022, 0.025, 3, 6, dark);   // throttle lever
+    M.mat = MT.METAL; helm([x - 0.2, oy, top - 0.1], [x - 0.05, oy + w * 0.75, top]);   // a spoked wheel, raked back on the aft face, and the throttle lever beside it
+    rod([x - 0.3, oy, top - 0.14], [x - 0.2, oy, top - 0.1], 0.02, steel);
     M.mat = MT.PLASTER; for (const sy of [-0.45, 0.1]) M.blob([x + 0.02, oy + sy * w, top + 0.008], 0.045, 0.045, 0.008, 2, 8, dark);   // gauges
     M.mat = MT.METAL; const a = [x + 0.25, oy - w, top], b = [x + 0.25 + scr * 0.25, oy - w, top + scr], c = [x + 0.25 + scr * 0.25, oy + w, top + scr], e = [x + 0.25, oy + w, top];   // windscreen frame and a grab rail over it
     rod(a, b, 0.011, steel); rod(b, c, 0.011, steel); rod(c, e, 0.011, steel);
@@ -4480,6 +4495,9 @@ function boatDetail(D, S, M, C, X) {
     for (const xx of [x0 - 0.012, x1 + 0.012]) for (const zz of [zs, zt]) rod([xx, -w, zz], [xx, w, zz], 0.014, C.trim);
     M.mat = MT.CLOTH; ring([(x0 + x1) / 2, w + 0.04, zs - 0.32], 0.2, [1, 0, 0], [0, 0, 1], 0.045, [1.0, 0.42, 0.1], 10);   // a life ring on the port side
     M.mat = MT.METAL; const ex = x0 + 0.12, ey = -(w - 0.14); rod([ex, ey, z1], [ex, ey, z1 + 0.55], 0.04, dark, 6); }   // exhaust stack
+  if (F.cabin && powered && !F.console) { const st = clamp(D.crew.seat_at, 0, 1), sx = S.x(st), sy = -(D.crew.seat_side || 0) * S.hb(st), hz = fz + Math.max(0.13, D.crew.eye_height_m - 0.7);   // in the wheelhouse: a wheel on a post in front of the helm seat, the throttle on a stand at its right
+    M.mat = MT.METAL; rod([sx + 0.62, sy, fz], [sx + 0.55, sy, hz + 0.28], 0.025, steel); rod([sx + 0.55, sy, hz + 0.28], [sx + 0.45, sy, hz + 0.32], 0.02, steel);
+    rod([sx + 0.47, sy + 0.32, fz], [sx + 0.47, sy + 0.32, hz + 0.25], 0.02, steel); helm([sx + 0.45, sy, hz + 0.32], [sx + 0.47, sy + 0.32, hz + 0.25]); }
 
   // ---- engines ----
   for (const [x, y, sc, g, col, hp] of motors || []) { M.mat = MT.METAL;
@@ -5494,6 +5512,7 @@ Object.assign(Engine, {
     b.v += clamp(target - b.v, -Pr.accel_ms2 * 1.5 * dt, Pr.accel_ms2 * dt) - b.v * (motor ? 0.08 : 0.25) * dt * (f === 0 ? 3 : 1) * (seat ? 1 : 2);
     const steerK = motor ? clamp(Math.abs(b.v) / 2, 0.25, 1) * Math.sign(b.v || 1) : 1, dyaw = s * Pr.turn_rate * steerK * dt;
     b.a += dyaw; this.P.a += dyaw;   // the view turns with the boat
+    if (seat && motor) { const k = Math.min(1, dt * 6); b.helmS = (b.helmS || 0) + (s * 1.4 - (b.helmS || 0)) * k; b.thrS = (b.thrS || 0) + (f * (run ? 1 : 0.6) - (b.thrS || 0)) * k; }   // the wheel follows the steering (up to 80 degrees), the throttle lever the power asked for
     // the current carries it; then move if the hull still floats there (bow and centre)
     const fl = flowAt(b.x, b.y, b.kd), drift = Hd.current_drift * (seat ? 1 : 0.6);
     const nx = b.x + (Math.cos(b.a) * b.v + fl[0] * drift) * dt, ny = b.y + (Math.sin(b.a) * b.v + fl[1] * drift) * dt, dir = Math.sign(b.v || 1);
@@ -6859,12 +6878,16 @@ Object.assign(Engine, {
         const i = BoatDB.list.indexOf(b.def); let g = BoatDB.gpu[i];
         if (!g || g.stale) { if (g) { gl.deleteVertexArray(g.vao); gl.deleteBuffer(g.ib); gl.deleteBuffer(g.vb); } const ib = gl.createBuffer(), vb = this.vbo(b.def._mesh); g = BoatDB.gpu[i] = { vao: this.litVao(vb, VB, ib, 40), ib, vb, n: b.def._mesh.length / VS }; }
         gl.uniform1f(L.u.roll, b.roll || 0);
-        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.def._oars ? b.def._hullN : g.n, 1);
+        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.def._oars || b.def._helm ? b.def._hullN : g.n, 1);
+        const W = b.def._helm, hN = b.def._helmN || 0; if (W) { if (b === this.boat) {   // the wheel and throttle you're driving with: posed into their own buffer, like the oars
+            if (!g.helm) { g.helm = { vb: gl.createBuffer(), data: new Float32Array(W.wheel.length + W.lever.length) }; g.helm.vao = this.litVao(g.helm.vb, VB, g.ib, 40); }
+            helmPose(b.def, b.helmS || 0, b.thrS || 0, g.helm.data); gl.bindBuffer(gl.ARRAY_BUFFER, g.helm.vb); gl.bufferData(gl.ARRAY_BUFFER, g.helm.data, gl.STREAM_DRAW); gl.bindVertexArray(g.helm.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, hN, 1); gl.bindVertexArray(g.vao); }
+          else gl.drawArraysInstanced(gl.TRIANGLES, b.def._hullN, hN, 1); }   // anyone else's: at rest, in the boat's own mesh
         const O = b.def._oars; if (O && (b.oarOn || b.oarWas)) {   // oars / paddle in the stroke: posed on the CPU (a few hundred vertices) into their own buffer, drawn with the hull's instance
           if (!g.oar) { g.oar = { vb: gl.createBuffer(), data: new Float32Array(O.mesh.length * (O.kind === 'oars' ? 2 : 1)) }; g.oar.vao = this.litVao(g.oar.vb, VB, g.ib, 40); }
           const n = O.mesh.length; let o = 0; for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(b.def, O, b.oarPh ? b.oarPh[sd > 0 ? 0 : 1] : 0, b.oarOn ? b.oarK || 0 : 0, sd, !!b.oarOn, O.m); oarXform(O.mesh, O.m, g.oar.data.subarray(o, o + n)); o += n; }
           gl.bindBuffer(gl.ARRAY_BUFFER, g.oar.vb); gl.bufferData(gl.ARRAY_BUFFER, g.oar.data, gl.STREAM_DRAW); gl.bindVertexArray(g.oar.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, o / VS, 1);
-        } else if (O) gl.drawArraysInstanced(gl.TRIANGLES, b.def._hullN, g.n - b.def._hullN, 1);   // stowed: they're in the boat's own mesh
+        } else if (O) gl.drawArraysInstanced(gl.TRIANGLES, b.def._hullN + hN, g.n - b.def._hullN - hN, 1);   // stowed: they're in the boat's own mesh
         b.oarWas = b.oarOn;
       }
       gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0); gl.uniform1f(L.u.hull, 0);
@@ -6983,12 +7006,11 @@ Object.assign(Engine, {
       this.hAmp = (this.hAmp || 0) + (clamp(spd, 0, 1) - (this.hAmp || 0)) * Math.min(1, dt * 8); const L = spd > 0.05 ? spd / (0.9 + 0.32 * Math.min(spd, 2.6)) : 0;   // on deck you walk
       this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist * 6.2832 / this.hStride) % 6.2832;
       o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, stride: this.hStride, ph: this.hPh, rod };
-      if (helm && ['outboard', 'inboard'].includes(D.propulsion.type)) {   // driving: both hands on the wheel (or one on the tiller); the right goes to the throttle while the speed is changing
+      if (helm && ['outboard', 'inboard'].includes(D.propulsion.type)) {   // driving: the left hand on the wheel and the right on the throttle (or the right on a tiller, twisted as the speed changes)
         const S = D._shape, F = D.features, st = clamp(D.crew.seat_at, 0, 1), sx = S.x(st), sy = -(D.crew.seat_side || 0) * S.hb(st), up = b.z - base, hip = o.hipZ, v = b.speed || 0;
         if (Math.abs(v - (this.hBoatV ?? v)) > 0.25 * dt) this.hThr = 0.7; this.hBoatV = v; this.hThr = Math.max(0, (this.hThr || 0) - dt);
-        if (F.console) { const cs = F.console, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), top = D.hull.floor_m + (cs.height ?? 0.95), turn = 0.5 * Math.sin(this.time * 0.7) * Math.min(1, Math.abs(v) / 3);   // (the wheel: boat-detail.js)
-          o.reachL = [x - 0.23 - sx, oy - 0.13 * Math.cos(turn) - sy, up + top - 0.1 - 0.13 * Math.sin(turn)]; o.reachR = this.hThr > 0 ? [x - 0.125 - sx, oy + w * 0.75 - sy, up + top + 0.165] : [x - 0.23 - sx, oy + 0.13 * Math.cos(turn) - sy, up + top - 0.1 + 0.13 * Math.sin(turn)]; }
-        else if (F.cabin) { o.reachL = [0.42, -0.15, hip + 0.32]; o.reachR = this.hThr > 0 ? [0.4, 0.34, hip + 0.4] : [0.42, 0.15, hip + 0.32]; }   // a wheel in the wheelhouse, a throttle beside it
+        if (D._helm) { const at = q => [q[0] - sx, q[1] - sy, q[2] + up];   // the left hand on the wheel's rim (about ten o'clock), turning it with the steering; the right on the throttle lever
+          o.reachL = at(helmGrip(D, b.helmS || 0, Math.PI - 0.55)); o.reachR = at(leverGrip(D, b.thrS || 0)); o.stoop = clamp((Math.max(o.reachL[0], o.reachR[0]) - 0.45) / 0.45, 0, 0.6); }   // a far console: lean in to it
         else o.reachR = [-0.05, 0.3, hip + 0.22 + (this.hThr > 0 ? 0.03 : 0)];   // a tiller beside you, its grip twisted for more or less
       }
       const O = D._oars; if (b.oarOn && O) {   // rowing or paddling: hands on the grips, wherever the stroke has the oars or paddle this frame (oarPose, boats.js)

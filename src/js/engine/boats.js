@@ -84,6 +84,7 @@ Object.assign(Engine, {
     b.v += clamp(target - b.v, -Pr.accel_ms2 * 1.5 * dt, Pr.accel_ms2 * dt) - b.v * (motor ? 0.08 : 0.25) * dt * (f === 0 ? 3 : 1) * (seat ? 1 : 2);
     const steerK = motor ? clamp(Math.abs(b.v) / 2, 0.25, 1) * Math.sign(b.v || 1) : 1, dyaw = s * Pr.turn_rate * steerK * dt;
     b.a += dyaw; this.P.a += dyaw;   // the view turns with the boat
+    if (seat && motor) { const k = Math.min(1, dt * 6); b.helmS = (b.helmS || 0) + (s * 1.4 - (b.helmS || 0)) * k; b.thrS = (b.thrS || 0) + (f * (run ? 1 : 0.6) - (b.thrS || 0)) * k; }   // the wheel follows the steering (up to 80 degrees), the throttle lever the power asked for
     // the current carries it; then move if the hull still floats there (bow and centre)
     const fl = flowAt(b.x, b.y, b.kd), drift = Hd.current_drift * (seat ? 1 : 0.6);
     const nx = b.x + (Math.cos(b.a) * b.v + fl[0] * drift) * dt, ny = b.y + (Math.sin(b.a) * b.v + fl[1] * drift) * dt, dir = Math.sign(b.v || 1);

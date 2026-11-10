@@ -34,12 +34,11 @@ Object.assign(Engine, {
       this.hAmp = (this.hAmp || 0) + (clamp(spd, 0, 1) - (this.hAmp || 0)) * Math.min(1, dt * 8); const L = spd > 0.05 ? spd / (0.9 + 0.32 * Math.min(spd, 2.6)) : 0;   // on deck you walk
       this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist * 6.2832 / this.hStride) % 6.2832;
       o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, stride: this.hStride, ph: this.hPh, rod };
-      if (helm && ['outboard', 'inboard'].includes(D.propulsion.type)) {   // driving: both hands on the wheel (or one on the tiller); the right goes to the throttle while the speed is changing
+      if (helm && ['outboard', 'inboard'].includes(D.propulsion.type)) {   // driving: the left hand on the wheel and the right on the throttle (or the right on a tiller, twisted as the speed changes)
         const S = D._shape, F = D.features, st = clamp(D.crew.seat_at, 0, 1), sx = S.x(st), sy = -(D.crew.seat_side || 0) * S.hb(st), up = b.z - base, hip = o.hipZ, v = b.speed || 0;
         if (Math.abs(v - (this.hBoatV ?? v)) > 0.25 * dt) this.hThr = 0.7; this.hBoatV = v; this.hThr = Math.max(0, (this.hThr || 0) - dt);
-        if (F.console) { const cs = F.console, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), top = D.hull.floor_m + (cs.height ?? 0.95), turn = 0.5 * Math.sin(this.time * 0.7) * Math.min(1, Math.abs(v) / 3);   // (the wheel: boat-detail.js)
-          o.reachL = [x - 0.23 - sx, oy - 0.13 * Math.cos(turn) - sy, up + top - 0.1 - 0.13 * Math.sin(turn)]; o.reachR = this.hThr > 0 ? [x - 0.125 - sx, oy + w * 0.75 - sy, up + top + 0.165] : [x - 0.23 - sx, oy + 0.13 * Math.cos(turn) - sy, up + top - 0.1 + 0.13 * Math.sin(turn)]; }
-        else if (F.cabin) { o.reachL = [0.42, -0.15, hip + 0.32]; o.reachR = this.hThr > 0 ? [0.4, 0.34, hip + 0.4] : [0.42, 0.15, hip + 0.32]; }   // a wheel in the wheelhouse, a throttle beside it
+        if (D._helm) { const at = q => [q[0] - sx, q[1] - sy, q[2] + up];   // the left hand on the wheel's rim (about ten o'clock), turning it with the steering; the right on the throttle lever
+          o.reachL = at(helmGrip(D, b.helmS || 0, Math.PI - 0.55)); o.reachR = at(leverGrip(D, b.thrS || 0)); o.stoop = clamp((Math.max(o.reachL[0], o.reachR[0]) - 0.45) / 0.45, 0, 0.6); }   // a far console: lean in to it
         else o.reachR = [-0.05, 0.3, hip + 0.22 + (this.hThr > 0 ? 0.03 : 0)];   // a tiller beside you, its grip twisted for more or less
       }
       const O = D._oars; if (b.oarOn && O) {   // rowing or paddling: hands on the grips, wherever the stroke has the oars or paddle this frame (oarPose, boats.js)

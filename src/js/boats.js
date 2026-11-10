@@ -132,7 +132,6 @@ function boatMesh(D) {
     M.mat = MT.PLASTER; const box = (x0, x1, ya, yb, za, zb, col) => { const y0 = ya + oy, y1 = yb + oy; M.quad([x0, y0, zb], [x1, y0, zb], [x1, y1, zb], [x0, y1, zb], col, [x0, 0, -9]);
       for (const [p, q] of [[[x0, y0], [x1, y0]], [[x1, y0], [x1, y1]], [[x1, y1], [x0, y1]], [[x0, y1], [x0, y0]]]) M.quad([p[0], p[1], za], [q[0], q[1], za], [q[0], q[1], zb], [p[0], p[1], zb], col, [(x0 + x1) / 2, (y0 + y1) / 2, (za + zb) / 2]); };
     const scr = F.console.screen ?? 0.3; box(x - 0.3, x + 0.25, -w, w, z0, z0 + h, C.deck); M.mat = MT.GLASS; M.quad([x + 0.25, oy - w, z0 + h], [x + 0.25 + scr * 0.25, oy - w, z0 + h + scr], [x + 0.25 + scr * 0.25, oy + w, z0 + h + scr], [x + 0.25, oy + w, z0 + h], [0.6, 0.75, 0.85], [x - 1, 0, 0]);
-    M.mat = MT.METAL; M.tube([x - 0.05, oy, z0 + h + 0.02], [x - 0.15, oy, z0 + h + 0.12], 0.012, 0.012, 5, [0.2, 0.2, 0.22]); M.blob([x - 0.16, oy, z0 + h + 0.13], 0.11, 0.11, 0.015, 2, 10, [0.15, 0.15, 0.16]);   // wheel
     if (F.fish_finder) { const fw = Math.min(0.09, w * 0.5); M.mat = MT.GLOW; M.quad([x + 0.12, oy - fw, z0 + h + 0.01], [x + 0.12, oy + fw, z0 + h + 0.01], [x + 0.16, oy + fw, z0 + h + 0.11], [x + 0.16, oy - fw, z0 + h + 0.11], [0.25, 0.75, 0.9], [x - 1, 0, 0]); } }
   else if (F.fish_finder) { const t = clamp(D.crew.seat_at + 0.1, 0, 0.95), x = S.x(t), g = S.gun(t); M.mat = MT.GLOW; M.quad([x, -0.08, g + 0.04], [x, 0.08, g + 0.04], [x + 0.03, 0.08, g + 0.16], [x + 0.03, -0.08, g + 0.16], [0.3, 0.9, 1.1], [x - 1, 0, 0]); }
   const motorAt = [];
@@ -153,7 +152,8 @@ function boatMesh(D) {
         M.quad(L(p, q, u0, za), L(p, q, u1, za), L(p, q, u1, zb), L(p, q, u0, zb), C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
     M.quad([x0 - 0.05, -w - 0.05, z1], [x1 + 0.05, -w - 0.05, z1], [x1 + 0.05, w + 0.05, z1], [x0 - 0.05, w + 0.05, z1], C.trim, [x0, 0, 0]); }
   if (typeof boatDetail === 'function') boatDetail(D, S, M, C, { inner, P, fz, decked, motors: motorAt });   // trim and fittings (boat-detail.js)
-  D._hullN = M.v.length / VS;   // the hull's own vertices; the oars / paddle (at rest) follow, for the menu picture
+  D._hullN = M.v.length / VS;   // the hull's own vertices; the wheel and throttle lever, then the oars / paddle (at rest) follow, for the menu picture
+  D._helmN = 0; if (D._helm) { for (const v of D._helm.wheel) M.v.push(v); for (const v of D._helm.lever) M.v.push(v); D._helmN = (D._helm.wheel.length + D._helm.lever.length) / VS; }
   const O = D._oars = boatOars(D, S, C); if (O) { const m = new Float32Array(O.mesh.length); for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(D, O, 0, 0, sd, false, O.m); oarXform(O.mesh, O.m, m); for (const v of m) M.v.push(v); } }
   return new Float32Array(M.v);
 }
@@ -184,6 +184,17 @@ function oarPose(D, O, ph, k, sd, live, out) {
   for (let i = 0; i < 9; i++) out[i] = R[i] * (i % 3 === 1 ? sd : 1); out[9] = T[0]; out[10] = sd * T[1]; out[11] = T[2];   // the port side is the mirror image
   return out;
 }
+// the wheel turned by ang (radians, + clockwise as the helmsman sees it: to starboard) and the throttle lever pushed by thr (-1 astern .. 1 full ahead), into dst
+function helmPose(D, ang, thr, dst) {
+  const W = D._helm, rot = (src, c, n, a, o) => { const co = Math.cos(a), si = Math.sin(a);   // about the axis n through c (Rodrigues)
+    const R = (x, y, z, out, k) => { const d = n[0] * x + n[1] * y + n[2] * z; out[k] = x * co + (n[1] * z - n[2] * y) * si + n[0] * d * (1 - co); out[k + 1] = y * co + (n[2] * x - n[0] * z) * si + n[1] * d * (1 - co); out[k + 2] = z * co + (n[0] * y - n[1] * x) * si + n[2] * d * (1 - co); };
+    for (let i = 0; i < src.length; i += VS) { R(src[i] - c[0], src[i + 1] - c[1], src[i + 2] - c[2], dst, o + i); dst[o + i] += c[0]; dst[o + i + 1] += c[1]; dst[o + i + 2] += c[2]; R(src[i + 3], src[i + 4], src[i + 5], dst, o + i + 3); for (let q = 6; q < VS; q++) dst[o + i + q] = src[i + q]; } };
+  rot(W.wheel, W.c, W.n, -ang, 0); rot(W.lever, W.lp, [0, 1, 0], thr * 0.55, W.wheel.length);   // the lever leans forward (about the boat's y axis) for ahead
+  return dst;
+}
+// a point on the wheel's rim at angle a (0 = starboard, pi/2 = top, as the helmsman sees it) once turned by ang; the throttle knob pushed by thr: boat frame
+function helmGrip(D, ang, a) { const W = D._helm, t = a - ang; return [0, 1, 2].map(j => W.c[j] + (W.u[j] * Math.cos(t) + W.v[j] * Math.sin(t)) * W.r); }
+function leverGrip(D, thr) { const W = D._helm, p = W.lp, b = thr * 0.55, dx = -0.075, dz = 0.165; return [p[0] + dx * Math.cos(b) + dz * Math.sin(b), p[1], p[2] - dx * Math.sin(b) + dz * Math.cos(b)]; }
 // the oar mesh (src) posed by m into dst: positions and normals
 function oarXform(src, m, dst) {
   for (let o = 0; o < src.length; o += VS) { const x = src[o], y = src[o + 1], z = src[o + 2], nx = src[o + 3], ny = src[o + 4], nz = src[o + 5];

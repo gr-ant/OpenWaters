@@ -16,6 +16,12 @@ function boatDetail(D, S, M, C, X) {
     for (const [p, q] of [[[x0, y0], [x1, y0]], [[x1, y0], [x1, y1]], [[x1, y1], [x0, y1]], [[x0, y1], [x0, y0]]]) M.quad([p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1], col, c); };
   // a ring of rod: centre c, radius r, in the plane spanned by unit vectors u and v
   const ring = (c, r, u, v, th, col, n = 16) => { for (let i = 0; i < n; i++) { const a0 = i / n * TAU, a1 = (i + 1) / n * TAU, at = a => [c[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * r, c[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * r, c[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * r]; rod(at(a0), at(a1), th, col); } };
+  // the wheel (centre wc) and throttle lever (pivot lp): their own small meshes in D._helm, turned and pushed as you drive (helmPose, boats.js)
+  const part = fn => { const keep = M, B = meshBuilder(true); B.mat = keep.mat; M = B; fn(); M = keep; return new Float32Array(B.v); };
+  const helm = (wc, lp) => { const u = [0, 1, 0], v = [-0.42, 0, 0.91], r = 0.15;
+    D._helm = { c: wc, u, v, n: norm3(cross3(u, v)), r, lp,
+      wheel: part(() => { ring(wc, r, u, v, 0.012, dark, 12); for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 0.5; rod(wc, [wc[0] + v[0] * Math.sin(a) * r, wc[1] + Math.cos(a) * r, wc[2] + v[2] * Math.sin(a) * r], 0.009, steel, 3); } }),
+      lever: part(() => { rod(lp, [lp[0] - 0.07, lp[1], lp[2] + 0.15], 0.012, steel); M.blob([lp[0] - 0.075, lp[1], lp[2] + 0.165], 0.022, 0.022, 0.025, 3, 6, dark); }) }; };
   // where the waterline meets the hull at station t (s along the section, 0 keel .. 1 gunwale)
   const sAt = (t, z) => { let lo = 0, hi = 1; for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < z) lo = m; else hi = m; } return (lo + hi) / 2; };
 
@@ -67,10 +73,8 @@ function boatDetail(D, S, M, C, X) {
 
   // ---- the helm ----
   if (F.console) { const cs = F.console, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), h = cs.height ?? 0.95, top = fz + h, scr = cs.screen ?? 0.3;
-    M.mat = MT.METAL; const wc = [x - 0.2, oy, top - 0.1], u = [0, 1, 0], v = [-0.42, 0, 0.91];   // a spoked wheel, raked back on the aft face
-    ring(wc, 0.15, u, v, 0.012, dark, 12); for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 0.5; rod(wc, [wc[0] + v[0] * Math.sin(a) * 0.15, wc[1] + Math.cos(a) * 0.15, wc[2] + v[2] * Math.sin(a) * 0.15], 0.009, steel, 3); }
-    rod([x - 0.3, oy, top - 0.14], wc, 0.02, steel);
-    rod([x - 0.05, oy + w * 0.75, top], [x - 0.12, oy + w * 0.75, top + 0.15], 0.012, steel); M.blob([x - 0.125, oy + w * 0.75, top + 0.165], 0.022, 0.022, 0.025, 3, 6, dark);   // throttle lever
+    M.mat = MT.METAL; helm([x - 0.2, oy, top - 0.1], [x - 0.05, oy + w * 0.75, top]);   // a spoked wheel, raked back on the aft face, and the throttle lever beside it
+    rod([x - 0.3, oy, top - 0.14], [x - 0.2, oy, top - 0.1], 0.02, steel);
     M.mat = MT.PLASTER; for (const sy of [-0.45, 0.1]) M.blob([x + 0.02, oy + sy * w, top + 0.008], 0.045, 0.045, 0.008, 2, 8, dark);   // gauges
     M.mat = MT.METAL; const a = [x + 0.25, oy - w, top], b = [x + 0.25 + scr * 0.25, oy - w, top + scr], c = [x + 0.25 + scr * 0.25, oy + w, top + scr], e = [x + 0.25, oy + w, top];   // windscreen frame and a grab rail over it
     rod(a, b, 0.011, steel); rod(b, c, 0.011, steel); rod(c, e, 0.011, steel);
@@ -87,6 +91,9 @@ function boatDetail(D, S, M, C, X) {
     for (const xx of [x0 - 0.012, x1 + 0.012]) for (const zz of [zs, zt]) rod([xx, -w, zz], [xx, w, zz], 0.014, C.trim);
     M.mat = MT.CLOTH; ring([(x0 + x1) / 2, w + 0.04, zs - 0.32], 0.2, [1, 0, 0], [0, 0, 1], 0.045, [1.0, 0.42, 0.1], 10);   // a life ring on the port side
     M.mat = MT.METAL; const ex = x0 + 0.12, ey = -(w - 0.14); rod([ex, ey, z1], [ex, ey, z1 + 0.55], 0.04, dark, 6); }   // exhaust stack
+  if (F.cabin && powered && !F.console) { const st = clamp(D.crew.seat_at, 0, 1), sx = S.x(st), sy = -(D.crew.seat_side || 0) * S.hb(st), hz = fz + Math.max(0.13, D.crew.eye_height_m - 0.7);   // in the wheelhouse: a wheel on a post in front of the helm seat, the throttle on a stand at its right
+    M.mat = MT.METAL; rod([sx + 0.62, sy, fz], [sx + 0.55, sy, hz + 0.28], 0.025, steel); rod([sx + 0.55, sy, hz + 0.28], [sx + 0.45, sy, hz + 0.32], 0.02, steel);
+    rod([sx + 0.47, sy + 0.32, fz], [sx + 0.47, sy + 0.32, hz + 0.25], 0.02, steel); helm([sx + 0.45, sy, hz + 0.32], [sx + 0.47, sy + 0.32, hz + 0.25]); }
 
   // ---- engines ----
   for (const [x, y, sc, g, col, hp] of motors || []) { M.mat = MT.METAL;
