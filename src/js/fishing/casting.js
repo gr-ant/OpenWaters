@@ -3,13 +3,13 @@
 Object.assign(Engine, {
   angStep(dt) {
     const A = this.ang; if (!A) return;
-    const bt = this.boat, helm = bt && this.boatMode !== 'deck';
-    if (A.out && (this.swim || (helm && !this.boatTrolls(bt.def)))) this.toggleRod(false);
+    const H = A.holder, bt = this.boat, helm = bt && this.boatMode !== 'deck' && !H;   // H: the rod stands in a rod holder (fishing/rod-holder.js)
+    if (A.out && !H && (this.swim || (helm && !this.boatTrolls(bt.def)))) this.toggleRod(false);
     if (!A.out || !A.S) return;
     const K = this.keys, P = this.P, S = A.S, ca = Math.cos(P.a), sa = Math.sin(P.a);
-    const btn = !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
+    const btn = !H && !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
     const fast = K.ShiftLeft || K.ShiftRight ? 1 : this.reelPull || 0;   // 0..1: Shift is flat out; on touch, how far the Reel button is pulled down
-    const eye = [P.x, P.y, P.z + EYE]; A.hand = this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
+    const eye = [P.x, P.y, P.z + EYE]; A.hand = H ? this.holderHand(H) : this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
     if (helm) { const cb = Math.cos(bt.a), sb = Math.sin(bt.a), Lh = bt.def.hull.length_m; A.hand = [bt.x - cb * Lh * 0.4 - sb * 0.35, bt.y - sb * Lh * 0.4 + cb * 0.35, bt.z + bt.def.hull.depth_m * 0.75]; }   // at the helm the rod sits in a holder at the stern
     A.t = (A.t || 0) + dt; A.reeling = false;
     if (A.bail && (press || (A.phase !== 'water' && A.phase !== 'bite' && A.phase !== 'flight'))) { A.bail = false; if (A.lure) this.say('Bail closed', 1); }   // turning the handle flips the bail shut
@@ -30,13 +30,14 @@ Object.assign(Engine, {
       // the line load jumps about frame to frame (current, swell, a boat under you): the blank answers to its average, not every flicker
       A.overS = (A.overS || 0) + ((A.over || 0) - (A.overS || 0)) * (1 - Math.exp(-dt * 3));
       if (A.phase === 'water') tb = clamp(A.overS * 1.2 + (A.flow || 0) * 0.04 * sstep(0, 0.1, A.overS), 0, 0.55);
-      if (A.phase === 'bite') this.biteStep(dt, press, btn);
+      if (A.phase === 'bite') { if (!(H && H.on)) this.biteStep(dt, press, btn); }   // a fish that set itself on the holder rod is held by rod-holder.js
       else if ((A.scanT = (A.scanT || 0) - dt) <= 0) { A.scanT = 0.25; this.lureScan(); }
     } else if (A.phase === 'fight') {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
       tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1);
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
-    if (!helm && A.phase !== 'charge') { const aim = this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
+    if (H) { ty = H.yaw; tp = HOLDER_PITCH; if (A.phase === 'bite') tb = 0.2 + 0.12 * Math.sin(A.t * (H.on ? 9 : 16)); }   // standing in the holder; the tip nods while something has the bait
+    else if (!helm && A.phase !== 'charge') { const aim = this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
     const k = 1 - Math.exp(-dt * (A.phase === 'flight' && A.t - A.castAt < 0.25 ? 18 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;

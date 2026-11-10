@@ -126,16 +126,17 @@ Object.assign(Engine, {
     l.x = eye[0] + f[0] * 2.4; l.y = eye[1] + f[1] * 2.4; l.z = eye[2] + f[2] * 2.4; l.intensity = 4.5;
   },
   updateTui() { // touch buttons follow what you're doing: Helm/Stand appears in a boat, Dive becomes Sit/Stand on deck, Cast/Reel/Strike while fishing
-    if (!this.touchUI) return; const A = this.ang, fp = A && A.out ? A.phase + (A.took ? 't' : '') + (A.bail ? 'b' : '') : 'x', st = (this.boat ? this.boatMode + (this.boatSit ? 's' : 'u') : '') + fp;
+    if (!this.touchUI) return; const A = this.ang, inH = this.rodInHand(), fp = inH ? A.phase + (A.took ? 't' : '') + (A.bail ? 'b' : '') : A && A.holder ? 'h' : 'x', st = (this.boat ? this.boatMode + (this.boatSit ? 's' : 'u') : '') + fp;
     if (st === this.tuiState) return; this.tuiState = st;
-    { const rb = document.getElementById('bRod'), cb = document.getElementById('bCast'), out = A && A.out, ph = out ? A.phase : '';
+    { const rb = document.getElementById('bRod'), cb = document.getElementById('bCast'), out = inH, ph = out ? A.phase : '';
       if (rb) { rb.querySelector('b').textContent = out ? 'Stow' : 'Rod'; rb.hidden = ph === 'card'; }
       const ub = document.getElementById('bUse'); if (ub) ub.hidden = !!out;   // with the rod out, the big button casts and reels
       if (cb) { cb.hidden = !out || ph === 'card'; cb.textContent = ph === 'water' ? 'Reel' : ph === 'fight' ? 'Reel' : ph === 'bite' ? (A.took ? 'Strike!' : '…') : ph === 'flight' ? 'Stop' : 'Cast'; cb.classList.toggle('lit', ph === 'bite' && !!A.took); cb.classList.toggle('reel', ph === 'water' || ph === 'fight'); }
       for (const id of ['bDrDn', 'bDrUp', 'bBail']) { const b = document.getElementById(id); if (b) b.hidden = !out || ph === 'card'; }
       { const b = document.getElementById('bBail'); if (b) b.classList.toggle('open', !!(out && A.bail)); }
+      { const b = document.getElementById('bHold'); if (b) b.hidden = ph !== 'water'; }   // Holder: set the rod down with its line out (fishing/rod-holder.js)
       { const b = document.getElementById('bFast'); if (b) b.hidden = true; } }   // the Reel button pulls down to wind faster instead
-    { const tui = document.getElementById('tui'); if (tui) { tui.classList.toggle('rod-out', !!(A && A.out)); tui.classList.toggle('aboard', !!this.boat); } }   // fishing: no Jump, and no Dive ashore (CSS)
+    { const tui = document.getElementById('tui'); if (tui) { tui.classList.toggle('rod-out', inH); tui.classList.toggle('aboard', !!this.boat); } }   // fishing: no Jump, and no Dive ashore (CSS)
     const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');
     if (h) { h.hidden = !this.boat; h.textContent = this.boatMode === 'deck' ? 'Helm' : (this.boat && !this.boatCanStand(this.boat.def) ? 'Fish' : 'Stand'); }
     if (dv) dv.textContent = this.boat && this.boatMode === 'deck' ? (this.boatSit ? 'Stand' : 'Sit') : 'Dive';

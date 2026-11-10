@@ -22,6 +22,7 @@ Object.assign(Engine, {
     try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* */ }
     try { const ms = Array.isArray(p) ? p.reduce((a, b) => a + b, 0) : p; for (const g of navigator.getGamepads ? navigator.getGamepads() : []) if (g && g.vibrationActuator) g.vibrationActuator.playEffect('dual-rumble', { duration: ms, strongMagnitude: Math.min(1, ms / 150), weakMagnitude: 0.8 }).catch(() => {}); } catch (e) { /* */ }
   },
+  rodInHand() { const A = this.ang; return !!(A && A.out && !A.holder); },   // out and not standing in a rod holder
   boatTrolls(D) { return CONFIG.trolling && ['outboard', 'inboard'].includes(D.propulsion.type); },
   toggleRod(on = !this.ang.out) {
     const A = this.ang; if (!A) return;

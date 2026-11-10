@@ -29,6 +29,7 @@
   #tui .a-bail.open { border-color:var(--gold-hi); color:var(--gold-hi); }
   #tui .a-drdn { right:94px; bottom:112px; width:68px; }
   #tui .a-drup { right:18px; bottom:112px; width:68px; }
+  #tui .a-hold { right:170px; bottom:112px; width:66px; }   /* line out: stand the rod in a holder */
   #tui.rod-out .a-helm { right:94px; bottom:160px; width:68px; }   /* aboard with the rod out: Helm and Sit / Stand go above the drag */
   #tui.rod-out.aboard .a-dive { right:25px; bottom:152px; }
   #tui.rod-out .a-jump, #tui.rod-out:not(.aboard) .a-dive { display: none; }   /* with the rod out: no jumping, and no diving from the bank (on a deck it's Sit / Stand) */

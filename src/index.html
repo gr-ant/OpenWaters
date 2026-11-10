@@ -131,7 +131,7 @@
     <small id="hSeedInfo"></small>
   </div>
   <div id="hHelp" class="panel" hidden><header><h2>Controls</h2><button class="round-x" data-icon="ui.close" data-help-close></button></header>
-    <dl><dt>WASD</dt><dd>move · Shift run · Space jump · C dive</dd><dt>Q</dt><dd>rod out / away</dd><dt>R / mouse</dt><dd>cast (hold, let go) · reel (Shift: faster) · strike</dd><dt>[ ]</dt><dd>drag</dd><dt>G</dt><dd>open / close the bail: line pays out so the lure sinks straight down (reeling closes it)</dd>
+    <dl><dt>WASD</dt><dd>move · Shift run · Space jump · C dive</dd><dt>Q</dt><dd>rod out / away</dd><dt>R / mouse</dt><dd>cast (hold, let go) · reel (Shift: faster) · strike</dd><dt>[ ]</dt><dd>drag</dd><dt>G</dt><dd>open / close the bail: line pays out so the lure sinks straight down (reeling closes it)</dd><dt>H</dt><dd>rod holder: stand the rod in a holder with its line out (a spike on the bank, a holder on the gunwale); a bell rings at a bite; F at the holder picks it up</dd>
     <dt>E / X</dt><dd>keep / release a catch</dd><dt>I · J · B</dt><dd>tackle box · journal · boats</dd><dt>↑ ↓ · ← → · Tab</dt><dd>in a menu: move · category · tab · Enter chooses</dd><dt>F</dt><dd>use · get in a boat · V helm</dd>
     <dt>2</dt><dd>fish radar</dd><dt>M</dt><dd>map · arrows move · W/S zoom · Enter travels to the crosshair</dd><dt>T</dt><dd>hold for fast time · Y season · U weather</dd><dt>Esc</dt><dd>pause · mouse sensitivity</dd><dt>? /</dt><dd>this card</dd></dl><small id="hDebug"></small></div>
   <button id="hSettings" title="Pause and settings (Esc)" aria-label="Pause and settings">Esc</button>
@@ -158,6 +158,7 @@
   <button id="bHelm" class="act a-pill a-helm" data-k="KeyV" hidden>Stand</button>
   <button id="bCast" class="act a-main" data-k="KeyR" data-hold="1" hidden>Cast</button>
   <button id="bBail" class="act a-bail" data-k="KeyG" hidden>Bail</button>
+  <button id="bHold" class="act a-pill a-hold" data-k="KeyH" hidden>Holder</button>
   <button id="bDrDn" class="act a-pill a-drdn" data-k="BracketLeft" hidden>Drag −</button>
   <button id="bDrUp" class="act a-pill a-drup" data-k="BracketRight" hidden>Drag +</button>
   <button id="bFast" class="act a-pill a-fast" data-k="KeyT" data-hold="1" hidden>Fast ⏩</button>
@@ -245,6 +246,7 @@
 <script src="js/birds/species.js"></script>
 <script src="js/birds/game-api.js"></script>
 <script src="js/game.js"></script>
+<script src="js/fishing/rod-holder.js"></script>
 <link rel="stylesheet" href="css/tutorial.css">
 <script src="js/hud/tutorial.js"></script>
 <script type="module" src="js/urchin.js"></script>

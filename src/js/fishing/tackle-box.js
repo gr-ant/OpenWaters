@@ -78,7 +78,7 @@ Object.assign(Engine, {
     });
     document.getElementById('ccKeep').onclick = () => this.finishCatch(true);
     document.getElementById('ccRel').onclick = () => this.finishCatch(false);
-    this.ov.addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement === this.ov && this.ang && this.ang.out) this.keys.Mouse0 = true; });
+    this.ov.addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement === this.ov && this.rodInHand()) this.keys.Mouse0 = true; });
     addEventListener('mouseup', e => { if (e.button === 0) this.keys.Mouse0 = false; });
   },
 });

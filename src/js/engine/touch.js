@@ -87,7 +87,7 @@ Object.assign(Engine, {
       const l = this.tlook;
       if (l && e.pointerId === l.id) {
         this.tlook = null;
-        if (tap && l.moved < 16 && e.timeStamp - l.t < CONFIG.tapMaxMs && !this.openMenu(x, y) && !(this.ang && this.ang.out)) this.action(); // tap the minimap = travel menu (a stray tap while fishing does nothing)
+        if (tap && l.moved < 16 && e.timeStamp - l.t < CONFIG.tapMaxMs && !this.openMenu(x, y) && !this.rodInHand()) this.action(); // tap the minimap = travel menu (a stray tap while fishing does nothing)
       }
     };
     addEventListener('pointerup', end); addEventListener('pointercancel', end);

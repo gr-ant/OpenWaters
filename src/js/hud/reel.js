@@ -20,7 +20,7 @@ Object.assign(Engine, {
   // line) and the drag knob / star / lever (drag down / up). They follow the 3D parts every frame.
   reelKeysHud() {
     const el = this.rkEl || (this.rkEl = document.getElementById('hReelKeys')), A = this.ang;
-    const on = !!(el && this.showReelKeys !== false && A && A.out && A.S && A.hand && !this.showMap && !this.pauseOpen && !['card', 'charge', 'flight'].includes(A.phase) && !(this.boat && this.boatMode !== 'deck'));
+    const on = !!(el && this.showReelKeys !== false && this.rodInHand() && A.S && A.hand && !this.showMap && !this.pauseOpen && !['card', 'charge', 'flight'].includes(A.phase) && !(this.boat && this.boatMode !== 'deck'));
     if (!el) return; if (el.hidden === on) el.hidden = !on; if (!on) return;
     const k = REEL_PARTS[A.S.reel.kind] ? A.S.reel.kind : 'spinning', Pp = REEL_PARTS[k];
     if (!this.rkChips || this.rkKind !== k) { this.rkKind = k;
