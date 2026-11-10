@@ -129,6 +129,12 @@ ${pine(68, 30, 10)}${pine(24, 26, 9)}<path d="M48 12V32" stroke="${OL}" stroke-w
 <circle cx="48" cy="36" r="30" fill="#c8a45a" stroke="${OL}" stroke-width="2"/><circle cx="48" cy="36" r="25.5" fill="url(#${G('g')})" stroke="${OL}" stroke-width="1.8"/></g>
 <path d="M48 36V10.5A25.5 25.5 0 0 1 73.5 36Z" fill="url(#${G('w')})"/><g fill="none" stroke="#9fe8b4" stroke-width="1.2" opacity=".65"><circle cx="48" cy="36" r="8.5"/><circle cx="48" cy="36" r="17"/><path d="M48 10.5V61.5M22.5 36H73.5"/></g>
 <path d="M27 46C30 42 36 41 40 44L43 41.5V50.5L40 48C36 51 30 50 27 46Z" fill="#f6e08a" stroke="${OL}" stroke-width="1.3" stroke-linejoin="round"/><circle cx="59" cy="26" r="2.4" fill="#f6e08a" stroke="${OL}" stroke-width="1"/>`); })(),
+    // leave the map: the chart rolled up and tied, an arrow leading back
+    back: (() => { const G = ids(); return svg('0 0 96 72', `<defs>${lg(G('p'), [[0, '#f8efd6'], [.55, '#e6d2a2'], [1, '#b99c66']])}${shadow(G('s'))}</defs><g filter="url(#${G('s')})" stroke-linejoin="round" stroke-linecap="round">
+<g transform="rotate(-14 48 46)"><rect x="18" y="35" width="60" height="22" rx="3" fill="url(#${G('p')})" stroke="${OL}" stroke-width="2.2"/>
+<ellipse cx="78" cy="46" rx="5" ry="11" fill="#d9c08c" stroke="${OL}" stroke-width="2"/><path d="M78 41.5a2.5 4.5 0 1 1 0 9" fill="none" stroke="#8a6a3a" stroke-width="1.4"/><ellipse cx="18" cy="46" rx="5" ry="11" fill="#f8efd6" stroke="${OL}" stroke-width="2"/>
+<rect x="43" y="34" width="9" height="24" fill="#b8402e" stroke="${OL}" stroke-width="1.8"/></g>
+<path d="M74 24C62 9 42 8 30 19" fill="none" stroke="${OL}" stroke-width="8"/><path d="M19 12L24 30L41 21Z" fill="#f6e08a" stroke="${OL}" stroke-width="2.2"/><path d="M74 24C62 9 42 8 30 19" fill="none" stroke="#f6e08a" stroke-width="4"/></g>`); })(),
     // the view you're in: through your own eyes, or over the angler's shoulder (a figure from behind inside a camera's frame)
     view1: (() => { const G = ids(); return svg('0 0 96 72', `<defs>${rg(G('i'), [[0, '#8fd0c0'], [.6, '#3f8a7c'], [1, '#1d4f48']], .5, .5, .6)}${shadow(G('s'))}</defs><g filter="url(#${G('s')})" stroke-linejoin="round">
 <path d="M7 36C20 17 34 11 48 11C62 11 76 17 89 36C76 55 62 61 48 61C34 61 20 55 7 36Z" fill="#f6eed6" stroke="${OL}" stroke-width="2.4"/>

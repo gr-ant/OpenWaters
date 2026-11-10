@@ -33,7 +33,7 @@
   #tui.rod-out .a-helm { right:94px; bottom:160px; width:68px; }   /* aboard with the rod out: Helm and Sit / Stand go above the drag */
   #tui.rod-out.aboard .a-dive { right:25px; bottom:152px; }
   #tui.rod-out .a-jump, #tui.rod-out:not(.aboard) .a-dive { display: none; }   /* with the rod out: no jumping, and no diving from the bank (on a deck it's Sit / Stand) */
-  body.map-open #tui .act, body.map-open .tui-rail button:not([data-k="KeyM"]) { display:none; }   /* the map up: only the Map button stays, to close it */
+  body.map-open #tui .act, body.map-open .tui-rail button { display:none; }   /* the map up: its own icons take over (Back closes it) */
   @media (orientation: landscape) and (max-height: 540px) {   /* a phone on its side: the rail runs along the top */
     .tui-rail { top:10px; right:58px; transform:none; flex-direction:row; gap:6px; }
     .tui-rail .ic { width:42px; height:34px; }

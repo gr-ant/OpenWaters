@@ -25,8 +25,9 @@ Object.assign(Engine, {
     try { this.miniPinned = localStorage.getItem('embercrown-minimap') === '1'; } catch (e) { this.miniPinned = false; }
     document.getElementById('hPin').onclick = e => { e.stopPropagation(); this.togglePin(); };
     document.getElementById('hSeed').onclick = e => { e.stopPropagation(); this.seedPress(); };
+    document.getElementById('hMapBack').onclick = e => { e.stopPropagation(); if (this.showMap) this.toggleBigMap(); };   // leave the map
     document.getElementById('hBiomes').onclick = e => { e.stopPropagation(); const b = e.target.closest('[data-climate]'); if (b) this.newIsland(b.dataset.climate); };
-    for (const id of ['hPin', 'hSeed', 'hBiomes']) for (const ev of ['pointerdown', 'pointerup', 'mousedown', 'touchstart']) document.getElementById(id).addEventListener(ev, e => e.stopPropagation());
+    for (const id of ['hPin', 'hSeed', 'hBiomes', 'hMapBack']) for (const ev of ['pointerdown', 'pointerup', 'mousedown', 'touchstart']) document.getElementById(id).addEventListener(ev, e => e.stopPropagation());
   },
   openJournal() { this.toggleJournal(); },
   // the address keeps the seed and other switches as they were, plus at=x,y,heading
