@@ -87,9 +87,9 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
   let chip = null;
   const showChip = t => { if (!chip) { chip = document.createElement('div'); chip.id = 'holderChip'; chip.setAttribute('role', 'status'); chip.setAttribute('aria-live', 'polite'); document.body.appendChild(chip); }
     if (chip.textContent !== t) chip.textContent = t; chip.hidden = !t; };
-  Game.on('update', dt => {
+  E.holderTick = function (dt) {   // one rod's holder for a frame; returns what the notice should say about it ('' for nothing)
     const A = E.ang, H = A && A.holder;
-    if (!H || !A.out) { if (A && H) A.holder = null; if (chip && !chip.hidden) showChip(''); return; }
+    if (!H || !A.out) { if (A && H) A.holder = null; return ''; }
     const st = A.phase === 'bite' ? (H.on ? 'on' : 'bite') : A.phase;
     if (st === 'bite' && H.was !== 'bite') { ring(H); H.alert = 'Bite at the rod holder!'; E.say(`Bell! ${H.alert} ${away(H)} m away`, 4); }
     else if (st !== 'bite' && st !== 'on' && (H.was === 'bite' || H.was === 'on')) H.alert = H.was === 'on' ? 'The fish at the holder threw the hook' : 'Missed a bite at the holder';
@@ -104,9 +104,12 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
         if ((H.ringT -= dt) <= 0) { ring(H); E.addRipple(L.x, L.y, 0.2 + f.len * 0.5); } }
     }
     const t = H.alert && (st === 'bite' || st === 'on' ? H.alert : `${H.alert} · rod still in the holder`);
-    showChip(t ? `${t} ${away(H)} m away${st === 'on' ? ` · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s` : ''}` : '');
-  });
+    return t ? `${t} ${away(H)} m away${st === 'on' ? ` · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s` : ''}` : '';
+  };
+  Game.on('update', dt => { const a = E.holderTick(dt); let b = '';
+    if (E.ang2) { const one = E.ang; E.ang = E.ang2; E.ang2 = one; try { b = E.holderTick(dt); } finally { E.ang2 = E.ang; E.ang = one; } }   // the second rod (fishing/two-rods.js)
+    const t = [a, b].filter(Boolean).join('   ·   '); if (t || (chip && !chip.hidden)) showChip(t); });
   // on the map: a dot where the rod stands
-  Game.onMap((c, toPx) => { const H = E.ang && E.ang.holder; if (!H) return; const [px, py] = toPx(H.x, H.y);
-    c.beginPath(); c.arc(px, py, 4.5, 0, 6.2832); c.fillStyle = H.on || (E.ang.phase === 'bite') ? '#ffd040' : '#e9cf8e'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#1c1608'; c.stroke(); });
+  Game.onMap((c, toPx) => { for (const A of [E.ang, E.ang2]) { const H = A && A.holder; if (!H) continue; const [px, py] = toPx(H.x, H.y);
+    c.beginPath(); c.arc(px, py, 4.5, 0, 6.2832); c.fillStyle = H.on || (A.phase === 'bite') ? '#ffd040' : '#e9cf8e'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#1c1608'; c.stroke(); } });
 })();

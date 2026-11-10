@@ -28,11 +28,11 @@ Object.assign(Engine, {
     const P = this.P, R = 72, cs = FISH_CELL;
     // populate around you, and around your lure or bait once it's out in the water (a long cast into deep water would
     // otherwise land beyond every fish); distance counts from whichever is nearer
-    const L = this.ang && this.ang.out && this.ang.lure, centres = [[P.x, P.y, R]];
-    if (L && L.kd >= 0 && !L.land && Math.hypot(L.x - P.x, L.y - P.y) > 24) centres.push([L.x, L.y, 40]);
+    const centres = [[P.x, P.y, R]], rods = [this.ang, this.ang2].filter(Boolean);   // (a second rod may stand in a holder: fishing/two-rods.js)
+    for (const A of rods) { const L = A.out && A.lure; if (L && L.kd >= 0 && !L.land && Math.hypot(L.x - P.x, L.y - P.y) > 24) centres.push([L.x, L.y, 40]); }
     const far = (x, y) => Math.min(...centres.map(([cx, cy, r]) => Math.hypot(x - cx, y - cy) - r));   // < 0 inside a circle
     if (this.fishRev !== FishDB.revision) { this.fishCells.clear(); this.fishRev = FishDB.revision; }
-    for (const [k, c] of this.fishCells) if (far((c.cx + 0.5) * cs, (c.cy + 0.5) * cs) > 24 && !c.fish.some(f => f === (this.ang && this.ang.fish))) this.fishCells.delete(k);
+    for (const [k, c] of this.fishCells) if (far((c.cx + 0.5) * cs, (c.cy + 0.5) * cs) > 24 && !c.fish.some(f => rods.some(A => f === A.fish))) this.fishCells.delete(k);
     const want = [], seen = new Set();
     for (const [x0, y0, r] of centres) { const ccx = Math.floor(x0 / cs), ccy = Math.floor(y0 / cs), rc = Math.ceil(r / cs);
       for (let dy = -rc; dy <= rc; dy++) for (let dx = -rc; dx <= rc; dx++) { const cx = ccx + dx, cy = ccy + dy, k = cx + ',' + cy, d = far((cx + 0.5) * cs, (cy + 0.5) * cs);
@@ -57,7 +57,7 @@ Object.assign(Engine, {
     }
     this.fish = []; for (const c of this.fishCells.values()) for (const f of c.fish) if (!f.dead) this.fish.push(f);
     this.spawned = this.spawned.filter(f => !f.dead && Math.hypot(f.x - P.x, f.y - P.y) < 250); for (const f of this.spawned) this.fish.push(f);   // ones you spawned stay until you're far away
-    const hk = this.ang && this.ang.fish; if (hk && !hk.dead && !this.fish.includes(hk)) this.fish.push(hk);   // the fish on your line stays, however far it runs
+    for (const A of rods) { const hk = A.fish; if (hk && !hk.dead && !this.fish.includes(hk)) this.fish.push(hk); }   // the fish on your line stays, however far it runs
   },
   // keep as many whole groups (a school with its leader, or a single fish) as fit in `room`, picked in a fixed
   // pseudo-random order so no species is always the one left out; followers never lose their leader

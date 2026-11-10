@@ -29,7 +29,7 @@ Object.assign(Engine, {
       const D = f.def, thief = baitThief(D); if (!fishCatchable(D) && !(thief && S.bait)) return;
       const r = R * (0.7 + 0.6 * f.sizeRank), dh = Math.hypot(f.x - L.x, f.y - L.y); if (dh > r || Math.abs(f.z - L.z) > 1.2 + r * 0.35) return;
       const p = this.rigStrike(f, pres, zone) * (thief ? 0.5 : 1);
-      if (Math.random() < p * 0.6) { f.state = 'lure'; f.zone = zone; f.tNext = 10 + 8 * Math.random(); Game.emit('follow', f); }
+      if (Math.random() < p * 0.6) { f.state = 'lure'; f.rod = A; f.zone = zone; f.tNext = 10 + 8 * Math.random(); Game.emit('follow', f); }
     });
   },
   // a fish following the lure gets to it: take it, or turn away

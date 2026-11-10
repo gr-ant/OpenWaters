@@ -5058,11 +5058,11 @@ Object.assign(Engine, {
     const P = this.P, R = 72, cs = FISH_CELL;
     // populate around you, and around your lure or bait once it's out in the water (a long cast into deep water would
     // otherwise land beyond every fish); distance counts from whichever is nearer
-    const L = this.ang && this.ang.out && this.ang.lure, centres = [[P.x, P.y, R]];
-    if (L && L.kd >= 0 && !L.land && Math.hypot(L.x - P.x, L.y - P.y) > 24) centres.push([L.x, L.y, 40]);
+    const centres = [[P.x, P.y, R]], rods = [this.ang, this.ang2].filter(Boolean);   // (a second rod may stand in a holder: fishing/two-rods.js)
+    for (const A of rods) { const L = A.out && A.lure; if (L && L.kd >= 0 && !L.land && Math.hypot(L.x - P.x, L.y - P.y) > 24) centres.push([L.x, L.y, 40]); }
     const far = (x, y) => Math.min(...centres.map(([cx, cy, r]) => Math.hypot(x - cx, y - cy) - r));   // < 0 inside a circle
     if (this.fishRev !== FishDB.revision) { this.fishCells.clear(); this.fishRev = FishDB.revision; }
-    for (const [k, c] of this.fishCells) if (far((c.cx + 0.5) * cs, (c.cy + 0.5) * cs) > 24 && !c.fish.some(f => f === (this.ang && this.ang.fish))) this.fishCells.delete(k);
+    for (const [k, c] of this.fishCells) if (far((c.cx + 0.5) * cs, (c.cy + 0.5) * cs) > 24 && !c.fish.some(f => rods.some(A => f === A.fish))) this.fishCells.delete(k);
     const want = [], seen = new Set();
     for (const [x0, y0, r] of centres) { const ccx = Math.floor(x0 / cs), ccy = Math.floor(y0 / cs), rc = Math.ceil(r / cs);
       for (let dy = -rc; dy <= rc; dy++) for (let dx = -rc; dx <= rc; dx++) { const cx = ccx + dx, cy = ccy + dy, k = cx + ',' + cy, d = far((cx + 0.5) * cs, (cy + 0.5) * cs);
@@ -5087,7 +5087,7 @@ Object.assign(Engine, {
     }
     this.fish = []; for (const c of this.fishCells.values()) for (const f of c.fish) if (!f.dead) this.fish.push(f);
     this.spawned = this.spawned.filter(f => !f.dead && Math.hypot(f.x - P.x, f.y - P.y) < 250); for (const f of this.spawned) this.fish.push(f);   // ones you spawned stay until you're far away
-    const hk = this.ang && this.ang.fish; if (hk && !hk.dead && !this.fish.includes(hk)) this.fish.push(hk);   // the fish on your line stays, however far it runs
+    for (const A of rods) { const hk = A.fish; if (hk && !hk.dead && !this.fish.includes(hk)) this.fish.push(hk); }   // the fish on your line stays, however far it runs
   },
   // keep as many whole groups (a school with its leader, or a single fish) as fit in `room`, picked in a fixed
   // pseudo-random order so no species is always the one left out; followers never lose their leader
@@ -5236,7 +5236,7 @@ Object.assign(Engine, {
       else { const lead = Math.min(1, Math.hypot(g.x - f.x, g.y - f.y) / 3) * 0.4; tx = g.x + Math.cos(g.a) * g.spd * g.len * lead; ty = g.y + Math.sin(g.a) * g.spd * g.len * lead; tz = g.z; g.chaser = f; g.chasedT = this.time; }
     }
     if (f.state === 'lure') { // following your lure or bait in
-      const A = this.ang, L = A && A.lure;
+      const A = f.rod && f.rod === this.ang2 ? f.rod : this.ang, L = A && A.lure;   // the rod whose bait it noticed (fishing/two-rods.js)
       if (!L || A.phase !== 'water' || A.fish || L.land) { f.state = 'rest'; f.tNext = 0.5 + Math.random(); }
       else { tx = L.x; ty = L.y; tz = L.z; }
     }
@@ -7993,7 +7993,7 @@ Object.assign(Engine, {
       const D = f.def, thief = baitThief(D); if (!fishCatchable(D) && !(thief && S.bait)) return;
       const r = R * (0.7 + 0.6 * f.sizeRank), dh = Math.hypot(f.x - L.x, f.y - L.y); if (dh > r || Math.abs(f.z - L.z) > 1.2 + r * 0.35) return;
       const p = this.rigStrike(f, pres, zone) * (thief ? 0.5 : 1);
-      if (Math.random() < p * 0.6) { f.state = 'lure'; f.zone = zone; f.tNext = 10 + 8 * Math.random(); Game.emit('follow', f); }
+      if (Math.random() < p * 0.6) { f.state = 'lure'; f.rod = A; f.zone = zone; f.tNext = 10 + 8 * Math.random(); Game.emit('follow', f); }
     });
   },
   // a fish following the lure gets to it: take it, or turn away
@@ -10579,9 +10579,9 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
   let chip = null;
   const showChip = t => { if (!chip) { chip = document.createElement('div'); chip.id = 'holderChip'; chip.setAttribute('role', 'status'); chip.setAttribute('aria-live', 'polite'); document.body.appendChild(chip); }
     if (chip.textContent !== t) chip.textContent = t; chip.hidden = !t; };
-  Game.on('update', dt => {
+  E.holderTick = function (dt) {   // one rod's holder for a frame; returns what the notice should say about it ('' for nothing)
     const A = E.ang, H = A && A.holder;
-    if (!H || !A.out) { if (A && H) A.holder = null; if (chip && !chip.hidden) showChip(''); return; }
+    if (!H || !A.out) { if (A && H) A.holder = null; return ''; }
     const st = A.phase === 'bite' ? (H.on ? 'on' : 'bite') : A.phase;
     if (st === 'bite' && H.was !== 'bite') { ring(H); H.alert = 'Bite at the rod holder!'; E.say(`Bell! ${H.alert} ${away(H)} m away`, 4); }
     else if (st !== 'bite' && st !== 'on' && (H.was === 'bite' || H.was === 'on')) H.alert = H.was === 'on' ? 'The fish at the holder threw the hook' : 'Missed a bite at the holder';
@@ -10596,11 +10596,63 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
         if ((H.ringT -= dt) <= 0) { ring(H); E.addRipple(L.x, L.y, 0.2 + f.len * 0.5); } }
     }
     const t = H.alert && (st === 'bite' || st === 'on' ? H.alert : `${H.alert} · rod still in the holder`);
-    showChip(t ? `${t} ${away(H)} m away${st === 'on' ? ` · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s` : ''}` : '');
-  });
+    return t ? `${t} ${away(H)} m away${st === 'on' ? ` · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s` : ''}` : '';
+  };
+  Game.on('update', dt => { const a = E.holderTick(dt); let b = '';
+    if (E.ang2) { const one = E.ang; E.ang = E.ang2; E.ang2 = one; try { b = E.holderTick(dt); } finally { E.ang2 = E.ang; E.ang = one; } }   // the second rod (fishing/two-rods.js)
+    const t = [a, b].filter(Boolean).join('   ·   '); if (t || (chip && !chip.hidden)) showChip(t); });
   // on the map: a dot where the rod stands
-  Game.onMap((c, toPx) => { const H = E.ang && E.ang.holder; if (!H) return; const [px, py] = toPx(H.x, H.y);
-    c.beginPath(); c.arc(px, py, 4.5, 0, 6.2832); c.fillStyle = H.on || (E.ang.phase === 'bite') ? '#ffd040' : '#e9cf8e'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#1c1608'; c.stroke(); });
+  Game.onMap((c, toPx) => { for (const A of [E.ang, E.ang2]) { const H = A && A.holder; if (!H) continue; const [px, py] = toPx(H.x, H.y);
+    c.beginPath(); c.arc(px, py, 4.5, 0, 6.2832); c.fillStyle = H.on || (A.phase === 'bite') ? '#ffd040' : '#e9cf8e'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#1c1608'; c.stroke(); } });
+})();
+</script>
+<script>
+'use strict';
+// FISHING: a second rod. Engine.ang stays "the rod in focus" (in your hands, at the helm, or the one you last set down), and
+// all the fishing code goes on working on it. Engine.ang2 is another rod standing in a holder: each frame the two are swapped
+// for a moment so the same code steps, draws and rings the bell for it too. So: cast, H to put the rod in a holder, Q for a
+// second rod; fish that one by hand, troll it from the helm, or put it in a holder as well. Use at a holder picks that rod up.
+//   Engine.ang2 -> the other rod (an angler object like Engine.ang, always in a holder), or null
+(() => {
+  const E = Engine; E.ang2 = null;
+  const swap = () => { const a = E.ang; E.ang = E.ang2; E.ang2 = a; };
+  const other = fn => { if (!E.ang2) return undefined; swap(); try { return fn(); } finally { swap(); } };   // run something as the other rod
+  E.rods = function () { return [this.ang, this.ang2].filter(Boolean); };
+  const say = (t, s = 2) => E.say(t, s);
+
+  // every frame: both rods fish; a second rod that's no longer standing in a holder isn't one
+  const baseStep = E.angStep; E.angStep = function (dt) { baseStep.call(this, dt); other(() => baseStep.call(E, dt)); if (this.ang2 && (!this.ang2.out || !this.ang2.holder)) this.ang2 = null; };
+  const baseDraw = E.drawTackle; E.drawTackle = function (...a) { baseDraw.apply(this, a); other(() => { if (E.ang.out) baseDraw.apply(E, a); }); };
+  // a fish that came to the other rod's bait takes that one
+  const baseArrive = E.lureArrive; E.lureArrive = function (f) { return f.rod && f.rod === this.ang2 ? other(() => baseArrive.call(E, f)) : baseArrive.call(this, f); };
+
+  // Q with the rod in a holder: a second rod in your hands (the same rig; tie on another in the tackle box)
+  const second = () => { const first = E.ang;
+    if (E.ang2) return say('Both rods are out: pick one up from its holder');
+    E.ang2 = first; E.angLoad(); baseRod.call(E, true);
+    if (!E.ang.out) { E.ang = first; E.ang2 = null; return; }   // couldn't take one out here (swimming, at a helm that doesn't troll): as you were
+    say(`Second rod · ${E.ang.rig.name}`, 2); };
+  const baseRod = E.toggleRod; E.toggleRod = function (on) {
+    if (on === undefined && this.ang && this.ang.holder) return second();
+    baseRod.call(this, on === undefined ? !this.ang.out : on);
+    if (this.ang && !this.ang.out && this.ang2) { this.ang = this.ang2; this.ang2 = null; this.tuiState = null; this.updateTui(); } };   // the one in your hands put away: the rod in the holder is the one you have out
+  const baseKey = E.keyPress; E.keyPress = function (code, e, card) {
+    if (!card && code === 'KeyQ' && this.ang && this.ang.holder) { this.keys[code] = true; if (!e || !e.repeat) second(); return; }
+    return baseKey.call(this, code, e, card); };
+  const baseTravel = E.travel; E.travel = function (...a) { this.ang2 = null; return baseTravel.apply(this, a); };   // travelling takes every rod with you
+
+  // picking up: whichever holder you're at. Hands must be free for the other rod: an idle rod goes away, one with its line out goes into a holder right here
+  const nearMine = E.holderNear, nearOther = () => !!other(() => nearMine.call(E));
+  E.holderNear = function () { return nearMine.call(this) || nearOther(); };
+  const basePick = E.pickUpHolder; E.pickUpHolder = function () { const A = this.ang, here = nearMine.call(this), there = nearOther(), biting = R => R && R.phase === 'bite';
+    if (here && !(there && biting(this.ang2) && !biting(A))) return basePick.call(this);   // (at both: the one with a fish on first)
+    if (!there) return;
+    if (A.out && !A.holder) { if (A.phase === 'ready') baseRod.call(this, false); else if (A.phase === 'water') { this.setHolder(); if (!this.ang.holder) return; } else return say('Finish with the rod in your hands first'); }
+    swap(); if (this.ang2 && !this.ang2.out) this.ang2 = null;
+    return basePick.call(this); };
+  const baseKeys = E.contextKeys; E.contextKeys = function () { const out = baseKeys.call(this), A = this.ang;
+    if (A && A.holder && !this.ang2 && !nearMine.call(this)) return [[Controls.key('rod'), 'Second rod'], ...out].slice(0, 4);
+    return A && !A.holder && nearOther() ? [[Controls.key('use'), 'Pick up rod'], ...out].slice(0, 4) : out; };
 })();
 </script>
 <style>

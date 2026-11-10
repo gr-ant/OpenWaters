@@ -134,7 +134,7 @@ Object.assign(Engine, {
       else { const lead = Math.min(1, Math.hypot(g.x - f.x, g.y - f.y) / 3) * 0.4; tx = g.x + Math.cos(g.a) * g.spd * g.len * lead; ty = g.y + Math.sin(g.a) * g.spd * g.len * lead; tz = g.z; g.chaser = f; g.chasedT = this.time; }
     }
     if (f.state === 'lure') { // following your lure or bait in
-      const A = this.ang, L = A && A.lure;
+      const A = f.rod && f.rod === this.ang2 ? f.rod : this.ang, L = A && A.lure;   // the rod whose bait it noticed (fishing/two-rods.js)
       if (!L || A.phase !== 'water' || A.fish || L.land) { f.state = 'rest'; f.tNext = 0.5 + Math.random(); }
       else { tx = L.x; ty = L.y; tz = L.z; }
     }
