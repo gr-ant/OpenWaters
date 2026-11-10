@@ -19,22 +19,22 @@
   },
   "body": {
     "profile": [
-      0.35,
-      0.75,
-      0.95,
+      0.62,
+      0.86,
+      0.98,
       1,
-      0.9,
-      0.7,
-      0.42,
-      0.22
+      0.92,
+      0.72,
+      0.45,
+      0.24
     ],
-    "height": 0.2,
-    "width": 0.2,
+    "height": 0.21,
+    "width": 0.22,
     "flex": 0.5,
     "swim": "cetacean",
     "head": {
       "length": 0.28,
-      "snout": 0.6,
+      "snout": 0.95,
       "mouth": 1,
       "jaw": "terminal"
     },
@@ -74,11 +74,51 @@
         "scale": 5,
         "region": "lower",
         "alpha": 0.6
+      },
+      {
+        "type": "stripe",
+        "color": "#9a9a9a",
+        "v": -0.55,
+        "width": 0.035,
+        "from": 0.03,
+        "to": 0.42,
+        "alpha": 0.75
+      },
+      {
+        "type": "stripe",
+        "color": "#9a9a9a",
+        "v": -0.68,
+        "width": 0.035,
+        "from": 0.03,
+        "to": 0.42,
+        "alpha": 0.75
+      },
+      {
+        "type": "stripe",
+        "color": "#9a9a9a",
+        "v": -0.8,
+        "width": 0.035,
+        "from": 0.03,
+        "to": 0.42,
+        "alpha": 0.75
+      },
+      {
+        "type": "stripe",
+        "color": "#9a9a9a",
+        "v": -0.92,
+        "width": 0.035,
+        "from": 0.03,
+        "to": 0.42,
+        "alpha": 0.75
       }
     ]
   },
   "habitat": {
-    "climates": ["temperate", "arctic", "tropical"],
+    "climates": [
+      "temperate",
+      "arctic",
+      "tropical"
+    ],
     "waters": {
       "sea": 1
     },

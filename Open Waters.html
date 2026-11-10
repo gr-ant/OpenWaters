@@ -2881,6 +2881,22 @@ function validateFish(raw) {
 
 // ---- procedural fish body from the definition (model: 1 long along +x, nose at +0.5, centred) ----
 const nPat = makeNoise(4242);
+// a whale's or dolphin's flipper: a smooth, flattened paddle swept down and back from the root, tapering to a point;
+// bumpy: the knobs (tubercles) along a humpback's leading edge
+function cetaceanFlipper(M, root, s, len, col, bumpy) {
+  const L = len * 0.95; cetaceanBlade(M, root, norm3([-0.5, s * 0.62, -0.6]), L, u => L * 0.17 * (0.55 + 0.45 * Math.sin(Math.PI * Math.min(1, u * 1.6 + 0.2))) * (1 - u * 0.85), col, bumpy, 0.22);
+}
+// a solid blade (flipper, fluke) from root along dir for L, chordAt(u) its half-width (0 root .. 1 tip), thin: thickness / width
+function cetaceanBlade(M, root, dir, L, chordAt, col, bumpy, thin) {
+  const N = 7;
+  const fore = norm3([1 - dir[0] * dir[0], -dir[0] * dir[1], -dir[0] * dir[2]]);   // the chord's forward direction, square to the flipper's length
+  const smooth = M.smoothTube; M.smoothTube = true;
+  for (let k = 0; k < N; k++) { const u0 = k / N, u1 = (k + 1) / N, p0 = root.map((v, i) => v + dir[i] * L * u0), p1 = root.map((v, i) => v + dir[i] * L * u1), n = 12;
+    const a = Math.abs(dir[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0], Xb = norm3(cross3(a, dir)), Yb = cross3(dir, Xb), phi = Math.atan2(fore[0] * Yb[0] + fore[1] * Yb[1] + fore[2] * Yb[2], fore[0] * Xb[0] + fore[1] * Xb[1] + fore[2] * Xb[2]);   // (the tube's own cross-section axes)
+    M.tube(p0, p1, chordAt(u0), Math.max(chordAt(u1), L * 0.004), n, col, k === N - 1, kk => { const t = kk / n * 6.2832 - phi; return 1 / Math.hypot(Math.cos(t), Math.sin(t) / thin); });   // flattened, but solid
+    if (bumpy) { const c = chordAt(u0 + 0.5 / N); M.blob(p0.map((v, i) => v + dir[i] * L * 0.5 / N + fore[i] * c * 0.82), c * 0.2, c * 0.2, c * 0.2, 4, 8, col); } }
+  M.smoothTube = smooth;
+}
 function fishMesh(D) {
   if (D.body.plan && D.body.plan !== 'fish') return planMesh(D);
   D._wave = 1;
@@ -3004,15 +3020,11 @@ function fishMesh(D) {
   else if (B.tail.shape === 'rounded') { poly = []; for (let k = 0; k <= 8; k++) { const a = -1.4 + k / 8 * 2.8; poly.push([x1 - (x1 - xe) * Math.cos(a * 0.9), T * 0.9 * Math.sin(a) / Math.sin(1.4)]); } }
   else { const f = B.tail.shape === 'emarginate' ? Math.min(fk, 0.2) : B.tail.shape === 'lunate' ? Math.max(fk, 0.45) : fk, sw = B.tail.shape === 'lunate' ? 0.15 : 0; poly = [[xe + sw * tl, T * (1 + sw)], [xe + f * (x1 - xe), 0], [xe + sw * tl, -T * (1 + sw)]]; }
   if (B.tail.shape === 'flukes') { // a whale's tail: two horizontal blades, swept back to pointed tips, notched in the middle
-    const L = (x1 - xe) * 1.15, sp = 0.1 + 0.5 * tl, N = 8, fc = mix(C.back, C.fins, 0.25);   // half-span ~ 1/6 of the length
+    const L = (x1 - xe) * 1.15, sp = 0.1 + 0.5 * tl, N = 8, fc = mix(C.back, C.flank, 0.3);   // half-span ~ 1/6 of the length; dark like the back
     M.blob([x1 - L * 0.06, 0, 0], L * 0.16, hr * 1.25, hr * 0.8, 6, 10, fc);   // the tail stock flattens into the flukes and closes the body's open end
-    for (const sd of [1, -1]) {
-      // root runs along the centre line (the two blades meet, no gap); the leading edge bows out then sweeps back to the tip
-      const pts = [[x1 + 0.01, 0, 0], [x1 + 0.01, sd * hr * 0.9, 0]];
-      for (let k = 1; k <= N; k++) { const u = k / N; pts.push([x1 - L * 0.62 * Math.pow(u, 1.6), sd * (hr * 0.9 + (sp - hr * 0.9) * Math.sin(u * Math.PI / 2)), 0]); }
-      for (let k = 1; k <= N; k++) { const v = k / N; pts.push([x1 - L * (0.62 - 0.2 * v) + L * 0.08 * Math.sin(Math.PI * v), sd * sp * (1 - v), 0]); }   // trailing edge back to the notch
-      const c = [x1 - L * 0.3, sd * sp * 0.35, 0];
-      for (let k = 0; k < pts.length; k++) M.tri(c, pts[k], pts[(k + 1) % pts.length], fc, [c[0], c[1], -1]);   // oriented to face up, into the light (a point above would turn them to face down and sit in shadow)
+    for (const sd of [1, -1]) {   // each blade: solid, broad at the root, swept back to a pointed tip, thinning toward it
+      const tip = [x1 - L * 0.62, sd * sp, 0], root = [x1 + 0.005, sd * hr * 0.3, 0], d = tip.map((v, k) => v - root[k]), len = Math.hypot(...d), cw = Math.min(L * 0.3, len * 0.45);
+      cetaceanBlade(M, root, d.map(v => v / len), len, u => cw * (1 - u) ** 0.7 * (0.75 + 0.25 * Math.sin(Math.PI * Math.min(1, u + 0.3))) + len * 0.01, fc, false, 0.16);
     }
   } else {
   const tp = [[x1, hr], ...poly, [x1, -hr]];
@@ -3027,12 +3039,14 @@ function fishMesh(D) {
       M.quad(base(t0), top0, top1, base(t1), fin, ctrSide(X(t0)));
     }
   };
-  (B.fins.dorsal || []).forEach((f, i) => finOn(f, true, i));
-  if (B.fins.anal) finOn(B.fins.anal, false, 0);
+  if (B.swim === 'cetacean') (B.fins.dorsal || []).forEach(f => { const ta = clamp(f.at, 0, 0.95), tb = clamp(f.at + f.length / bl, 0, 1), tm = (ta + tb) / 2, h = f.height;   // a whale's dorsal: a solid hump on the back
+    M.blob([X(tm) - h * 0.2, 0, HH(tm) * 0.9 + h * 0.3], Math.max((X(ta) - X(tb)) * 0.55, h * 0.6), Math.max(h * 0.32, HW(tm) * 0.12), h * 0.8, 5, 10, mix(C.back, C.flank, 0.2)); });
+  else { (B.fins.dorsal || []).forEach((f, i) => finOn(f, true, i)); if (B.fins.anal) finOn(B.fins.anal, false, 0); }
   if (B.fins.adipose) { const ta = 0.86; M.blob([X(ta), 0, HH(ta) * 0.95 + 0.012], 0.025, 0.006, 0.014, 5, 10, fin); }
   for (const s of [1, -1]) {
     const tpc = hl * 1.05, pc = B.fins.pectoral, pv = clamp(0.5, 0, 1) * B.fins.pelvic;
-    M.tri([X(tpc), s * HW(tpc) * 0.95, -HH(tpc) * 0.3], [X(tpc) - pc * 0.9, s * (HW(tpc) + pc * 0.55), -HH(tpc) * 0.55], [X(tpc) - pc * 0.4, s * HW(tpc) * 0.95, -HH(tpc) * 0.55], fin, [X(tpc), 0, 0]);
+    if (B.swim === 'cetacean') cetaceanFlipper(M, [X(tpc), s * HW(tpc) * 0.8, -HH(tpc) * 0.45], s, pc, mix(fin, C.back, 0.55), B.tail.shape === 'flukes' && pc > 0.2);
+    else M.tri([X(tpc), s * HW(tpc) * 0.95, -HH(tpc) * 0.3], [X(tpc) - pc * 0.9, s * (HW(tpc) + pc * 0.55), -HH(tpc) * 0.55], [X(tpc) - pc * 0.4, s * HW(tpc) * 0.95, -HH(tpc) * 0.55], fin, [X(tpc), 0, 0]);
     M.tri([X(0.5), s * HW(0.5) * 0.6, -HH(0.5) * 0.85], [X(0.5) - pv * 1.1, s * (HW(0.5) * 0.6 + pv * 0.4), -HH(0.5) - pv * 0.5], [X(0.5) - pv * 0.5, s * HW(0.5) * 0.4, -HH(0.5) * 0.95], fin, [X(0.5), 0, 0]);
   }
   for (let k = 0; k < (B.barbels | 0); k++) { // whiskers fan out from around the mouth
@@ -29560,22 +29574,22 @@ window.addEventListener('DOMContentLoaded', () => {
   },
   "body": {
     "profile": [
-      0.35,
-      0.75,
-      0.95,
+      0.62,
+      0.86,
+      0.98,
       1,
-      0.9,
-      0.7,
-      0.42,
-      0.22
+      0.92,
+      0.72,
+      0.45,
+      0.24
     ],
-    "height": 0.2,
-    "width": 0.2,
+    "height": 0.21,
+    "width": 0.22,
     "flex": 0.5,
     "swim": "cetacean",
     "head": {
       "length": 0.28,
-      "snout": 0.6,
+      "snout": 0.95,
       "mouth": 1,
       "jaw": "terminal"
     },
@@ -29615,11 +29629,51 @@ window.addEventListener('DOMContentLoaded', () => {
         "scale": 5,
         "region": "lower",
         "alpha": 0.6
+      },
+      {
+        "type": "stripe",
+        "color": "#9a9a9a",
+        "v": -0.55,
+        "width": 0.035,
+        "from": 0.03,
+        "to": 0.42,
+        "alpha": 0.75
+      },
+      {
+        "type": "stripe",
+        "color": "#9a9a9a",
+        "v": -0.68,
+        "width": 0.035,
+        "from": 0.03,
+        "to": 0.42,
+        "alpha": 0.75
+      },
+      {
+        "type": "stripe",
+        "color": "#9a9a9a",
+        "v": -0.8,
+        "width": 0.035,
+        "from": 0.03,
+        "to": 0.42,
+        "alpha": 0.75
+      },
+      {
+        "type": "stripe",
+        "color": "#9a9a9a",
+        "v": -0.92,
+        "width": 0.035,
+        "from": 0.03,
+        "to": 0.42,
+        "alpha": 0.75
       }
     ]
   },
   "habitat": {
-    "climates": ["temperate", "arctic", "tropical"],
+    "climates": [
+      "temperate",
+      "arctic",
+      "tropical"
+    ],
     "waters": {
       "sea": 1
     },
