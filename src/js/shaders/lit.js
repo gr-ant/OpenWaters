@@ -74,9 +74,9 @@ void main(){
   } else { tp = p; wv = vec3(twl, tmk, 1.); }
   wp = q; wn = m; tuv = uv; gl_Position = vp * vec4(q, 1.);
 }`;
-// underwater: fog thickens exponentially into the water colour
-const FOG_GLSL = `uniform vec3 cam, sun, fogc; uniform float far, uwf;
-vec3 fog(vec3 c, vec3 wp){ float d = length(wp - cam) / far; return mix(c, fogc, uwf > .5 ? 1. - exp(-d * 3.2) : clamp(d*d*1.3, 0., 1.)); }`;
+// underwater: fog thickens exponentially into the water colour; toon (painted look, CONFIG.toon): the haze builds up sooner, for stronger aerial perspective
+const FOG_GLSL = `uniform vec3 cam, sun, fogc; uniform float far, uwf, toon;
+vec3 fog(vec3 c, vec3 wp){ float d = length(wp - cam) / far; return mix(c, fogc, uwf > .5 ? 1. - exp(-d * 3.2) : clamp(d*d*1.3 + toon * .6 * d * (1. - d), 0., 1.)); }`;
 // light focused by surface ripples onto whatever lies underwater
 const CAUSTIC_GLSL = `float caustic(vec2 uv, float tm){
   vec2 p = mod(uv * 6.28318, 6.28318) - 250., i = p; float c = 1.;
@@ -176,20 +176,23 @@ void main(){
   vec3 N = normalize(wn); float spec = 0., em = 0.;
   if (wv.z > .5 && N.z < .62) { vec3 Nf = normalize(cross(dFdx(wp), dFdy(wp))); if (dot(Nf, N) < 0.) Nf = -Nf; N = normalize(mix(N, Nf, smoothstep(.62, .35, N.z))); }   // steep terrain: faceted, like fractured rock, not draped cloth
   vec3 bc = surface(col, N, int(mt + .5), spec, em);
+  { int sid = int(mt + .5); if (sid != 9 && sid != 11) bc = mix(bc, col, toon * .5); }   // toon: half the procedural grain, flatter cleaner colour (not glowing crystals or lamp glass)
   { // seasons: dormant grass browns, snow settles on what faces up, rain darkens
     float above = (wv.z < .5 && wv.x == 0.) || wv.x - wp.z < -.04 ? 1. : 0., id = mt + .5;
-    if (wv.z > .5 && above > 0.) { float gr = clamp((bc.g - max(bc.r, bc.b)) * 7., 0., 1.); bc = mix(bc, vec3(dot(bc, vec3(.5, .4, .1))) * vec3(1.18, 1., .62), gr * seasA.w * .8); }
+    if (wv.z > .5 && above > 0.) { float gr = clamp((bc.g - max(bc.r, bc.b)) * 7., 0., 1.); bc = mix(bc, vec3(dot(bc, vec3(.5, .4, .1))) * vec3(1.18, 1., .62), gr * seasA.w * .8); bc *= mix(vec3(1.), vec3(1.06, 1.14, .78), toon * gr * (1. - seasA.w)); }   // toon: green grass goes a brighter yellow-green
     float up = wv.z > .5 ? smoothstep(.5, .85, N.z) : (id > 5.5 && id < 7.5 ? smoothstep(.1, .55, N.z) : 0.);
     float sn = 0.;
     if (seasB.x > 0.) sn = seasB.x * up * smoothstep(.15, .45, vn(wp.xy * .4) * .55 + vn(wp.xy * 2.1) * .25 + seasB.x * .55) * above;
     bc = mix(bc * (1. - .22 * seasB.y * above), vec3(.9, .93, .97), sn);
   }
   vec2 cs = caveShade(wp, sun);
-  float d = max(dot(N, sun), 0.) * (1. - cs.y); spec *= 1. - cs.y;
+  float d = max(dot(N, sun), 0.);
+  d = mix(d, smoothstep(0., .12, d) * .6 + smoothstep(.38, .5, d) * .4, toon) * (1. - cs.y); spec *= 1. - cs.y;   // toon: two soft bands (shade, lit, full sun) instead of a smooth falloff
   vec3 a = amb * (.75 + .5 * (.5 + .5 * N.z)) * (1. - .6 * cs.x);
   vec3 c = bc * (a + lcol * d);
   if (spec > 0.) { vec3 V = normalize(cam - wp), H = normalize(sun + V); c += lcol * spec * pow(max(dot(N, H), 0.), 60.) * .8; }
   c += bc * fireLight(N);
+  if (toon > 0. && wv.z < .5) c += bc * (lcol * .6 + amb * .4) * pow(1. - abs(dot(N, normalize(cam - wp))), 3.) * smoothstep(-.3, .3, dot(N, sun)) * .5 * toon;   // toon: soft sunlit rim on trees, boats, people (not terrain: far ground is all grazing angles)
   c += bc * seasB.z * vec3(.7, .75, 1.) * (.5 + .5 * max(N.z, 0.));   // lightning
   float wd = wv.x - wp.z; // depth below the local water surface
   if (hull > .5) wd = min(wd, -tp.z);
@@ -200,5 +203,6 @@ void main(){
     c = c * mix(vec3(1.), tint, clamp(.2 + wd * .2, 0., .9)) * exp(-wd * (.03 + .15 * mk));
     c += lcol * cs * (bc * .9 + .06) * (.35 + .65 * max(N.z, 0.)) * .9;
   } else if (wv.z > .5 && wd > -.45) c *= mix(.62, 1., -wd / .45); // wet band just above the waterline
+  c = max(mix(vec3(dot(c, vec3(.3, .59, .11))), c, 1. + .28 * toon), 0.);   // toon: richer colour
   o = vec4(fog(mix(c, bc, em * emk), wp), clr < .01 ? 1. : mix(1. - clr, 1., pow(1. - abs(dot(N, normalize(cam - wp))), 2.) * .7));
 }`;

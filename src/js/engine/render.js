@@ -39,7 +39,7 @@ Object.assign(Engine, {
       gl.uniform3fv(sk.u.sun, S.sun); gl.uniform3fv(sk.u.zen, S.zen); gl.uniform3fv(sk.u.hor, S.hor); gl.uniform3fv(sk.u.sunc, S.sunc);
       gl.uniform1f(sk.u.night, S.night); gl.uniform1f(sk.u.sset, S.sset); gl.uniform1f(sk.u.t, this.time);
       gl.uniform1f(sk.u.stars, CONFIG.stars ? 1 : 0); gl.uniform1f(sk.u.clouds, CONFIG.clouds ? 1 : 0);
-      gl.uniform4f(sk.u.wsky, ENV.cloud, ENV.flash, ENV.wind, ENV.fog);
+      gl.uniform4f(sk.u.wsky, ENV.cloud, ENV.flash, ENV.wind, ENV.fog); gl.uniform1f(sk.u.toon, CONFIG.toon ? 1 : 0);
       gl.bindVertexArray(this.fsVao); gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.depthMask(true); gl.clear(gl.DEPTH_BUFFER_BIT);
     }
@@ -49,7 +49,7 @@ Object.assign(Engine, {
     // terrain, bridges, trees
     const L = this.lit; gl.useProgram(L.p);
     gl.uniformMatrix4fv(L.u.vp, false, vp); gl.uniform3fv(L.u.cam, E); gl.uniform3fv(L.u.sun, SUN); gl.uniform3fv(L.u.fogc, HORZ); gl.uniform1f(L.u.far, FOGD); gl.uniform1f(L.u.uwf, uw ? 1 : 0);
-    gl.uniform3fv(L.u.lcol, S.lcol); gl.uniform3fv(L.u.amb, S.amb); gl.uniform1f(L.u.night, S.night); gl.uniform1f(L.u.emk, 1);
+    gl.uniform3fv(L.u.lcol, S.lcol); gl.uniform3fv(L.u.amb, S.amb); gl.uniform1f(L.u.night, S.night); gl.uniform1f(L.u.emk, 1); gl.uniform1f(L.u.toon, CONFIG.toon ? 1 : 0);
     gl.uniform1f(L.u.time, this.time); gl.uniform1f(L.u.sway, 0); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     gl.uniform1f(L.u.inst, 0); gl.uniform1f(L.u.pscale, 1); gl.uniform1f(L.u.dry, 0);
     gl.uniform4f(L.u.seasA, ENV.leaf, ENV.autumn, ENV.young, ENV.dormant); gl.uniform4f(L.u.seasB, ENV.snowCover, ENV.wet, ENV.flash * 0.8, 0);
@@ -195,7 +195,7 @@ Object.assign(Engine, {
     const Wt = this.water; gl.useProgram(Wt.p); this.caveUniforms(gl, Wt, E);
     gl.uniformMatrix4fv(Wt.u.vp, false, vp); gl.uniform1f(Wt.u.far, FOGD); gl.uniform1f(Wt.u.uwf, uw ? 1 : 0);
     gl.uniform3fv(Wt.u.cam, E); gl.uniform3fv(Wt.u.sun, S.sun[2] > -0.05 ? S.sun : SUN); gl.uniform3fv(Wt.u.fogc, HORZ); gl.uniform1f(Wt.u.t, this.time);
-    gl.uniform3fv(Wt.u.lcol, S.lcol); gl.uniform3fv(Wt.u.amb, S.amb); gl.uniform3fv(Wt.u.zen, S.zen); gl.uniform3fv(Wt.u.hor, S.hor);
+    gl.uniform3fv(Wt.u.lcol, S.lcol); gl.uniform3fv(Wt.u.amb, S.amb); gl.uniform3fv(Wt.u.zen, S.zen); gl.uniform3fv(Wt.u.hor, S.hor); gl.uniform1f(Wt.u.toon, CONFIG.toon ? 1 : 0);
     gl.uniform1f(Wt.u.wnd, ENV.wind); gl.uniform4f(Wt.u.wx, ENV.snowing ? 0 : ENV.rain, ENV.wind, ENV.turb, ENV.flash * 0.8);
     gl.uniform4f(Wt.u.ice, ENV.iceLake, ENV.icePond, ENV.snowCover, ENV.iceSea);
     { const rp = this.ripUni || (this.ripUni = new Float32Array(32)), T = this.time, R = this.ripples;   // the 8 nearest live ripples, no per-frame arrays
