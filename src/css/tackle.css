@@ -82,3 +82,28 @@
   #catch { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }   /* the 3D view keeps animating behind it: a live blur costs every frame */
   #catch #ccTurn { display:block; margin-top:8px; font-size:11px; color:#c8bfa0; } body.touch #catch #ccTurn { display:none; }
   #catch button#ccKeep { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }
+  /* the rig builder: rod and reel on top, then the line down to the hook and bait (or the lure), each part a picture on it */
+  .rb-head { text-align: center; margin: 2px 0 10px; } .rb-head b { display: block; font: 700 24px var(--serif); } .rb-head i { font: italic 14px var(--serif); color: var(--muted); }
+  .rb-top { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rb-card { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 6px 8px; border-radius: 12px; border: 1.5px solid #d4e4e077; background: #ffffff08; color: var(--cream); font: 600 15px var(--serif); cursor: pointer; }
+  .rb-card .ri { width: 100%; height: 58px; } .rb-card:hover, .rb-node:hover .rb-lab, .rb-card.on { border-color: var(--gold-hi); } .rb-card.empty { border-style: dashed; color: var(--muted); min-height: 76px; justify-content: center; }
+  .rb-chain { position: relative; margin: 4px 0 6px; }
+  .rb-chain::before { content: ''; position: absolute; left: 50%; top: -6px; bottom: 26px; width: 2px; margin-left: -1px; background: linear-gradient(#e8dcb8cc, #e8dcb866); }   /* the line itself */
+  .rb-node { position: relative; display: grid; grid-template-columns: 1fr 70px 1fr; align-items: center; min-height: 66px; cursor: pointer; }
+  .rb-ic { grid-column: 2; grid-row: 1; width: 70px; height: 60px; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
+  .rb-ic .ri { width: 70px; height: 60px; } .rb-svg { width: 64px; height: 56px; display: block; }
+  .rb-node.empty .rb-ic::after { content: ''; width: 14px; height: 14px; border-radius: 50%; border: 2px dashed var(--muted); background: var(--pg2); }
+  .rb-lab { grid-row: 1; position: relative; padding: 6px 10px; border-radius: 10px; border: 1.5px solid #d4e4e066; background: rgba(14,26,18,.75); font: 600 14px/1.25 var(--sans); color: var(--cream); }
+  .rb-lab small { display: block; font: 700 11px var(--sans); letter-spacing: 1.4px; text-transform: uppercase; color: var(--gold-hi); }
+  .rb-node.l .rb-lab { grid-column: 1; margin-right: 10px; } .rb-node.r .rb-lab { grid-column: 3; margin-left: 10px; }
+  .rb-node.l .rb-lab::after, .rb-node.r .rb-lab::after { content: ''; position: absolute; top: 50%; width: 12px; height: 1.5px; background: #e8dcb8aa; }   /* a lead from the label to the part */
+  .rb-node.l .rb-lab::after { right: -12px; } .rb-node.r .rb-lab::after { left: -12px; }
+  .rb-node.empty .rb-lab { border-style: dashed; color: var(--muted); }
+  .rb-end { display: flex; justify-content: center; gap: 6px; margin: 6px 0; } .rb-end button { padding: 5px 14px; border-radius: 14px; border: 1.5px solid #d4e4e099; background: #0002; color: var(--cream); font: 600 13px var(--serif); cursor: pointer; }
+  .rb-end button[aria-checked="true"] { background: linear-gradient(180deg, #f7ecd0, var(--parch2)); color: var(--ink); border-color: var(--gold-hi); }
+  .rb-adds { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0; } .rb-adds button { padding: 7px 16px; border-radius: 12px; border: 1.5px dashed #d4e4e099; background: none; color: var(--cream); font: 600 14px var(--serif); cursor: pointer; } .rb-adds button:hover { border-color: var(--gold-hi); }
+  .rb-name { grid-column: 1 / -1; }
+  .rb-pick-head { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; } .rb-pick-head span { flex: 1; text-align: center; } .rb-pick-head b { display: block; font: 700 22px var(--serif); } .rb-pick-head i { font: italic 13px var(--serif); color: var(--muted); }
+  .rb-step { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--gold); background: #0003; color: var(--cream); font: 600 24px/1 var(--serif); cursor: pointer; } .rb-step:disabled { opacity: .3; cursor: default; }
+  .rb-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; } .rb-none { display: flex; align-items: center; justify-content: center; font: 600 22px var(--serif); color: var(--muted); }
+  .rb-done { display: block; width: 100%; margin: 10px 0 4px; padding: 9px; border-radius: 10px; border: 1.5px solid var(--gold); background: #0003; color: var(--cream); font: 600 15px var(--serif); cursor: pointer; }

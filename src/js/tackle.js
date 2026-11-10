@@ -167,3 +167,21 @@ function gearSummary(d) {
 // can this animal be caught on hook and line? Mammals and turtles aren't fished for; shellfish don't bite.
 const fishCatchable = D => !D._air && !D._herp && !['turtle', 'bivalve', 'snail', 'crab', 'lobster', 'shrimp', 'jelly'].includes(D.body.plan);
 const baitThief = D => ['crab', 'lobster', 'shrimp', 'snail'].includes(D.body.plan);   // they pick a hook clean
+
+// ---- the rig builder (tackle box): its parts in order down the line, and pictures for the parts without a model ----
+const RIG_PARTS = {
+  rod: { label: 'Rod', tip: 'how far it casts and what it can lift' },
+  reel: { label: 'Reel', tip: 'line capacity and drag' },
+  line: { label: 'Line', tip: 'strength, stretch and how well fish see it' },
+  float: { label: 'Float', optional: true, none: 'fish on the bottom or keep the lure moving', tip: 'holds the bait at a depth and shows a bite' },
+  sinker: { label: 'Sinker', optional: true, none: 'no weight: the bait drifts naturally', tip: 'takes the bait down and adds casting weight' },
+  leader: { label: 'Leader', optional: true, none: 'tie straight to the main line', tip: 'hard to see, or bite-proof against teeth' },
+  hook: { label: 'Hook', tip: 'size for the fish you want' },
+  bait: { label: 'Bait', tip: 'what the fish want to eat' },
+  lure: { label: 'Lure', tip: 'what it imitates and how it swims' },
+};
+const rigSteps = lure => ['rod', 'reel', 'line', 'float', 'sinker', 'leader', ...(lure ? ['lure'] : ['hook', 'bait'])];
+function spoolSVG(d) { const c = (d && d.colors && Object.values(d.colors)[0]) || '#c8c0a8';
+  return `<svg class="rb-svg" viewBox="0 0 64 56"><rect x="14" y="8" width="36" height="7" rx="2" fill="#b98a52" stroke="#3a2416" stroke-width="1.5"/><rect x="14" y="41" width="36" height="7" rx="2" fill="#b98a52" stroke="#3a2416" stroke-width="1.5"/><rect x="18" y="15" width="28" height="26" fill="${c}" stroke="#2a2216" stroke-width="1.2"/>${[19, 23, 27, 31, 35].map(y => `<path d="M18 ${y}h28" stroke="#000" stroke-opacity=".18" stroke-width="1"/>`).join('')}<path d="M32 0v8M32 48v8" stroke="${c}" stroke-width="2"/></svg>`; }
+function leaderSVG(d) { const c = (d && d.colors && Object.values(d.colors)[0]) || '#b8c0c8';
+  return `<svg class="rb-svg" viewBox="0 0 64 56"><path d="M32 0v10" stroke="#c8c0a8" stroke-width="2"/><ellipse cx="32" cy="14" rx="4" ry="5" fill="none" stroke="#9aa2aa" stroke-width="2.5"/><rect x="28.5" y="18" width="7" height="10" rx="2" fill="#8a929a" stroke="#2a2a2e" stroke-width="1.2"/><ellipse cx="32" cy="32" rx="4" ry="5" fill="none" stroke="#9aa2aa" stroke-width="2.5"/><path d="M32 37q-3 5 0 9t0 10" fill="none" stroke="${c}" stroke-width="2.4"/></svg>`; }

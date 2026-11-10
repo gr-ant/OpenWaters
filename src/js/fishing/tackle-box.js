@@ -25,11 +25,31 @@ Object.assign(Engine, {
       foot.innerHTML = `<button id="tkBuild" class="big">${uiIcon('ui.wrench')}Build a rig</button>`; foot.hidden = false;
     } else if (T === 'build') {
       const B = this.tkBuild || (this.tkBuild = Object.assign({ name: '', float_depth_m: null, drag: 0.3 }, JSON.parse(JSON.stringify((A && A.rig) ? { parts: A.rig.parts, float_depth_m: A.rig.float_depth_m, drag: A.rig.drag } : { parts: {} }))));
-      const opt = (slot, optional) => `<label>${slot[0].toUpperCase() + slot.slice(1)}<select data-slot="${slot}">${optional ? '<option value="">— none —</option>' : ''}${TackleDB.ofType(slot).map(g => `<option value="${esc(g.id)}" ${B.parts[slot] === g.id ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}</select></label>`;
       const rig = { type: 'rig', id: 'draft', name: B.name || 'New rig', parts: Object.fromEntries(Object.entries(B.parts).filter(([, v]) => v)), float_depth_m: B.float_depth_m, drag: B.drag }, S = rigStats(rig);
-      let h = `<button id="tkBack" class="back">${uiIcon('ui.chevron')}Rigs</button><div class="detail build">${S.errors.length ? '' : rigIconHTML(S)}<b>Build a rig</b></div><div class="tkform">` + opt('rod') + opt('reel') + opt('line') + opt('leader', 1) + '<div class="tkor">lure</div>' + opt('lure', 1) + '<div class="tkor">or bait</div>' + opt('hook', 1) + opt('bait', 1) + opt('sinker', 1) + opt('float', 1);
-      if (B.parts.float) h += `<label>Float depth (m)<input id="tkDepth" type="number" min="0.1" max="30" step="0.1" value="${B.float_depth_m ?? (TackleDB.byId[B.parts.float] || {}).depth_m ?? 1}"></label>`;
-      h += `<label>Name<input id="tkName" type="text" maxlength="40" placeholder="My rig" value="${esc(B.name)}"></label></div>`;
+      const P = B.parts, lureEnd = B.end === 'lure' || (!B.end && !!P.lure), steps = rigSteps(lureEnd), g = slot => P[slot] && TackleDB.byId[P[slot]];
+      const pic = (slot, d) => slot === 'line' ? spoolSVG(d) : slot === 'leader' ? leaderSVG(d) : d ? gearIconHTML(d) : '';
+      let h = `<button id="tkBack" class="back">${uiIcon('ui.chevron')}Rigs</button>`;
+      if (this.tkPick) {   // choosing a part: every option for that slot, then on down the line
+        const slot = this.tkPick, k = steps.indexOf(slot), L = TackleDB.ofType(slot), opt = RIG_PARTS[slot];
+        h += `<div class="rb-pick-head"><button class="rb-step" data-pick="${steps[k - 1] || ''}" ${k > 0 ? '' : 'disabled'} aria-label="Previous part">‹</button><span><b>${opt.label}</b><i>${k + 1} of ${steps.length} · ${opt.tip}</i></span><button class="rb-step" data-pick="${steps[k + 1] || ''}" ${k < steps.length - 1 ? '' : 'disabled'} aria-label="Next part">›</button></div><ul class="rb-opts">`;
+        if (opt.optional) h += `<li data-choose="" class="card slim${P[slot] ? '' : ' on'}"><span class="ri rb-none">—</span><span class="tx"><b>None</b><small>${opt.none}</small></span></li>`;
+        for (const d of L) h += `<li data-choose="${esc(d.id)}" class="card slim${P[slot] === d.id ? ' on' : ''}" title="${esc(d.description || '')}">${slot === 'line' || slot === 'leader' ? `<span class="ri">${pic(slot, d)}</span>` : gearIconHTML(d)}<span class="tx"><b>${esc(d.name)}</b><small>${esc(gearSummary(d))}</small></span></li>`;
+        h += `</ul><button class="rb-done" data-pick="">Back to the rig</button>`;
+        body.innerHTML = h; return;
+      }
+      // the rig, top to bottom: rod and reel, then each part on the line down to the hook and bait, or the lure
+      const node = (slot, side) => { const d = g(slot), o = RIG_PARTS[slot];
+        return `<div class="rb-node ${side}${d ? '' : ' empty'}" data-pick="${slot}"><span class="rb-lab"><small>${o.label}</small>${d ? esc(d.name) : 'Choose…'}</span><span class="rb-ic">${pic(slot, d)}</span></div>`; };
+      h += `<div class="rb-head"><b>Build a rig</b><i>Tap a part to change it</i></div><div class="rb-top">`;
+      for (const slot of ['rod', 'reel']) { const d = g(slot); h += `<button class="rb-card${d ? '' : ' empty'}" data-pick="${slot}">${d ? gearIconHTML(d) : ''}<b>${d ? esc(d.name) : 'Choose a ' + slot}</b></button>`; }
+      h += '</div><div class="rb-chain">';
+      let side = 'l'; const adds = [];
+      for (const slot of steps.slice(2)) { if (RIG_PARTS[slot].optional && !g(slot)) { adds.push(slot); continue; } h += node(slot, side); side = side === 'l' ? 'r' : 'l'; }
+      h += `</div><div class="rb-end" role="radiogroup" aria-label="The end of the line"><button data-end="bait" aria-checked="${!lureEnd}" role="radio">Hook &amp; bait</button><button data-end="lure" aria-checked="${lureEnd}" role="radio">Lure</button></div>`;
+      if (adds.length) h += `<div class="rb-adds">${adds.map(slot => `<button data-pick="${slot}">+ ${RIG_PARTS[slot].label}</button>`).join('')}</div>`;
+      h += '<div class="tkform">';
+      if (P.float) h += `<label>Float depth (m)<input id="tkDepth" type="number" min="0.1" max="30" step="0.1" value="${B.float_depth_m ?? (TackleDB.byId[P.float] || {}).depth_m ?? 1}"></label>`;
+      h += `<label class="rb-name">Name<input id="tkName" type="text" maxlength="40" placeholder="My rig" value="${esc(B.name)}"></label></div>`;
       if (S.errors.length) h += `<div class="tkstats bad">${S.errors.map(esc).join('<br>')}</div>`;
       else { h += `<div class="chips"><span>🎯 ${S.castMax.toFixed(0)} m</span><span>💪 ${S.strengthKg.toFixed(1)} kg</span><span>🧵 ${S.capM} m</span><span>⚖ ${S.castG.toFixed(0)} g</span></div>`;
         if (S.warnings.length) h += `<div class="tkwarn">${S.warnings.map(w => '⚠ ' + esc(w)).join('<br>')}</div>`; }
@@ -47,7 +67,7 @@ Object.assign(Engine, {
     const el = document.getElementById('tackle'); if (!el) return;
     const body = document.getElementById('tkBody');
     document.getElementById('tkClose').onclick = () => this.toggleTackle(false);
-    document.getElementById('tkFoot').addEventListener('click', e => { if (e.target.closest('#tkBuild')) { this.tackleTab = 'build'; this.tkBuild = null; this.tackleRender(); } });
+    document.getElementById('tkFoot').addEventListener('click', e => { if (e.target.closest('#tkBuild')) { this.tackleTab = 'build'; this.tkBuild = null; this.tkPick = null; this.tackleRender(); } });
     document.getElementById('tkTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { this.tackleTab = b.dataset.tab; if (b.dataset.tab === 'build') this.tkBuild = null; this.tackleRender(); } });
     body.addEventListener('click', e => {
       if (performance.now() - (this.tackleOpenT || 0) < 350) return;   // the tap that opened the box
@@ -55,6 +75,14 @@ Object.assign(Engine, {
       if (fg) { e.stopPropagation(); const id = fg.dataset.forget; TackleDB.forget(id); const d = TackleDB.byId[id]; if (d) { TackleDB.list.splice(TackleDB.list.indexOf(d), 1); delete TackleDB.byId[id]; TackleDB.revision++; } this.say('Removed (built-in gear comes back on reload)', 2); this.tackleRender(); return; }
       const ct = e.target.closest('[data-cat]'); if (ct) { this.rigCat = ct.dataset.cat; this.tkNav = null; this.tackleRender(); return; }
       if (e.target.closest('#tkBack')) { this.tackleTab = 'rigs'; this.tackleRender(); return; }
+      if (this.tackleTab === 'build') {   // the rig builder: a part tapped, an option chosen, the end of the line switched
+        const B = this.tkBuild, P = B.parts, ch = e.target.closest('[data-choose]'), pk = e.target.closest('[data-pick]'), en = e.target.closest('[data-end]');
+        if (ch) { const slot = this.tkPick, v = ch.dataset.choose || undefined; P[slot] = v;
+          if (slot === 'lure' && v) P.hook = P.bait = undefined; if ((slot === 'bait' || slot === 'hook') && v) P.lure = undefined; if (slot === 'float') B.float_depth_m = null;
+          const steps = rigSteps(B.end === 'lure' || (!B.end && !!P.lure)), k = steps.indexOf(slot); this.tkPick = steps[k + 1] || null; this.tackleRender(); body.scrollTop = 0; return; }   // on down the line
+        if (pk) { this.tkPick = pk.dataset.pick || null; this.tackleRender(); body.scrollTop = 0; return; }
+        if (en) { B.end = en.dataset.end; if (B.end === 'lure') P.hook = P.bait = undefined; else P.lure = undefined; this.tkPick = B.end === 'lure' ? 'lure' : 'hook'; this.tackleRender(); return; }
+      }
       const r = e.target.closest('[data-rig]'); if (r) { this.equipRig(r.dataset.rig); this.tackleRender(); return; }
       const g = e.target.closest('[data-gear]'); if (g) { const pre = document.getElementById('tkJson'); pre.textContent = TackleDB.json(g.dataset.gear); pre.hidden = false; pre.scrollIntoView({ block: 'nearest' }); return; }
       if (e.target.id === 'tkUse' || e.target.id === 'tkExport') {
