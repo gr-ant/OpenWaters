@@ -63,22 +63,29 @@ function hullShape(H) {
     return [b * Math.sin(s * Math.PI / 2), -k + (g + k) * (1 - Math.cos(s * Math.PI / 2))]; };
   return { L, hb, keel, gun, sec, x: t => (t - 0.5) * L };
 }
-// Surfaces are MT.PLASTER (plain paint): the generic material draws rock strata on upright faces and wood draws plank grain, and on a
+// meshBuilder(true): rounded parts are smooth-shaded. Surfaces are MT.PLASTER (plain paint): the generic material draws rock strata on upright faces and wood draws plank grain, and on a
 // hull both read as stray lines.
 function boatMesh(D) {
-  const H = D.hull, S = hullShape(H), M = meshBuilder(), C = {}; for (const k in BOAT_DEFAULTS.colors) C[k] = hexRGB(D.colors[k] || D.colors.hull || BOAT_DEFAULTS.colors[k]);
-  const NT = 22, NS = 8, th = H.thickness_m, fz = H.floor_m, wl = 0.01, below = C.bottom ? C.bottom : C.hull;
+  const H = D.hull, S = hullShape(H), M = meshBuilder(true), C = {}; for (const k in BOAT_DEFAULTS.colors) C[k] = hexRGB(D.colors[k] || D.colors.hull || BOAT_DEFAULTS.colors[k]);
+  const NT = 36, NS = 12, th = H.thickness_m, fz = H.floor_m, wl = 0.01, below = C.bottom ? C.bottom : C.hull;
   const decked = t => (H.decks && (t > 1 - (H.decks.bow || 0) || t < (H.decks.stern || 0))) || (H.cockpit && (t < H.cockpit[0] || t > H.cockpit[1]));
   const P = (t, s, sd) => { const [y, z] = S.sec(t, s); return [S.x(t), sd * y, z]; };
   // outer skin (antifouling below the waterline)
   M.mat = MT.PLASTER;
   // each panel is cut along the waterline, so the antifouling meets the topsides in a clean line, not a staircase of whole panels
   const sWl = t => { let lo = 0, hi = 1; for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < wl) lo = m; else hi = m; } return (lo + hi) / 2; };
+  // the skin is smooth-shaded: each corner takes the hull's own slope there, so the panels blend into one fair curve
+  const nrm = (t, s, sd) => { const e = 0.006, a = P(Math.min(1, t + e), s, sd), b = P(Math.max(0, t - e), s, sd), c = P(t, Math.min(1, s + e), sd), d = P(t, Math.max(0, s - e), sd), p = P(t, s, sd);
+    let n = cross3([a[0] - b[0], a[1] - b[1], a[2] - b[2]], [c[0] - d[0], c[1] - d[1], c[2] - d[2]]); if (Math.hypot(...n) < 1e-9) return [0, sd, 0];
+    n = norm3(n); return n[1] * p[1] + n[2] * (p[2] - 0.3) < 0 ? [-n[0], -n[1], -n[2]] : n; };   // pointing out, away from the middle of the boat
+  const skin = (qa, qb, qc, qd, sd, col) => { const v = [qa, qb, qc, qd].map(q => P(q[0], q[1], sd)), n = [qa, qb, qc, qd].map(q => nrm(q[0], q[1], sd));
+    for (const [i, j, k] of [[0, 1, 2], [0, 2, 3]]) { const f = cross3([v[j][0] - v[i][0], v[j][1] - v[i][1], v[j][2] - v[i][2]], [v[k][0] - v[i][0], v[k][1] - v[i][1], v[k][2] - v[i][2]]), out = f[0] * n[i][0] + f[1] * n[i][1] + f[2] * n[i][2] >= 0;   // wound to face outward
+      if (Math.hypot(...f) > 1e-12) out ? M.triN(v[i], v[j], v[k], n[i], n[j], n[k], col, col, col) : M.triN(v[i], v[k], v[j], n[i], n[k], n[j], col, col, col); } };
   for (let i = 0; i < NT; i++) { const t0 = i / NT, t1 = (i + 1) / NT, w0 = sWl(t0), w1 = sWl(t1);
     for (let j = 0; j < NS; j++) for (const sd of [1, -1]) {
       const s0 = j / NS, s1 = (j + 1) / NS, m0 = clamp(w0, s0, s1), m1 = clamp(w1, s0, s1);
-      if (m0 > s0 || m1 > s0) M.quad(P(t0, s0, sd), P(t1, s0, sd), P(t1, m1, sd), P(t0, m0, sd), below, [S.x(t0), 0, 0.3]);
-      if (m0 < s1 || m1 < s1) M.quad(P(t0, m0, sd), P(t1, m1, sd), P(t1, s1, sd), P(t0, s1, sd), C.hull, [S.x(t0), 0, 0.3]);
+      if (m0 > s0 || m1 > s0) skin([t0, s0], [t1, s0], [t1, m1], [t0, m0], sd, below);
+      if (m0 < s1 || m1 < s1) skin([t0, m0], [t1, m1], [t1, s1], [t0, s1], sd, C.hull);
     } }
   // inside: walls down to the floor, the floor, and the rim along the gunwale
   const inner = (t, sd, z) => { let y = 0; for (let k = 0; k <= 20; k++) { const [yy, zz] = S.sec(t, k / 20); if (zz >= z) { y = yy; break; } y = yy; } return [S.x(t), sd * Math.max(0, y - th), z]; };
@@ -153,7 +160,7 @@ function boatMesh(D) {
 // ---- oars and paddles: one small mesh about its pivot (a rowlock, the paddler's lower hand, the middle of a kayak paddle), posed every frame ----
 function boatOars(D, S, C) {
   const F = D.features, kind = F.paddle === 'oars' ? 'oars' : F.paddle === 'double' ? 'double' : F.paddle ? 'single' : ''; if (!kind) return null;
-  const M = meshBuilder(); M.mat = MT.PLASTER;
+  const M = meshBuilder(true); M.mat = MT.PLASTER;
   if (kind === 'oars') { M.tube([0, -0.55, 0], [0, 1.3, 0], 0.02, 0.018, 5, C.trim); M.blob([0, 1.47, 0], 0.012, 0.24, 0.07, 3, 8, C.accent); }   // shaft out along +y, handle inboard
   else if (kind === 'double') { M.tube([0, -1.1, 0], [0, 1.1, 0], 0.015, 0.015, 5, C.trim); for (const sd of [1, -1]) M.blob([0, sd * 1.12, 0], 0.012, 0.22, 0.08, 3, 8, C.accent); }
   else { M.tube([0, 0, -0.45], [0, 0, 0.75], 0.015, 0.015, 5, C.trim); M.blob([0, 0, 0.78], 0.02, 0.06, 0.02, 2, 6, C.trim); M.blob([0, 0, -0.62], 0.012, 0.09, 0.2, 3, 8, C.accent); }   // grip up, blade down

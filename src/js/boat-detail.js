@@ -7,15 +7,15 @@
 //  from the hull's own shape (S), so it follows any size or build. X: { inner, P, fz, decked, motors: [[x, y, scale, gunwale, colour, hp]] }.
 // ======================================================================
 function boatDetail(D, S, M, C, X) {
-  const H = D.hull, F = D.features, L = H.length_m, k = clamp(L / 5, 0.7, 1.8), NT = 22, { inner, P, fz, decked, motors } = X;
+  const H = D.hull, F = D.features, L = H.length_m, k = clamp(L / 5, 0.7, 1.8), NT = 36, { inner, P, fz, decked, motors } = X;
   const steel = [0.78, 0.79, 0.81], dark = [0.13, 0.13, 0.14], rope = [0.82, 0.76, 0.58], powered = ['outboard', 'inboard'].includes(D.propulsion.type), kayak = !!H.cockpit, tr = H.stern === 'transom', blunt = H.bow === 'blunt';
   const crown = 0.04 + 0.03 * H.beam_m, deckZ = (t, y = 0) => S.gun(t) + crown * Math.min(1, S.hb(t) * 4) * (1 - Math.min(1, Math.abs(y) / Math.max(0.05, S.hb(t)))) + 0.006;   // the top of a crowned deck
-  const rod = (a, b, r, col, n = 4) => M.tube(a, b, r, r, n, col, false);
+  const rod = (a, b, r, col, n = 6) => M.tube(a, b, r, r, n, col, false);
   // a closed box (no bottom): top and four sides
   const box = (x0, x1, y0, y1, z0, z1, col) => { const c = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]; M.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], col, [c[0], c[1], z0 - 9]);
     for (const [p, q] of [[[x0, y0], [x1, y0]], [[x1, y0], [x1, y1]], [[x1, y1], [x0, y1]], [[x0, y1], [x0, y0]]]) M.quad([p[0], p[1], z0], [q[0], q[1], z0], [q[0], q[1], z1], [p[0], p[1], z1], col, c); };
   // a ring of rod: centre c, radius r, in the plane spanned by unit vectors u and v
-  const ring = (c, r, u, v, th, col, n = 12) => { for (let i = 0; i < n; i++) { const a0 = i / n * TAU, a1 = (i + 1) / n * TAU, at = a => [c[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * r, c[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * r, c[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * r]; rod(at(a0), at(a1), th, col); } };
+  const ring = (c, r, u, v, th, col, n = 16) => { for (let i = 0; i < n; i++) { const a0 = i / n * TAU, a1 = (i + 1) / n * TAU, at = a => [c[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * r, c[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * r, c[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * r]; rod(at(a0), at(a1), th, col); } };
   // where the waterline meets the hull at station t (s along the section, 0 keel .. 1 gunwale)
   const sAt = (t, z) => { let lo = 0, hi = 1; for (let i = 0; i < 14; i++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < z) lo = m; else hi = m; } return (lo + hi) / 2; };
 
