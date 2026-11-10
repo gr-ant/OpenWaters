@@ -34,7 +34,10 @@ const SHOTS = [
         const c = coverAt(x, y, 6, false).coral; if (c > 0.9) { best = { x, y, a: p.a, c, w }; break; } if (!best || c > best.c) best = { x, y, a: p.a, c, w }; } if (best && best.c > 0.9) break; }   // (dense enough: stop looking)
     window.shot.best = { c: best.c, d: best.w.depth, x: best.x, y: best.y }; Engine.travel(best.x - Math.cos(best.a) * 60, best.y - Math.sin(best.a) * 60); await shot.wait(1000);   // ashore nearby, so the land around streams in
     const bx = best.x - Math.cos(best.a) * 4, by = best.y - Math.sin(best.a) * 4; Engine.P.x = bx; Engine.P.y = by; const w = Game.waterAt(bx, by);   // a few metres back from it, looking out over it
-    shot.hold({ tod: 0.5, z: Math.max(w.ground + 1.5, w.level - 1) - EYE, a: best.a + 0.5, pitch: -0.55 }); await shot.wait(6000);` },
+    shot.hold({ tod: 0.5, z: Math.max(w.ground + 1.5, w.level - 1) - EYE, a: best.a + 0.5, pitch: -0.55 }); await shot.wait(4000);
+    const [oc] = Game.spawn('common_octopus') || [], ox = bx + Math.cos(best.a + 0.5) * 3.2, oy = by + Math.sin(best.a + 0.5) * 3.2, og = Game.waterAt(ox, oy).ground;   // an octopus on the coral in front of you
+    if (oc) Game.on('update', () => Object.assign(oc, { x: ox, y: oy, z: og + 0.25, a: best.a + 2.4 }));
+    await shot.wait(2000);` },
   { name: '4-whale-deep-ocean', seed: 42, climate: 'tropical', run: `
     const p = Game.findWater('sea', 0, 0, 6000); Engine.travel(p.x, p.y); await shot.wait(1500);
     let d = 120; for (; d < 1500; d += 40) { const q = shot.out(p.a, d), w = Game.waterAt(q[0], q[1]); if (w.depth > 60) break; }   // out over deep water
