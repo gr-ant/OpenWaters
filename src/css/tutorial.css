@@ -17,7 +17,9 @@
   #tutCard .tut-bar { height: 6px; border-radius: 3px; background: #ffffff1f; margin-top: 9px; overflow: hidden; } #tutCard .tut-bar[hidden] { display: none; }
   #tutCard .tut-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #c9a95a, #ffe9a8); transition: width .2s; }
   #tutCard .tut-note { margin-top: 6px; font-size: 13px; color: #ffd9a0; min-height: 0; } #tutCard .tut-note:empty { display: none; }
-  body.touch #tutCard { top: 92px; font-size: 14px; } body.map-open #tutCard { top: auto; bottom: 18px; }
+  body.touch #tutCard { top: 92px; font-size: 14px; }
+  body.touch #tutCard:not(.beside-r):not(.beside-l) { left: calc((100vw - 60px) / 2); width: min(460px, calc(100vw - 84px)); }   /* narrower, and centred in the space left of the buttons down the right edge */
+  body.map-open #tutCard { top: auto; bottom: 18px; }
   /* a panel open (the journal on the left, the boats list on the right): the card moves beside it, or to the bottom when there's no room */
   #tutCard.beside-r { left: auto; right: 16px; transform: none; width: var(--tut-w); animation: none; }
   #tutCard.beside-l { left: 16px; transform: none; width: var(--tut-w); animation: none; }
