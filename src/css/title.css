@@ -21,10 +21,9 @@ body.title-on #hud, body.title-on #tui, body.title-on #overlay { visibility: hid
   transition: transform .15s, border-color .15s, background .15s, box-shadow .15s; }
 .ti-item b { font: inherit; white-space: nowrap; }
 .ti-ic { display: block; width: clamp(64px, 6.4vw, 112px); aspect-ratio: 4 / 3; } .ti-ic svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 3px 3px rgba(0,0,0,.45)); }
-.ti-primary { background: linear-gradient(180deg, rgba(46,104,74,.96), rgba(30,80,54,.97)); border-color: #f0d58a; box-shadow: 0 0 0 2px rgba(240,213,138,.25), 0 0 22px rgba(240,213,138,.35), 0 6px 18px rgba(0,0,0,.35); }
 button.ti-item:hover, button.ti-item:focus-visible { transform: translateY(-4px); border-color: var(--gold-hi); outline: none; background: linear-gradient(180deg, rgba(50,110,78,.97), rgba(32,84,56,.98)); }
-.ti-primary:hover, .ti-primary:focus-visible { box-shadow: 0 0 0 3px rgba(240,213,138,.4), 0 0 28px rgba(240,213,138,.5), 0 8px 20px rgba(0,0,0,.4); }
-.ti-soon { cursor: not-allowed; }
+button.ti-item:hover, button.ti-item:focus-visible { box-shadow: 0 0 0 3px rgba(240,213,138,.4), 0 0 28px rgba(240,213,138,.5), 0 8px 20px rgba(0,0,0,.4); }
+.ti-soon { cursor: not-allowed; color: rgba(246,236,210,.4); background: linear-gradient(180deg, rgba(30,40,34,.85), rgba(22,30,26,.88)); border-color: rgba(196,168,108,.3); box-shadow: none; } .ti-soon .ti-ic { filter: grayscale(1) opacity(.45); }   /* not ready yet */
 .ti-foot { position: absolute; left: clamp(20px, 3.8vw, 72px); bottom: clamp(12px, 2.2vh, 22px); margin: 0; font: 600 clamp(11px, .95vw, 15px) var(--sans); text-transform: uppercase; letter-spacing: 1.5px; color: rgba(243,230,198,.9); text-shadow: 0 1px 2px rgba(0,0,0,.7); }
 /* New island: the three climates and Back take the cards' place */
 .ti-biomes { grid-template-columns: repeat(3, 1fr) .7fr; }

@@ -74,7 +74,7 @@
     if (page === 'main' && this.titleSettings && this.pausePage === 'settings') { this.titleSettings = false; this.togglePause(false); return; }
     return pauseShow.call(this, page);
   };
-  document.getElementById('pauseMenu').addEventListener('close', () => { Engine.titleSettings = false; if (Engine.titleOpen) start.focus({ preventScroll: true }); });
+  document.getElementById('pauseMenu').addEventListener('close', () => { Engine.titleSettings = false; });
   // while the menu is up the game hears no keys (the menu's own buttons still work: Enter / Space / arrows)
   const hold = e => {
     if (!Engine.titleOpen || Engine.pauseOpen) return;
@@ -93,7 +93,6 @@
     const w = Game.waterAt(Engine.P.x + Math.cos(Engine.P.a) * 8, Engine.P.y + Math.sin(Engine.P.a) * 8);
     document.getElementById('tiSub').textContent = `${CLIMATE.name} Island${w && w.depth > 0 ? ' · ' + w.name : ''}`;
     document.getElementById('tiFoot').textContent = `Island no. ${SEED}`;
-    setTimeout(() => start.focus({ preventScroll: true }), 50);
   });
   Game.on('update', () => {   // a slow look around while the menu is up
     if (!Engine.titleOpen || Engine.pauseOpen || Engine.titleA === undefined || REDUCED_MOTION) return;
