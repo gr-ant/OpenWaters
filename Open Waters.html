@@ -9369,6 +9369,10 @@ Object.assign(Engine, {
     const words = { reel: [Controls.key('cast'), 'Reel'], free: [Controls.key('bail'), k === 'spinning' ? (A.bail ? 'Close bail' : 'Open bail') : A.bail ? 'Lock spool' : 'Free spool'],
       drag: [`${Controls.key('dragDown')} ${Controls.key('dragUp')}`, `Drag ${A.dragKg.toFixed(1)} kg`] };
     const nudge = { reel: [26, -10], free: [-30, 22], drag: [24, 24] };   // a little off each part so it isn't hidden
+    if (this.thirdP) { let i = 0;   // third person: the reel is small and out on the figure, so the chips sit in a tidy column above the dock, not over it
+      for (const c of ['drag', 'free', 'reel']) { const C = this.rkChips[c]; C.s.style.display = ''; C.s.style.transform = `translate(14px, ${innerHeight - 86 - 30 * i++}px) translate(0, -50%)`;
+        const t = words[c].join('|'); if (t !== C.txt) { C.txt = t; C.k.textContent = words[c][0]; C.b.textContent = words[c][1]; } }
+      return; }
     for (const c in spots) { const C = this.rkChips[c], p = this.project(...this.rodPoint(A, spots[c]));
       if (!p) { C.s.style.display = 'none'; continue; } C.s.style.display = '';
       C.s.style.transform = `translate(${(p[0] + nudge[c][0]).toFixed(1)}px, ${(p[1] + nudge[c][1]).toFixed(1)}px) translate(-50%, -50%)`;
