@@ -228,6 +228,7 @@ Object.assign(Engine, {
       for (let k = 0; k < 4 + Math.min(20, w / 4); k++) this.spawn(DROP, L.x + this.rnd(-0.05, 0.05), L.y + this.rnd(-0.05, 0.05), wl, this.rnd(-0.5, 0.5), this.rnd(-0.5, 0.5), this.rnd(0.8, 1.8), this.rnd(0.3, 0.5), 0.025);
       if (S.float) { A.float = { x: L.x, y: L.y, z: wl, dip: 0, vx: L.vx, vy: L.vy, rot: L.dir }; L.vx = L.vy = 0; }
       A.lineOut = Math.hypot(L.x - A.tip[0], L.y - A.tip[1], L.z - A.tip[2]) + 0.3;
+      if (Math.hypot(L.x - this.P.x, L.y - this.P.y) >= 10) this.landMark = { x: L.x, y: L.y, z: wl, t: this.time };   // a long cast: a white ring where it came down (game.js)
       this.say(`${Math.hypot(L.x - this.P.x, L.y - this.P.y).toFixed(0)} m${S.lure && S.lure.style === 'skirt' && this.boat && this.boatTrolls(this.boat.def) ? ' · now drive the boat to troll it' : S.float ? '' : S.sinkMs > 0 ? ' · let it sink, then reel' : ' · reel to work it'}`, 1.6);
     } else if (L.z <= g) { L.z = g + 0.01; L.vx = L.vy = L.vz = 0; L.land = true; L.kd = -1; L.t = 0; A.phase = 'water'; this.say('On the bank: reel it back', 1.5); }
   },

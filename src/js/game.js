@@ -47,6 +47,12 @@
     c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.rect(-1e5, -1e5, 2e5, 2e5); c.rect(ax, ay, bx - ax, by - ay); c.fill('evenodd'); c.restore();
   });
 
+  // a long cast's splashdown: a white ring there that opens out and fades over a second (Engine.landMark, fishing/casting.js)
+  Game.onHud(c => { const M = Engine.landMark; if (!M || !c || Engine.showMap) return; const u = (Engine.time - M.t) / 1; if (u >= 1 || u < 0) { if (u >= 1) Engine.landMark = null; return; }
+    const p = Game.project(M.x, M.y, M.z); if (!p) return; const r = 5 + 23 * (1 - (1 - u) ** 2);
+    c.save(); c.globalAlpha = 1 - u; c.lineWidth = 2.5; c.strokeStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(p[0], p[1] + 1, r, r * 0.55, 0, 0, 6.2832); c.stroke();
+    c.lineWidth = 2; c.strokeStyle = '#fff'; c.beginPath(); c.ellipse(p[0], p[1], r, r * 0.55, 0, 0, 6.2832); c.stroke(); c.restore(); });
+
   // ---- start menu: the world runs behind it (a fresh island, a canoe on a pond); input is held until Start ----
   const T = document.getElementById('title'), start = document.getElementById('tiStart');
   const startGame = () => {

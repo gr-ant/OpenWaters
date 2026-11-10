@@ -8039,6 +8039,7 @@ Object.assign(Engine, {
       for (let k = 0; k < 4 + Math.min(20, w / 4); k++) this.spawn(DROP, L.x + this.rnd(-0.05, 0.05), L.y + this.rnd(-0.05, 0.05), wl, this.rnd(-0.5, 0.5), this.rnd(-0.5, 0.5), this.rnd(0.8, 1.8), this.rnd(0.3, 0.5), 0.025);
       if (S.float) { A.float = { x: L.x, y: L.y, z: wl, dip: 0, vx: L.vx, vy: L.vy, rot: L.dir }; L.vx = L.vy = 0; }
       A.lineOut = Math.hypot(L.x - A.tip[0], L.y - A.tip[1], L.z - A.tip[2]) + 0.3;
+      if (Math.hypot(L.x - this.P.x, L.y - this.P.y) >= 10) this.landMark = { x: L.x, y: L.y, z: wl, t: this.time };   // a long cast: a white ring where it came down (game.js)
       this.say(`${Math.hypot(L.x - this.P.x, L.y - this.P.y).toFixed(0)} m${S.lure && S.lure.style === 'skirt' && this.boat && this.boatTrolls(this.boat.def) ? ' · now drive the boat to troll it' : S.float ? '' : S.sinkMs > 0 ? ' · let it sink, then reel' : ' · reel to work it'}`, 1.6);
     } else if (L.z <= g) { L.z = g + 0.01; L.vx = L.vy = L.vz = 0; L.land = true; L.kd = -1; L.t = 0; A.phase = 'water'; this.say('On the bank: reel it back', 1.5); }
   },
@@ -10437,6 +10438,12 @@ Game.on('catch', () => Birds.excite());
     c.save(); c.setLineDash([8, 6]); c.lineWidth = 2; c.strokeStyle = 'rgba(232,208,146,.75)'; c.strokeRect(ax, ay, bx - ax, by - ay);
     c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.rect(-1e5, -1e5, 2e5, 2e5); c.rect(ax, ay, bx - ax, by - ay); c.fill('evenodd'); c.restore();
   });
+
+  // a long cast's splashdown: a white ring there that opens out and fades over a second (Engine.landMark, fishing/casting.js)
+  Game.onHud(c => { const M = Engine.landMark; if (!M || !c || Engine.showMap) return; const u = (Engine.time - M.t) / 1; if (u >= 1 || u < 0) { if (u >= 1) Engine.landMark = null; return; }
+    const p = Game.project(M.x, M.y, M.z); if (!p) return; const r = 5 + 23 * (1 - (1 - u) ** 2);
+    c.save(); c.globalAlpha = 1 - u; c.lineWidth = 2.5; c.strokeStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(p[0], p[1] + 1, r, r * 0.55, 0, 0, 6.2832); c.stroke();
+    c.lineWidth = 2; c.strokeStyle = '#fff'; c.beginPath(); c.ellipse(p[0], p[1], r, r * 0.55, 0, 0, 6.2832); c.stroke(); c.restore(); });
 
   // ---- start menu: the world runs behind it (a fresh island, a canoe on a pond); input is held until Start ----
   const T = document.getElementById('title'), start = document.getElementById('tiStart');
