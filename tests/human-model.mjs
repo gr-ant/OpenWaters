@@ -6,7 +6,8 @@ import vm from 'node:vm';
 const ctx = vm.createContext({});
 vm.runInContext('const clamp = (v, a, b) => v < a ? a : v > b ? b : v;\n' + ['models/mesh-builder', 'models/human'].map(f => fs.readFileSync(`src/js/${f}.js`, 'utf8')).join('\n')
   + '\nthis.humanParts = humanParts; this.humanPose = humanPose; this.humanPlace = humanPlace; this.VS = VS;', ctx);
-const parts = ctx.humanParts();
+const shipped = JSON.parse(fs.readFileSync('src/angler/angler.json', 'utf8')), clothes = JSON.parse(fs.readFileSync('src/angler/clothes.json', 'utf8')).clothes;
+const parts = ctx.humanParts(shipped, 'temperate', clothes);   // dressed as shipped, for a temperate island
 for (const [name, m] of Object.entries(parts)) { assert.ok(m.length > 0 && m.length % (ctx.VS * 3) === 0, name); assert.ok(m.every(Number.isFinite), `${name}: finite`); }
 const bounds = pose => { const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
   for (const q of pose.parts) { const m = parts[q[0]]; assert.ok(m, q[0]);
@@ -26,16 +27,20 @@ for (let ph = 0; ph < 6.3; ph += 0.3) { const q = ctx.humanPose({ mode: 'swim', 
   for (const n of ['upper', 'fore', 'thigh', 'shin']) { const [l, r] = of(n); assert.equal(l[4], r[4], `${n} together at ${ph}`); assert.equal(l[2], -r[2], `${n} mirrored at ${ph}`); } }
 const sw = ph => Object.fromEntries(ctx.humanPose({ mode: 'swim', ph }).parts.map(q => [q[0], q[4] + Math.PI / 2]));   // angles from the body's line
 assert.ok(Math.abs(sw(5.8).upper - Math.PI) < 0.01 && Math.abs(sw(5.8).thigh) < 0.01, 'glide: arms out ahead, legs straight'); assert.ok(sw(2.1).upper < 1.3, 'pull: arms down under the shoulders'); assert.ok(sw(3.7).shin < -0.8 && sw(3.7).thigh > 0.6, 'knees drawn up before the kick');
-// the look is data (src/angler/angler.json): an outfit per climate, and other skin, hair and colours, all still build
-const shipped = JSON.parse(fs.readFileSync('src/angler/angler.json', 'utf8')), count = m => Object.values(m).reduce((a, p) => a + p.length, 0), ok = (m, why) => { for (const [name, v] of Object.entries(m)) assert.ok(v.length > 0 && v.every(Number.isFinite), `${why}: ${name}`); };
-const colours = m => new Set(Object.values(m).flatMap(v => { const out = []; for (let i = 0; i < v.length; i += ctx.VS) out.push([v[i + 6], v[i + 7], v[i + 8]].map(x => Math.round(x * 255)).join()); return out; }));
-const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(), has = (m, h) => colours(m).has(hex(h)), wear = {};
-for (const climate of ['temperate', 'arctic', 'tropical']) { const m = wear[climate] = ctx.humanParts(shipped, climate), O = shipped.outfits[climate]; ok(m, climate);
-  for (const k of ['hat', 'top', 'bottom', 'feet']) assert.ok(has(m, O.colors[k]), `${climate}: ${k} colour on the model`); }
-const mesh = (m, part) => { const v = m[part], s = new Set(); for (let i = 0; i < v.length; i += ctx.VS) s.add([v[i + 6], v[i + 7], v[i + 8]].map(x => Math.round(x * 255)).join()); return s; };
-assert.ok(mesh(wear.tropical, 'upper').has(hex(shipped.skin)) && mesh(wear.tropical, 'upper').size === 1, 'tank top: bare arms'); assert.ok(mesh(wear.tropical, 'shin').has(hex(shipped.skin)), 'shorts: bare shins');
-assert.ok(!mesh(wear.arctic, 'fore').has(hex(shipped.skin)), 'jacket: gloves, no bare hands'); assert.ok(mesh(wear.temperate, 'torso').size >= 3, 'flannel: two colours and the vest');
-for (const look of [{ skin: '#8d5a3c', hair: { style: 'ponytail', color: '#111111' }, outfits: { temperate: { hat: null, colors: { top: '#aa3344' } } } }, { hair: { style: 'long' } }, { hair: { style: 'none' }, skin: 'nonsense' }, undefined]) ok(ctx.humanParts(look), JSON.stringify(look));
-assert.ok(count(ctx.humanParts({ outfits: { temperate: { hat: null } } })) < count(ctx.humanParts()), 'no hat: fewer triangles');
-assert.ok(has(ctx.humanParts({ hair: { color: '#ff0000' } }), '#ff0000'), 'hair colour reaches the mesh');
+// the look is data: angler.json (skin, hair, what's worn per climate and its colours) and clothes.json (every garment's shapes)
+const count = m => Object.values(m).reduce((a, p) => a + p.length, 0), ok = (m, why) => { for (const [name, v] of Object.entries(m)) assert.ok(v.length > 0 && v.every(Number.isFinite), `${why}: ${name}`); };
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(), wear = {};
+const mesh = (m, part) => { const s = new Set(); for (const v of part ? [m[part]] : Object.values(m)) for (let i = 0; i < v.length; i += ctx.VS) s.add([v[i + 6], v[i + 7], v[i + 8]].map(x => Math.round(x * 255)).join()); return s; };
+const bare = ctx.humanParts(shipped, 'nowhere', clothes); ok(bare, 'bare'); assert.deepEqual([...mesh(bare)].sort(), [hex(shipped.skin), hex(shipped.hair.color)].sort(), 'no outfit: just skin and hair');
+for (const climate of ['temperate', 'arctic', 'tropical']) { const m = wear[climate] = ctx.humanParts(shipped, climate, clothes), O = shipped.outfits[climate]; ok(m, climate);
+  for (const id of O.wear) assert.ok(clothes.some(g => g.id === id), `${climate}: ${id} is in clothes.json`);
+  for (const [k, c] of Object.entries(O.colors)) assert.ok(mesh(m).has(hex(c)), `${climate}: ${k} colour on the model`);
+  assert.ok(!mesh(m).has('128,128,128'), `${climate}: every shape found its colour`); assert.ok(count(m) > count(bare), `${climate}: dressed`); }
+for (const g of clothes) for (const [name, list] of Object.entries(g.parts)) { assert.ok(name in bare, `${g.id}: part ${name}`); for (const q of list) assert.ok(['blob', 'tube', 'oval', 'wrap'].filter(k => q[k]).length === 1 && q.color, `${g.id}.${name}: ${JSON.stringify(q)}`); }
+assert.deepEqual([...mesh(wear.tropical, 'upper')], [hex(shipped.skin)], 'tank top: bare arms'); assert.deepEqual([...mesh(wear.tropical, 'fore')], [hex(shipped.skin)], 'tank top: bare forearms');
+assert.ok(mesh(wear.arctic, 'fore').has(hex(shipped.outfits.arctic.colors.gloves)), 'jacket: gloves'); assert.ok(mesh(wear.temperate, 'torso').size >= 4, 'flannel in two colours under the vest');
+// a garment made up on the spot, bad shapes skipped, unknown garments ignored
+const odd = ctx.humanParts({ hair: { style: 'ponytail', color: '#ff0000' }, outfits: { x: { wear: ['scarf', 'missing'], colors: { wool: '#00ff00' } } } }, 'x', [{ id: 'scarf', parts: { torso: [{ oval: [0.05, 0.09, 0.09, -0.02, 0.11, 0.11], color: 'wool' }, { blob: ['a'], color: 'wool' }, { tube: [0, 1], color: 'wool' }, null] } }]);
+ok(odd, 'scarf'); assert.ok(mesh(odd, 'torso').has('0,255,0') && mesh(odd, 'head').has('255,0,0'), 'a new garment and hair colour reach the mesh');
+for (const look of [{ hair: { style: 'long' } }, { hair: { style: 'none' }, skin: 'nonsense' }, undefined]) ok(ctx.humanParts(look), JSON.stringify(look));
 console.log('Human model checks passed.');

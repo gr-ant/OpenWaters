@@ -2,7 +2,7 @@
 // built-in fish, boats and tackle: <script type="application/json" data-builtin="fish|boat|tackle"> blocks at the end of this
 // file, one per definition; they're parsed at boot, after the loading screen has painted (parsing hundreds of KB of JSON is quick,
 // but parsing it as JavaScript object literals before the page could draw was not)
-const BUILTIN = { fish: [], boat: [], tackle: [], feature: [], angler: [] };   // feature: map features (src/features/*.json); angler: your look in third person (src/angler/angler.json)
+const BUILTIN = { fish: [], boat: [], tackle: [], feature: [], angler: [], clothes: [] };   // feature: map features (src/features/*.json); angler, clothes: your look in third person (src/angler/*.json)
 function readBuiltins() {
   for (const el of document.querySelectorAll('script[data-builtin]')) {
     try { BUILTIN[el.dataset.builtin].push(JSON.parse(el.textContent)); } catch (e) { console.error('Bad built-in', el.dataset.builtin, 'JSON:', e.message); }

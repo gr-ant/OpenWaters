@@ -115,18 +115,26 @@ You can add these to the URL: `#seed-12345` picks a fixed world, and `#climate-�
 
 ## The angler's look
 
-`src/angler/angler.json` is how you look in third-person view (H): skin, hair, and an outfit for each island climate. The model is built from it once, at start (`src/js/models/human.js`).
+How you look in third-person view (H) is data, in `src/angler/`. `src/js/models/human.js` only draws the bare body, then whatever these two files say is worn.
+
+**`angler.json`**: you.
 
 | Field | Values |
 |---|---|
 | `skin` | a colour, `"#rrggbb"` |
 | `hair.style` | `"short"`, `"long"`, `"ponytail"` or `"none"` |
 | `hair.color` | a colour |
-| `outfits.temperate`, `.arctic`, `.tropical` | what's worn on that kind of island: |
-| …`.hat` | `"cap"`, `"beanie"`, `"sun_hat"` or `null` |
-| …`.top` | `"flannel"` (banded in `top` and `accent`), `"jacket"` (quilted, hooded, with gloves) or `"tank"` (bare arms) |
-| …`.bottom` | `"trousers"` or `"shorts"` |
-| …`.feet` | `"boots"` or `"sandals"` |
-| …`.colors` | `hat`, `top`, `accent` (flannel's second colour, the jacket's fur collar, the beanie's bobble), `vest` (over a flannel; leave out for none), `trim` (vest shoulders, cuffs, hat band, boot stripe), `gloves`, `bottom`, `patches` (knees), `feet`, `band` (boot tops) |
+| `outfits.temperate`, `.arctic`, `.tropical` | what you wear on that kind of island |
+| …`.wear` | a list of garment ids from `clothes.json`, e.g. `["trousers", "boots", "flannel", "vest", "cap"]` |
+| …`.colors` | the colours those garments ask for by name: `hat`, `top`, `accent`, `vest`, `trim`, `gloves`, `bottom`, `patches`, `feet`, `band` |
 
-Anything left out falls back to a default in `human.js`.
+**`clothes.json`**: every garment (`cap`, `beanie`, `sun_hat`, `flannel`, `vest`, `jacket`, `tank`, `trousers`, `shorts`, `boots`, `sandals`). A garment lists shapes for each body part it covers (`head`, `torso`, `hips`, `upper` and `fore` arm, `thigh`, `shin`; arms and legs are drawn once per side). Numbers are metres in that part's own frame: x forward, y to the right, z up from the joint (parts hang down, so most z are negative; the head goes up from the neck).
+
+| Shape | Meaning |
+|---|---|
+| `"blob": [x, y, z, rx, ry, rz]` | an ellipsoid; `"mirror": true` repeats it at -y; `"detail": [rings, segments]` |
+| `"tube": [z0, r0, z1, r1]` | a tapered tube down the part; `"at": [x, y]`, `"sides"`, `"cap": true` closes the far end |
+| `"oval": [z0, halfWidth0, halfDepth0, z1, halfWidth1, halfDepth1]` | an oval ring, for the torso |
+| `"wrap": [z0, z1, off0, off1]` | a ring that follows the torso's own shape, standing `off0` (and `off1` at the far end) off the skin |
+
+Every shape has a `"color"`: a name looked up in the outfit's `colors`, or `"skin"`, `"hair"`, or a literal `"#rrggbb"`. `"shade": 0.8` darkens it; `"mat": "plain"` is for things that aren't cloth. To add a garment, add an entry to `clothes.json` and put its id in an outfit's `wear`.
