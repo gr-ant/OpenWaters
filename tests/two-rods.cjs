@@ -13,7 +13,7 @@ ctx.globalThis = ctx; vm.createContext(ctx);
 vm.runInContext(`
 var Engine = { P: { x: 0, y: 0, z: 0, a: 0 }, time: 0, keys: {}, touchUI: false, boat: null, boatMode: 'deck', fights: 0, lost: [],
   say(t) { said.push(t); }, buzz() {}, addRipple() {}, updateTui() {}, keyPress(code) { this.keys[code] = true; if (code === 'KeyQ') this.toggleRod(); },
-  action() { this.based = true; }, steps: [], draws: [], angStep() { this.steps.push(this.ang); }, drawTackle() { this.draws.push(this.ang); }, lureArrive(f) { f.cameTo = this.ang; }, travel() { this.travelled = true; }, contextKeys() { return [['R', 'Reel']]; }, fishingStatus() { return { title: 'in hand' }; },
+  action() { this.based = true; }, nearBoat: () => null, steps: [], draws: [], angStep() { this.steps.push(this.ang); }, drawTackle() { this.draws.push(this.ang); }, lureArrive(f) { f.cameTo = this.ang; }, travel() { this.travelled = true; }, contextKeys() { return [['R', 'Reel']]; }, fishingStatus() { return { title: 'in hand' }; },
   rodAim: () => [0, 0.3], handForReel: () => [0, 0, 1.2],
   startFight(f) { this.fights++; this.ang.phase = 'fight'; f.hooked = 'fight'; },
   loseFish(msg, why) { this.lost.push(why); this.ang.fish = null; this.ang.phase = 'water'; this.say(msg); },

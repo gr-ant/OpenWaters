@@ -47,7 +47,7 @@ Object.assign(Engine, {
   nearBoat() { // a boat you're standing or swimming beside
     const P = this.P; let best = null, bd = 1e9;
     for (const b of this.boats) { const L = b.def.hull.length_m, ca = Math.cos(b.a), sa = Math.sin(b.a), dx = P.x - b.x, dy = P.y - b.y, u = clamp(dx * ca + dy * sa, -L / 2, L / 2);
-      const d = Math.hypot(dx - ca * u, dy - sa * u) - b.def.hull.beam_m / 2; if (d < 2.2 && d < bd && Math.abs(P.z + EYE * 0.5 - b.z) < 3) { bd = d; best = b; } }
+      const d = Math.hypot(dx - ca * u, dy - sa * u) - b.def.hull.beam_m / 2; if (d < 2.2 && d < bd && Math.abs(P.z + EYE * 0.5 - b.z) < 6) { bd = d; best = b; } }   // from the bank, swimming, or diving under it
     return best;
   },
   boardBoat(b) {

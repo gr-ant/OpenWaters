@@ -28,7 +28,7 @@ Object.assign(Engine, {
     }
     const cb = this.useBtn || (this.useBtn = document.getElementById('bUse')), pk = !tg && this.holderByUse && this.holderByUse(), tl = !tg && !pk && this.trapUseLabel && this.trapUseLabel(), mode = tg ? 'take' : pk ? 'pick' : tl || 'use'; // touch button label follows what F would do (Pick up: the rod in its holder; Throw / Set / Haul: fishing/nets-traps.js)
     if (this.touchUI && cb.dataset.mode !== mode) { cb.dataset.mode = mode; cb.textContent = tg ? 'Take' : pk ? 'Pick up' : tl || 'Use'; }
-    if (this.touchUI) { const hb = this.holdBtn || (this.holdBtn = document.getElementById('bHold')), A = this.ang, hm = this.rodInHand() && A.phase === 'water' ? 'set' : this.boat && this.holderNear && this.holderNear() ? 'pick' : '';   // Holder: set the rod down; aboard, also how you pick it up (Use is for the boat)
+    if (this.touchUI) { const hb = this.holdBtn || (this.holdBtn = document.getElementById('bHold')), A = this.ang, hm = this.rodInHand() && A.phase === 'water' ? 'set' : this.holderNear && this.holderNear() && !this.holderByUse() ? 'pick' : '';   // Holder: set the rod down; beside or in a boat, also how you pick it up (Use is for the boat)
       if (hb && hb.dataset.mode !== hm) { hb.dataset.mode = hm; hb.hidden = !hm; hb.textContent = hm === 'pick' ? 'Pick up' : 'Holder'; } }
     if (!this.showMap) { // crosshair: dot + four ticks, dark outline so it reads on any background
       const X = Wd / 2, Y = Ht / 2, tick = (w, col) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { c.moveTo(X + dx * 5, Y + dy * 5); c.lineTo(X + dx * 11, Y + dy * 11); } c.stroke(); };

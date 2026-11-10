@@ -5500,7 +5500,7 @@ Object.assign(Engine, {
   nearBoat() { // a boat you're standing or swimming beside
     const P = this.P; let best = null, bd = 1e9;
     for (const b of this.boats) { const L = b.def.hull.length_m, ca = Math.cos(b.a), sa = Math.sin(b.a), dx = P.x - b.x, dy = P.y - b.y, u = clamp(dx * ca + dy * sa, -L / 2, L / 2);
-      const d = Math.hypot(dx - ca * u, dy - sa * u) - b.def.hull.beam_m / 2; if (d < 2.2 && d < bd && Math.abs(P.z + EYE * 0.5 - b.z) < 3) { bd = d; best = b; } }
+      const d = Math.hypot(dx - ca * u, dy - sa * u) - b.def.hull.beam_m / 2; if (d < 2.2 && d < bd && Math.abs(P.z + EYE * 0.5 - b.z) < 6) { bd = d; best = b; } }   // from the bank, swimming, or diving under it
     return best;
   },
   boardBoat(b) {
@@ -7181,7 +7181,7 @@ Object.assign(Engine, {
     }
     const cb = this.useBtn || (this.useBtn = document.getElementById('bUse')), pk = !tg && this.holderByUse && this.holderByUse(), tl = !tg && !pk && this.trapUseLabel && this.trapUseLabel(), mode = tg ? 'take' : pk ? 'pick' : tl || 'use'; // touch button label follows what F would do (Pick up: the rod in its holder; Throw / Set / Haul: fishing/nets-traps.js)
     if (this.touchUI && cb.dataset.mode !== mode) { cb.dataset.mode = mode; cb.textContent = tg ? 'Take' : pk ? 'Pick up' : tl || 'Use'; }
-    if (this.touchUI) { const hb = this.holdBtn || (this.holdBtn = document.getElementById('bHold')), A = this.ang, hm = this.rodInHand() && A.phase === 'water' ? 'set' : this.boat && this.holderNear && this.holderNear() ? 'pick' : '';   // Holder: set the rod down; aboard, also how you pick it up (Use is for the boat)
+    if (this.touchUI) { const hb = this.holdBtn || (this.holdBtn = document.getElementById('bHold')), A = this.ang, hm = this.rodInHand() && A.phase === 'water' ? 'set' : this.holderNear && this.holderNear() && !this.holderByUse() ? 'pick' : '';   // Holder: set the rod down; beside or in a boat, also how you pick it up (Use is for the boat)
       if (hb && hb.dataset.mode !== hm) { hb.dataset.mode = hm; hb.hidden = !hm; hb.textContent = hm === 'pick' ? 'Pick up' : 'Holder'; } }
     if (!this.showMap) { // crosshair: dot + four ticks, dark outline so it reads on any background
       const X = Wd / 2, Y = Ht / 2, tick = (w, col) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { c.moveTo(X + dx * 5, Y + dy * 5); c.lineTo(X + dx * 11, Y + dy * 11); } c.stroke(); };
@@ -10835,9 +10835,9 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
     if (!card && code === 'KeyQ' && this.ang && this.ang.holder) { this.keys[code] = true; if (!e.repeat) this.say(`Your rod is in its holder ${away(this.ang.holder)} m away: ${pickKey()} there to pick it up`, 2.5); return; }
     return baseKey.call(this, code, e, card); };
   const baseRod = E.toggleRod; E.toggleRod = function (on = !this.ang.out) { if (!on && this.ang && this.ang.holder) this.ang.holder = null; return baseRod.call(this, on); };
-  // Use picks the rod up from a holder ashore; aboard it's for the boat (leaving it, the helm), and H picks the rod up
-  E.holderByUse = function () { return !this.boat && this.holderNear(); };
-  const pickKey = () => E.touchUI ? 'Pick up' : E.boat ? Controls.key('holder') : useKey();
+  // Use picks the rod up from a holder, unless there's a boat to board or leave: then Use is for the boat, and H picks the rod up
+  E.holderByUse = function () { return !this.boat && !this.nearBoat() && this.holderNear(); };
+  const pickKey = () => E.touchUI ? 'Pick up' : E.holderByUse() ? useKey() : Controls.key('holder');
   const baseAction = E.action; E.action = function () { if (this.holderByUse()) return this.pickUpHolder(); return baseAction.call(this); };
   Game.on('key', code => { if (code !== 'KeyH') return; const A = E.ang;
     if (A && A.holder) return E.holderNear() ? E.pickUpHolder() : E.say(`Your rod is in its holder ${away(A.holder)} m away`, 2);
@@ -10846,10 +10846,10 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
 
   // the panel and the key hints
   const baseKeys = E.contextKeys; E.contextKeys = function () { const out = baseKeys.call(this), A = this.ang;
-    if (A && A.holder) return this.holderNear() ? [[this.boat ? Controls.key('holder') : Controls.key('use'), 'Pick up rod'], ...out].slice(0, 4) : out;
+    if (A && A.holder) return this.holderNear() ? [[this.holderByUse() ? Controls.key('use') : Controls.key('holder'), 'Pick up rod'], ...out].slice(0, 4) : out;
     return this.rodInHand() && A.phase === 'water' ? [[Controls.key('holder'), 'Rod holder'], ...out].slice(0, 4) : out; };
   const baseStatus = E.fishingStatus; E.fishingStatus = function () { const A = this.ang, H = A && A.holder; if (!H) return baseStatus.call(this);
-    const near = this.holderNear(), key = near && !this.touchUI ? (this.boat ? Controls.key('holder') : Controls.key('use')) : '', act = near ? 'Pick up' : '', sub = near ? 'right here' : `${away(H)} m away`;
+    const near = this.holderNear(), key = near && !this.touchUI ? (this.holderByUse() ? Controls.key('use') : Controls.key('holder')) : '', act = near ? 'Pick up' : '', sub = near ? 'right here' : `${away(H)} m away`;
     if (A.phase === 'bite') return H.on ? { title: 'Fish on at the holder!', sub: `${sub} · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s`, key, act, bite: 'strike', alert: true } : { title: 'Bite at the holder!', sub, key, act, bite: 'strike' };
     return { title: 'Rod in the holder', sub: H.alert ? `${sub} · ${H.alert.toLowerCase()}` : sub, key, act }; };
 
@@ -10930,7 +10930,7 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
     return basePick.call(this); };
   const baseKeys = E.contextKeys; E.contextKeys = function () { const out = baseKeys.call(this), A = this.ang;
     if (A && A.holder && !this.ang2 && !nearMine.call(this)) return [[Controls.key('rod'), 'Second rod'], ...out].slice(0, 4);
-    return A && !A.holder && nearOther() ? [[this.boat ? Controls.key('holder') : Controls.key('use'), 'Pick up rod'], ...out].slice(0, 4) : out; };
+    return A && !A.holder && nearOther() ? [[this.holderByUse() ? Controls.key('use') : Controls.key('holder'), 'Pick up rod'], ...out].slice(0, 4) : out; };
 })();
 </script>
 <style>

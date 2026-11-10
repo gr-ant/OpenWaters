@@ -70,9 +70,9 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
     if (!card && code === 'KeyQ' && this.ang && this.ang.holder) { this.keys[code] = true; if (!e.repeat) this.say(`Your rod is in its holder ${away(this.ang.holder)} m away: ${pickKey()} there to pick it up`, 2.5); return; }
     return baseKey.call(this, code, e, card); };
   const baseRod = E.toggleRod; E.toggleRod = function (on = !this.ang.out) { if (!on && this.ang && this.ang.holder) this.ang.holder = null; return baseRod.call(this, on); };
-  // Use picks the rod up from a holder ashore; aboard it's for the boat (leaving it, the helm), and H picks the rod up
-  E.holderByUse = function () { return !this.boat && this.holderNear(); };
-  const pickKey = () => E.touchUI ? 'Pick up' : E.boat ? Controls.key('holder') : useKey();
+  // Use picks the rod up from a holder, unless there's a boat to board or leave: then Use is for the boat, and H picks the rod up
+  E.holderByUse = function () { return !this.boat && !this.nearBoat() && this.holderNear(); };
+  const pickKey = () => E.touchUI ? 'Pick up' : E.holderByUse() ? useKey() : Controls.key('holder');
   const baseAction = E.action; E.action = function () { if (this.holderByUse()) return this.pickUpHolder(); return baseAction.call(this); };
   Game.on('key', code => { if (code !== 'KeyH') return; const A = E.ang;
     if (A && A.holder) return E.holderNear() ? E.pickUpHolder() : E.say(`Your rod is in its holder ${away(A.holder)} m away`, 2);
@@ -81,10 +81,10 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
 
   // the panel and the key hints
   const baseKeys = E.contextKeys; E.contextKeys = function () { const out = baseKeys.call(this), A = this.ang;
-    if (A && A.holder) return this.holderNear() ? [[this.boat ? Controls.key('holder') : Controls.key('use'), 'Pick up rod'], ...out].slice(0, 4) : out;
+    if (A && A.holder) return this.holderNear() ? [[this.holderByUse() ? Controls.key('use') : Controls.key('holder'), 'Pick up rod'], ...out].slice(0, 4) : out;
     return this.rodInHand() && A.phase === 'water' ? [[Controls.key('holder'), 'Rod holder'], ...out].slice(0, 4) : out; };
   const baseStatus = E.fishingStatus; E.fishingStatus = function () { const A = this.ang, H = A && A.holder; if (!H) return baseStatus.call(this);
-    const near = this.holderNear(), key = near && !this.touchUI ? (this.boat ? Controls.key('holder') : Controls.key('use')) : '', act = near ? 'Pick up' : '', sub = near ? 'right here' : `${away(H)} m away`;
+    const near = this.holderNear(), key = near && !this.touchUI ? (this.holderByUse() ? Controls.key('use') : Controls.key('holder')) : '', act = near ? 'Pick up' : '', sub = near ? 'right here' : `${away(H)} m away`;
     if (A.phase === 'bite') return H.on ? { title: 'Fish on at the holder!', sub: `${sub} · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s`, key, act, bite: 'strike', alert: true } : { title: 'Bite at the holder!', sub, key, act, bite: 'strike' };
     return { title: 'Rod in the holder', sub: H.alert ? `${sub} · ${H.alert.toLowerCase()}` : sub, key, act }; };
 

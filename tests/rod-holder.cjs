@@ -13,7 +13,7 @@ ctx.globalThis = ctx; vm.createContext(ctx);
 vm.runInContext(`
 var Engine = { P: { x: 0, y: 0, z: 0, a: 0 }, time: 0, keys: {}, touchUI: false, boat: null, boatMode: 'deck', fights: 0, lost: [],
   say(t) { said.push(t); }, buzz() {}, addRipple() {}, updateTui() {}, keyPress(code) { this.keys[code] = true; if (code === 'KeyQ') this.toggleRod(); },
-  action() { this.based = true; }, contextKeys() { return [['R', 'Reel']]; }, fishingStatus() { return { title: 'in hand' }; },
+  action() { this.based = true; }, nearBoat: () => null, contextKeys() { return [['R', 'Reel']]; }, fishingStatus() { return { title: 'in hand' }; },
   rodAim: () => [0, 0.3], handForReel: () => [0, 0, 1.2],
   startFight(f) { this.fights++; this.ang.phase = 'fight'; f.hooked = 'fight'; },
   loseFish(msg, why) { this.lost.push(why); this.ang.fish = null; this.ang.phase = 'water'; this.say(msg); },
@@ -72,7 +72,8 @@ E.P.x = 20; E.P.y = 0.3; E.based = false; A(E.holderNear() && E.contextKeys()[0]
 E.boat = null; E.P.x = 24; step(0.016); A(Ang.out && Ang.holder === B && !E.rodInHand(), 'ashore: still in the holder');
 Math.random = () => 0; E.fishTake(fish()); step(0.016); A(/Bite at the rod holder/.test(els[0].textContent), 'it still rings from the boat: ' + els[0].textContent); Math.random = r0;
 b.x = 26; E.holderHand(B); A(Math.abs(B.x - (26 - B.ly)) < 1e-9, 'and drifts with it');
-E.P.x = 25.5; E.P.y = 0; A(E.holderNear(), 'swum back to it'); E.based = false; E.action(); A(!Ang.holder && Ang.out, 'Use from the water picks it up');
+E.P.x = 25.5; E.P.y = 0; A(E.holderNear(), 'swum back to it'); E.nearBoat = () => b; E.based = false; E.action(); A(E.based && Ang.holder === B && E.contextKeys()[0][0] === 'H', 'beside the boat, Use boards it (H picks the rod up)');
+key('KeyH'); A(!Ang.holder && Ang.out, 'H picks it up'); E.nearBoat = () => null;
 E.boat = b; E.boatMode = 'drive'; Ang.holder = null; Ang.phase = 'water'; key('KeyH'); A(!Ang.holder && /helm/.test(said.at(-1)), 'not from the helm');
 map.forEach(f => f({ beginPath() {}, arc() {}, fill() {}, stroke() {} }, (x, y) => [x, y]));
 console.log('ok:', said.slice(-4).join(' | '));
