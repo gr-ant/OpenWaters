@@ -629,6 +629,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
     <button data-k="KeyJ"><span class="ic" data-icon="dock.journal"></span><b>Journal</b></button>
     <button data-k="KeyB"><span class="ic" data-icon="dock.boat"></span><b>Boats</b></button>
     <button id="bRod" data-k="KeyQ"><span class="ic" data-icon="dock.rod"></span><b>Rod</b></button>
+    <button id="bView" class="line" data-k="KeyK"><span class="ic">1st</span><b>View</b></button>
     <button id="bTorch" data-k="KeyL" hidden><span class="ic" data-icon="dock.torch"></span><b>Light</b></button>
   </nav>
   <nav class="tui-rail tui-more" aria-label="Settings and dev tools">
@@ -704,8 +705,8 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 // ======================================================================
 const CONFIG = {
   // movement (world units are roughly metres; per second)
-  walkSpeed: 5, runSpeed: 14, swimFactor: 0.5,
-  jumpSpeed: 9, gravity: 28, eyeHeight: 1.7,
+  walkSpeed: 2.2, jogSpeed: 3.8, runSpeed: 5.5, swimFactor: 0.5,   // a person's pace: a brisk walk; holding Run you jog, and after a moment build up to a run
+  jumpSpeed: 5.5, boatJumpFactor: 0.55, gravity: 28, eyeHeight: 1.7,   // a jump of about half a metre; off a boat it's a hop over the side (jumpSpeed x boatJumpFactor)
   // looking around
   mouseSensitivity: 0.0025, touchLookSensitivity: 0.0065, mouseDragSensitivity: 0.004, arrowKeyTurnSpeed: 1.8,
   fieldOfView: 75,                    // degrees
@@ -743,7 +744,7 @@ const CONFIG = {
   pondChance: 0.25,                   // share of 170 m cells that try to hold a pond in a hollow (moist lowland only)
   rivers: true, creeks: true,
   // swimming
-  swimSpeed: 3.2, swimSprint: 6, diveSpeed: 3,
+  swimSpeed: 1.1, swimSprint: 1.8, diveSpeed: 1.5,
   // water life & atmosphere
   maxFish: 1200,                      // most fish simulated at once (nearest water cells first)
   maxFishTouch: 600,                  // lower ambient population cap on touch devices
@@ -780,7 +781,7 @@ const CONTROL_ACTIONS = [   // [id, canonical code, group, label]
   ['left', 'KeyA', 'Moving', 'Step left · steer left'], ['right', 'KeyD', 'Moving', 'Step right · steer right'],
   ['run', 'ShiftLeft', 'Moving', 'Run · reel faster · boat power'], ['jump', 'Space', 'Moving', 'Jump · swim up'],
   ['dive', 'KeyC', 'Moving', 'Dive · sit / stand on deck'], ['use', 'KeyF', 'Moving', 'Use · board / leave a boat'],
-  ['torch', 'KeyL', 'Moving', 'Dive light (deep water)'],
+  ['torch', 'KeyL', 'Moving', 'Dive light (deep water)'], ['view', 'KeyK', 'Moving', 'First / third-person view'],
   ['rod', 'KeyQ', 'Fishing', 'Rod out / away'], ['cast', 'KeyR', 'Fishing', 'Cast · reel · strike (left mouse too)'],
   ['bail', 'KeyG', 'Fishing', 'Open / close the bail'], ['holder', 'KeyH', 'Fishing', 'Rod holder: set the rod down / pick it up'], ['dragDown', 'BracketLeft', 'Fishing', 'Drag down'], ['dragUp', 'BracketRight', 'Fishing', 'Drag up'],
   ['keep', 'KeyE', 'Fishing', 'Keep a catch'], ['release', 'KeyX', 'Fishing', 'Release a catch'],
@@ -2154,6 +2155,126 @@ function meshBuilder(smooth = false) { // smooth: round, smooth-shaded blobs (fi
 }
 const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const norm3 = a => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+</script>
+<script>
+'use strict';
+// The angler seen from behind (third-person view): a very low-detail person, just the silhouette. Each part is its own small
+// mesh hanging down -z from its joint (the head sits up +z from the neck), so a pose is only a joint position and a pitch per
+// part: every bend is about the shoulders' side-to-side axis, which is what the instanced fish pitch (ipt) already does.
+const HUMAN = { foot: 0.08, shin: 0.39, thigh: 0.4, torso: 0.52, neck: 0.045, head: 0.135, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
+// How the angler looks is data (README.md, "The angler's look"): src/angler/angler.json gives skin, hair and, for each island
+// climate, what's worn and its colours; src/angler/clothes.json gives every garment's shapes. This file only knows the bare body.
+const ANGLER_LOOK = { skin: '#dba985', hair: { style: 'short', color: '#573826' }, outfits: {} };
+const HUMAN_BUILD = { shoulder: 0.185, hip: 0.1, chest: [0.2, 0.135], waist: [0.175, 0.125], hips: [0.185, 0.13] };   // [half-width, half-depth] of chest, waist and hips
+// The part meshes, in the frame above (x forward, y to the right, z up, joint at the origin): the bare body, then each garment
+// worn in this climate drawn over it. A garment lists shapes per body part (all numbers in metres, in that part's frame):
+//   { blob: [x, y, z, rx, ry, rz], detail?: [rings, segments], mirror?: true (again at -y) }    an ellipsoid
+//   { tube: [z0, r0, z1, r1], at?: [x, y], sides?, cap? }                                         a tapered tube down the part
+//   { oval: [z0, halfWidth0, halfDepth0, z1, halfWidth1, halfDepth1], cap? }                      an oval ring (torso)
+//   { wrap: [z0, z1, off0, off1?], cap? }                                                         a ring following the torso, off0 / off1 out from the skin
+// each with color: a key of the outfit's colors, "skin", "hair" or "#rrggbb"; shade?: a darkening factor; mat?: "plain" (not cloth).
+function humanParts(look, climate = 'temperate', clothes = []) {
+  const K = Object.assign({}, ANGLER_LOOK, look), Hr = Object.assign({}, ANGLER_LOOK.hair, K.hair), W = (K.outfits || {})[climate] || {}, C = W.colors || {}, G = HUMAN_BUILD, H = HUMAN;
+  H.shoulder = G.shoulder; H.hip = G.hip;   // the pose hangs the arms and legs at these widths
+  const rgb = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h) ? [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255) : null;
+  const skin = rgb(K.skin) || [0.86, 0.66, 0.52], hair = rgb(Hr.color) || [0.34, 0.22, 0.15], top = H.neck + H.head;
+  const worn = (Array.isArray(W.wear) ? W.wear : []).map(id => clothes.find(g => g && g.id === id)).filter(Boolean);
+  // an oval ring from height z0 (half-width a0 across the shoulders, half-depth c0 front to back) down to z1 (a1, c1): chests and coats aren't round
+  const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 10, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 10 * 6.2832) / (e ? a1 : a0), Math.sin(k / 10 * 6.2832) / (e ? c1 : c0)));
+  const sh = [G.shoulder + 0.02, 0.105], grow = ([a, c], g) => [a + g, c + g], mix = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+  const sec = z => z > -0.24 ? mix(sh, G.chest, clamp((z + 0.11) / -0.13, 0, 1)) : mix(G.chest, G.waist, clamp((z + 0.24) / (0.24 - H.torso), 0, 1));   // the torso's cross-section z below the shoulders
+  const nums = (v, n) => Array.isArray(v) && v.length >= n && v.every(Number.isFinite);
+  const shape = (B, q) => {   // one garment shape; anything malformed is skipped
+    const base = q.color === 'skin' ? skin : q.color === 'hair' ? hair : rgb(C[q.color]) || rgb(q.color) || [0.5, 0.5, 0.5], col = base.map(v => v * (Number.isFinite(q.shade) ? q.shade : 1)), d = nums(q.detail, 2) ? q.detail : [4, 8];
+    B.mat = q.mat === 'plain' ? MT.GEN : MT.CLOTH;
+    if (nums(q.blob, 6)) for (const s of q.mirror ? [1, -1] : [1]) B.blob([q.blob[0], s * q.blob[1], q.blob[2]], q.blob[3], q.blob[4], q.blob[5], d[0], d[1], col);
+    else if (nums(q.tube, 4)) { const at = nums(q.at, 2) ? q.at : [0, 0]; B.tube([at[0], at[1], q.tube[0]], [at[0], at[1], q.tube[2]], q.tube[1], q.tube[3], q.sides > 2 ? q.sides : 8, col, !!q.cap); }
+    else if (nums(q.oval, 6)) oval(B, q.oval[0], q.oval[3], [q.oval[1], q.oval[2]], [q.oval[4], q.oval[5]], col, !!q.cap);
+    else if (nums(q.wrap, 3)) oval(B, q.wrap[0], q.wrap[1], grow(sec(q.wrap[0]), q.wrap[2]), grow(sec(q.wrap[1]), q.wrap[3] ?? q.wrap[2]), col, !!q.cap);
+  };
+  // meshBuilder(true): smooth-shaded blobs, so the figure is soft, not faceted
+  const part = (name, body) => { const B = meshBuilder(true); B.mat = MT.GEN; body(B); for (const g of worn) for (const q of (g.parts && g.parts[name]) || []) if (q) shape(B, q); return new Float32Array(B.v); };
+  return {
+    head: part('head', B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.058, 0.055, 8, skin, false); B.blob([0.01, 0, top], 0.122, 0.108, H.head, 4, 8, skin);   // a short neck, a good-sized head
+      for (const y of [-0.106, 0.106]) B.blob([0, y, top - 0.01], 0.022, 0.017, 0.034, 3, 4, skin);   // ears
+      if (Hr.style !== 'none') B.blob([-0.022, 0, top + 0.005], 0.12, 0.113, 0.135, 4, 8, hair);   // hair over the crown, back and sides (the face stays clear)
+      if (Hr.style === 'long') B.blob([-0.085, 0, top - 0.12], 0.068, 0.113, 0.165, 3, 6, hair);   // down to the shoulders
+      if (Hr.style === 'ponytail') B.blob([-0.158, 0, top - 0.08], 0.04, 0.04, 0.12, 3, 5, hair); }),
+    torso: part('torso', B => { oval(B, 0.01, -0.04, [0.07, 0.07], [0.145, 0.095], skin); oval(B, -0.04, -0.11, [0.145, 0.095], sh, skin); oval(B, -0.11, -0.24, sh, G.chest, skin); oval(B, -0.24, -H.torso, G.chest, G.waist, skin, true); }),   // shoulders sloping well down from the neck, chest, waist
+    hips: part('hips', B => B.blob([0, 0, 0], G.hips[1] - 0.008, G.hips[0] - 0.007, 0.112, 4, 8, skin)),
+    upper: part('upper', B => { B.blob([0, 0, -0.02], 0.074, 0.074, 0.092, 4, 8, skin); B.tube([0, 0, -0.04], [0, 0, -H.upper], 0.07, 0.056, 8, skin, true); }),   // a tall soft cap for the shoulder (no flat top), the upper arm below it
+    fore: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.044, 8, skin, false); B.blob([0, 0, -H.fore - 0.04], 0.044, 0.038, 0.06, 4, 6, skin); }),   // elbow, forearm, hand
+    thigh: part('thigh', B => { B.blob([0, 0, 0], 0.094, 0.094, 0.094, 4, 8, skin); B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.094, 0.072, 8, skin, true); }),   // a ball at the hip, so the leg stays whole when it swings out
+    shin: part('shin', B => { B.blob([0, 0, -0.005], 0.076, 0.074, 0.08, 4, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.shin], 0.072, 0.054, 8, skin, false); }),   // knee, shin
+    foot: part('foot', B => { B.blob([0, 0, 0], 0.056, 0.054, 0.05, 3, 6, skin); B.blob([0.055, 0, -H.foot + 0.055], 0.115, 0.058, 0.04, 4, 8, skin); }),   // ankle, foot (the sole is H.foot below the ankle)
+  };
+}
+// A pose: o.mode 'jump' (in the air: o.rise), 'stand' (o.crouch after a landing; moving too: o.swing 0..1 how much, o.gait 0 walk .. 1 jog .. 2 run, o.ph the stride phase, o.stride the metres a whole cycle covers), 'swim' (o.body: body pitch, -pi/2 lying
+// face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet;
+// o.paddle; o.helm). o.rod: the right hand holds a rod out in front. Returns the parts as [part, forward, side, up, pitch, roll, yaw],
+// the right hand and the head centre, all relative to the feet (standing, sitting) under the body's own heading. Every part hangs
+// down from its joint, is rolled out to the side (roll, + to the right), pitched forward (pitch), then turned (yaw): the order the
+// lit shader applies them, so a limb can swing sideways and the shoulders can turn against the hips.
+function humanPose(o) {
+  const H = HUMAN, ph = o.ph || 0, sw = o.swing || 0, out = [], PI = Math.PI;
+  const end = (J, L, pitch, roll = 0, yaw = 0) => { const x = L * Math.cos(roll) * Math.sin(pitch), y = L * Math.sin(roll), z = -L * Math.cos(roll) * Math.cos(pitch), c = Math.cos(yaw), q = Math.sin(yaw); return [J[0] + c * x - q * y, J[1] + q * x + c * y, J[2] + z]; };   // a limb's far end
+  let b = 0, hipZ = 0, headP = 0, twist = 0, turn = 0, sway = 0;   // body pitch; head pitch; shoulders' and hips' yaw; a shift over the standing foot
+  const thigh = [0, 0], shin = [0, 0], foot = [0, 0], up = [0, 0], fore = [0, 0], thR = [0, 0], shR = [0, 0], upR = [0, 0], foR = [0, 0];
+  for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, p = ph + i * PI, s = Math.sin(p);   // i: 0 left, 1 right, half a stride apart
+    if (o.mode === 'swim' && o.tread) { b = o.body ?? -PI / 2; headP = b;   // treading water: a slow flutter kick, the arms out to the sides, sculling
+      thigh[i] = b + 0.5 * Math.sin(ph * 2 + i * PI); shin[i] = thigh[i] - 0.25; foot[i] = shin[i] - 0.7; thR[i] = side * 0.15;
+      up[i] = b + 1.1 + 0.35 * s; fore[i] = up[i] + 0.25; upR[i] = side * 0.55; foR[i] = side * 0.35; }
+    else if (o.mode === 'swim') { b = o.body ?? -PI / 2; headP = b + 0.75;   // breaststroke, head up: both sides together. Angles from the body's line: 0 trails back to the feet, pi reaches past the head
+      const u = ph / 6.2832 % 1, st = (a, z) => { const t = clamp((u - a) / (z - a), 0, 1); return t * t * (3 - 2 * t); }, mix = (x, y, t) => x + (y - x) * t;
+      const pull = st(0, 0.35), tuck = st(0.35, 0.6), reach = st(0.6, 0.78), frog = tuck * (1 - reach);   // pull the water back; hands in under the chin as the knees draw up; shoot the arms forward as the legs kick; glide
+      up[i] = b + mix(mix(PI, 1.1, pull), PI, reach); fore[i] = b + mix(mix(PI, 1.1, pull) - 0.45 * Math.sin(PI * pull) + 1.8 * tuck, PI, reach);
+      upR[i] = side * (0.08 + 0.8 * Math.sin(PI * pull) * (1 - tuck)); foR[i] = upR[i] * 0.6;   // the hands sweep out wide and round on the pull
+      thigh[i] = b + 0.75 * frog; shin[i] = thigh[i] - 1.7 * frog; thR[i] = side * 0.6 * frog; shR[i] = side * 0.25 * frog; foot[i] = shin[i] - 0.9 * (1 - frog); }   // heels up to the seat, knees apart, then the kick; toes pointed on the glide
+    else if (o.mode === 'sit') { b = o.paddle ? -0.12 : 0; hipZ = o.hipZ; headP = b * 0.4;
+      thigh[i] = PI / 2 - 0.1; shin[i] = Math.acos(clamp((hipZ - H.foot) / H.shin, 0, 1)); foot[i] = shin[i]; thR[i] = side * 0.14;   // thighs along the seat, knees a little apart, shins down to the floor (straight out in a kayak)
+      up[i] = o.paddle ? 0.75 + 0.4 * s : 0.45; fore[i] = up[i] + (o.paddle ? 0.5 : 0.9); upR[i] = side * 0.1; foR[i] = -side * 0.12; }
+    else if (o.mode === 'jump') { const r = clamp(o.rise ?? 0, -1, 1), tuck = 1 - Math.abs(r), upw = Math.max(r, 0), dn = Math.max(-r, 0);   // in the air. o.rise: 1 just off the ground .. 0 at the top .. -1 coming down
+      b = -0.12 * upw + 0.06 * dn; headP = b * 0.4;   // thrown forward going up, a touch back coming down
+      thigh[i] = b + 0.15 + 0.85 * tuck + 0.25 * dn + side * 0.12; shin[i] = thigh[i] - 0.15 - 1.35 * tuck - 0.3 * dn; thR[i] = side * (0.04 + 0.08 * dn);   // legs straight off the ground, knees up at the top (one a little ahead), reaching down to land
+      foot[i] = shin[i] - 0.7 * upw - 0.6 * shin[i] * dn;   // toes pointed on the way up, feet levelling for the ground
+      up[i] = b + 0.5 + 1.5 * upw + 0.5 * tuck + 0.3 * dn; fore[i] = up[i] + 0.5 + 0.4 * tuck; upR[i] = side * (0.15 + 0.2 * tuck + 0.5 * dn); foR[i] = upR[i] * 0.5; }   // arms thrown up, then out wide for balance
+    else { const g = clamp(o.gait || 0, 0, 2), G3 = (w, j, r) => g < 1 ? w + (j - w) * g : j + (r - j) * (g - 1), sm = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };   // o.gait 0 walk .. 1 jog .. 2 run: G3(walk, jog, run) blends a setting between them
+      // The legs are driven by the feet. o.stride is the ground one whole cycle (two steps) covers, and the caller advances o.ph by exactly
+      // that, so a foot on the ground goes back under the body just as fast as the body goes forward: it stays where it was put down.
+      const L = o.stride ?? sw * G3(1.3, 2.4, 3.1), T = H.thigh, S2 = H.shin, duty = G3(0.58, 0.36, 0.28), S = duty * L, xF = 0.38 * S, big = Math.min(1, S / 0.3);   // duty: the part of the cycle a foot is down; S: how far it travels under you meanwhile; big: 0 for a shuffle .. 1 a real step
+      const c = Math.cos(p), u = ((p / 6.2832) % 1 + 1) % 1, u0 = ((ph / 6.2832) % 1 + 1) % 1, high = duty / 2 + 0.25 * sm((0.56 - duty) / 0.12), A = big * G3(0.026, 0.045, 0.07);   // the body rises and falls twice a stride: highest over the standing leg walking, in mid-air running
+      const cr = clamp(o.crouch || 0, 0, 1);   // o.crouch: 1 = knees taking a landing, easing back to 0
+      hipZ = H.foot + Math.sqrt(Math.max(0.01, ((T + S2) * 0.985) ** 2 - xF * xF)) - A + A * Math.cos(12.5664 * (u0 - high)) - 0.2 * cr;
+      b = -sw * G3(0.03, 0.1, 0.2) + big * G3(0.02, 0.03, 0.04) * Math.cos(12.5664 * (u0 - high) + 0.9) - 0.3 * cr; headP = -sw * G3(0.03, 0.1, 0.2) * 0.4;   // upright walking, leaning into a jog, well forward at a run, and the chest nods a little as each foot lands; the head stays level
+      const fOn = big * G3(0.3, 0.12, 0), fOff = -big * G3(0.55, 0.75, 0.9); let x, z = H.foot, f;   // the foot's tilt as the heel lands (toes up, walking) and as the toes push off
+      if (u < duty) { const t = u / duty, on = Math.max(0, 1 - t / 0.25); f = fOn * on * on + fOff * sm((t - 0.65) / 0.35); x = xF - t * S;   // on the ground: straight back under the hips, rolling from heel to toe
+        if (f > 0) { x -= 0.07 * (1 - Math.cos(f)); z += 0.07 * Math.sin(f); } else { x += 0.17 * (1 - Math.cos(f)); z -= 0.17 * Math.sin(f); } }   // (the ankle rides up over the heel, then over the toes, which stay put)
+      else { const t = (u - duty) / (1 - duty), e = sm(t), xo = xF - S + 0.17 * (1 - Math.cos(fOff)), zo = -0.17 * Math.sin(fOff), xi = xF - 0.07 * (1 - Math.cos(fOn)), zi = 0.07 * Math.sin(fOn);   // in the air: from where it pushed off to where it lands
+        x = xo + (xi - xo) * e; z += zo + (zi - zo) * e + big * Math.sin(PI * t) * (G3(0.06, 0.12, 0.2) + G3(0, 0.1, 0.25) * (1 - t)); f = fOff + (fOn - fOff) * e - 0.25 * big * Math.sin(PI * t); }   // lifted through, the heel kicked up behind at a run
+      const dz = hipZ - z, D = Math.min(Math.hypot(x, dz), T + S2 - 0.001), ac = v => Math.acos(clamp(v, -1, 1));   // hip to ankle: the knee (always forward) takes up the slack
+      thigh[i] = Math.atan2(x, dz) + ac((T * T + D * D - S2 * S2) / (2 * T * D)); shin[i] = thigh[i] - (PI - ac((T * T + S2 * S2 - D * D) / (2 * T * S2))); foot[i] = f; thR[i] = side * 0.03;
+      const ca = Math.cos(p - 0.3); up[i] = b - sw * G3(0.35, 0.5, 0.85) * ca - 0.35 * cr; fore[i] = up[i] + 0.15 + sw * (G3(0.1, 1.2, 1.45) + G3(0.25, 0.2, 0.3) * (0.5 - 0.5 * ca));   // (the arms trail the legs a touch)   // arms against the legs: long and loose walking, elbows bent to a right angle jogging, pumping at a run
+      upR[i] = side * (0.08 + 0.02 * sw * g); foR[i] = -side * G3(0.04, 0.14, 0.1);
+      if (i) { twist = G3(0.1, 0.14, 0.2) * sw * c; turn = -G3(0.03, 0.04, 0.05) * sw * c; sway = G3(0.02, 0.012, 0.005) * big * Math.sin(6.2832 * (u - duty / 2) + PI / 2); } }   // right leg forward: right shoulder back, right hip forward; a walker's weight shifts over the standing foot
+  }
+  if (o.rod && o.mode !== 'swim') { up[1] = b + 0.45; fore[1] = up[1] + 1.25; upR[1] = 0.06; foR[1] = -0.16; }   // right forearm out in front, the hand in toward the middle, holding the rod
+  const leg = i => { const side = i ? 1 : -1, hipJ = [-side * H.hip * Math.sin(turn), sway + side * H.hip * Math.cos(turn), 0], knee = end(hipJ, H.thigh, thigh[i], thR[i], turn), ankle = end(knee, H.shin, shin[i], shR[i], turn); return { hipJ, knee, ankle }; };
+  if (o.mode === 'jump') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i]))));   // in the air the lowest heel or toe is where your feet are
+  const hip = [0, sway, hipZ], sh = [-Math.sin(b) * H.torso, sway, hipZ + Math.cos(b) * H.torso], arm2 = end(sh, 0.15, b);   // the shoulders: up the (leaning) spine from the hips; arm2: the shoulder joints' height, well below the top of the sloping shoulders
+  out.push(['hips', hip[0], hip[1], hip[2], b, sway * 2, turn], ['torso', sh[0], sh[1], sh[2], b, -sway * 1.5, twist],   // the hips tip and the chest leans a little over the standing foot
+    ['head', sh[0], sh[1], sh[2], headP, 0, twist * 0.3]);
+  let hand = null;
+  for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, L = leg(i), up3 = v => [v[0], v[1], v[2] + hipZ];
+    const J = [arm2[0] - side * H.shoulder * Math.sin(twist), arm2[1] + side * H.shoulder * Math.cos(twist), arm2[2]], elbow = end(J, H.upper, up[i], upR[i], twist);
+    out.push(['thigh', ...up3(L.hipJ), thigh[i], thR[i], turn], ['shin', ...up3(L.knee), shin[i], shR[i], turn], ['foot', ...up3(L.ankle), foot[i], 0, turn],
+      ['upper', ...J, up[i], upR[i], twist], ['fore', ...elbow, fore[i], foR[i], twist]);
+    if (i) hand = end(elbow, H.fore + 0.04, fore[i], foR[i], twist); }
+  const hc = [sh[0] - Math.sin(b) * (H.neck + H.head), sway, sh[2] + Math.cos(b) * (H.neck + H.head)];
+  return { parts: out, hand, head: hc };
+}
+// one part's vertex (x, y, z in its own frame) in the body's frame: the same roll, pitch and yaw the lit shader applies, then the joint offset
+function humanPlace(q, x, y, z) { const cr = Math.cos(q[5] || 0), sr = Math.sin(q[5] || 0), cp = Math.cos(q[4]), sp = Math.sin(q[4]), cy = Math.cos(q[6] || 0), sy = Math.sin(q[6] || 0);
+  const y1 = y * cr - z * sr, z1 = y * sr + z * cr, x2 = x * cp - z1 * sp, z2 = x * sp + z1 * cp; return [q[1] + cy * x2 - sy * y1, q[2] + sy * x2 + cy * y1, q[3] + z2]; }
 </script>
 <script>
 'use strict';
@@ -4328,6 +4449,7 @@ const Engine = {
     if (code === 'KeyV' && !e.repeat && this.boat) this.toggleBoatMode();                       // take the helm / leave it to move about the boat
     if (code === 'KeyC' && !e.repeat && this.boat && this.boatMode === 'deck') this.toggleBoatSit();   // sit down / stand up
     if (code === 'KeyM' && !e.repeat) this.toggleBigMap();
+    if (code === 'KeyK' && !e.repeat) this.toggleView();                                          // first / third person
     if (code === 'KeyN' && !e.repeat && this.showMap) this.seedPress();                       // the map screen's icons: a new island (pick its biome), pin the minimap
     if (code === 'KeyP' && !e.repeat && this.showMap) this.togglePin();
     if ((code === 'Enter' || code === 'NumpadEnter') && !e.repeat && this.showMap) { this.menu = null; this.say('Travelling…', 1); setTimeout(() => this.travel(this.mapCX, this.mapCY, CONFIG.travelSymbol), 30); }   // to the crosshair
@@ -4872,9 +4994,9 @@ Object.assign(Engine, {
   // first water surface along the view ray within 70 m (null if the ground is hit first)
   lookWater() {
     if (this.uw) return null;
-    const P = this.P, cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)], z0 = P.z + EYE;
+    const P = this.P, cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)], E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];   // third person: along the camera's ray, so the crosshair means what it shows
     for (let s = 0.5; s < 70; s += s < 12 ? 0.4 : 1) {
-      const x = P.x + F[0] * s, y = P.y + F[1] * s, z = z0 + F[2] * s; sample(x, y); const g = hW(SE);
+      const x = E[0] + F[0] * s, y = E[1] + F[1] * s, z = E[2] + F[2] * s; sample(x, y); const g = hW(SE);
       if (z < SW && g < SW) return { x, y, dist: s };
       if (z < g) return null;
     }
@@ -5278,7 +5400,7 @@ Object.assign(Engine, {
     const b = this.boat; if (!b) return; const P = this.P, D = b.def; this.boat = null; this.boatMode = 'drive'; b.v = 0; b.oarOn = false; this.boatKick(b, jump ? -1.5 : 0.8, jump ? 0.8 : 0.4);
     if (jump) {   // over the side the way you're facing: clear of the hull, then the usual fall (into the water, or onto the bank)
       const ca = Math.cos(P.a), sa = Math.sin(P.a); let d = 0.6; while (d < D.hull.length_m + 1 && this.boatOver(b, P.x + ca * (d - 0.5), P.y + sa * (d - 0.5))) d += 0.2;
-      P.x += ca * d; P.y += sa * d; P.vz = CONFIG.jumpSpeed; Game.emit('leaveBoat', b); return;
+      P.x += ca * d; P.y += sa * d; P.vz = CONFIG.jumpSpeed * CONFIG.boatJumpFactor; Game.emit('leaveBoat', b); return;
     }
     // step ashore if there's dry land close by, otherwise slip into the water beside the boat
     let best = null, bd = 1e9;
@@ -5814,7 +5936,9 @@ Object.assign(Engine, {
     const swimSp = (run ? CONFIG.swimSprint : CONFIG.swimSpeed) * Game.speedMultiplier;
     const diving = swim && f !== 0 && (under || P.pitch < -0.45);
     const fwd = diving ? f * Math.cos(P.pitch) : f;
-    const sp = (swim ? swimSp : (run ? CONFIG.runSpeed : CONFIG.walkSpeed) * (1 - 0.55 * wade) * Game.speedMultiplier) * dt;
+    this.runT = run && !swim && (f || s) ? (this.runT || 0) + dt : 0;   // how long you've been running: a jog first, a full run after a second and a half
+    const ramp = clamp(this.runT - 1.5, 0, 1), runSp = CONFIG.jogSpeed + (CONFIG.runSpeed - CONFIG.jogSpeed) * ramp * ramp * (3 - 2 * ramp);
+    const sp = (swim ? swimSp : (run ? runSp : CONFIG.walkSpeed) * (1 - 0.55 * wade) * Game.speedMultiplier) * dt;
     const ca = Math.cos(P.a), sa = Math.sin(P.a), mx = (ca * fwd - sa * s) * sp, my = (sa * fwd + ca * s) * sp;
     const feet = swim ? Math.max(P.z, wl0 - 0.5) : P.z;   // swimming: climb out from the surface, so beaches still let you wade ashore
     const inHull = this.boats.length ? this.boatBlocks(P.x, P.y, feet) : null;   // a boat drifted over you (or you came up under one): you can still get out
@@ -5835,6 +5959,7 @@ Object.assign(Engine, {
       if (K.Space && P.z <= floor + 0.05) P.vz = CONFIG.jumpSpeed * (1 - 0.5 * wade);
       P.vz -= CONFIG.gravity * dt; P.z += P.vz * dt;
     }
+    this.airH = swim ? 0 : P.z - floor;   // how far your feet are off the ground (third-person jump pose)
     if (P.z <= floor) { P.z = floor; if (P.vz < 0) P.vz = 0; }
     oSwim = swim; oUnder = under; oWade = wade; oWl = wl0;
     }
@@ -5873,7 +5998,7 @@ Object.assign(Engine, {
       this.emitN(26 + 30 * mk, dt, () => { const a = Math.random() * 6.2832, r = this.rnd(0.8, 8); this.spawn(MOTE, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, P.z + EYE + this.rnd(-3, 3), this.rnd(-0.08, 0.08), this.rnd(-0.08, 0.08), 0, this.rnd(2.5, 5), this.rnd(0.02, 0.045), { top: wl0 - 0.05, col: mk > 0.5 ? [0.55, 0.6, 0.35] : null }); });
     }
     this.torchStep();
-    this.updateFish(dt); this.updateIdleBoats(dt); this.angStep(dt);
+    this.updateFish(dt); this.updateIdleBoats(dt); if (this.thirdP) this.humanStep(dt); this.angStep(dt);
     this.updateTui();
     // what water is under the crosshair (for the HUD and games)
     if ((this.lookT -= dt) <= 0) { this.lookT = 0.12; const h = this.lookWater(); this.look = h ? Object.assign(waterInfo(h.x, h.y), { x: h.x, y: h.y, dist: h.dist }) : null; }
@@ -6519,7 +6644,7 @@ Object.assign(Engine, {
     const cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)];
     const R = [-Math.sin(P.a), Math.cos(P.a), 0];
     const U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
-    const E = [P.x, P.y, P.z + EYE], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const E = this.camE = this.thirdP ? this.camPos(F) : [P.x, P.y, P.z + EYE], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];   // third person: the camera sits behind you (third-person.js)
     const tx = Math.tan(FOV / 2), ty = tx * Hh / W, near = 0.1; this.tanX = tx; this.tanY = ty;
     const view = new Float32Array([R[0], U[0], -F[0], 0, R[1], U[1], -F[1], 0, R[2], U[2], -F[2], 0, -dot(R, E), -dot(U, E), dot(F, E), 1]);
     const proj = new Float32Array([1 / tx, 0, 0, 0, 0, 1 / ty, 0, 0, 0, 0, (FAR + near) / (near - FAR), -1, 0, 0, 2 * FAR * near / (near - FAR), 0]);
@@ -6668,6 +6793,7 @@ Object.assign(Engine, {
       gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0); gl.uniform1f(L.u.hull, 0);
     }
     if (globalThis.Birds) Birds.draw(this, gl, L, E);   // birds: in the air, on the water, on perches and boats
+    if (this.thirdP) this.drawHuman(gl, L);   // you, seen from behind
     if (this.ang && this.ang.out) { this.drawTackle(gl, L, E); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
     // props (static decorations) and pickups, instanced per mesh; the pickup you'd collect pulses
     const drawInst = (m, arr) => { if (!arr.length) return; this.upInst(m, arr); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, arr.length / 6); };
@@ -6741,6 +6867,70 @@ Object.assign(Engine, {
     this.drawOverlay();
   },
 
+});
+</script>
+<script>
+'use strict';
+// Engine: the third-person view (prototype): a camera behind and above you, the low-detail angler (models/human.js) posed for
+// what you're doing, and the rod in that angler's right hand. Off (this.thirdP false), nothing here runs and the view is first person.
+Object.assign(Engine, {
+  toggleView() {
+    this.thirdP = !this.thirdP; this.camD = 0; this.hPose = null;
+    const b = document.getElementById('bView'); if (b) b.querySelector('.ic').textContent = this.thirdP ? '3rd' : '1st';
+    this.say(this.thirdP ? 'Third-person view' : 'First-person view', 1.2);
+  },
+  // the camera: 3.2 m back along the view from just over your head, pulled in so it stays above the ground and on your side of
+  // the water surface (above it while you're above, under it while you dive).
+  // shortcut: ground and water only, not trees, rocks, boat cabins or cave roofs; upgrade to a sphere cast against those
+  camPos(F) {
+    const P = this.P, o = [P.x, P.y, P.z + EYE + 0.35]; sample(o[0], o[1]);
+    const under = o[2] < SW && hW(SE) < SW, D = 3.2; let d = D;
+    for (let s = 0.25; s <= D; s += 0.25) { const x = o[0] - F[0] * s, y = o[1] - F[1] * s, z = o[2] - F[2] * s; sample(x, y); const g = hW(SE), wet = g < SW;
+      if (z < g + 0.3 || (wet && (under ? z > SW - 0.2 : z < SW + 0.2))) { d = s - 0.25; break; } }
+    this.camD = d < (this.camD || 0) ? d : (this.camD || 0) + (d - (this.camD || 0)) * 0.08;   // in at once when something's in the way, back out gently
+    return [o[0] - F[0] * this.camD, o[1] - F[1] * this.camD, o[2] - F[2] * this.camD];
+  },
+  // per frame, before the rod: what you're doing picks the pose; the stride follows how far you've actually moved
+  humanStep(dt) {
+    const P = this.P, b = this.boat, A = this.ang, rod = !!(A && A.out), H = HUMAN;
+    const lx = b ? this.boatLX || 0 : P.x, ly = b ? this.boatLY || 0 : P.y, mx = lx - (this.hLX ?? lx), my = ly - (this.hLY ?? ly), moved = Math.hypot(mx, my); this.hLX = lx; this.hLY = ly;
+    const dist = moved < 3 ? moved : 0, spd = dt > 0 ? dist / dt : 0;   // a jump (travel, boarding) isn't a stride
+    // he faces the way he's going (sideways and backwards too: he turns, he doesn't shuffle), turning smoothly; with the rod out, the way you're looking
+    const going = dist > 0 && spd > 0.3 && !rod, to = going ? Math.atan2(my, mx) + (b ? b.a : 0) : rod || this.hFace === undefined ? P.a : this.hFace, was = this.hFace ?? P.a;
+    this.hFace = was + Math.atan2(Math.sin(to - was), Math.cos(to - was)) * Math.min(1, dt * 10);
+    let o, base = P.z, rot = this.hFace;
+    if (b) { const D = b.def, helm = this.boatMode !== 'deck', sit = helm || this.boatSit, eye = helm ? D.crew.eye_height_m : sit ? (D.hull.cockpit ? D.crew.eye_height_m : 0.95) : 1.62;
+      base = P.z + EYE - eye; if (helm) rot = this.hFace = b.a; else if (sit) rot = this.hFace = P.a;   // feet on the floor (or deck) under the eye the boat code puts you at; at the helm you face the bow
+      this.hAmp = (this.hAmp || 0) + (clamp(spd, 0, 1) - (this.hAmp || 0)) * Math.min(1, dt * 8); const L = spd > 0.05 ? spd / (0.9 + 0.32 * Math.min(spd, 2.6)) : 0;   // on deck you walk
+      this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist * 6.2832 / this.hStride) % 6.2832;
+      o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, stride: this.hStride, ph: this.hPh, rod }; }
+    else if (this.swim) { const go = this.moving; this.hPh = ((this.hPh || 0) + dt * (go ? 3.6 : 1.8)) % 6.2832;   // a breaststroke every 1.75 s
+      o = { mode: 'swim', tread: !go, body: go ? -Math.PI / 2 + (this.under ? clamp(P.pitch, -1.2, 1.2) : 0) : -0.25, ph: this.hPh }; }
+    else if (this.airH > 0.15 || (this.airH > 0.05 && P.vz > 1)) { this.hAir = P.vz; o = { mode: 'jump', rise: P.vz / CONFIG.jumpSpeed, rod }; }   // off the ground (not just a step down a bank): going up, over the top, coming down
+    else { if (this.hAir !== undefined) { this.hCrouch = clamp(-this.hAir / 6, 0.35, 1); this.hAir = undefined; } this.hCrouch = Math.max(0, (this.hCrouch || 0) - dt * 3);   // landed: the knees take it, deeper the harder you came down
+      const M = Game.speedMultiplier, gait = clamp((spd / M - 2.6) / 0.8, 0, 1) + clamp((spd / M - 4.2) / 1, 0, 1);   // by how fast you're really going: walk, jog (about 3.4 to 4.2 m/s), run
+      this.hGait = (this.hGait || 0) + (gait - (this.hGait || 0)) * Math.min(1, dt * 5); this.hAmp = (this.hAmp || 0) + ((spd > 0.3 ? 1 : 0) - (this.hAmp || 0)) * Math.min(1, dt * 8);
+      const g = this.hGait, v = spd / M, rate = g < 1 ? (0.9 + 0.32 * Math.min(v, 2.6)) * (1 - g) + 1.6 * g : 1.6 + 0.15 * (g - 1), L = spd > 0.05 ? v / rate : 0;   // strides a second for this pace, so the ground one stride covers
+      this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist / M * 6.2832 / this.hStride) % 6.2832;   // the stride moves on by exactly the ground covered: planted feet don't slide
+      o = { mode: 'stand', swing: this.hAmp, gait: g, stride: this.hStride, ph: this.hPh, rod, crouch: this.hCrouch }; }
+    const pose = humanPose(o), sm = this.hSm;
+    if (sm && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
+      const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
+      pose.parts.forEach((q, n) => { const w = sm.parts[n]; for (let j = 1; j < 3; j++) q[j] = ease(w[j], q[j]); q[3] = w[3] + (q[3] - w[3]) * Math.min(1, dt * 60); for (let j = 4; j < 7; j++) q[j] = turn(w[j], q[j]); });   // (height follows faster: the rise and fall of each step should show)
+      pose.hand = pose.hand.map((v, j) => ease(sm.hand[j], v)); }
+    this.hSm = { mode: o.mode, parts: pose.parts.map(q => q.slice()), hand: pose.hand.slice() };
+    if (o.mode === 'swim') base = P.z + EYE - (o.tread ? 0.12 : 0.3) - pose.head[2];   // head where the first-person eye is (treading water), or lying low in the water swimming
+    const c = Math.cos(rot), s = Math.sin(rot), w = q => [P.x + c * q[0] - s * q[1], P.y + s * q[0] + c * q[1], base + q[2]];
+    this.hPose = { pose, rot, base, w, hand: w(pose.hand) };
+  },
+  drawHuman(gl, L) {
+    const hp = this.hPose; if (!hp) return;
+    const M = this._hParts || (this._hParts = humanParts(BUILTIN.angler[0], CLIMATE.key, (BUILTIN.clothes[0] || {}).clothes)), P = this.P; sample(P.x, P.y); const wl = SW, mk = WATER[SK].murk;
+    gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.roll, 0);
+    for (const q of hp.pose.parts) { const g = this.tackleGpu('human:' + q[0], () => M[q[0]]), p = hp.w([q[1], q[2], q[3]]);
+      gl.uniform1f(L.u.roll, q[5]); this.upInst(g, [p[0], p[1], p[2], 1, hp.rot + q[6], 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); }   // roll (a limb out to the side), pitch, then the part's own turn on top of your heading
+    gl.uniform1f(L.u.fsh, 0); gl.uniform1f(L.u.roll, 0);
+  },
 });
 </script>
 <script>
@@ -7475,6 +7665,7 @@ Object.assign(Engine, {
     const btn = !H && !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
     const fast = K.ShiftLeft || K.ShiftRight ? 1 : this.reelPull || 0;   // 0..1: Shift is flat out; on touch, how far the Reel button is pulled down
     const eye = [P.x, P.y, P.z + EYE]; A.hand = H ? this.holderHand(H) : this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
+    if (this.thirdP && !helm && !H && this.hPose) A.hand = this.hPose.hand;   // third person: in the angler's right hand
     if (helm) { const cb = Math.cos(bt.a), sb = Math.sin(bt.a), Lh = bt.def.hull.length_m; A.hand = [bt.x - cb * Lh * 0.4 - sb * 0.35, bt.y - sb * Lh * 0.4 + cb * 0.35, bt.z + bt.def.hull.depth_m * 0.75]; }   // at the helm the rod sits in a holder at the stern
     A.t = (A.t || 0) + dt; A.reeling = false;
     if (A.bail && (press || (A.phase !== 'water' && A.phase !== 'bite' && A.phase !== 'flight'))) { A.bail = false; if (A.lure) this.say('Bail closed', 1); }   // turning the handle flips the bail shut
@@ -7502,7 +7693,7 @@ Object.assign(Engine, {
       tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1);
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
     if (H) { ty = H.yaw; tp = HOLDER_PITCH; if (A.phase === 'bite') tb = 0.2 + 0.12 * Math.sin(A.t * (H.on ? 9 : 16)); }   // standing in the holder; the tip nods while something has the bait
-    else if (!helm && A.phase !== 'charge') { const aim = this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
+    else if (!helm && A.phase !== 'charge') { const aim = this.thirdP ? [P.a - 0.08, clamp(0.55 + 0.35 * P.pitch, 0.15, 1.1)] : this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
     const k = 1 - Math.exp(-dt * (A.phase === 'flight' && A.t - A.castAt < 0.25 ? 18 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;
@@ -7988,7 +8179,8 @@ Object.assign(Engine, {
     const d = Math.max(0.3, f.len / (0.9 * tx), f.len / (1.3 * ty)), cp = Math.cos(P.pitch);   // far enough that it fits, whichever way it's turned
     A.cardYaw = (A.cardYaw || 0) + ((K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0)) * dt * 2.4;
     A.cardTilt = clamp((A.cardTilt || 0) + ((K.KeyW || K.ArrowUp ? 1 : 0) - (K.KeyS || K.ArrowDown ? 1 : 0)) * dt * 1.8, -1.4, 1.4);
-    f.x = P.x + Math.cos(P.a) * cp * d; f.y = P.y + Math.sin(P.a) * cp * d; f.z = P.z + EYE + Math.sin(P.pitch) * d;   // dead centre, on the line of sight
+    const E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];   // third person: in front of the camera, the same card
+    f.x = E[0] + Math.cos(P.a) * cp * d; f.y = E[1] + Math.sin(P.a) * cp * d; f.z = E[2] + Math.sin(P.pitch) * d;   // dead centre, on the line of sight
     f.a = P.a + Math.PI / 2 + A.cardYaw; f.pitch = A.cardTilt;
     f.ph = (f.ph + dt * (2 + 3 * Math.max(0, Math.sin(this.time * 1.7)))) % 6.2832; f.open = 0.25 + 0.2 * Math.sin(this.time * 3);
   },
@@ -8025,7 +8217,7 @@ Object.assign(Engine, {
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
     const one = (g, x, y, z, s, rot, wl, mk, pitch) => { this.upInst(g, [x, y, z, s, rot, 0.5, wl, mk, 0, pitch]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); };
     const lvl = rodBendLevel(A.bend), rk = `rod:${A.rigId}:${rv}:${lvl}`;
-    const held = this.boat && this.boatMode === 'deck' && !A.holder;   // in your hands on deck: drawn over the boat, so it can't poke through the hull
+    const held = !this.thirdP && this.boat && this.boatMode === 'deck' && !A.holder;   // in your hands on deck: drawn over the boat, so it can't poke through the hull
     if (held) gl.depthRange(0, 0.1);
     one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
     if (A.holder) { const H = A.holder; one(this.tackleGpu('holder:' + !!H.boat, () => holderMesh(H.up + (H.boat ? 0 : 0.3))), A.hand[0], A.hand[1], A.hand[2], 1, H.yaw, -1e4, 0, 0); }   // the spike or gunwale holder the rod stands in
@@ -8060,7 +8252,7 @@ Object.assign(Engine, {
       c.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`; c.lineWidth = w; c.beginPath(); c.moveTo(pa[0], pa[1]);
       if (pm && sag > 0.01) c.quadraticCurveTo(2 * pm[0] - (pa[0] + pb[0]) / 2, 2 * pm[1] - (pa[1] + pb[1]) / 2, pb[0], pb[1]); else c.lineTo(pb[0], pb[1]); c.stroke();
     };
-    const w = A.S.line.material === 'braid' ? 1.5 : 1.1, P = this.P, E = [P.x, P.y, P.z + EYE];
+    const w = A.S.line.material === 'braid' ? 1.5 : 1.1, P = this.P, E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];
     const px = (x, y, z) => clamp(w * 0.9 / Math.max(0.3, Math.hypot(x - E[0], y - E[1], z - E[2])), 0.5, w);   // thinner with distance
     c.save(); c.lineCap = 'butt'; c.lineJoin = 'round';
     const R = A.rope; if (!R) { c.restore(); return; }
@@ -11018,7 +11210,7 @@ globalThis.Urchin = {
 // built-in fish, boats and tackle: <script type="application/json" data-builtin="fish|boat|tackle"> blocks at the end of this
 // file, one per definition; they're parsed at boot, after the loading screen has painted (parsing hundreds of KB of JSON is quick,
 // but parsing it as JavaScript object literals before the page could draw was not)
-const BUILTIN = { fish: [], boat: [], tackle: [], feature: [], boatparts: [] };   // feature: map features (src/features/*.json)
+const BUILTIN = { fish: [], boat: [], tackle: [], feature: [], boatparts: [], angler: [], clothes: [] };   // feature: map features (src/features/*.json); boatparts: boats/parts.json; angler, clothes: your look in third person (src/angler/*.json)
 function readBuiltins() {
   for (const el of document.querySelectorAll('script[data-builtin]')) {
     try { BUILTIN[el.dataset.builtin].push(JSON.parse(el.textContent)); } catch (e) { console.error('Bad built-in', el.dataset.builtin, 'JSON:', e.message); }
@@ -11077,6 +11269,170 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <!-- built-in fish species, boats and tackle: one JSON block each, the same format as files you drop onto the game -->
+<script type="application/json" data-builtin="angler">
+{
+  "schema": "embercrown-angler/1",
+  "name": "The angler",
+  "skin": "#dba985",
+  "hair": { "style": "short", "color": "#573826" },
+  "outfits": {
+    "temperate": {
+      "wear": ["trousers", "boots", "flannel", "vest", "cap"],
+      "colors": { "hat": "#80946a", "top": "#a13b2f", "vest": "#4a5c33", "bottom": "#333330", "feet": "#3d4733" }
+    },
+    "arctic": {
+      "wear": ["trousers", "boots", "jacket", "beanie"],
+      "colors": { "hat": "#b5412f", "top": "#d58a2c", "gloves": "#2f3a44", "bottom": "#2b2f36", "feet": "#26282b" }
+    },
+    "tropical": {
+      "wear": ["shorts", "sandals", "sunshirt", "sun_hat"],
+      "colors": { "hat": "#dcc48e", "top": "#ece8dc", "bottom": "#3a7ca5", "feet": "#5a3d28" }
+    }
+  }
+}
+</script>
+<script type="application/json" data-builtin="clothes">
+{
+  "schema": "embercrown-clothes/1",
+  "clothes": [
+    { "id": "cap", "name": "Ball cap", "parts": {
+      "head": [
+        {"blob": [0.0, 0.0, 0.2306, 0.1356, 0.1197, 0.099], "detail": [4, 8], "color": "hat"},
+        {"blob": [0.1412, 0.0, 0.225, 0.1073, 0.096, 0.0146], "color": "hat"},
+        {"blob": [0.0, 0.0, 0.3296, 0.0203, 0.0203, 0.0113], "detail": [3, 5], "color": "hat"},
+        {"blob": [-0.1322, 0.0, 0.1856, 0.0136, 0.0452, 0.0146], "detail": [3, 5], "color": "hat"}
+      ]
+    } },
+    { "id": "beanie", "name": "Beanie", "parts": {
+      "head": [
+        {"blob": [-0.0056, 0.0, 0.225, 0.1378, 0.1265, 0.1181], "detail": [4, 8], "color": "hat"},
+        {"tube": [0.2194, 0.1401, 0.1575, 0.1356], "at": [-0.0056, 0.0], "sides": 8, "color": "hat"},
+        {"blob": [-0.0056, 0.0, 0.36, 0.0361, 0.0361, 0.0338], "detail": [3, 5], "color": "hat"}
+      ]
+    } },
+    { "id": "sun_hat", "name": "Sun hat", "parts": {
+      "head": [
+        {"blob": [0.0, 0.0, 0.2362, 0.1288, 0.1175, 0.0956], "detail": [4, 8], "color": "hat"},
+        {"blob": [0.0, 0.0, 0.2047, 0.2824, 0.2824, 0.0135], "detail": [3, 10], "color": "hat"},
+        {"tube": [0.2475, 0.1276, 0.2137, 0.1322], "sides": 8, "color": "hat"}
+      ]
+    } },
+    { "id": "flannel", "name": "Flannel shirt", "parts": {
+      "torso": [
+        {"oval": [0.012, 0.078, 0.078, -0.04, 0.153, 0.103], "color": "top"},
+        {"oval": [-0.04, 0.153, 0.103, -0.11, 0.213, 0.113], "color": "top"},
+        {"wrap": [-0.11, -0.24, 0.008], "color": "top"},
+        {"wrap": [-0.24, -0.52, 0.008], "color": "top", "cap": true},
+        {"oval": [0.04, 0.07, 0.075, -0.012, 0.1, 0.1], "color": "top"}
+      ],
+      "upper": [
+        {"blob": [0, 0, -0.02, 0.082, 0.082, 0.1], "detail": [4, 8], "color": "top"},
+        {"tube": [-0.04, 0.078, -0.3, 0.064], "color": "top", "cap": true}
+      ],
+      "fore": [
+        {"tube": [0.02, 0.064, -0.24, 0.055], "color": "top"},
+        {"tube": [-0.195, 0.066, -0.25, 0.066], "color": "top", "cap": true}
+      ]
+    } },
+    { "id": "vest", "name": "Fishing vest", "parts": {
+      "torso": [
+        {"oval": [-0.02, 0.12, 0.098, -0.11, 0.231, 0.131], "color": "vest"},
+        {"wrap": [-0.11, -0.19, 0.026], "color": "vest"},
+        {"wrap": [-0.19, -0.24, 0.026], "color": "vest"},
+        {"wrap": [-0.24, -0.46, 0.026], "color": "vest"},
+        {"wrap": [-0.46, -0.478, 0.026, 0.004], "color": "vest"},
+        {"blob": [0.157, 0.095, -0.35, 0.022, 0.058, 0.055], "detail": [3, 5], "mirror": true, "color": "vest"},
+        {"blob": [0.173, 0.095, -0.305, 0.01, 0.06, 0.014], "detail": [3, 5], "mirror": true, "color": "vest"},
+        {"blob": [-0.159, 0.095, -0.22, 0.012, 0.017, 0.03], "detail": [3, 4], "mirror": true, "color": "vest"}
+      ]
+    } },
+    { "id": "jacket", "name": "Quilted jacket and gloves", "parts": {
+      "torso": [
+        {"oval": [0.012, 0.08, 0.08, -0.04, 0.18, 0.128], "color": "top"},
+        {"oval": [-0.04, 0.18, 0.128, -0.11, 0.24, 0.14], "color": "top"},
+        {"wrap": [-0.11, -0.16, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.16, -0.21, 0.041, 0.023], "color": "top"},
+        {"wrap": [-0.21, -0.26, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.26, -0.31, 0.041, 0.023], "color": "top"},
+        {"wrap": [-0.31, -0.36, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.36, -0.41, 0.041, 0.023], "color": "top"},
+        {"wrap": [-0.41, -0.46, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.46, -0.51, 0.041, 0.023], "color": "top"},
+        {"wrap": [-0.51, -0.56, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.56, -0.61, 0.041, 0.023], "color": "top", "cap": true},
+        {"oval": [0.06, 0.085, 0.09, 0, 0.125, 0.125], "color": "top"},
+        {"blob": [-0.13, 0, -0.08, 0.085, 0.14, 0.12], "detail": [4, 8], "color": "top"}
+      ],
+      "upper": [
+        {"blob": [0, 0, -0.02, 0.1, 0.1, 0.118], "detail": [4, 8], "color": "top"},
+        {"tube": [-0.04, 0.096, -0.3, 0.08], "color": "top", "cap": true}
+      ],
+      "fore": [
+        {"tube": [0.02, 0.082, -0.24, 0.07], "color": "top"},
+        {"tube": [-0.195, 0.081, -0.25, 0.081], "color": "top", "cap": true},
+        {"blob": [0, 0, -0.31, 0.058, 0.0505, 0.077], "detail": [3, 5], "color": "gloves"}
+      ]
+    } },
+    { "id": "sunshirt", "name": "Sun shirt", "parts": {
+      "torso": [
+        {"oval": [0.012, 0.08, 0.078, -0.04, 0.157, 0.107], "color": "top"},
+        {"oval": [-0.04, 0.157, 0.107, -0.11, 0.217, 0.117], "color": "top"},
+        {"wrap": [-0.11, -0.24, 0.012], "color": "top"},
+        {"wrap": [-0.24, -0.56, 0.012, 0.024], "color": "top", "cap": true},
+        {"oval": [0.045, 0.072, 0.078, -0.012, 0.104, 0.104], "color": "top"},
+        {"blob": [-0.105, 0, -0.05, 0.06, 0.11, 0.09], "color": "top"}
+      ],
+      "upper": [
+        {"blob": [0, 0, -0.02, 0.085, 0.085, 0.102], "detail": [4, 8], "color": "top"},
+        {"tube": [-0.04, 0.081, -0.3, 0.07], "color": "top", "cap": true}
+      ],
+      "fore": [
+        {"blob": [0, 0, 0, 0.07, 0.07, 0.07], "color": "top"},
+        {"tube": [0.02, 0.068, -0.255, 0.058], "color": "top", "cap": true}
+      ]
+    } },
+    { "id": "trousers", "name": "Trousers", "parts": {
+      "hips": [
+        {"blob": [0, 0, 0, 0.146, 0.2, 0.136], "detail": [4, 8], "color": "bottom"}
+      ],
+      "thigh": [
+        {"blob": [0, 0, 0, 0.104, 0.104, 0.104], "detail": [4, 8], "color": "bottom"},
+        {"tube": [0.03, 0.1, -0.4, 0.078], "color": "bottom", "cap": true}
+      ],
+      "shin": [
+        {"tube": [0.02, 0.078, -0.39, 0.063], "color": "bottom"},
+        {"blob": [0, 0, -0.01, 0.085, 0.083, 0.093], "color": "bottom"}
+      ]
+    } },
+    { "id": "shorts", "name": "Shorts", "parts": {
+      "hips": [
+        {"blob": [0, 0, 0, 0.155, 0.21, 0.142], "detail": [4, 8], "color": "bottom"}
+      ],
+      "thigh": [
+        {"blob": [0, 0, 0, 0.12, 0.12, 0.115], "detail": [4, 8], "color": "bottom"},
+        {"tube": [0.03, 0.12, -0.31, 0.128], "color": "bottom"},
+        {"tube": [-0.31, 0.128, -0.3, 0.085], "color": "bottom"}
+      ]
+    } },
+    { "id": "boots", "name": "Wellingtons", "parts": {
+      "shin": [
+        {"tube": [-0.15, 0.083, -0.39, 0.074], "color": "feet", "mat": "plain"},
+        {"tube": [-0.14, 0.089, -0.215, 0.088], "color": "feet", "mat": "plain"}
+      ],
+      "foot": [
+        {"blob": [0, 0, 0, 0.076, 0.074, 0.06], "color": "feet", "mat": "plain"},
+        {"blob": [0.055, 0, -0.03, 0.13, 0.064, 0.05], "color": "feet", "mat": "plain"}
+      ]
+    } },
+    { "id": "sandals", "name": "Sandals", "parts": {
+      "foot": [
+        {"blob": [0.055, 0, -0.068, 0.135, 0.066, 0.012], "color": "feet", "mat": "plain"},
+        {"blob": [0.08, 0, -0.01, 0.02, 0.06, 0.03], "detail": [3, 5], "color": "feet", "mat": "plain"}
+      ]
+    } }
+  ]
+}
+</script>
 <script type="application/json" data-builtin="feature">
 {
   "id": "sea_stacks",

@@ -21,6 +21,8 @@ Do not regenerate fixtures simply to make a failing comparison pass. Intentional
 
 `node tests/boats.mjs` loads the boat definitions and the on-board engine code in Node and checks the oar / paddle stroke (blade in the water on the drive, sweeping aft), the hull heeling toward your weight and settling, and hulls being solid to swimmers and to other boats.
 
+`node tests/human-model.mjs` checks the third-person angler (src/js/models/human.js): every part builds with finite vertices, standing it is 1.7–1.8 m tall with its feet at z = 0, and the stride, swim, seated and rod-holding poses stay sane.
+
 ## Browser image comparisons
 
 Start an isolated headless Chrome instance in a separate terminal:

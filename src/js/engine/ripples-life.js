@@ -11,9 +11,9 @@ Object.assign(Engine, {
   // first water surface along the view ray within 70 m (null if the ground is hit first)
   lookWater() {
     if (this.uw) return null;
-    const P = this.P, cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)], z0 = P.z + EYE;
+    const P = this.P, cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)], E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];   // third person: along the camera's ray, so the crosshair means what it shows
     for (let s = 0.5; s < 70; s += s < 12 ? 0.4 : 1) {
-      const x = P.x + F[0] * s, y = P.y + F[1] * s, z = z0 + F[2] * s; sample(x, y); const g = hW(SE);
+      const x = E[0] + F[0] * s, y = E[1] + F[1] * s, z = E[2] + F[2] * s; sample(x, y); const g = hW(SE);
       if (z < SW && g < SW) return { x, y, dist: s };
       if (z < g) return null;
     }

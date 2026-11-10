@@ -136,3 +136,29 @@ A boat can be a short definition that names a size, a build and what's fitted; t
 | `deck` | `console`, `casting_deck`, `rod_holders`, `fish_finder`, `trolling_motor`, `livewell` (1 spot each), `cabin` (2 spots, medium and large) |
 
 `colors` is optional (the build has its own). To add a boat, put its file in `src/boats/` and a line for it in `src/index.html`, or call `Game.loadBoat(def)`. The older full definitions (`embercrown-boat/1`: every hull dimension spelled out) still work.
+
+## The angler's look
+
+How you look in third-person view (K) is data, in `src/angler/`. `src/js/models/human.js` only draws the bare body, then whatever these two files say is worn.
+
+**`angler.json`**: you.
+
+| Field | Values |
+|---|---|
+| `skin` | a colour, `"#rrggbb"` |
+| `hair.style` | `"short"`, `"long"`, `"ponytail"` or `"none"` |
+| `hair.color` | a colour |
+| `outfits.temperate`, `.arctic`, `.tropical` | what you wear on that kind of island |
+| …`.wear` | a list of garment ids from `clothes.json`, e.g. `["trousers", "boots", "flannel", "vest", "cap"]` |
+| …`.colors` | the colours those garments ask for by name: `hat`, `top`, `vest`, `gloves`, `bottom`, `feet` (one plain colour per garment for now) |
+
+**`clothes.json`**: every garment (`cap`, `beanie`, `sun_hat`, `flannel`, `vest`, `jacket`, `sunshirt`, `trousers`, `shorts`, `boots`, `sandals`). A garment lists shapes for each body part it covers (`head`, `torso`, `hips`, `upper` and `fore` arm, `thigh`, `shin`, `foot`; arms and legs are drawn once per side). Numbers are metres in that part's own frame: x forward, y to the right, z up from the joint (parts hang down, so most z are negative; the head goes up from the neck).
+
+| Shape | Meaning |
+|---|---|
+| `"blob": [x, y, z, rx, ry, rz]` | an ellipsoid; `"mirror": true` repeats it at -y; `"detail": [rings, segments]` |
+| `"tube": [z0, r0, z1, r1]` | a tapered tube down the part; `"at": [x, y]`, `"sides"`, `"cap": true` closes the far end |
+| `"oval": [z0, halfWidth0, halfDepth0, z1, halfWidth1, halfDepth1]` | an oval ring, for the torso |
+| `"wrap": [z0, z1, off0, off1]` | a ring that follows the torso's own shape, standing `off0` (and `off1` at the far end) off the skin |
+
+Every shape has a `"color"`: a name looked up in the outfit's `colors`, or `"skin"`, `"hair"`, or a literal `"#rrggbb"`. `"shade": 0.8` darkens it; `"mat": "plain"` is for things that aren't cloth. To add a garment, add an entry to `clothes.json` and put its id in an outfit's `wear`.

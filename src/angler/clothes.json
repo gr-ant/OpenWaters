@@ -1,0 +1,140 @@
+{
+  "schema": "embercrown-clothes/1",
+  "clothes": [
+    { "id": "cap", "name": "Ball cap", "parts": {
+      "head": [
+        {"blob": [0.0, 0.0, 0.2306, 0.1356, 0.1197, 0.099], "detail": [4, 8], "color": "hat"},
+        {"blob": [0.1412, 0.0, 0.225, 0.1073, 0.096, 0.0146], "color": "hat"},
+        {"blob": [0.0, 0.0, 0.3296, 0.0203, 0.0203, 0.0113], "detail": [3, 5], "color": "hat"},
+        {"blob": [-0.1322, 0.0, 0.1856, 0.0136, 0.0452, 0.0146], "detail": [3, 5], "color": "hat"}
+      ]
+    } },
+    { "id": "beanie", "name": "Beanie", "parts": {
+      "head": [
+        {"blob": [-0.0056, 0.0, 0.225, 0.1378, 0.1265, 0.1181], "detail": [4, 8], "color": "hat"},
+        {"tube": [0.2194, 0.1401, 0.1575, 0.1356], "at": [-0.0056, 0.0], "sides": 8, "color": "hat"},
+        {"blob": [-0.0056, 0.0, 0.36, 0.0361, 0.0361, 0.0338], "detail": [3, 5], "color": "hat"}
+      ]
+    } },
+    { "id": "sun_hat", "name": "Sun hat", "parts": {
+      "head": [
+        {"blob": [0.0, 0.0, 0.2362, 0.1288, 0.1175, 0.0956], "detail": [4, 8], "color": "hat"},
+        {"blob": [0.0, 0.0, 0.2047, 0.2824, 0.2824, 0.0135], "detail": [3, 10], "color": "hat"},
+        {"tube": [0.2475, 0.1276, 0.2137, 0.1322], "sides": 8, "color": "hat"}
+      ]
+    } },
+    { "id": "flannel", "name": "Flannel shirt", "parts": {
+      "torso": [
+        {"oval": [0.012, 0.078, 0.078, -0.04, 0.153, 0.103], "color": "top"},
+        {"oval": [-0.04, 0.153, 0.103, -0.11, 0.213, 0.113], "color": "top"},
+        {"wrap": [-0.11, -0.24, 0.008], "color": "top"},
+        {"wrap": [-0.24, -0.52, 0.008], "color": "top", "cap": true},
+        {"oval": [0.04, 0.07, 0.075, -0.012, 0.1, 0.1], "color": "top"}
+      ],
+      "upper": [
+        {"blob": [0, 0, -0.02, 0.082, 0.082, 0.1], "detail": [4, 8], "color": "top"},
+        {"tube": [-0.04, 0.078, -0.3, 0.064], "color": "top", "cap": true}
+      ],
+      "fore": [
+        {"tube": [0.02, 0.064, -0.24, 0.055], "color": "top"},
+        {"tube": [-0.195, 0.066, -0.25, 0.066], "color": "top", "cap": true}
+      ]
+    } },
+    { "id": "vest", "name": "Fishing vest", "parts": {
+      "torso": [
+        {"oval": [-0.02, 0.12, 0.098, -0.11, 0.231, 0.131], "color": "vest"},
+        {"wrap": [-0.11, -0.19, 0.026], "color": "vest"},
+        {"wrap": [-0.19, -0.24, 0.026], "color": "vest"},
+        {"wrap": [-0.24, -0.46, 0.026], "color": "vest"},
+        {"wrap": [-0.46, -0.478, 0.026, 0.004], "color": "vest"},
+        {"blob": [0.157, 0.095, -0.35, 0.022, 0.058, 0.055], "detail": [3, 5], "mirror": true, "color": "vest"},
+        {"blob": [0.173, 0.095, -0.305, 0.01, 0.06, 0.014], "detail": [3, 5], "mirror": true, "color": "vest"},
+        {"blob": [-0.159, 0.095, -0.22, 0.012, 0.017, 0.03], "detail": [3, 4], "mirror": true, "color": "vest"}
+      ]
+    } },
+    { "id": "jacket", "name": "Quilted jacket and gloves", "parts": {
+      "torso": [
+        {"oval": [0.012, 0.08, 0.08, -0.04, 0.18, 0.128], "color": "top"},
+        {"oval": [-0.04, 0.18, 0.128, -0.11, 0.24, 0.14], "color": "top"},
+        {"wrap": [-0.11, -0.16, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.16, -0.21, 0.041, 0.023], "color": "top"},
+        {"wrap": [-0.21, -0.26, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.26, -0.31, 0.041, 0.023], "color": "top"},
+        {"wrap": [-0.31, -0.36, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.36, -0.41, 0.041, 0.023], "color": "top"},
+        {"wrap": [-0.41, -0.46, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.46, -0.51, 0.041, 0.023], "color": "top"},
+        {"wrap": [-0.51, -0.56, 0.023, 0.041], "color": "top"},
+        {"wrap": [-0.56, -0.61, 0.041, 0.023], "color": "top", "cap": true},
+        {"oval": [0.06, 0.085, 0.09, 0, 0.125, 0.125], "color": "top"},
+        {"blob": [-0.13, 0, -0.08, 0.085, 0.14, 0.12], "detail": [4, 8], "color": "top"}
+      ],
+      "upper": [
+        {"blob": [0, 0, -0.02, 0.1, 0.1, 0.118], "detail": [4, 8], "color": "top"},
+        {"tube": [-0.04, 0.096, -0.3, 0.08], "color": "top", "cap": true}
+      ],
+      "fore": [
+        {"tube": [0.02, 0.082, -0.24, 0.07], "color": "top"},
+        {"tube": [-0.195, 0.081, -0.25, 0.081], "color": "top", "cap": true},
+        {"blob": [0, 0, -0.31, 0.058, 0.0505, 0.077], "detail": [3, 5], "color": "gloves"}
+      ]
+    } },
+    { "id": "sunshirt", "name": "Sun shirt", "parts": {
+      "torso": [
+        {"oval": [0.012, 0.08, 0.078, -0.04, 0.157, 0.107], "color": "top"},
+        {"oval": [-0.04, 0.157, 0.107, -0.11, 0.217, 0.117], "color": "top"},
+        {"wrap": [-0.11, -0.24, 0.012], "color": "top"},
+        {"wrap": [-0.24, -0.56, 0.012, 0.024], "color": "top", "cap": true},
+        {"oval": [0.045, 0.072, 0.078, -0.012, 0.104, 0.104], "color": "top"},
+        {"blob": [-0.105, 0, -0.05, 0.06, 0.11, 0.09], "color": "top"}
+      ],
+      "upper": [
+        {"blob": [0, 0, -0.02, 0.085, 0.085, 0.102], "detail": [4, 8], "color": "top"},
+        {"tube": [-0.04, 0.081, -0.3, 0.07], "color": "top", "cap": true}
+      ],
+      "fore": [
+        {"blob": [0, 0, 0, 0.07, 0.07, 0.07], "color": "top"},
+        {"tube": [0.02, 0.068, -0.255, 0.058], "color": "top", "cap": true}
+      ]
+    } },
+    { "id": "trousers", "name": "Trousers", "parts": {
+      "hips": [
+        {"blob": [0, 0, 0, 0.146, 0.2, 0.136], "detail": [4, 8], "color": "bottom"}
+      ],
+      "thigh": [
+        {"blob": [0, 0, 0, 0.104, 0.104, 0.104], "detail": [4, 8], "color": "bottom"},
+        {"tube": [0.03, 0.1, -0.4, 0.078], "color": "bottom", "cap": true}
+      ],
+      "shin": [
+        {"tube": [0.02, 0.078, -0.39, 0.063], "color": "bottom"},
+        {"blob": [0, 0, -0.01, 0.085, 0.083, 0.093], "color": "bottom"}
+      ]
+    } },
+    { "id": "shorts", "name": "Shorts", "parts": {
+      "hips": [
+        {"blob": [0, 0, 0, 0.155, 0.21, 0.142], "detail": [4, 8], "color": "bottom"}
+      ],
+      "thigh": [
+        {"blob": [0, 0, 0, 0.12, 0.12, 0.115], "detail": [4, 8], "color": "bottom"},
+        {"tube": [0.03, 0.12, -0.31, 0.128], "color": "bottom"},
+        {"tube": [-0.31, 0.128, -0.3, 0.085], "color": "bottom"}
+      ]
+    } },
+    { "id": "boots", "name": "Wellingtons", "parts": {
+      "shin": [
+        {"tube": [-0.15, 0.083, -0.39, 0.074], "color": "feet", "mat": "plain"},
+        {"tube": [-0.14, 0.089, -0.215, 0.088], "color": "feet", "mat": "plain"}
+      ],
+      "foot": [
+        {"blob": [0, 0, 0, 0.076, 0.074, 0.06], "color": "feet", "mat": "plain"},
+        {"blob": [0.055, 0, -0.03, 0.13, 0.064, 0.05], "color": "feet", "mat": "plain"}
+      ]
+    } },
+    { "id": "sandals", "name": "Sandals", "parts": {
+      "foot": [
+        {"blob": [0.055, 0, -0.068, 0.135, 0.066, 0.012], "color": "feet", "mat": "plain"},
+        {"blob": [0.08, 0, -0.01, 0.02, 0.06, 0.03], "detail": [3, 5], "color": "feet", "mat": "plain"}
+      ]
+    } }
+  ]
+}

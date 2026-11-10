@@ -69,7 +69,9 @@ Object.assign(Engine, {
     const swimSp = (run ? CONFIG.swimSprint : CONFIG.swimSpeed) * Game.speedMultiplier;
     const diving = swim && f !== 0 && (under || P.pitch < -0.45);
     const fwd = diving ? f * Math.cos(P.pitch) : f;
-    const sp = (swim ? swimSp : (run ? CONFIG.runSpeed : CONFIG.walkSpeed) * (1 - 0.55 * wade) * Game.speedMultiplier) * dt;
+    this.runT = run && !swim && (f || s) ? (this.runT || 0) + dt : 0;   // how long you've been running: a jog first, a full run after a second and a half
+    const ramp = clamp(this.runT - 1.5, 0, 1), runSp = CONFIG.jogSpeed + (CONFIG.runSpeed - CONFIG.jogSpeed) * ramp * ramp * (3 - 2 * ramp);
+    const sp = (swim ? swimSp : (run ? runSp : CONFIG.walkSpeed) * (1 - 0.55 * wade) * Game.speedMultiplier) * dt;
     const ca = Math.cos(P.a), sa = Math.sin(P.a), mx = (ca * fwd - sa * s) * sp, my = (sa * fwd + ca * s) * sp;
     const feet = swim ? Math.max(P.z, wl0 - 0.5) : P.z;   // swimming: climb out from the surface, so beaches still let you wade ashore
     const inHull = this.boats.length ? this.boatBlocks(P.x, P.y, feet) : null;   // a boat drifted over you (or you came up under one): you can still get out
@@ -90,6 +92,7 @@ Object.assign(Engine, {
       if (K.Space && P.z <= floor + 0.05) P.vz = CONFIG.jumpSpeed * (1 - 0.5 * wade);
       P.vz -= CONFIG.gravity * dt; P.z += P.vz * dt;
     }
+    this.airH = swim ? 0 : P.z - floor;   // how far your feet are off the ground (third-person jump pose)
     if (P.z <= floor) { P.z = floor; if (P.vz < 0) P.vz = 0; }
     oSwim = swim; oUnder = under; oWade = wade; oWl = wl0;
     }
@@ -128,7 +131,7 @@ Object.assign(Engine, {
       this.emitN(26 + 30 * mk, dt, () => { const a = Math.random() * 6.2832, r = this.rnd(0.8, 8); this.spawn(MOTE, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, P.z + EYE + this.rnd(-3, 3), this.rnd(-0.08, 0.08), this.rnd(-0.08, 0.08), 0, this.rnd(2.5, 5), this.rnd(0.02, 0.045), { top: wl0 - 0.05, col: mk > 0.5 ? [0.55, 0.6, 0.35] : null }); });
     }
     this.torchStep();
-    this.updateFish(dt); this.updateIdleBoats(dt); this.angStep(dt);
+    this.updateFish(dt); this.updateIdleBoats(dt); if (this.thirdP) this.humanStep(dt); this.angStep(dt);
     this.updateTui();
     // what water is under the crosshair (for the HUD and games)
     if ((this.lookT -= dt) <= 0) { this.lookT = 0.12; const h = this.lookWater(); this.look = h ? Object.assign(waterInfo(h.x, h.y), { x: h.x, y: h.y, dist: h.dist }) : null; }

@@ -145,6 +145,7 @@
     <button data-k="KeyJ"><span class="ic" data-icon="dock.journal"></span><b>Journal</b></button>
     <button data-k="KeyB"><span class="ic" data-icon="dock.boat"></span><b>Boats</b></button>
     <button id="bRod" data-k="KeyQ"><span class="ic" data-icon="dock.rod"></span><b>Rod</b></button>
+    <button id="bView" class="line" data-k="KeyK"><span class="ic">1st</span><b>View</b></button>
     <button id="bTorch" data-k="KeyL" hidden><span class="ic" data-icon="dock.torch"></span><b>Light</b></button>
   </nav>
   <nav class="tui-rail tui-more" aria-label="Settings and dev tools">
@@ -180,6 +181,7 @@
 <script src="js/shaders/water.js"></script>
 <script src="js/shaders/particles-sky.js"></script>
 <script src="js/models/mesh-builder.js"></script>
+<script src="js/models/human.js"></script>
 <script src="js/models/trees.js"></script>
 <script src="js/models/water-plants.js"></script>
 <script src="js/models/particle-kinds.js"></script>
@@ -220,6 +222,7 @@
 <script src="js/engine/inventory-bag.js"></script>
 <script src="js/engine/sky-light.js"></script>
 <script src="js/engine/render.js"></script>
+<script src="js/engine/third-person.js"></script>
 <script src="js/models/cenote-caves.js"></script>
 <script src="js/engine/overlay.js"></script>
 <script src="js/engine/map.js"></script>
@@ -256,6 +259,8 @@
 <!-- Walking trails and signposts are disabled for now. -->
 <script src="js/boot.js"></script>
 <!-- built-in fish species, boats and tackle: one JSON block each, the same format as files you drop onto the game -->
+<script type="application/json" data-builtin="angler" src="angler/angler.json"></script>
+<script type="application/json" data-builtin="clothes" src="angler/clothes.json"></script>
 <script type="application/json" data-builtin="feature" src="features/sea_stacks.json"></script>
 <script type="application/json" data-builtin="feature" src="features/glaciers.json"></script>
 <script type="application/json" data-builtin="feature" src="features/cenotes.json"></script>
