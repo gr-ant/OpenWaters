@@ -10801,7 +10801,7 @@ Game.on('catch', () => Birds.excite());
     if (T.set.length) { h += '<h4>Out now</h4><ul>';
       for (const tr of T.set) { const [x, y] = anchor(tr); h += `<li class="card slim" style="cursor:default"><span><b>${KINDS[tr.kind].name}</b><br><small>${WATER_KEYS[tr.kd]} · ${tr.ax != null ? 'stake' : 'buoy'} · set ${soaked(tr.h)} ago · ${Math.round(Math.hypot(x - P.x, y - P.y))} m away</small></span></li>`; }
       h += '</ul>'; }
-    return h + `<footer>Pick one, then ${useKey()}. The net stays down until you pull it in with ${haulKey()}. From the bank a pot is tied to a stake; from a boat it hangs under a buoy. ${haulKey()} at the stake or buoy hauls it. Pots fill slowly: leave them an hour or two of game time. They show on the map.</footer>`;
+    return h;
   };
   document.getElementById('tkBody').addEventListener('click', e => { const li = e.target.closest('[data-trap]'); if (!li || performance.now() - (Engine.tackleOpenT || 0) < 350) return;
     const kind = li.dataset.trap, K = KINDS[kind];
