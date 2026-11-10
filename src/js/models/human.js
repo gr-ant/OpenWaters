@@ -2,7 +2,7 @@
 // The angler seen from behind (third-person view): a very low-detail person, just the silhouette. Each part is its own small
 // mesh hanging down -z from its joint (the head sits up +z from the neck), so a pose is only a joint position and a pitch per
 // part: every bend is about the shoulders' side-to-side axis, which is what the instanced fish pitch (ipt) already does.
-const HUMAN = { foot: 0.08, shin: 0.42, thigh: 0.43, torso: 0.52, neck: 0.08, head: 0.12, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
+const HUMAN = { foot: 0.08, shin: 0.39, thigh: 0.4, torso: 0.52, neck: 0.08, head: 0.12, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
 // How the angler looks is data (README.md, "The angler's look"): src/angler/angler.json gives skin, hair and, for each island
 // climate, what's worn and its colours; src/angler/clothes.json gives every garment's shapes. This file only knows the bare body.
 const ANGLER_LOOK = { skin: '#dba985', hair: { style: 'short', color: '#573826' }, outfits: {} };
@@ -68,12 +68,14 @@ function humanPose(o) {
     else if (o.mode === 'sit') { b = o.paddle ? -0.12 : 0; hipZ = o.hipZ;
       thigh[i] = Math.PI / 2 - 0.1; shin[i] = Math.acos(clamp((hipZ - H.foot) / H.shin, 0, 1));   // thighs along the seat, shins down to the floor (straight out in a kayak)
       up[i] = o.paddle ? 0.75 + 0.4 * s : 0.45; fore[i] = up[i] + (o.paddle ? 0.5 : 0.9); }
-    else { b = -0.12 * sw * sw;   // leaning into a run
-      thigh[i] = b + 0.55 * sw * s; shin[i] = thigh[i] - sw * 1.1 * Math.max(0, c);   // the knee folds as the leg comes through
-      up[i] = b - 0.6 * sw * s; fore[i] = up[i] + 0.15 + 0.6 * sw; }
+    else { b = -(0.05 * sw + 0.09 * sw * sw);   // leaning into it, more at a run
+      const p = ph + i * Math.PI, bump = (at, k) => ((1 + Math.cos(p - at)) / 2) ** k;   // a smooth rise and fall centred on a point of the stride
+      thigh[i] = b + sw * (0.5 * s + 0.1);   // the thigh swings a little further forward than back
+      shin[i] = thigh[i] - sw * (1.25 * bump(-0.55, 2) + 0.22 * bump(2.3, 4));   // the knee folds as the leg comes through, and gives a little as the foot takes the weight
+      up[i] = b - 0.55 * sw * s; fore[i] = up[i] + 0.15 + sw * (0.55 + 0.3 * (0.5 - 0.5 * s)); }   // arms swing against the legs, the elbow closing on the way forward
   }
   if (o.mode === 'stand') hipZ = Math.max(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => -d(thigh[i], H.thigh)[1] - x * Math.sin(shin[i]) + (H.shin + H.foot) * Math.cos(shin[i]))));   // the lower boot (heel or toe) on the ground
-  if (o.rod && o.mode !== 'swim') { up[1] = b + 0.3; fore[1] = up[1] + 1.05; }   // right forearm out in front, holding the rod
+  if (o.rod && o.mode !== 'swim') { up[1] = b + 0.45; fore[1] = up[1] + 1.25; }   // right forearm out in front, holding the rod
   const hip = [0, hipZ], sh = [hip[0] - d(b, H.torso)[0], hip[1] - d(b, H.torso)[1]], add = (a, q) => [a[0] + q[0], a[1] + q[1]], arm = add(sh, d(b, 0.15));   // arm: the shoulder joint, well below the top of the sloping shoulders and tucked into the body's side
   out.push(['hips', hip[0], 0, hip[1], b], ['torso', sh[0], 0, sh[1], b], ['head', sh[0], 0, sh[1], b + headUp]);
   let hand = null;
