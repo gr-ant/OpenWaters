@@ -4,7 +4,7 @@
 Object.assign(Engine, {
   toggleView() {
     this.thirdP = !this.thirdP; this.camD = 0; this.hPose = null;
-    const b = document.getElementById('bView'); if (b) b.querySelector('.ic').textContent = this.thirdP ? '3rd' : '1st';
+    const b = document.getElementById('bView'); if (b) b.querySelector('.ic').innerHTML = uiIcon(this.thirdP ? 'dock.view3' : 'dock.view1');   // the picture shows the view you're in
     this.say(this.thirdP ? 'Third-person view' : 'First-person view', 1.2);
   },
   // the camera: 3.2 m back along the view from just over your head, pulled in so it stays above the ground and on your side of
