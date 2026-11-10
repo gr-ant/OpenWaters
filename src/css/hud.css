@@ -113,7 +113,7 @@
   body.touch #hLoc { left: 12px; top: 8px; gap: 8px; }
   body.touch #hCond { left: 14px; top: 58px; transform: none; font-size: 13px; gap: 8px; padding: 4px 12px; border-width: 1.5px; }
   body.touch #hMap { width: 132px; top: 58px; right: 10px; border-width: 2px; }
-  body.mini-on.touch .tui-rail { top: auto; bottom: calc(50% - 230px); transform: none; }
+  body.mini-on.touch .tui-rail { top: 166px; }   /* the pinned minimap sits under the menu button: the rail starts below it */
   body.touch #hStatus { bottom: auto; top: 98px; left: 12px; right: auto; max-width: calc(100vw - 90px); }
   body.touch #hMsg { bottom: 200px; max-width: calc(100vw - 90px); }
   body.touch #hSettings { top: 10px; right: 10px; width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 0; }
