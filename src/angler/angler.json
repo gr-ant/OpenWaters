@@ -6,15 +6,15 @@
   "outfits": {
     "temperate": {
       "wear": ["trousers", "boots", "flannel", "vest", "cap"],
-      "colors": { "hat": "#80946a", "top": "#a13b2f", "accent": "#33262a", "vest": "#4a5c33", "trim": "#cc9433", "bottom": "#333330", "patches": "#242421", "feet": "#3d4733", "band": "#80946a" }
+      "colors": { "hat": "#80946a", "top": "#a13b2f", "vest": "#4a5c33", "bottom": "#333330", "feet": "#3d4733" }
     },
     "arctic": {
       "wear": ["trousers", "boots", "jacket", "beanie"],
-      "colors": { "hat": "#b5412f", "top": "#d58a2c", "accent": "#e9e3d3", "trim": "#2f3a44", "gloves": "#2f3a44", "bottom": "#2b2f36", "patches": "#22262c", "feet": "#26282b", "band": "#e9e3d3" }
+      "colors": { "hat": "#b5412f", "top": "#d58a2c", "gloves": "#2f3a44", "bottom": "#2b2f36", "feet": "#26282b" }
     },
     "tropical": {
       "wear": ["shorts", "sandals", "tank", "sun_hat"],
-      "colors": { "hat": "#dcc48e", "top": "#ece8dc", "trim": "#3a7ca5", "bottom": "#3a7ca5", "feet": "#5a3d28" }
+      "colors": { "hat": "#dcc48e", "top": "#ece8dc", "bottom": "#3a7ca5", "feet": "#5a3d28" }
     }
   }
 }

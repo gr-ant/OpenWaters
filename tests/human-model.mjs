@@ -38,7 +38,7 @@ for (const climate of ['temperate', 'arctic', 'tropical']) { const m = wear[clim
   assert.ok(!mesh(m).has('128,128,128'), `${climate}: every shape found its colour`); assert.ok(count(m) > count(bare), `${climate}: dressed`); }
 for (const g of clothes) for (const [name, list] of Object.entries(g.parts)) { assert.ok(name in bare, `${g.id}: part ${name}`); for (const q of list) assert.ok(['blob', 'tube', 'oval', 'wrap'].filter(k => q[k]).length === 1 && q.color, `${g.id}.${name}: ${JSON.stringify(q)}`); }
 assert.deepEqual([...mesh(wear.tropical, 'upper')], [hex(shipped.skin)], 'tank top: bare arms'); assert.deepEqual([...mesh(wear.tropical, 'fore')], [hex(shipped.skin)], 'tank top: bare forearms');
-assert.ok(mesh(wear.arctic, 'fore').has(hex(shipped.outfits.arctic.colors.gloves)), 'jacket: gloves'); assert.ok(mesh(wear.temperate, 'torso').size >= 4, 'flannel in two colours under the vest');
+assert.ok(mesh(wear.arctic, 'fore').has(hex(shipped.outfits.arctic.colors.gloves)), 'jacket: gloves'); assert.equal(mesh(wear.temperate, 'torso').size, 3, 'plain colours: skin, flannel, vest');
 // a garment made up on the spot, bad shapes skipped, unknown garments ignored
 const odd = ctx.humanParts({ hair: { style: 'ponytail', color: '#ff0000' }, outfits: { x: { wear: ['scarf', 'missing'], colors: { wool: '#00ff00' } } } }, 'x', [{ id: 'scarf', parts: { torso: [{ oval: [0.05, 0.09, 0.09, -0.02, 0.11, 0.11], color: 'wool' }, { blob: ['a'], color: 'wool' }, { tube: [0, 1], color: 'wool' }, null] } }]);
 ok(odd, 'scarf'); assert.ok(mesh(odd, 'torso').has('0,255,0') && mesh(odd, 'head').has('255,0,0'), 'a new garment and hair colour reach the mesh');

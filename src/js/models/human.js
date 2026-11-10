@@ -6,7 +6,7 @@ const HUMAN = { foot: 0.08, shin: 0.42, thigh: 0.43, torso: 0.52, neck: 0.08, he
 // How the angler looks is data (README.md, "The angler's look"): src/angler/angler.json gives skin, hair and, for each island
 // climate, what's worn and its colours; src/angler/clothes.json gives every garment's shapes. This file only knows the bare body.
 const ANGLER_LOOK = { skin: '#dba985', hair: { style: 'short', color: '#573826' }, outfits: {} };
-const HUMAN_BUILD = { shoulder: 0.195, hip: 0.1, chest: [0.2, 0.135], waist: [0.175, 0.125], hips: [0.185, 0.13] };   // [half-width, half-depth] of chest, waist and hips
+const HUMAN_BUILD = { shoulder: 0.185, hip: 0.1, chest: [0.2, 0.135], waist: [0.175, 0.125], hips: [0.185, 0.13] };   // [half-width, half-depth] of chest, waist and hips
 // The part meshes, in the frame above (x forward, y to the right, z up, joint at the origin): the bare body, then each garment
 // worn in this climate drawn over it. A garment lists shapes per body part (all numbers in metres, in that part's frame):
 //   { blob: [x, y, z, rx, ry, rz], detail?: [rings, segments], mirror?: true (again at -y) }    an ellipsoid
@@ -22,7 +22,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
   const worn = (Array.isArray(W.wear) ? W.wear : []).map(id => clothes.find(g => g && g.id === id)).filter(Boolean);
   // an oval ring from height z0 (half-width a0 across the shoulders, half-depth c0 front to back) down to z1 (a1, c1): chests and coats aren't round
   const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 10, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 10 * 6.2832) / (e ? a1 : a0), Math.sin(k / 10 * 6.2832) / (e ? c1 : c0)));
-  const sh = [G.shoulder + 0.01, 0.105], grow = ([a, c], g) => [a + g, c + g], mix = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+  const sh = [G.shoulder + 0.02, 0.105], grow = ([a, c], g) => [a + g, c + g], mix = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
   const sec = z => z > -0.24 ? mix(sh, G.chest, clamp((z + 0.11) / -0.13, 0, 1)) : mix(G.chest, G.waist, clamp((z + 0.24) / (0.24 - H.torso), 0, 1));   // the torso's cross-section z below the shoulders
   const nums = (v, n) => Array.isArray(v) && v.length >= n && v.every(Number.isFinite);
   const shape = (B, q) => {   // one garment shape; anything malformed is skipped
@@ -43,7 +43,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
       if (Hr.style === 'ponytail') B.blob([-0.14, 0, top - 0.07], 0.035, 0.035, 0.11, 3, 5, hair); }),
     torso: part('torso', B => { oval(B, 0.01, -0.04, [0.07, 0.07], [0.145, 0.095], skin); oval(B, -0.04, -0.11, [0.145, 0.095], sh, skin); oval(B, -0.11, -0.24, sh, G.chest, skin); oval(B, -0.24, -H.torso, G.chest, G.waist, skin, true); }),   // shoulders sloping well down from the neck, chest, waist
     hips: part('hips', B => B.blob([0, 0, 0], G.hips[1], G.hips[0], 0.12, 4, 8, skin)),
-    upper: part('upper', B => { B.blob([0, 0, 0], 0.074, 0.074, 0.074, 4, 8, skin); B.tube([0, 0, 0], [0, 0, -H.upper], 0.07, 0.056, 8, skin, true); }),   // a round shoulder, the upper arm
+    upper: part('upper', B => { B.blob([0, 0, -0.02], 0.074, 0.074, 0.092, 4, 8, skin); B.tube([0, 0, -0.04], [0, 0, -H.upper], 0.07, 0.056, 8, skin, true); }),   // a tall soft cap for the shoulder (no flat top), the upper arm below it
     fore: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.044, 8, skin, false); B.blob([0, 0, -H.fore - 0.04], 0.044, 0.038, 0.06, 4, 6, skin); }),   // elbow, forearm, hand
     thigh: part('thigh', B => B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.094, 0.072, 8, skin, true)),
     shin: part('shin', B => { B.blob([0, 0, -0.005], 0.076, 0.074, 0.08, 4, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.shin], 0.072, 0.054, 8, skin, false); B.blob([0.055, 0, fz + 0.055], 0.115, 0.058, 0.04, 4, 8, skin); }),   // knee, shin, foot
@@ -74,7 +74,7 @@ function humanPose(o) {
   }
   if (o.mode === 'stand') hipZ = Math.max(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => -d(thigh[i], H.thigh)[1] - x * Math.sin(shin[i]) + (H.shin + H.foot) * Math.cos(shin[i]))));   // the lower boot (heel or toe) on the ground
   if (o.rod && o.mode !== 'swim') { up[1] = b + 0.3; fore[1] = up[1] + 1.05; }   // right forearm out in front, holding the rod
-  const hip = [0, hipZ], sh = [hip[0] - d(b, H.torso)[0], hip[1] - d(b, H.torso)[1]], add = (a, q) => [a[0] + q[0], a[1] + q[1]], arm = add(sh, d(b, 0.12));   // arm: the shoulder joint, well below the top of the sloping shoulders
+  const hip = [0, hipZ], sh = [hip[0] - d(b, H.torso)[0], hip[1] - d(b, H.torso)[1]], add = (a, q) => [a[0] + q[0], a[1] + q[1]], arm = add(sh, d(b, 0.15));   // arm: the shoulder joint, well below the top of the sloping shoulders and tucked into the body's side
   out.push(['hips', hip[0], 0, hip[1], b], ['torso', sh[0], 0, sh[1], b], ['head', sh[0], 0, sh[1], b + headUp]);
   let hand = null;
   for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, knee = add(hip, d(thigh[i], H.thigh)), elbow = add(arm, d(up[i], H.upper));
