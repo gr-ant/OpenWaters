@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Build "Open Waters.html" from src/: every local <script src> and <link rel="stylesheet"> in src/index.html is
 inlined, in the order listed there. Usage: python3 build.py
-New fish, boat, tackle or song? Add its file and a matching line to src/index.html (order matters: rigs after their parts)."""
-import pathlib, re, sys
+New fish, boat, tackle or song? Add its file and a matching line to src/index.html (order matters: rigs after their parts).
+python3 build.py --shots [name ...] also takes the game's screenshots (electron/shots.js) into Screenshots/auto/."""
+import pathlib, re, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent
 SRC, OUT = ROOT / 'src', ROOT / 'Open Waters.html'
@@ -31,3 +32,10 @@ print(f'Built {OUT.name} from {len(used)} files')
 for p in sorted(SRC.rglob('*')):
     if p.is_file() and (rel := p.relative_to(SRC).as_posix()) != 'index.html' and rel not in used:
         print(f'  warning: {rel} is not listed in src/index.html, so it is not in the build')
+
+if '--shots' in sys.argv:   # screenshots of the fresh build, in Electron (installed by: cd electron && npm install)
+    electron = ROOT / 'electron' / 'node_modules' / '.bin' / 'electron'
+    if not electron.exists():
+        sys.exit('No Electron: run  cd electron && npm install  first')
+    names = [a for a in sys.argv[1:] if a != '--shots']
+    sys.exit(subprocess.run([str(electron), str(ROOT / 'electron' / 'shots.js'), *names], cwd=ROOT / 'electron').returncode)
