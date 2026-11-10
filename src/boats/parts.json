@@ -1,0 +1,52 @@
+{
+  "schema": "embercrown-boatparts/1",
+  "sizes": {
+    "personal": { "name": "Personal", "spots": { "engine": 0, "hull": 0, "deck": 0 }, "mass": 0.35, "turn": 1.0,
+      "hull": { "length_m": 3.9, "beam_m": 0.8, "depth_m": 0.34, "draft_m": 0.1, "floor_m": 0.04 }, "handling": { "stability": 0.4, "waves_max": 0.5, "current_drift": 1 },
+      "helm": { "eye_height_m": 0.85 } },
+    "small": { "name": "Small", "spots": { "engine": 1, "hull": 1, "deck": 1 }, "mass": 1, "turn": 1.0,
+      "hull": { "length_m": 4.4, "beam_m": 1.5, "depth_m": 0.5, "draft_m": 0.12, "floor_m": 0.04 }, "handling": { "stability": 0.65, "waves_max": 0.55, "current_drift": 0.8 },
+      "helm": { "eye_height_m": 1.05, "seat_height": 0.3, "console_height": 0.55 } },
+    "medium": { "name": "Medium", "spots": { "engine": 2, "hull": 2, "deck": 2 }, "mass": 2.2, "turn": 0.85,
+      "hull": { "length_m": 6.2, "beam_m": 2.3, "depth_m": 0.8, "draft_m": 0.28, "floor_m": 0.1 }, "handling": { "stability": 0.8, "waves_max": 1.0, "current_drift": 0.5 },
+      "helm": { "eye_height_m": 1.5, "seat_height": 0.65, "console_height": 0.95, "cabin_height": 1.7 } },
+    "large": { "name": "Large", "spots": { "engine": 3, "hull": 3, "deck": 3 }, "mass": 4.5, "turn": 0.55,
+      "hull": { "length_m": 9.5, "beam_m": 3.3, "depth_m": 1.3, "draft_m": 0.65, "floor_m": 0.18 }, "handling": { "stability": 0.92, "waves_max": 1.7, "current_drift": 0.25 },
+      "helm": { "eye_height_m": 1.65, "seat_height": 0.75, "console_height": 1.0, "cabin_height": 2.0 } }
+  },
+  "builds": {
+    "canoe": { "name": "Canoe", "sizes": ["personal", "small"], "by_hand": "paddle", "helm_at": 0.17, "helm_seat": "thwart", "length": 1.15, "beam": 0.72,
+      "hull": { "bottom": "round", "bow": "pointed", "stern": "pointed", "fullness": 0.45, "sheer_bow_m": 0.22, "sheer_stern_m": 0.2, "decks": { "bow": 0.05, "stern": 0.05 } },
+      "colors": { "hull": "#2e6b4a", "deck": "#d8c8a0", "trim": "#6a4a2a", "interior": "#c8b896", "accent": "#202020" } },
+    "kayak": { "name": "Kayak", "sizes": ["personal"], "by_hand": "double_paddle", "helm_at": 0.4, "helm_seat": "kayak", "length": 1.15, "beam": 0.75,
+      "hull": { "bottom": "round", "bow": "pointed", "stern": "pointed", "fullness": 0.35, "sheer_bow_m": 0.12, "sheer_stern_m": 0.06, "floor_m": 0.02, "cockpit": [0.33, 0.52] },
+      "colors": { "hull": "#d9a020", "deck": "#e8c060", "trim": "#303030", "interior": "#404040", "accent": "#202020" } },
+    "skiff": { "name": "Skiff", "sizes": ["small", "medium"], "by_hand": "oars", "helm_at": 0.12, "helm_seat": "bench",
+      "hull": { "bottom": "flat", "bow": "blunt", "stern": "transom", "transom_width": 0.95, "fullness": 0.9, "sheer_bow_m": 0.1, "sheer_stern_m": 0, "decks": { "bow": 0.06, "stern": 0 } },
+      "colors": { "hull": "#5a6a4a", "bottom": "#8a8e90", "deck": "#9aa0a4", "trim": "#c8ccd0", "interior": "#a8acb0", "accent": "#303030" } },
+    "vee": { "name": "V-hull", "sizes": ["small", "medium", "large"], "by_hand": "oars", "helm_at": 0.12, "helm_seat": "bench",
+      "hull": { "bottom": "vee", "deadrise_deg": 18, "bow": "pointed", "stern": "transom", "transom_width": 0.85, "fullness": 0.55, "sheer_bow_m": 0.22, "sheer_stern_m": 0, "decks": { "bow": 0.12, "stern": 0 } },
+      "colors": { "hull": "#f0f0ec", "bottom": "#27405e", "deck": "#e4e4de", "trim": "#c8ccd0", "interior": "#dcdcd4", "accent": "#27405e" } },
+    "workboat": { "name": "Workboat", "sizes": ["medium", "large"], "by_hand": "oars", "helm_at": 0.2, "helm_seat": "bench",
+      "hull": { "bottom": "vee", "deadrise_deg": 14, "bow": "pointed", "stern": "transom", "transom_width": 0.88, "fullness": 0.6, "sheer_bow_m": 0.5, "sheer_stern_m": 0, "decks": { "bow": 0.12, "stern": 0 } },
+      "colors": { "hull": "#e8e4d8", "bottom": "#7a2a22", "deck": "#c9c4b4", "trim": "#2f4a3a", "interior": "#bdb8a8", "accent": "#2f4a3a" } }
+  },
+  "engines": {
+    "small": { "name": "Small outboard", "spots": 1, "power": 1, "control": 3, "hp": 15, "color": "#2a2a2a" },
+    "medium": { "name": "Medium outboard", "spots": 2, "power": 2, "control": 2, "hp": 70, "color": "#1a1a1e" },
+    "large": { "name": "Large outboard", "spots": 3, "power": 3, "control": 1, "hp": 250, "color": "#f2f2f2" }
+  },
+  "hull_items": {
+    "seat": { "name": "Bench seat", "spots": 1, "seat": { "type": "bench", "height": 0.3 } },
+    "storage": { "name": "Storage locker", "spots": 1, "seat": { "type": "locker", "height": 0.42 } }
+  },
+  "deck_items": {
+    "console": { "name": "Helm console", "spots": 1, "sizes": ["small", "medium", "large"], "console": true },
+    "cabin": { "name": "Wheelhouse", "spots": 2, "sizes": ["medium", "large"], "cabin": true },
+    "casting_deck": { "name": "Casting decks", "spots": 1, "features": { "casting_decks": true } },
+    "rod_holders": { "name": "Rod holders", "spots": 1, "features": { "rod_holders": 4 } },
+    "fish_finder": { "name": "Fish finder", "spots": 1, "features": { "fish_finder": true } },
+    "trolling_motor": { "name": "Trolling motor", "spots": 1, "features": { "trolling_motor": true } },
+    "livewell": { "name": "Livewell", "spots": 1, "features": { "livewell": true } }
+  }
+}

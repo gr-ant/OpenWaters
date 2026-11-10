@@ -112,3 +112,27 @@ See urchin's README for the song format (`A1P5@4q` means measure A, beat 1, inst
 ## Playing options
 
 You can add these to the URL: `#seed-12345` picks a fixed world, and `#climate-…`, `#season-…` and `#weather-…` set the starting conditions.
+
+## Boats from parts
+
+A boat can be a short definition that names a size, a build and what's fitted; the game builds the rest (`src/js/boat-builder.js`). The parts are data, in `src/boats/parts.json`.
+
+```json
+{ "schema": "embercrown-boat/2", "id": "bay_boat", "name": "Bay boat", "size": "medium", "build": "vee",
+  "engines": ["medium"], "hull": ["seat", "storage"], "deck": ["console", "casting_deck"], "colors": { "hull": "#f0f0ec" } }
+```
+
+| | Personal | Small | Medium | Large |
+|---|---|---|---|---|
+| Engine spots | 0 | 1 | 2 | 3 |
+| Hull spots | 0 | 1 | 2 | 3 |
+| Deck spots | 0 | 1 | 2 | 3 |
+
+| Field | Parts |
+|---|---|
+| `build` | `canoe` (personal, small), `kayak` (personal), `skiff` (small, medium), `vee` (small to large), `workboat` (medium, large) |
+| `engines` | `small` (1 spot, power 1, control 3), `medium` (2, 2, 2), `large` (3, 3, 1). Power adds up; control is the average. None: paddled or rowed |
+| `hull` | `seat`, `storage` (1 spot each) |
+| `deck` | `console`, `casting_deck`, `rod_holders`, `fish_finder`, `trolling_motor`, `livewell` (1 spot each), `cabin` (2 spots, medium and large) |
+
+`colors` is optional (the build has its own). To add a boat, put its file in `src/boats/` and a line for it in `src/index.html`, or call `Game.loadBoat(def)`. The older full definitions (`embercrown-boat/1`: every hull dimension spelled out) still work.

@@ -4,13 +4,28 @@ import fs from 'node:fs';
 // Boat logic without a browser: the built-in boats, the oar / paddle stroke, the hull rocking under your weight, hulls being solid.
 // Run from the repository root: node tests/boats.mjs
 const read = p => fs.readFileSync(p, 'utf8');
-const files = ['config', 'world/worldgen', 'models/mesh-builder', 'creatures/fish', 'creatures/cephalopods-shellfish', 'boats'];
+const files = ['config', 'world/worldgen', 'models/mesh-builder', 'creatures/fish', 'creatures/cephalopods-shellfish', 'boats', 'boat-builder'];
 const source = 'var BUILTIN = { fish: [], boat: [], tackle: [], feature: [] }; var Engine = {};\n' + files.map(f => read(`src/js/${f}.js`)).join('\n') + '\n' + read('src/js/engine/on-board.js');
-const api = new Function('location', 'history', 'matchMedia', 'localStorage', source + '\nreturn { BoatDB, Engine, oarPose, oarXform, VS };')(
+const api = new Function('location', 'history', 'matchMedia', 'localStorage', source + '\nBOAT_PARTS = ' + read('src/boats/parts.json') + ';\nreturn { BoatDB, Engine, oarPose, oarXform, VS, buildBoat, MT };')(
   { search: '', hash: '' }, { replaceState() {} }, () => ({ matches: false }), { getItem() { return null; } });
-const { BoatDB, Engine: E, oarPose, oarXform, VS } = api;
+const { BoatDB, Engine: E, oarPose, oarXform, VS, buildBoat, MT } = api;
 for (const [, name] of read('src/index.html').matchAll(/data-builtin="boat" src="([^"]+)"/g)) assert.ok(BoatDB.register(JSON.parse(read(`src/${name}`)), { quiet: true }).def, name);
-assert.ok(BoatDB.list.length >= 8);
+assert.ok(BoatDB.list.length >= 13);
+
+// boats built from parts (boat-builder.js, boats/parts.json): a short definition becomes a whole boat
+{ const B = id => BoatDB.byId[id], short = { id: 't', name: 'T', size: 'medium', build: 'vee' }, why = d => buildBoat(Object.assign({}, short, d)).errors.join('; ');
+  assert.equal(B('pack_canoe').propulsion.type, 'paddle'); assert.equal(B('pack_canoe').features.motor, null);
+  assert.equal(B('skiff').propulsion.type, 'outboard'); assert.equal(B('skiff').features.motors.length, 1); assert.equal(B('skiff').seats.length, 2); assert.equal(B('skiff').features.rod_holders, 4);
+  assert.equal(B('twin_skiff').features.motors.length, 2); assert.equal(B('twin_skiff')._parts.power, B('bay_boat')._parts.power);   // two small engines push as hard as one medium…
+  assert.ok(B('twin_skiff').propulsion.turn_rate > B('bay_boat').propulsion.turn_rate, '…and steer better');
+  assert.ok(B('bay_boat').features.console && B('bay_boat').features.casting_decks && B('bay_boat').seats.some(s => s.type === 'locker'));
+  assert.ok(B('trawler').features.cabin && B('trawler').hull.length_m > B('bay_boat').hull.length_m && B('bay_boat').hull.length_m > B('skiff').hull.length_m);
+  assert.ok(B('bay_boat').propulsion.max_speed_ms > buildBoat(Object.assign({}, short, { engines: ['small'] })).def.propulsion.max_speed_ms, 'more power, more speed');
+  assert.equal(buildBoat(short).def.propulsion.type, 'oars', 'no engine: rowed');
+  assert.match(why({ engines: ['large'] }), /3 spots used, a medium boat has 2/); assert.match(why({ engines: ['small', 'medium'] }), /spots used/); assert.match(why({ hull: ['seat', 'seat', 'seat'] }), /hull: 3 spots/);
+  assert.match(why({ deck: ['cabin', 'rod_holders'] }), /deck: 3 spots/); assert.match(why({ size: 'personal' }), /can't be personal/); assert.match(why({ build: 'raft' }), /build: one of/); assert.match(why({ engines: ['huge'] }), /no part called "huge"/);
+  assert.match(why({ deck: ['console', 'console'] }), /once/); assert.match(buildBoat({ id: 'k', name: 'K', size: 'personal', build: 'kayak', engines: ['small'] }).errors.join(), /1 spots used, a personal boat has 0/);
+  for (const D of BoatDB.list) { const m = D._mesh; let lined = 0; for (let i = 9; i < m.length; i += VS) if (m[i] === MT.GEN || m[i] === MT.WOOD) lined++; assert.equal(lined, 0, `${D.id}: plain surfaces, no grain or strata`); assert.ok(m.every(Number.isFinite), D.id); } }
 
 for (const D of BoatDB.list) {
   // the water shader's table: the waterline beam is inside the gunwale beam everywhere

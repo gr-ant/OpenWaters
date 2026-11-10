@@ -2,7 +2,7 @@
 // built-in fish, boats and tackle: <script type="application/json" data-builtin="fish|boat|tackle"> blocks at the end of this
 // file, one per definition; they're parsed at boot, after the loading screen has painted (parsing hundreds of KB of JSON is quick,
 // but parsing it as JavaScript object literals before the page could draw was not)
-const BUILTIN = { fish: [], boat: [], tackle: [], feature: [] };   // feature: map features (src/features/*.json)
+const BUILTIN = { fish: [], boat: [], tackle: [], feature: [], boatparts: [] };   // feature: map features (src/features/*.json)
 function readBuiltins() {
   for (const el of document.querySelectorAll('script[data-builtin]')) {
     try { BUILTIN[el.dataset.builtin].push(JSON.parse(el.textContent)); } catch (e) { console.error('Bad built-in', el.dataset.builtin, 'JSON:', e.message); }
@@ -31,7 +31,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // generating the island and the first chunks takes a moment: sketch its bones on the loading screen and let that paint first
   { const cv = document.querySelector('#loading canvas'); if (cv) sketchIsland(cv); }
   requestAnimationFrame(() => setTimeout(() => {
-    readBuiltins();
+    readBuiltins(); BOAT_PARTS = BUILTIN.boatparts[0] || null;   // sizes, builds, engines and fittings (boats/parts.json), before the boats that name them
     for (const [list, DB, label] of [[BUILTIN.fish, FishDB, 'fish'], [BUILTIN.boat, BoatDB, 'boat'], [BUILTIN.tackle, TackleDB, 'tackle']]) {   // built-ins, then what this browser has imported (same id: the import wins)
       for (const j of list) for (const d of Array.isArray(j) ? j : [j]) { const r = DB.register(d, { quiet: true }); if (!r.def) console.error(`Built-in ${label} rejected:`, d.id, r.errors); }
     }

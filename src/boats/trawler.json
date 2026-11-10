@@ -1,0 +1,19 @@
+{
+  "schema": "embercrown-boat/2",
+  "id": "trawler",
+  "name": "Trawler",
+  "size": "large",
+  "build": "workboat",
+  "engines": [
+    "large"
+  ],
+  "hull": [
+    "storage",
+    "storage",
+    "seat"
+  ],
+  "deck": [
+    "cabin",
+    "rod_holders"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "schema": "embercrown-boat/2",
+  "id": "bay_boat",
+  "name": "Bay boat",
+  "size": "medium",
+  "build": "vee",
+  "engines": [
+    "medium"
+  ],
+  "hull": [
+    "seat",
+    "storage"
+  ],
+  "deck": [
+    "console",
+    "casting_deck"
+  ]
+}

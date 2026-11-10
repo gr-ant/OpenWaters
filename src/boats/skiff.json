@@ -1,0 +1,16 @@
+{
+  "schema": "embercrown-boat/2",
+  "id": "skiff",
+  "name": "Skiff",
+  "size": "small",
+  "build": "skiff",
+  "engines": [
+    "small"
+  ],
+  "hull": [
+    "seat"
+  ],
+  "deck": [
+    "rod_holders"
+  ]
+}
