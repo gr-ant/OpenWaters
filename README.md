@@ -119,7 +119,6 @@ You can add these to the URL: `#seed-12345` picks a fixed world, and `#climate-â
 
 | Field | Values |
 |---|---|
-| `build` | `"male"` or `"female"`: shoulder, waist and hip widths, and how thick the limbs are |
 | `skin` | a colour, `"#rrggbb"` |
 | `hair.style` | `"short"`, `"long"`, `"ponytail"` or `"none"` |
 | `hair.color` | a colour |

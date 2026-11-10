@@ -4,15 +4,14 @@
 // part: every bend is about the shoulders' side-to-side axis, which is what the instanced fish pitch (ipt) already does.
 const HUMAN = { foot: 0.08, shin: 0.42, thigh: 0.43, torso: 0.52, neck: 0.08, head: 0.12, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
 // How the angler looks: src/angler/angler.json (README.md, "The angler's look") laid over these defaults. Colours are "#rrggbb";
-// a null cap or vest leaves it off. build picks the proportions below: [half-width, half-depth] of chest, waist and hips.
-const ANGLER_LOOK = { build: 'male', skin: '#dba985', hair: { style: 'short', color: '#573826' },
+// a null cap or vest leaves it off.
+const ANGLER_LOOK = { skin: '#dba985', hair: { style: 'short', color: '#573826' },
   outfit: { cap: '#80946a', shirt: '#80946a', vest: '#4a5c33', trim: '#cc9433', trousers: '#333330', patches: '#242421', boots: '#3d4733', boot_band: '#80946a' } };
-const HUMAN_BUILD = { male: { shoulder: 0.205, hip: 0.1, chest: [0.2, 0.135], waist: [0.175, 0.125], hips: [0.185, 0.13], limb: 1 },
-  female: { shoulder: 0.18, hip: 0.105, chest: [0.175, 0.13], waist: [0.145, 0.11], hips: [0.195, 0.135], limb: 0.88 } };
+const HUMAN_BUILD = { shoulder: 0.205, hip: 0.1, chest: [0.2, 0.135], waist: [0.175, 0.125], hips: [0.185, 0.13], limb: 1 };   // [half-width, half-depth] of chest, waist and hips
 // the part meshes, in the frame above: x forward, y to the right, z up, joint at the origin
 function humanParts(look) {
-  const K = Object.assign({}, ANGLER_LOOK, look), O = Object.assign({}, ANGLER_LOOK.outfit, K.outfit), Hr = Object.assign({}, ANGLER_LOOK.hair, K.hair), G = HUMAN_BUILD[K.build] || HUMAN_BUILD.male, H = HUMAN, l = G.limb;
-  H.shoulder = G.shoulder; H.hip = G.hip;   // the pose hangs the arms and legs at this build's widths
+  const K = Object.assign({}, ANGLER_LOOK, look), O = Object.assign({}, ANGLER_LOOK.outfit, K.outfit), Hr = Object.assign({}, ANGLER_LOOK.hair, K.hair), G = HUMAN_BUILD, H = HUMAN, l = G.limb;
+  H.shoulder = G.shoulder; H.hip = G.hip;   // the pose hangs the arms and legs at these widths
   const rgb = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h) ? [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255) : null;
   const skin = rgb(K.skin) || [0.86, 0.66, 0.52], hair = rgb(Hr.color) || [0.34, 0.22, 0.15], shirt = rgb(O.shirt) || [0.5, 0.58, 0.4], trim = rgb(O.trim) || [0.8, 0.58, 0.2], cap = rgb(O.cap), vest = rgb(O.vest);
   const pants = rgb(O.trousers) || [0.2, 0.2, 0.19], patch = rgb(O.patches) || pants, boot = rgb(O.boots) || [0.24, 0.28, 0.2], band = rgb(O.boot_band) || boot;

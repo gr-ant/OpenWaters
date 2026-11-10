@@ -1,7 +1,6 @@
 {
   "schema": "embercrown-angler/1",
   "name": "The angler",
-  "build": "male",
   "skin": "#dba985",
   "hair": { "style": "short", "color": "#573826" },
   "outfit": {
