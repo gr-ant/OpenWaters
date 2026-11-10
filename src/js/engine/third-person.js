@@ -41,6 +41,13 @@ Object.assign(Engine, {
           o.reachL = [x - 0.23 - sx, oy - 0.13 * Math.cos(turn) - sy, up + top - 0.1 - 0.13 * Math.sin(turn)]; o.reachR = this.hThr > 0 ? [x - 0.125 - sx, oy + w * 0.75 - sy, up + top + 0.165] : [x - 0.23 - sx, oy + 0.13 * Math.cos(turn) - sy, up + top - 0.1 + 0.13 * Math.sin(turn)]; }
         else if (F.cabin) { o.reachL = [0.42, -0.15, hip + 0.32]; o.reachR = this.hThr > 0 ? [0.4, 0.34, hip + 0.4] : [0.42, 0.15, hip + 0.32]; }   // a wheel in the wheelhouse, a throttle beside it
         else o.reachR = [-0.05, 0.3, hip + 0.22 + (this.hThr > 0 ? 0.03 : 0)];   // a tiller beside you, its grip twisted for more or less
+      }
+      const O = D._oars; if (b.oarOn && O) {   // rowing or paddling: hands on the grips, wherever the stroke has the oars or paddle this frame (oarPose, boats.js)
+        const S = D._shape, st = clamp(D.crew.seat_at, 0, 1), sx = S.x(st), sy = -(D.crew.seat_side || 0) * S.hb(st), up = b.z - base, m = this.hOarM || (this.hOarM = new Float32Array(12));
+        const at = (sd, q) => { oarPose(D, O, b.oarPh ? b.oarPh[sd > 0 ? 0 : 1] : 0, b.oarK || 0, sd, true, m); return [m[0] * q[0] + m[3] * q[1] + m[6] * q[2] + m[9] - sx, m[1] * q[0] + m[4] * q[1] + m[7] * q[2] + m[10] - sy, m[2] * q[0] + m[5] * q[1] + m[8] * q[2] + m[11] + up]; };   // a point on the oar, boat frame -> the figure's
+        if (O.kind === 'oars') { o.reachR = at(1, [0, -0.5, 0]); o.reachL = at(-1, [0, -0.5, 0]); }   // each hand on its oar's handle (the inboard end)
+        else if (O.kind === 'double') { o.reachR = at(1, [0, 0.35, 0]); o.reachL = at(1, [0, -0.35, 0]); }   // either side of the middle of the shaft
+        else { o.reachR = at(1, [0, 0, 0.15]); o.reachL = at(1, [0, 0, 0.45]); o.twist = 0.4; o.lean = 0.25; }   // single blade: the right hand low on the shaft, the left up it, turned and leaning toward the paddle side
       } }
     else if (this.swim) { const go = this.moving; this.hPh = ((this.hPh || 0) + dt * (go ? 3.6 : 1.8)) % 6.2832;   // a breaststroke every 1.75 s
       o = { mode: 'swim', tread: !go, body: go ? -Math.PI / 2 + (this.under ? clamp(P.pitch, -1.2, 1.2) : 0) : -0.25, ph: this.hPh }; }
@@ -57,8 +64,8 @@ Object.assign(Engine, {
     if (rod && !A.holder && (A.phase === 'charge' || A.phase === 'fight' || (A.phase === 'flight' && A.t - A.castAt < 0.6) || (A.reelS || 0) > 0.05)) { o.hands2 = true; if (A.reeling || A.phase === 'fight') o.crank = A.crank || 0; }   // both hands to cast; the left one winds
     if (rod && !A.holder && A.setT !== undefined && A.t - A.setT < 0.9) { const su = A.t - A.setT; o.castW = Math.max(o.castW || 0, 0.75 * (1 - Math.exp(-su * 30)) * Math.exp(-su * 3.5)); o.hands2 = true; }   // setting the hook: both hands, the rod swept up and back
     const pose = humanPose(o), sm = this.hSm;
-    if (sm && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
-      const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
+    if (sm && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop (rowing: quickly, so the hands keep up with the oars)
+      const k = Math.min(1, dt * (this.boat && this.boat.oarOn ? 80 : 24)), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
       pose.parts.forEach((q, n) => { const w = sm.parts[n]; for (let j = 1; j < 3; j++) q[j] = ease(w[j], q[j]); q[3] = w[3] + (q[3] - w[3]) * Math.min(1, dt * 60); for (let j = 4; j < 7; j++) q[j] = turn(w[j], q[j]); });   // (height follows faster: the rise and fall of each step should show)
       pose.hand = pose.hand.map((v, j) => ease(sm.hand[j], v)); }
     this.hSm = { mode: o.mode, parts: pose.parts.map(q => q.slice()), hand: pose.hand.slice() };
