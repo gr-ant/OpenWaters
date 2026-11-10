@@ -2,7 +2,7 @@
 // The angler seen from behind (third-person view): a very low-detail person, just the silhouette. Each part is its own small
 // mesh hanging down -z from its joint (the head sits up +z from the neck), so a pose is only a joint position and a pitch per
 // part: every bend is about the shoulders' side-to-side axis, which is what the instanced fish pitch (ipt) already does.
-const HUMAN = { foot: 0.08, shin: 0.39, thigh: 0.4, torso: 0.52, neck: 0.08, head: 0.12, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
+const HUMAN = { foot: 0.08, shin: 0.39, thigh: 0.4, torso: 0.52, neck: 0.045, head: 0.135, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
 // How the angler looks is data (README.md, "The angler's look"): src/angler/angler.json gives skin, hair and, for each island
 // climate, what's worn and its colours; src/angler/clothes.json gives every garment's shapes. This file only knows the bare body.
 const ANGLER_LOOK = { skin: '#dba985', hair: { style: 'short', color: '#573826' }, outfits: {} };
@@ -36,11 +36,11 @@ function humanParts(look, climate = 'temperate', clothes = []) {
   // meshBuilder(true): smooth-shaded blobs, so the figure is soft, not faceted
   const part = (name, body) => { const B = meshBuilder(true); B.mat = MT.GEN; body(B); for (const g of worn) for (const q of (g.parts && g.parts[name]) || []) if (q) shape(B, q); return new Float32Array(B.v); };
   return {
-    head: part('head', B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.055, 0.05, 6, skin, false); B.blob([0.01, 0, top], 0.108, 0.094, H.head, 4, 6, skin);
-      for (const y of [-0.093, 0.093]) B.blob([0, y, top - 0.01], 0.02, 0.016, 0.03, 3, 4, skin);   // ears
-      if (Hr.style !== 'none') B.blob([-0.02, 0, top + 0.005], 0.106, 0.099, 0.12, 4, 6, hair);   // hair over the crown, back and sides (the face stays clear)
-      if (Hr.style === 'long') B.blob([-0.075, 0, top - 0.11], 0.06, 0.1, 0.15, 3, 6, hair);   // down to the shoulders
-      if (Hr.style === 'ponytail') B.blob([-0.14, 0, top - 0.07], 0.035, 0.035, 0.11, 3, 5, hair); }),
+    head: part('head', B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.058, 0.055, 8, skin, false); B.blob([0.01, 0, top], 0.122, 0.108, H.head, 4, 8, skin);   // a short neck, a good-sized head
+      for (const y of [-0.106, 0.106]) B.blob([0, y, top - 0.01], 0.022, 0.017, 0.034, 3, 4, skin);   // ears
+      if (Hr.style !== 'none') B.blob([-0.022, 0, top + 0.005], 0.12, 0.113, 0.135, 4, 8, hair);   // hair over the crown, back and sides (the face stays clear)
+      if (Hr.style === 'long') B.blob([-0.085, 0, top - 0.12], 0.068, 0.113, 0.165, 3, 6, hair);   // down to the shoulders
+      if (Hr.style === 'ponytail') B.blob([-0.158, 0, top - 0.08], 0.04, 0.04, 0.12, 3, 5, hair); }),
     torso: part('torso', B => { oval(B, 0.01, -0.04, [0.07, 0.07], [0.145, 0.095], skin); oval(B, -0.04, -0.11, [0.145, 0.095], sh, skin); oval(B, -0.11, -0.24, sh, G.chest, skin); oval(B, -0.24, -H.torso, G.chest, G.waist, skin, true); }),   // shoulders sloping well down from the neck, chest, waist
     hips: part('hips', B => B.blob([0, 0, 0], G.hips[1] - 0.008, G.hips[0] - 0.007, 0.112, 4, 8, skin)),
     upper: part('upper', B => { B.blob([0, 0, -0.02], 0.074, 0.074, 0.092, 4, 8, skin); B.tube([0, 0, -0.04], [0, 0, -H.upper], 0.07, 0.056, 8, skin, true); }),   // a tall soft cap for the shoulder (no flat top), the upper arm below it

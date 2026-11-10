@@ -2139,7 +2139,7 @@ const norm3 = a => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l
 // The angler seen from behind (third-person view): a very low-detail person, just the silhouette. Each part is its own small
 // mesh hanging down -z from its joint (the head sits up +z from the neck), so a pose is only a joint position and a pitch per
 // part: every bend is about the shoulders' side-to-side axis, which is what the instanced fish pitch (ipt) already does.
-const HUMAN = { foot: 0.08, shin: 0.39, thigh: 0.4, torso: 0.52, neck: 0.08, head: 0.12, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
+const HUMAN = { foot: 0.08, shin: 0.39, thigh: 0.4, torso: 0.52, neck: 0.045, head: 0.135, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
 // How the angler looks is data (README.md, "The angler's look"): src/angler/angler.json gives skin, hair and, for each island
 // climate, what's worn and its colours; src/angler/clothes.json gives every garment's shapes. This file only knows the bare body.
 const ANGLER_LOOK = { skin: '#dba985', hair: { style: 'short', color: '#573826' }, outfits: {} };
@@ -2173,11 +2173,11 @@ function humanParts(look, climate = 'temperate', clothes = []) {
   // meshBuilder(true): smooth-shaded blobs, so the figure is soft, not faceted
   const part = (name, body) => { const B = meshBuilder(true); B.mat = MT.GEN; body(B); for (const g of worn) for (const q of (g.parts && g.parts[name]) || []) if (q) shape(B, q); return new Float32Array(B.v); };
   return {
-    head: part('head', B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.055, 0.05, 6, skin, false); B.blob([0.01, 0, top], 0.108, 0.094, H.head, 4, 6, skin);
-      for (const y of [-0.093, 0.093]) B.blob([0, y, top - 0.01], 0.02, 0.016, 0.03, 3, 4, skin);   // ears
-      if (Hr.style !== 'none') B.blob([-0.02, 0, top + 0.005], 0.106, 0.099, 0.12, 4, 6, hair);   // hair over the crown, back and sides (the face stays clear)
-      if (Hr.style === 'long') B.blob([-0.075, 0, top - 0.11], 0.06, 0.1, 0.15, 3, 6, hair);   // down to the shoulders
-      if (Hr.style === 'ponytail') B.blob([-0.14, 0, top - 0.07], 0.035, 0.035, 0.11, 3, 5, hair); }),
+    head: part('head', B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.058, 0.055, 8, skin, false); B.blob([0.01, 0, top], 0.122, 0.108, H.head, 4, 8, skin);   // a short neck, a good-sized head
+      for (const y of [-0.106, 0.106]) B.blob([0, y, top - 0.01], 0.022, 0.017, 0.034, 3, 4, skin);   // ears
+      if (Hr.style !== 'none') B.blob([-0.022, 0, top + 0.005], 0.12, 0.113, 0.135, 4, 8, hair);   // hair over the crown, back and sides (the face stays clear)
+      if (Hr.style === 'long') B.blob([-0.085, 0, top - 0.12], 0.068, 0.113, 0.165, 3, 6, hair);   // down to the shoulders
+      if (Hr.style === 'ponytail') B.blob([-0.158, 0, top - 0.08], 0.04, 0.04, 0.12, 3, 5, hair); }),
     torso: part('torso', B => { oval(B, 0.01, -0.04, [0.07, 0.07], [0.145, 0.095], skin); oval(B, -0.04, -0.11, [0.145, 0.095], sh, skin); oval(B, -0.11, -0.24, sh, G.chest, skin); oval(B, -0.24, -H.torso, G.chest, G.waist, skin, true); }),   // shoulders sloping well down from the neck, chest, waist
     hips: part('hips', B => B.blob([0, 0, 0], G.hips[1] - 0.008, G.hips[0] - 0.007, 0.112, 4, 8, skin)),
     upper: part('upper', B => { B.blob([0, 0, -0.02], 0.074, 0.074, 0.092, 4, 8, skin); B.tube([0, 0, -0.04], [0, 0, -H.upper], 0.07, 0.056, 8, skin, true); }),   // a tall soft cap for the shoulder (no flat top), the upper arm below it
@@ -10664,24 +10664,24 @@ window.addEventListener('DOMContentLoaded', () => {
   "clothes": [
     { "id": "cap", "name": "Ball cap", "parts": {
       "head": [
-        {"blob": [0, 0, 0.245, 0.12, 0.106, 0.088], "detail": [4, 8], "color": "hat"},
-        {"blob": [0.125, 0, 0.24, 0.095, 0.085, 0.013], "color": "hat"},
-        {"blob": [0, 0, 0.333, 0.018, 0.018, 0.01], "detail": [3, 5], "color": "hat"},
-        {"blob": [-0.117, 0, 0.205, 0.012, 0.04, 0.013], "detail": [3, 5], "color": "hat"}
+        {"blob": [0.0, 0.0, 0.2306, 0.1356, 0.1197, 0.099], "detail": [4, 8], "color": "hat"},
+        {"blob": [0.1412, 0.0, 0.225, 0.1073, 0.096, 0.0146], "color": "hat"},
+        {"blob": [0.0, 0.0, 0.3296, 0.0203, 0.0203, 0.0113], "detail": [3, 5], "color": "hat"},
+        {"blob": [-0.1322, 0.0, 0.1856, 0.0136, 0.0452, 0.0146], "detail": [3, 5], "color": "hat"}
       ]
     } },
     { "id": "beanie", "name": "Beanie", "parts": {
       "head": [
-        {"blob": [-0.005, 0, 0.24, 0.122, 0.112, 0.105], "detail": [4, 8], "color": "hat"},
-        {"tube": [0.235, 0.124, 0.18, 0.12], "at": [-0.005, 0], "sides": 8, "color": "hat"},
-        {"blob": [-0.005, 0, 0.36, 0.032, 0.032, 0.03], "detail": [3, 5], "color": "hat"}
+        {"blob": [-0.0056, 0.0, 0.225, 0.1378, 0.1265, 0.1181], "detail": [4, 8], "color": "hat"},
+        {"tube": [0.2194, 0.1401, 0.1575, 0.1356], "at": [-0.0056, 0.0], "sides": 8, "color": "hat"},
+        {"blob": [-0.0056, 0.0, 0.36, 0.0361, 0.0361, 0.0338], "detail": [3, 5], "color": "hat"}
       ]
     } },
     { "id": "sun_hat", "name": "Sun hat", "parts": {
       "head": [
-        {"blob": [0, 0, 0.25, 0.114, 0.104, 0.085], "detail": [4, 8], "color": "hat"},
-        {"blob": [0, 0, 0.222, 0.25, 0.25, 0.012], "detail": [3, 10], "color": "hat"},
-        {"tube": [0.26, 0.113, 0.23, 0.117], "sides": 8, "color": "hat"}
+        {"blob": [0.0, 0.0, 0.2362, 0.1288, 0.1175, 0.0956], "detail": [4, 8], "color": "hat"},
+        {"blob": [0.0, 0.0, 0.2047, 0.2824, 0.2824, 0.0135], "detail": [3, 10], "color": "hat"},
+        {"tube": [0.2475, 0.1276, 0.2137, 0.1322], "sides": 8, "color": "hat"}
       ]
     } },
     { "id": "flannel", "name": "Flannel shirt", "parts": {
