@@ -7670,33 +7670,44 @@ Object.assign(Engine, {
     if (helm) { const cb = Math.cos(bt.a), sb = Math.sin(bt.a), Lh = bt.def.hull.length_m; A.hand = [bt.x - cb * Lh * 0.4 - sb * 0.35, bt.y - sb * Lh * 0.4 + cb * 0.35, bt.z + bt.def.hull.depth_m * 0.75]; }   // at the helm the rod sits in a holder at the stern
     A.t = (A.t || 0) + dt; A.reeling = false;
     if (A.bail && (press || (A.phase !== 'water' && A.phase !== 'bite' && A.phase !== 'flight'))) { A.bail = false; if (A.lure) this.say('Bail closed', 1); }   // turning the handle flips the bail shut
-    let tp = 0.36 + 0.3 * P.pitch, ty = P.a - 0.38, tb = 0;   // where the rod wants to point (up and across the view), and how much it bends
+    let tp = 0.36 + 0.3 * P.pitch, ty = P.a - 0.38, tb = 0, dp = 0, dyw = 0;   // where the rod wants to point (up and across the view), how much it bends, and small moves on top of the aim (the cast's follow-through, the rhythm of reeling)
     const L = A.lure;
     if (A.phase === 'ready') {
       if (A.baitLeft <= 0 && S.bait) { A.baitLeft = S.bait.lasts; this.say(`Fresh ${S.bait.name.toLowerCase()} on the hook`, 1.5); }
-      if (press && !this.showMap) { A.phase = 'charge'; A.charge = 0; }
+      if (press && !this.showMap) { A.phase = 'charge'; A.charge = 0; A.stroke = null; }
     } else if (A.phase === 'charge') {
-      A.charge = Math.min(1, A.charge + dt / 1.05); tp = 1.55 + 0.35 * A.charge; tb = 0.25 * A.charge;
-      if (release) this.castLure();
+      const back = 1.3 + 0.6 * A.charge * A.charge * (3 - 2 * A.charge);   // the rod drawn back over your shoulder, further the longer you hold
+      if (A.stroke == null) { A.charge = Math.min(1, A.charge + dt / 1.05); tp = back; ty = P.a - 0.38 - 0.14 * A.charge; tb = 0.1 + 0.22 * A.charge;   // wind-up: back and a little out to the side, the tip loaded by the lure hanging behind
+        if (release) A.stroke = 0; }
+      else { A.stroke += dt; const u = Math.min(1, A.stroke / 0.15); tp = back + (0.85 - back) * u * u; tb = 0.3 + 0.5 * A.charge * Math.sin(Math.PI * Math.min(1, u * 1.15));   // the forward stroke: the rod whips through, bent deep against the lure, and lets it go as it comes past upright
+        if (u >= 1) { A.stroke = null; this.castLure(); } }
     } else if (A.phase === 'flight') {
-      tp = 0.15 + 0.2 * P.pitch; this.lureFlight(dt, press);
+      const ft = A.t - A.castAt; tp = 0.15 + 0.2 * P.pitch; dp = -0.5 * Math.exp(-ft * 5); tb = 0.16 * Math.exp(-ft * 7) * Math.abs(Math.sin(ft * 34));   // follow-through: the tip carries on down toward the water and quivers as it unloads
+      this.lureFlight(dt, press);
     } else if (A.phase === 'water' || A.phase === 'bite') {
       const ah = Math.atan2(L.y - A.hand[1], L.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.15, -0.5, 0.4);
       tp = 0.2 + 0.2 * P.pitch; tb = A.phase === 'bite' ? 0.15 + 0.1 * Math.sin(A.t * 30) * (A.nibT > 0 ? 1 : 0) : clamp(0.02 + (btn ? 0.05 : 0) + (A.overS || 0) * 1.2 + (A.flow || 0) * 0.08, 0, 0.45);
       this.lureWater(dt, btn, fast);
       // the line load jumps about frame to frame (current, swell, a boat under you): the blank answers to its average, not every flicker
       A.overS = (A.overS || 0) + ((A.over || 0) - (A.overS || 0)) * (1 - Math.exp(-dt * 3));
-      if (A.phase === 'water') tb = clamp(A.overS * 1.2 + (A.flow || 0) * 0.04 * sstep(0, 0.1, A.overS), 0, 0.55);
+      // What bends the rod with no fish on is only what the line is dragging: the lure through the water (winding, a current, the boat
+      // towing it) and how hard you're winding. A lure sinking in deep water on a tight line hangs nearly dead weight, so the rod stays easy.
+      A.reelS = (A.reelS || 0) + ((btn ? 0.5 + 0.5 * fast : 0) - (A.reelS || 0)) * (1 - Math.exp(-dt * 6));
+      const drag = clamp((L.spd || 0) / 2.5, 0, 1), most = 0.04 + 0.2 * drag + 0.14 * A.reelS + (A.flow || 0) * 0.03;
+      if (A.phase === 'water') { tb = Math.min(most, Math.max(A.overS * 1.2, 0.5 * most * A.reelS)) + (S.lure ? 0.025 * S.lure.action * drag * Math.sin(A.t * 42) : 0);   // (a working lure throbs in the tip)
+        if (btn) { A.crank = (A.crank || 0) + dt * (7 + 9 * fast); dp = 0.014 * Math.sin(A.crank); dyw = 0.008 * Math.cos(A.crank); }   // the rod rocks a touch with each turn of the handle…
+        dp -= 0.05 * A.reelS; }   // …and dips toward the line while you wind
       if (A.phase === 'bite') { if (!(H && H.on)) this.biteStep(dt, press, btn); }   // a fish that set itself on the holder rod is held by rod-holder.js
       else if ((A.scanT = (A.scanT || 0) - dt) <= 0) { A.scanT = 0.25; this.lureScan(); }
     } else if (A.phase === 'fight') {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
-      tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1);
+      tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') { tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1); if (btn) { A.crank = (A.crank || 0) + dt * (5 + 6 * fast); dp = 0.05 * Math.sin(A.crank * 0.6); } }   // pump and wind: the rod lifts and drops as you gain line
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
     if (H) { ty = H.yaw; tp = HOLDER_PITCH; if (A.phase === 'bite') tb = 0.2 + 0.12 * Math.sin(A.t * (H.on ? 9 : 16)); }   // standing in the holder; the tip nods while something has the bait
     else if (!helm && A.phase !== 'charge') { const aim = this.thirdP ? [P.a - 0.08, clamp(0.55 + 0.35 * P.pitch, 0.15, 1.1)] : this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
-    const k = 1 - Math.exp(-dt * (A.phase === 'flight' && A.t - A.castAt < 0.25 ? 18 : 7));
+    tp += dp; ty += dyw;
+    const k = 1 - Math.exp(-dt * (A.phase === 'charge' && A.stroke != null ? 34 : A.phase === 'flight' && A.t - A.castAt < 0.25 ? 18 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;
     this.rodFlexStep(dt, tb);
     A.tip = this.rodTip(A);
