@@ -50,6 +50,9 @@ for (const [gait, stride] of [[0, 0.5], [0, 1.4], [1, 2.4], [2, 3.1]]) for (cons
   for (const j of [up, top, down]) assert.ok(Math.abs(j.lo) < 0.03, `jump: feet are the lowest point (${j.lo})`);
   assert.ok(up.knee < 0.5 && top.knee > 1.4 && down.knee < 1, `knees: ${up.knee} ${top.knee} ${down.knee}`); assert.ok(up.arm > 1.6 && down.out > up.out + 0.3, `arms up, then out: ${up.arm} ${up.out} ${down.out}`);
   const hipOf = o => ctx.humanPose(o).parts[0][3]; assert.ok(hipOf({ mode: 'stand', crouch: 1 }) < hipOf({ mode: 'stand' }) - 0.15 && Math.abs(bounds(ctx.humanPose({ mode: 'stand', crouch: 1 })).lo[2]) < 0.03, 'landing: the hips drop, the feet stay down'); }
+// casting: wound back, the rod hand is up, back and out to the right; following through, it's out in front and lower
+{ const hand = o => ctx.humanPose(Object.assign({ mode: 'stand', rod: true }, o)).hand, rest = hand({}), back = hand({ castW: 1 }), thru = hand({ castF: 1 });
+  assert.ok(back[2] > rest[2] + 0.25 && back[0] < rest[0] - 0.1 && back[1] > rest[1] + 0.05, `wound back: ${back} from ${rest}`); assert.ok(thru[0] > rest[0] + 0.05 && thru[2] < back[2], `follow-through: ${thru}`); bounds(ctx.humanPose({ mode: 'stand', rod: true, castW: 1 })); }
 // three gaits: a walker's arms hang long and a foot is always down; a jogger's elbows are bent; a runner lifts the knee highest and leaves the ground
 { const G = g => { let elbow = 0, knee = -9, air = 0; for (let ph = 0; ph < 6.3; ph += 0.05) { const P = ctx.humanPose({ mode: 'stand', swing: 1, gait: g, ph }), by = n => P.parts.filter(q => q[0] === n);
     elbow = Math.max(elbow, by('fore')[0][4] - by('upper')[0][4]); knee = Math.max(knee, by('thigh')[1][4]); air = Math.max(air, bounds(P).lo[2]); } return { elbow, knee, air }; }, w = G(0), j = G(1), r = G(2);

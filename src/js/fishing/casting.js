@@ -20,13 +20,14 @@ Object.assign(Engine, {
       if (A.baitLeft <= 0 && S.bait) { A.baitLeft = S.bait.lasts; this.say(`Fresh ${S.bait.name.toLowerCase()} on the hook`, 1.5); }
       if (press && !this.showMap) { A.phase = 'charge'; A.charge = 0; A.stroke = null; }
     } else if (A.phase === 'charge') {
-      const back = 1.3 + 0.6 * A.charge * A.charge * (3 - 2 * A.charge);   // the rod drawn back over your shoulder, further the longer you hold
-      if (A.stroke == null) { A.charge = Math.min(1, A.charge + dt / 1.05); tp = back; ty = P.a - 0.38 - 0.14 * A.charge; tb = 0.1 + 0.22 * A.charge;   // wind-up: back and a little out to the side, the tip loaded by the lure hanging behind
+      const c = A.charge * A.charge * (3 - 2 * A.charge), back = 1.15 + 0.5 * c, side = P.a - 0.38 - 0.5 * c;   // the rod drawn back and well out to the right (a three-quarter cast), further the longer you hold
+      if (A.stroke == null) { A.charge = Math.min(1, A.charge + dt / 1.05); tp = back; ty = side; tb = 0.1 + 0.22 * A.charge;   // wind-up: the tip loaded by the lure hanging behind
         if (release) A.stroke = 0; }
-      else { A.stroke += dt; const u = Math.min(1, A.stroke / 0.15); tp = back + (0.85 - back) * u * u; tb = 0.3 + 0.5 * A.charge * Math.sin(Math.PI * Math.min(1, u * 1.15));   // the forward stroke: the rod whips through, bent deep against the lure, and lets it go as it comes past upright
+      else { A.stroke += dt; const u = Math.min(1, A.stroke / 0.26), e = u * u * u * (u * (u * 6 - 15) + 10);   // the forward stroke, eased in and out: one sweep from back-right round to the front
+        tp = back + (0.8 - back) * e; ty = side + (P.a - 0.2 - side) * e; tb = 0.3 + 0.5 * A.charge * Math.sin(Math.PI * Math.min(1, u * 1.1));   // bent deep against the lure, which goes as the rod comes past upright
         if (u >= 1) { A.stroke = null; this.castLure(); } }
     } else if (A.phase === 'flight') {
-      const ft = A.t - A.castAt; tp = 0.15 + 0.2 * P.pitch; dp = -0.5 * Math.exp(-ft * 5); tb = 0.16 * Math.exp(-ft * 7) * Math.abs(Math.sin(ft * 34));   // follow-through: the tip carries on down toward the water and quivers as it unloads
+      const ft = A.t - A.castAt; tp = 0.15 + 0.2 * P.pitch; dp = -0.45 * Math.exp(-ft * 3.2); dyw = -0.1 * Math.exp(-ft * 3.2); tb = 0.16 * Math.exp(-ft * 7) * Math.abs(Math.sin(ft * 34));   // follow-through: the tip carries on down toward the water and quivers as it unloads
       this.lureFlight(dt, press);
     } else if (A.phase === 'water' || A.phase === 'bite') {
       const ah = Math.atan2(L.y - A.hand[1], L.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.15, -0.5, 0.4);
@@ -51,7 +52,7 @@ Object.assign(Engine, {
     else if (!helm && A.phase !== 'charge') { const aim = this.thirdP ? [P.a - 0.08, clamp(0.55 + 0.35 * P.pitch, 0.15, 1.1)] : this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
     tp += dp; ty += dyw;
-    const k = 1 - Math.exp(-dt * (A.phase === 'charge' && A.stroke != null ? 34 : A.phase === 'flight' && A.t - A.castAt < 0.25 ? 18 : 7));
+    const k = 1 - Math.exp(-dt * (A.phase === 'charge' && A.stroke != null ? 24 : A.phase === 'flight' && A.t - A.castAt < 0.5 ? 10 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;
     this.rodFlexStep(dt, tb);
     A.tip = this.rodTip(A);

@@ -52,7 +52,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
 }
 // A pose: o.mode 'jump' (in the air: o.rise), 'stand' (o.crouch after a landing; moving too: o.swing 0..1 how much, o.gait 0 walk .. 1 jog .. 2 run, o.ph the stride phase, o.stride the metres a whole cycle covers), 'swim' (o.body: body pitch, -pi/2 lying
 // face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet;
-// o.paddle; o.helm). o.rod: the right hand holds a rod out in front. Returns the parts as [part, forward, side, up, pitch, roll, yaw],
+// o.paddle; o.helm). o.rod: the right hand holds a rod out in front (o.castW, o.castF: casting). Returns the parts as [part, forward, side, up, pitch, roll, yaw],
 // the right hand and the head centre, all relative to the feet (standing, sitting) under the body's own heading. Every part hangs
 // down from its joint, is rolled out to the side (roll, + to the right), pitched forward (pitch), then turned (yaw): the order the
 // lit shader applies them, so a limb can swing sideways and the shoulders can turn against the hips.
@@ -98,7 +98,9 @@ function humanPose(o) {
       upR[i] = side * (0.08 + 0.02 * sw * g); foR[i] = -side * G3(0.04, 0.14, 0.1);
       if (i) { twist = G3(0.1, 0.14, 0.2) * sw * c; turn = -G3(0.03, 0.04, 0.05) * sw * c; sway = G3(0.02, 0.012, 0.005) * big * Math.sin(6.2832 * (u - duty / 2) + PI / 2); } }   // right leg forward: right shoulder back, right hip forward; a walker's weight shifts over the standing foot
   }
-  if (o.rod && o.mode !== 'swim') { up[1] = b + 0.45; fore[1] = up[1] + 1.25; upR[1] = 0.06; foR[1] = -0.16; }   // right forearm out in front, the hand in toward the middle, holding the rod
+  if (o.rod && o.mode !== 'swim') { const w = clamp(o.castW || 0, 0, 1), f = clamp(o.castF || 0, 0, 1);   // right forearm out in front, the hand in toward the middle, holding the rod
+    up[1] = b + 0.45 + 0.75 * w + 0.45 * f; fore[1] = up[1] + 1.25 + 0.9 * w - 0.75 * f; upR[1] = 0.06 + 0.5 * w + 0.12 * f; foR[1] = -0.16 + 0.35 * w;   // casting (o.castW wound back 0..1, o.castF following through 0..1): the arm lifts back and out to the right, then reaches forward
+    twist += 0.32 * w - 0.22 * f; if (o.mode === 'stand') b -= 0.08 * f; }   // the shoulders turn with it, and he leans into the throw
   const leg = i => { const side = i ? 1 : -1, hipJ = [-side * H.hip * Math.sin(turn), sway + side * H.hip * Math.cos(turn), 0], knee = end(hipJ, H.thigh, thigh[i], thR[i], turn), ankle = end(knee, H.shin, shin[i], shR[i], turn); return { hipJ, knee, ankle }; };
   if (o.mode === 'jump') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i]))));   // in the air the lowest heel or toe is where your feet are
   const hip = [0, sway, hipZ], sh = [-Math.sin(b) * H.torso, sway, hipZ + Math.cos(b) * H.torso], arm2 = end(sh, 0.15, b);   // the shoulders: up the (leaning) spine from the hips; arm2: the shoulder joints' height, well below the top of the sloping shoulders
