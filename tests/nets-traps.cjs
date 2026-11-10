@@ -4,7 +4,7 @@ const store = {}, said = [], listeners = {}, hud = [], map = [], cards = [];
 const ctx = { console, Math, JSON, Date, performance, isFinite, Object, Float32Array, Uint32Array, Uint16Array, Int32Array, Map, Set,
   localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = v; } },
   document: { getElementById: () => ({ addEventListener() {} }), createElement: () => ({ hidden: false, innerHTML: '', addEventListener(n, f) { this.onclick = f; } }), body: { appendChild(e) { cards.push(e); } } }, cards, sample() {}, hW: () => -2.2, SE: 0, SW: -0.2,
-  CONFIG: { saveName: 't', saveProgress: true }, SEED: 5, CLIMATE: { key: 'temperate' }, WATER_KEYS: ['sea', 'lake', 'pond', 'river', 'creek'], FISH_CELL: 16,
+  clamp: (v, a, b) => Math.max(a, Math.min(b, v)), CONFIG: { saveName: 't', saveProgress: true }, SEED: 5, CLIMATE: { key: 'temperate' }, WATER_KEYS: ['sea', 'lake', 'pond', 'river', 'creek'], FISH_CELL: 16,
   Controls: { key: () => 'F' }, uiIcon: n => `<svg ${n}/>`,
   FishDB: { list: [{ id: 'blue_crab', name: 'Blue crab', body: { plan: 'crab' }, size: { length_cm: { typical: 15 } } }, { id: 'american_lobster', name: 'American lobster', body: { plan: 'lobster' }, size: { length_cm: { typical: 25 } } }] },
   cellFish: (cx, cy) => [0, 1, 0, 1].map((si, k) => ({ si, id: `x@${cx},${cy}.0#0.${k}`, hx: cx * 16 + 4 + k, hy: cy * 16 + 8, size: { cm: 14 + k, kg: 0.2 } })),
@@ -21,7 +21,7 @@ var Game = { MT, player: { x: 0, y: 0, z: 0, a: 0 }, lookingAt: null, swimming: 
   addProp(mesh, x, y, o) { if (!Engine.meshData[mesh]) throw new Error('no mesh ' + mesh); const p = Object.assign({ mesh, x, y }, o); Engine.props.push(p); return p; },
   on(n, f) { (L[n] = L[n] || []).push(f); }, emit(n, ...a) { for (const f of L[n] || []) f(...a); }, onHud(f) { hud.push(f); }, onMap(f) { map.push(f); },
   say(t) { said.push(t); }, sound() {}, splash() {}, ripple() {}, disturb() {},
-  isWater: (x, y) => x > 3, groundAt: () => 0, waterAt: (x, y) => ({ level: -0.2, ground: -2.2, depth: x > 3 ? 2 : 0, kindId: 0, iced: false }),
+  isWater: (x, y) => x > 3, groundAt: x => x > 3 ? -2.2 : 0, waterAt: (x, y) => ({ level: -0.2, ground: -2.2, depth: x > 3 ? 2 : 0, kindId: 0, iced: false }),
   fishNear: (x, y, r) => Engine.fish.filter(f => Math.hypot(f.x - x, f.y - y) <= r) };
 `, Object.assign(ctx, { L: listeners, hud, map, said }));
 vm.runInContext(fs.readFileSync(R + 'fishing/nets-traps.js', 'utf8'), ctx);
@@ -29,7 +29,7 @@ vm.runInContext(`
 const A = (c, m) => { if (!c) throw new Error('FAIL ' + m); }, T = Engine.traps, step = (dt, h = 0) => { Engine.time += dt; Engine.dtH = h; Game.emit('update', dt); };
 const run = (sec, h = 0) => { for (let t = 0; t < sec - 1e-9; t += 0.05) step(0.05, h * 0.05 / sec); }, R = () => Game.emit('key', 'KeyR'), pose = n => Engine.props.find(p => p.mesh === n);
 Game.emit('ready');
-A(Object.keys(Engine.meshData).length === 6, 'six meshes');
+A(Object.keys(Engine.meshData).length === 5, 'five meshes');
 Engine.action(); A(Engine.based, 'plain Use falls through');
 // crab pot from the bank: it flies out in an arc, lands, then sinks to the bed on its rope
 T.hand = 'crab_pot'; Engine.action(); A(T.fly.length === 1 && !T.set.length && Engine.props.length === 1, 'pot in the air');
@@ -62,20 +62,25 @@ A(T.set.length === 2 && T.set.every(t => t.ax === null) && T.hand === null && /n
 T.hand = 'lobster_cage'; Engine.action(); A(/All 2 are out/.test(said.at(-1)), 'no third');
 T.hand = null; run(3); Engine.action(); A(T.set.some(t => t.pull), 'Use hauls at a buoy'); run(1.7); A(T.set.length === 1, 'one up'); if (T.card) key('KeyE');
 A(JSON.parse(localStorage.getItem('engine-traps-t-5')).set.length === 1, 'saved one');
-// cast net: seen bundled in your hand; thrown, it opens and stays down until R; what was under it is held there, then comes in with it
+// cast net: a soft thing. In your hand it hangs gathered and swings; thrown, it spins open; it settles on the bed and stays until R; it trails closed as it comes in
 Engine.boat = null; Game.player.x = 0; const small = { id: 'm1', x: 5.5, y: 0.3, z: -1, lengthCm: 8, weightKg: 0.01, species: 'mummichog', name: 'Mummichog', def: { body: {} } };
 Engine.fish = [small, { id: 'big', x: 5.4, y: 0, z: -1, lengthCm: 80, weightKg: 4, species: 'pike', name: 'Pike', def: { body: {} } }];
-T.hand = 'cast_net'; step(0.05); A(T.held && pose('cast_net') === T.held && T.held.scale < 0.3, 'the net in your hand'); const inHand = T.held;
-const r0 = Math.random; Math.random = () => 0.1; Engine.action(); A(T.net && T.net.stage === 'fly' && T.net.prop === inHand && !T.held, 'the bundle in your hand is what flies: ' + said.at(-1));
-run(0.4); A(pose('cast_net').scale > 0.5 && pose('cast_net').z > -0.2 && T.act && T.act.toss > 0, 'opening in the air'); run(0.5); A(T.net.stage === 'down' && small.hooked === 'net' && Engine.fish.length === 2, 'down over the small fish, which is held under it');
-Math.random = r0; run(5); A(T.net && T.net.stage === 'down' && pose('cast_net').z < -1, 'it stays down, on the bottom, until you pull'); A(Engine.contextKeys()[0][1] === 'Haul net' && Engine.trapUseLabel() === 'Haul', 'haul hints');
-hud.forEach(f => f()); A(/pull it in/.test(Engine.hudDetail), 'hud says how'); const lines = []; Game.project = (x, y, z) => [x, z]; hud.forEach(f => f({ save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, quadraticCurveTo() { lines.push(1); }, stroke() {} })); A(lines.length === 2, 'the hand line is drawn out to the net');
-R(); run(0.5); A(T.net && T.net.stage === 'haul' && pose('cast_net').scale < 1 && T.act && T.act.pull !== undefined && Math.abs(small.x - pose('cast_net').x) < 0.3, 'coming in, gathered up, the catch with it');
-run(0.6); A(!T.net && T.card && T.card.gear === 'Cast net' && T.card.items.length === 1 && !pose('cast_net'), 'net up: a card for the catch'); step(0.05); A(!T.held, 'hands full until you decide');
+const spread = () => Math.max(...T.cn.p.map(p => Math.hypot(p[0] - T.cn.hub[0], p[1] - T.cn.hub[1], p[2] - T.cn.hub[2]))), flat = () => Math.max(...T.cn.p.map(p => Math.hypot(p[0] - T.cn.hub[0], p[1] - T.cn.hub[1]))), finite = () => T.cn.p.every(p => p.every(Number.isFinite)) && T.cn.hub.every(Number.isFinite);
+T.hand = 'cast_net'; run(1.5); A(T.cn && finite() && spread() <= 0.46 && T.cn.p.every(p => p[2] < T.cn.hub[2] - 0.2), 'in hand: gathered, hanging below the hand: ' + spread());
+const x0 = T.cn.p[0][0]; Game.player.x = 0.6; step(0.05); A(Math.abs(T.cn.p[0][0] - x0) < 0.55, 'the weights lag as you move: it swings'); Game.player.x = 0; run(1);
+const lines = []; Game.project = (x, y, z) => [x, z]; const pen = { save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() { lines.push(1); }, quadraticCurveTo() { lines.push('rope'); }, stroke() {}, arc() { lines.push('lead'); }, fill() {} };
+hud.forEach(f => f(pen)); A(lines.filter(l => l === 1).length === 40 && lines.filter(l => l === 'lead').length === 10 && !lines.includes('rope'), 'drawn: spokes, mesh rings and weights; no hand line until it is thrown');
+const r0 = Math.random; Math.random = () => 0.1; Engine.action(); A(T.net && T.net.stage === 'fly', 'thrown: ' + said.at(-1));
+run(0.5); A(finite() && flat() > 1 && T.cn.hub[2] > -0.2 && T.act && T.act.toss > 0, 'spinning open in the air: ' + flat()); lines.length = 0; hud.forEach(f => f(pen)); A(lines.filter(l => l === 'rope').length === 2, 'the hand line runs out to it');
+run(0.4); A(T.net.stage === 'down' && small.hooked === 'net' && Engine.fish.length === 2, 'down over the small fish, which is held under it');
+Math.random = r0; run(5); A(T.net && T.net.stage === 'down' && finite() && T.cn.hub[2] < -1 && T.cn.p.every(p => p[2] <= -2.1 && p[2] >= -2.2), 'it stays down until you pull, the weights on the bed'); A(Engine.contextKeys()[0][1] === 'Haul net' && Engine.trapUseLabel() === 'Haul', 'haul hints');
+hud.forEach(f => f()); A(/pull it in/.test(Engine.hudDetail), 'hud says how');
+R(); run(0.5); A(T.net && T.net.stage === 'haul' && T.cn.k < 1 && T.act && T.act.pull !== undefined && Math.abs(small.x - T.cn.hub[0]) < 0.3, 'coming in, closing, the catch with it');
+run(0.6); A(!T.net && T.card && T.card.gear === 'Cast net' && T.card.items.length === 1, 'net up: a card for the catch'); run(0.5); A(T.cn && spread() <= 0.6, 'gathered in your hand again');
 key('KeyX'); A(!T.card && small.hooked === false && small.state === 'flee' && Math.abs(small.x - 5.4) < 1e-9 && Engine.fish.length === 2 && /Let it go/.test(said.at(-1)), 'let go: back in the water where the net came down: ' + said.at(-1));
-step(0.05); A(T.held, 'the net is back in your hand'); run(0.5); Math.random = () => 0.1; small.x = 5.5; small.y = 0.3; Engine.action(); run(1); R(); run(1.6); Math.random = r0; A(T.card, 'caught again'); key('KeyE');
+run(0.5); Math.random = () => 0.1; small.x = 5.5; small.y = 0.3; Engine.action(); run(1); R(); run(1.6); Math.random = r0; A(T.card, 'caught again'); key('KeyE');
 A(Engine.fish.length === 1 && /In the creel: 1 × Mummichog/.test(said.at(-1)) && Engine.catchLog().at(-1).kept === true && Engine.catchLog().at(-1).rig === 'Cast net', 'kept: ' + said.at(-1));
 // putting the net away while it's down brings it in
-run(0.5); Engine.action(); run(1); A(T.net && T.net.stage === 'down', 'down again'); T.hand = null; run(1.2); A(!T.net && /empty/.test(said.at(-1)) && !T.held, 'put away: it came in');
+run(0.5); Engine.action(); run(1); A(T.net && T.net.stage === 'down', 'down again'); T.hand = null; run(1.2); A(!T.net && /empty/.test(said.at(-1)), 'put away: it came in'); step(0.05); A(!T.cn, 'and it is gone from your hand');
 console.log('ok:', said.slice(-3).join(' | '));
 `, ctx);

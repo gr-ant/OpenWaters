@@ -10433,14 +10433,6 @@ Game.on('catch', () => Birds.excite());
     b.mat = MT.PLASTER; b.blob([0, 0, 0.06], 0.13, 0.13, 0.2, 6, 8, i => i < 3 ? K.buoy : [0.92, 0.92, 0.88]);
     Game.registerMesh('trap_buoy_' + kind, b.done());
   }
-  { // the cast net, open on the water: spokes, rings and a lead line round the rim
-    const b = Game.mesh(), n = 10, col = [0.86, 0.87, 0.8], at = (k, r) => [Math.cos(k / n * 6.2832) * r, Math.sin(k / n * 6.2832) * r, 0]; b.mat = MT.CLOTH;
-    for (let k = 0; k < n; k++) { b.tube([0, 0, 0], at(k, NET_R), 0.008, 0.008, 3, col, false);
-      for (const r of [NET_R / 3, NET_R * 2 / 3, NET_R]) b.tube(at(k, r), at(k + 1, r), 0.008, 0.008, 3, col, false); }
-    b.mat = MT.METAL; for (let k = 0; k < n; k++) b.blob(at(k + 0.5, NET_R * 0.98), 0.03, 0.03, 0.03, 3, 4, LEAD);
-    Game.registerMesh('cast_net', b.done());
-  }
-
   // ---- what's set out: props in the world, saved per island ----
   const key = () => 'engine-traps-' + CONFIG.saveName + '-' + SEED;
   const save = () => { if (!CONFIG.saveProgress) return;
@@ -10486,6 +10478,8 @@ Game.on('catch', () => Birds.excite());
     record(Cd.gear, Cd.kd, Cd.items); const k = Cd.items.filter(i => i.kept), g = Cd.items.length - k.length;
     say(k.length ? `In the creel: ${tally(k)}${g ? ` · let ${g} go` : ''}` : `Let ${g === 1 ? 'it' : `all ${g}`} go`, k.length ? 4 : 2.5); if (Engine.tackleOpen) Engine.tackleRender(); };
   Game.on('key', code => { if (!T.card) return; if (code === 'KeyE') decide(false); else if (code === 'KeyX') decide(true); });
+  const baseKeyC = Engine.keyPress; if (baseKeyC) Engine.keyPress = function (code, e, card) { if (!T.card || card) return baseKeyC.call(this, code, e, card);   // while the card's up it owns the keys: a key bound to Release and to a menu (X is Boats too on the Pike layout) only answers the card
+    if (code === 'KeyE') decide(false); else if (code === 'KeyX') decide(true); else if (/^(Key[WASDC]|Shift(Left|Right)|Space|Arrow(Up|Down|Left|Right))$/.test(code)) return baseKeyC.call(this, code, e, card); };
   const takeLive = f => { Engine.removeFish(f); Engine.fish = Engine.fish.filter(q => q !== f); for (const c of Engine.fishCells.values()) { const i = c.fish.indexOf(f); if (i >= 0) { c.fish.splice(i, 1); break; } } };
 
   // ---- the water in front of you: under the crosshair when that's in reach, else a few metres ahead ----
@@ -10500,27 +10494,43 @@ Game.on('catch', () => Birds.excite());
   const haulKey = () => Engine.touchUI ? 'Use' : Controls.key('cast');
   T.act = null;   // what your arms are doing, for the third-person figure: { toss: 0..1 } or { pull: radians }
 
-  // ---- the cast net: thrown out spinning open, it sinks over whatever was under it and stays down until you pull it in (R) ----
+  // ---- the cast net is a soft thing: a hub (where the hand line is tied) and NP lead weights round the rim, joined by mesh that can't
+  // stretch. The weights fall, swing and drag (slower under water) and the mesh is drawn between them, so it dangles from your hand,
+  // spins open when thrown, settles in a dome on the bed and trails closed as you haul it in. T.cn: { hub, p: weights, o: where they were, k: how far it's let out (0.25 gathered .. 1) }
+  const NP = 10, TAU2 = 6.2832;
+  const netBody = h => ({ hub: h.slice(), k: 0.25, spin: 0, p: Array.from({ length: NP }, (_, i) => [h[0] + Math.cos(i / NP * TAU2) * 0.06, h[1] + Math.sin(i / NP * TAU2) * 0.06, h[2] - 0.35]), o: Array.from({ length: NP }, (_, i) => [h[0] + Math.cos(i / NP * TAU2) * 0.06, h[1] + Math.sin(i / NP * TAU2) * 0.06, h[2] - 0.35]) });
+  const netPhys = (B, dt, wl, open) => { const h = B.hub, R = NET_R * B.k, chord = 2 * R * Math.sin(Math.PI / NP) * 1.06, d = Math.min(dt, 0.033); if (open) B.spin += d * 7;
+    B.p.forEach((p, i) => { const o = B.o[i], wet = p[2] < wl, keep = wet ? 0.86 : 0.985, vx = (p[0] - o[0]) * keep, vy = (p[1] - o[1]) * keep, vz = (p[2] - o[2]) * keep;   // carry on as it was going, less the drag; then fall
+      o[0] = p[0]; o[1] = p[1]; o[2] = p[2]; p[0] += vx; p[1] += vy; p[2] += vz - (wet ? 2.2 : 9.8) * d * d;
+      if (open) { const a = i / NP * TAU2 + B.spin, t = [h[0] + Math.cos(a) * R, h[1] + Math.sin(a) * R, h[2] - 0.08 * R], q = Math.min(1, d * 14); for (let j = 0; j < 3; j++) p[j] += (t[j] - p[j]) * q; } });   // thrown with a spin, the weights fly out and it opens flat
+    for (let it = 0; it < 3; it++) B.p.forEach((p, i) => { let dx = p[0] - h[0], dy = p[1] - h[1], dz = p[2] - h[2], L = Math.hypot(dx, dy, dz);   // the mesh holds: no weight further from the hub, or from its neighbours, than the net allows
+      if (L > R) { const q = R / L; p[0] = h[0] + dx * q; p[1] = h[1] + dy * q; p[2] = h[2] + dz * q; }
+      const n = B.p[(i + 1) % NP]; dx = n[0] - p[0]; dy = n[1] - p[1]; dz = n[2] - p[2]; L = Math.hypot(dx, dy, dz); if (L > chord) { const q = (L - chord) / L / 2; p[0] += dx * q; p[1] += dy * q; p[2] += dz * q; n[0] -= dx * q; n[1] -= dy * q; n[2] -= dz * q; }
+      const fl = Game.groundAt(p[0], p[1]) + 0.03; if (p[2] < fl) { p[2] = fl; p[0] = (p[0] + B.o[i][0]) / 2; p[1] = (p[1] + B.o[i][1]) / 2; } }); };   // and they rest (and drag) on the ground or the bed
+  T.cn = null;
+  // thrown out, it sinks over whatever was under it and stays down until you pull it in (R)
   const throwNet = () => {
     if (T.net || Engine.time < T.busy) return;
     if (Game.swimming) return say("You can't throw a net while swimming", 2);
     const p = aim(9); if (!p) return say('Face the water: the net reaches about 9 m');
     if (Game.waterAt(p.x, p.y).iced) return say("It's frozen over there", 2);
-    const h = hands(), prop = T.held || Game.addProp('cast_net', h[0], h[1], { z: h[2], scale: 0.2, rot: 0 }); T.held = null; T.net = { x: p.x, y: p.y, from: h, t0: Engine.time, stage: 'fly', got: [], prop }; say('Net away…', 1);   // the bundle in your hand is what flies
+    if (!T.cn) T.cn = netBody(hands()); T.net = { x: p.x, y: p.y, from: T.cn.hub.slice(), t0: Engine.time, stage: 'fly', got: [] }; say('Net away…', 1);
   };
-  const haulNet = () => { const N = T.net; if (!N || N.stage !== 'down') return false; N.stage = 'haul'; N.t0 = Engine.time; N.back = [N.prop.x, N.prop.y, N.prop.z]; Game.ripple(N.x, N.y, 1); return true; };
-  const netStep = dt => { const N = T.net; if (!N) return; const t = Engine.time - N.t0, pr = N.prop; if (N.stage !== 'down' || t < 1.4) Engine.propKey = null;   // (moving: redraw; lying on the bed it needn't)
+  const haulNet = () => { const N = T.net; if (!N || N.stage !== 'down') return false; N.stage = 'haul'; N.t0 = Engine.time; N.back = T.cn.hub.slice(); Game.ripple(N.x, N.y, 1); return true; };
+  const netStep = dt => { const N = T.net, want = T.hand === 'cast_net' || !!N; if (!want) { T.cn = null; return; } if (!T.cn) T.cn = netBody(hands());
+    const B = T.cn, hb = B.hub; if (!N) { const h = hands(); hb[0] = h[0]; hb[1] = h[1]; hb[2] = h[2] - 0.1; B.k += (0.25 - B.k) * Math.min(1, dt * 6); netPhys(B, dt, -1e9, false); return; }   // in your hand: gathered up, hanging and swinging as you move
+    const t = Engine.time - N.t0;
     if (N.stage === 'fly') { const u = Math.min(1, t / 0.7), w = Game.waterAt(N.x, N.y); T.act = { toss: Math.min(1, t / 0.5) };   // out in an arc, opening as it spins
-      pr.x = lerp(N.from[0], N.x, u); pr.y = lerp(N.from[1], N.y, u); pr.z = lerp(N.from[2], w.level, u) + 1.5 * Math.sin(Math.PI * u); pr.scale = 0.2 + 0.8 * ease(u); pr.rot += dt * 7;
+      hb[0] = lerp(N.from[0], N.x, u); hb[1] = lerp(N.from[1], N.y, u); hb[2] = lerp(N.from[2], w.level, u) + 1.5 * Math.sin(Math.PI * u); B.k = 0.25 + 0.75 * ease(u); netPhys(B, dt, w.level, true);
       if (u >= 1) { N.stage = 'down'; N.t0 = Engine.time; N.kd = w.kindId; N.wl = w.level; N.bed = Math.max(w.ground + 0.06, w.level - 1.4); Game.splash(N.x, N.y, 24); Game.sound('plop', { x: N.x, y: N.y });
         N.got = Game.fishNear(N.x, N.y, NET_R).filter(f => !f.hooked && f.lengthCm <= 40 && ['fish', 'shrimp'].includes(f.def.body.plan || 'fish') && f.z > N.wl - 3.5 && Math.random() < 0.8).slice(0, 12);   // small fish and shrimp under it, down to 3.5 m
         for (const f of N.got) f.hooked = 'net'; Game.disturb(N.x, N.y, 1.5); say(`Net down · ${haulKey()} to pull it in`, 2.5); } }   // held under it (still in the world until you decide)
-    else if (N.stage === 'down') { pr.z = lerp(N.wl - 0.05, N.bed, ease(Math.min(1, t / 1.2))); T.act = null;   // sinking, then lying there
+    else if (N.stage === 'down') { hb[2] = lerp(N.wl - 0.05, N.bed, ease(Math.min(1, t / 1.6))); B.k = 1; netPhys(B, dt, N.wl, false); T.act = null;   // the weights go down first and it settles in a dome
       if (!T.hand || Math.hypot(N.x - Game.player.x, N.y - Game.player.y) > 25) haulNet(); }   // put away or walked off: it comes in
-    else { const u = Math.min(1, t / 0.9), h = hands(); T.act = { pull: Engine.time * 9 };   // gathered up and drawn back to your hands
-      pr.x = lerp(N.back[0], h[0], ease(u)); pr.y = lerp(N.back[1], h[1], ease(u)); pr.z = lerp(N.back[2], h[2], ease(u)); pr.scale = 1 - 0.75 * ease(u);
-      N.got.forEach((f, i) => { f.x = pr.x + Math.cos(i * 2.4) * 0.25 * pr.scale; f.y = pr.y + Math.sin(i * 2.4) * 0.25 * pr.scale; f.z = pr.z - 0.1; });   // the catch comes in with it
-      if (u >= 1) { unplace([pr]); T.net = null; T.act = null; T.busy = Engine.time + 0.4;
+    else { const u = Math.min(1, t / 0.9), h = hands(); T.act = { pull: Engine.time * 9 };   // drawn back to your hands, closing as it comes, the weights trailing
+      hb[0] = lerp(N.back[0], h[0], ease(u)); hb[1] = lerp(N.back[1], h[1], ease(u)); hb[2] = lerp(N.back[2], h[2] - 0.1, ease(u)); B.k = 1 - 0.75 * ease(u); netPhys(B, dt, N.wl, false);
+      N.got.forEach((f, i) => { f.x = hb[0] + Math.cos(i * 2.4) * 0.25 * B.k; f.y = hb[1] + Math.sin(i * 2.4) * 0.25 * B.k; f.z = hb[2] - 0.15; });   // the catch comes in with it
+      if (u >= 1) { T.net = null; T.act = null; T.busy = Engine.time + 0.4;
         const back = f => { sample(N.x, N.y); f.hooked = false; f.x = N.x; f.y = N.y; f.z = Math.max(hW(SE) + 0.05, SW - 0.4); f.state = 'flee'; f.stress = 1; f.thx = Game.player.x; f.thy = Game.player.y; f.tNext = 0; };   // back where the net came down, and off it goes
         if (!offer('Cast net', N.kd, N.got.map(f => ({ species: f.species, name: f.name, lengthCm: f.lengthCm, weightKg: f.weightKg, keep: () => { f.hooked = false; takeLive(f); }, free: () => back(f) })))) say('The net came up empty', 2.5); } } };
 
@@ -10592,9 +10602,6 @@ Game.on('catch', () => Birds.excite());
   Game.on('update', dt => {
     for (const tr of T.set) tr.h += Engine.dtH || 0;
     T.act = null; netStep(dt || 0); potStep(dt || 0);
-    const hold = T.hand === 'cast_net' && !T.net && !T.card && !Game.swimming;   // the net bundled in your hand, ready to throw
-    if (hold) { const h = hands(); if (!T.held) T.held = Game.addProp('cast_net', h[0], h[1], { z: h[2], scale: 0.2, rot: 0 }); T.held.x = h[0]; T.held.y = h[1]; T.held.z = h[2] - 0.12; T.held.rot = Game.player.a; Engine.propKey = null; }
-    else if (T.held) { unplace([T.held]); T.held = null; }
     if (T.set.length && Engine.time - T.saveT > 20) { T.saveT = Engine.time; save(); }   // soak time survives a reload
   });
   Game.on('ready', () => { if (!CONFIG.saveProgress) return;
@@ -10606,10 +10613,17 @@ Game.on('catch', () => Birds.excite());
     if (netDown()) Engine.hudDetail = `Cast net out  ·  ${haulKey()} to pull it in`;
     else if (tr) Engine.hudDetail = `${KINDS[tr.kind].name}  ·  set ${soaked(tr.h)} ago  ·  ${haulKey()} to haul`;
     else if (T.hand) Engine.hudDetail = `${KINDS[T.hand].name} in hand  ·  ${useKey()} to ${T.hand === 'cast_net' ? 'throw' : Engine.boat || Game.swimming ? 'drop under a buoy' : 'set from the bank'}`; });
-  // the net's hand line: from your hand out to the net, paying out as it flies, slack while it lies, coming in as you haul
-  Game.onHud(c => { const N = T.net; if (!N || !c || Engine.showMap) return; const h = hands(), pr = N.prop, a = Game.project(h[0], h[1], h[2] - 0.05), b = Game.project(pr.x, pr.y, pr.z + 0.05); if (!a || !b) return;
-    const d = Math.hypot(pr.x - h[0], pr.y - h[1]), sag = N.stage === 'down' ? 0.25 + 0.05 * d : 0.06 * d, m = Game.project((h[0] + pr.x) / 2, (h[1] + pr.y) / 2, (h[2] + pr.z) / 2 - sag);
-    c.save(); c.lineCap = 'round'; for (const [w, col] of [[3.2, 'rgba(40,30,16,.55)'], [1.8, 'rgba(226,208,150,.95)']]) { c.lineWidth = w; c.strokeStyle = col; c.beginPath(); c.moveTo(a[0], a[1]); if (m) c.quadraticCurveTo(2 * m[0] - (a[0] + b[0]) / 2, 2 * m[1] - (a[1] + b[1]) / 2, b[0], b[1]); else c.lineTo(b[0], b[1]); c.stroke(); } c.restore(); });
+  // the net and its hand line, drawn over the view (as the fishing line is): spokes from the hub to each weight, three rings of mesh, the weights
+  // themselves, and the line from your hand, paying out as it flies, slack while it lies, coming in as you haul. Fainter where it's under water.
+  Game.onHud(c => { const B = T.cn, N = T.net; if (!B || !c || Engine.showMap) return; const P = Game.player, wl = N && N.wl !== undefined ? N.wl : -1e9, pr = q => Game.project(q[0], q[1], q[2]);
+    const near = Math.max(1, Math.hypot(B.hub[0] - P.x, B.hub[1] - P.y)), w = clamp(2.2 / near, 0.6, 1.6), H = pr(B.hub), at = (i, f) => { const p = B.p[(i + NP) % NP]; return [B.hub[0] + (p[0] - B.hub[0]) * f, B.hub[1] + (p[1] - B.hub[1]) * f, B.hub[2] + (p[2] - B.hub[2]) * f]; };
+    const seg = (a, b, wide) => { const pa = pr(a), pb = pr(b); if (!pa || !pb) return; c.globalAlpha = a[2] < wl && b[2] < wl ? 0.4 : 0.9; c.lineWidth = wide; c.beginPath(); c.moveTo(pa[0], pa[1]); c.lineTo(pb[0], pb[1]); c.stroke(); };
+    c.save(); c.lineCap = 'round'; c.strokeStyle = '#e4e2cf';
+    for (let i = 0; i < NP; i++) { seg(B.hub, B.p[i], w); for (const f of [1 / 3, 2 / 3, 1]) seg(at(i, f), at(i + 1, f), f === 1 ? w * 1.5 : w * 0.8); }
+    c.fillStyle = '#7d8388'; for (const p of B.p) { const q = pr(p); if (q) { c.globalAlpha = p[2] < wl ? 0.5 : 1; c.beginPath(); c.arc(q[0], q[1], clamp(7 / near, 1.2, 3.5), 0, TAU2); c.fill(); } }   // the lead weights
+    if (N && H) { const h = hands(), a = pr([h[0], h[1], h[2] - 0.05]), d = Math.hypot(B.hub[0] - h[0], B.hub[1] - h[1]), sag = N.stage === 'down' ? 0.25 + 0.05 * d : 0.06 * d, m = pr([(h[0] + B.hub[0]) / 2, (h[1] + B.hub[1]) / 2, (h[2] + B.hub[2]) / 2 - sag]);
+      if (a) for (const [lw, col] of [[3.2, 'rgba(40,30,16,.55)'], [1.8, 'rgba(226,208,150,.95)']]) { c.globalAlpha = 1; c.lineWidth = lw; c.strokeStyle = col; c.beginPath(); c.moveTo(a[0], a[1]); if (m) c.quadraticCurveTo(2 * m[0] - (a[0] + H[0]) / 2, 2 * m[1] - (a[1] + H[1]) / 2, H[0], H[1]); else c.lineTo(H[0], H[1]); c.stroke(); } }
+    c.restore(); });
   // on the map: a dot where each pot is hauled from
   Game.onMap((c, toPx, inside) => { for (const tr of T.set) { const [x, y] = anchor(tr), [px, py] = toPx(x, y); if (inside && !inside(px, py)) continue;
     const [r, g, b] = KINDS[tr.kind].buoy; c.beginPath(); c.arc(px, py, 4, 0, 6.2832); c.fillStyle = `rgb(${Math.min(255, r * 170) | 0},${Math.min(255, g * 170) | 0},${Math.min(255, b * 170) | 0})`; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#fff'; c.stroke(); } });
