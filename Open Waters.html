@@ -2140,7 +2140,7 @@ const norm3 = a => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l
 // mesh hanging down -z from its joint (the head sits up +z from the neck), so a pose is only a joint position and a pitch per
 // part: every bend is about the shoulders' side-to-side axis, which is what the instanced fish pitch (ipt) already does.
 const HUMAN = { foot: 0.08, shin: 0.42, thigh: 0.43, torso: 0.52, neck: 0.08, head: 0.12, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
-// How the angler looks: src/angler/angler.json (see the README beside it) laid over these defaults. Colours are "#rrggbb";
+// How the angler looks: src/angler/angler.json (README.md, "The angler's look") laid over these defaults. Colours are "#rrggbb";
 // a null cap or vest leaves it off. build picks the proportions below: [half-width, half-depth] of chest, waist and hips.
 const ANGLER_LOOK = { build: 'male', skin: '#dba985', hair: { style: 'short', color: '#573826' },
   outfit: { cap: '#80946a', shirt: '#80946a', vest: '#4a5c33', trim: '#cc9433', trousers: '#333330', patches: '#242421', boots: '#3d4733', boot_band: '#80946a' } };
