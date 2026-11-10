@@ -1,0 +1,17 @@
+{
+  "schema": "embercrown-angler/1",
+  "name": "The angler",
+  "build": "male",
+  "skin": "#dba985",
+  "hair": { "style": "short", "color": "#573826" },
+  "outfit": {
+    "cap": "#80946a",
+    "shirt": "#80946a",
+    "vest": "#4a5c33",
+    "trim": "#cc9433",
+    "trousers": "#333330",
+    "patches": "#242421",
+    "boots": "#3d4733",
+    "boot_band": "#80946a"
+  }
+}

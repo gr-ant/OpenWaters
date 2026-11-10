@@ -2140,28 +2140,46 @@ const norm3 = a => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l
 // mesh hanging down -z from its joint (the head sits up +z from the neck), so a pose is only a joint position and a pitch per
 // part: every bend is about the shoulders' side-to-side axis, which is what the instanced fish pitch (ipt) already does.
 const HUMAN = { foot: 0.08, shin: 0.42, thigh: 0.43, torso: 0.52, neck: 0.08, head: 0.12, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
+// How the angler looks: src/angler/angler.json (see the README beside it) laid over these defaults. Colours are "#rrggbb";
+// a null cap or vest leaves it off. build picks the proportions below: [half-width, half-depth] of chest, waist and hips.
+const ANGLER_LOOK = { build: 'male', skin: '#dba985', hair: { style: 'short', color: '#573826' },
+  outfit: { cap: '#80946a', shirt: '#80946a', vest: '#4a5c33', trim: '#cc9433', trousers: '#333330', patches: '#242421', boots: '#3d4733', boot_band: '#80946a' } };
+const HUMAN_BUILD = { male: { shoulder: 0.205, hip: 0.1, chest: [0.2, 0.135], waist: [0.175, 0.125], hips: [0.185, 0.13], limb: 1 },
+  female: { shoulder: 0.18, hip: 0.105, chest: [0.175, 0.13], waist: [0.145, 0.11], hips: [0.195, 0.135], limb: 0.88 } };
 // the part meshes, in the frame above: x forward, y to the right, z up, joint at the origin
-function humanParts() {   // dressed for the bank: cap, hooded shirt under a fishing vest, dark trousers, wellingtons (colours are plain: the faceted shading does the rest)
-  const H = HUMAN, skin = [0.86, 0.66, 0.52], hair = [0.34, 0.22, 0.15], shirt = [0.5, 0.58, 0.4], vest = [0.29, 0.36, 0.2], tan = [0.8, 0.58, 0.2], pants = [0.2, 0.2, 0.19], patch = [0.14, 0.14, 0.13], boot = [0.24, 0.28, 0.2];
+function humanParts(look) {
+  const K = Object.assign({}, ANGLER_LOOK, look), O = Object.assign({}, ANGLER_LOOK.outfit, K.outfit), Hr = Object.assign({}, ANGLER_LOOK.hair, K.hair), G = HUMAN_BUILD[K.build] || HUMAN_BUILD.male, H = HUMAN, l = G.limb;
+  H.shoulder = G.shoulder; H.hip = G.hip;   // the pose hangs the arms and legs at this build's widths
+  const rgb = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h) ? [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255) : null;
+  const skin = rgb(K.skin) || [0.86, 0.66, 0.52], hair = rgb(Hr.color) || [0.34, 0.22, 0.15], shirt = rgb(O.shirt) || [0.5, 0.58, 0.4], trim = rgb(O.trim) || [0.8, 0.58, 0.2], cap = rgb(O.cap), vest = rgb(O.vest);
+  const pants = rgb(O.trousers) || [0.2, 0.2, 0.19], patch = rgb(O.patches) || pants, boot = rgb(O.boots) || [0.24, 0.28, 0.2], band = rgb(O.boot_band) || boot;
   const part = (mat, f) => { const B = meshBuilder(); B.mat = mat; f(B); return new Float32Array(B.v); }, top = H.neck + H.head;
+  // an oval ring from height z0 (half-width a0 across the shoulders, half-depth c0 front to back) down to z1 (a1, c1): chests and coats aren't round
+  const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 10, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 10 * 6.2832) / (e ? a1 : a0), Math.sin(k / 10 * 6.2832) / (e ? c1 : c0)));
+  const sh = [G.shoulder + 0.01, 0.105], grow = ([a, c], g) => [a + g, c + g], g = 0.024;   // g: how far the vest stands off the shirt
   return {
-    head: part(MT.GEN, B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.05, 0.045, 6, skin, false); B.blob([0.01, 0, top], 0.105, 0.09, H.head, 4, 6, skin);
-      for (const y of [-0.09, 0.09]) B.blob([0, y, top - 0.01], 0.02, 0.015, 0.03, 3, 4, skin);   // ears
-      B.blob([-0.02, 0, top - 0.015], 0.1, 0.094, 0.11, 4, 6, hair);   // hair round the back and sides, under the cap
-      B.mat = MT.CLOTH; B.blob([0, 0, top + 0.045], 0.115, 0.1, 0.085, 4, 8, shirt); B.blob([0.12, 0, top + 0.04], 0.09, 0.08, 0.012, 3, 6, shirt);   // cap and its peak
-      B.blob([0, 0, top + 0.13], 0.018, 0.018, 0.01, 3, 5, tan); B.blob([-0.112, 0, top + 0.005], 0.012, 0.04, 0.013, 3, 5, tan); }),   // the button on top, the strap at the back
-    torso: part(MT.CLOTH, B => { B.blob([0, 0, -H.torso / 2], 0.12, H.shoulder + 0.02, H.torso / 2 + 0.03, 4, 6, shirt);
-      B.blob([0, 0, -H.torso / 2 - 0.03], 0.13, H.shoulder + 0.03, 0.24, 4, 8, vest); B.blob([-0.005, 0, -0.1], 0.136, H.shoulder + 0.027, 0.09, 3, 8, tan);   // the vest, tan across the shoulders
-      B.blob([-0.1, 0, -0.03], 0.07, 0.11, 0.1, 3, 6, shirt);   // the hood, down
-      for (const y of [-0.1, 0.1]) B.blob([-0.128, y, -0.21], 0.012, 0.016, 0.028, 3, 4, tan); }),   // two tabs on the back
-    hips: part(MT.CLOTH, B => B.blob([0, 0, 0], 0.11, H.hip + 0.07, 0.1, 3, 6, pants)),
-    upper: part(MT.CLOTH, B => B.tube([0, 0, 0.02], [0, 0, -H.upper], 0.058, 0.048, 5, shirt, true)),
-    fore: part(MT.CLOTH, B => { B.tube([0, 0, 0.02], [0, 0, -H.fore + 0.03], 0.046, 0.04, 5, shirt, false); B.tube([0, 0, -H.fore + 0.07], [0, 0, -H.fore + 0.02], 0.047, 0.047, 5, tan, true);   // sleeve, rolled cuff
-      B.mat = MT.GEN; B.blob([0, 0, -H.fore - 0.04], 0.035, 0.03, 0.05, 3, 5, skin); }),
-    thigh: part(MT.CLOTH, B => B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.075, 0.058, 6, pants, true)),
-    shin: part(MT.CLOTH, B => { B.tube([0, 0, 0.02], [0, 0, -0.2], 0.056, 0.05, 6, pants, false); B.blob([0, 0, -0.01], 0.062, 0.06, 0.075, 3, 6, patch);   // trouser leg, knee patch
-      B.mat = MT.GEN; B.tube([0, 0, -0.15], [0, 0, -H.shin], 0.062, 0.055, 6, boot, false); B.blob([0.05, 0, -H.shin - H.foot + 0.045], 0.12, 0.055, 0.045, 3, 6, boot);   // wellingtons
-      B.tube([0, 0, -0.14], [0, 0, -0.21], 0.067, 0.066, 6, shirt, false); B.tube([0, 0, -0.165], [0, 0, -0.185], 0.07, 0.07, 6, tan, false); }),   // the boot top and its stripe
+    head: part(MT.GEN, B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.055, 0.05, 6, skin, false); B.blob([0.01, 0, top], 0.108, 0.094, H.head, 4, 6, skin);
+      for (const y of [-0.093, 0.093]) B.blob([0, y, top - 0.01], 0.02, 0.016, 0.03, 3, 4, skin);   // ears
+      if (Hr.style !== 'none') B.blob([-0.02, 0, top + 0.005], 0.106, 0.099, 0.12, 4, 6, hair);   // hair over the crown, back and sides (the face stays clear)
+      if (Hr.style === 'long') B.blob([-0.075, 0, top - 0.11], 0.06, 0.1, 0.15, 3, 6, hair);   // down to the shoulders
+      if (Hr.style === 'ponytail') B.blob([-0.14, 0, top - 0.07], 0.035, 0.035, 0.11, 3, 5, hair);
+      if (cap) { B.mat = MT.CLOTH; B.blob([0, 0, top + 0.045], 0.12, 0.106, 0.088, 4, 8, cap); B.blob([0.125, 0, top + 0.04], 0.095, 0.085, 0.013, 3, 6, cap);   // cap and its peak
+        B.blob([0, 0, top + 0.133], 0.018, 0.018, 0.01, 3, 5, trim); B.blob([-0.117, 0, top + 0.005], 0.012, 0.04, 0.013, 3, 5, trim); } }),   // the button on top, the strap at the back
+    torso: part(MT.CLOTH, B => { oval(B, 0.01, -0.06, [0.075, 0.07], sh, shirt); oval(B, -0.06, -0.24, sh, G.chest, shirt); oval(B, -0.24, -H.torso, G.chest, G.waist, shirt, true);   // the shirt: sloping shoulders, chest, waist
+      oval(B, 0.04, -0.012, [0.07, 0.075], [0.1, 0.1], shirt); B.blob([-0.115, 0, -0.065], 0.075, 0.125, 0.11, 3, 6, shirt);   // collar, and the hood lying down the back
+      if (vest) { const mid = [(G.chest[0] + G.waist[0]) / 2, (G.chest[1] + G.waist[1]) / 2], dark = vest.map(v => v * 0.82);
+        oval(B, -0.012, -0.068, [0.1, 0.088], grow(sh, g), trim); oval(B, -0.068, -0.19, grow(sh, g), grow(G.chest, g), trim);   // the vest stands off the shirt: trim across the shoulders…
+        oval(B, -0.19, -0.46, grow(G.chest, g), grow(mid, g), vest); oval(B, -0.46, -0.478, grow(mid, g), mid, vest);   // …the body, and the hem turned in
+        for (const y of [-0.095, 0.095]) { B.blob([G.chest[1] + g - 0.004, y, -0.35], 0.022, 0.058, 0.055, 3, 5, dark); B.blob([G.chest[1] + g + 0.012, y, -0.305], 0.01, 0.06, 0.014, 3, 5, trim);   // chest pockets and their flaps
+          B.blob([-G.chest[1] - g + 0.002, y, -0.22], 0.012, 0.017, 0.03, 3, 4, trim); } } }),   // two tabs on the back
+    hips: part(MT.CLOTH, B => B.blob([0, 0, 0], G.hips[1], G.hips[0], 0.12, 3, 8, pants)),
+    upper: part(MT.CLOTH, B => { B.blob([0, 0, 0], 0.072 * l, 0.072 * l, 0.072 * l, 3, 6, shirt); B.tube([0, 0, 0], [0, 0, -H.upper], 0.068 * l, 0.056 * l, 6, shirt, true); }),   // a round shoulder, then the sleeve
+    fore: part(MT.CLOTH, B => { B.tube([0, 0, 0.02], [0, 0, -H.fore + 0.03], 0.056 * l, 0.047 * l, 6, shirt, false); B.tube([0, 0, -H.fore + 0.075], [0, 0, -H.fore + 0.02], 0.058 * l, 0.058 * l, 6, trim, true);   // sleeve, rolled cuff
+      B.mat = MT.GEN; B.blob([0, 0, -H.fore - 0.04], 0.04 * l, 0.034 * l, 0.055, 3, 5, skin); }),
+    thigh: part(MT.CLOTH, B => B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.092 * l, 0.07 * l, 6, pants, true)),
+    shin: part(MT.CLOTH, B => { B.tube([0, 0, 0.02], [0, 0, -0.2], 0.07 * l, 0.062 * l, 6, pants, false); B.blob([0, 0, -0.01], 0.077 * l, 0.075 * l, 0.085, 3, 6, patch);   // trouser leg, knee patch
+      B.mat = MT.GEN; B.tube([0, 0, -0.15], [0, 0, -H.shin], 0.075 * l, 0.066 * l, 6, boot, false); B.blob([0.055, 0, -H.shin - H.foot + 0.05], 0.13, 0.064, 0.05, 3, 6, boot);   // wellingtons
+      B.tube([0, 0, -0.14], [0, 0, -0.215], 0.081 * l, 0.08 * l, 6, band, false); B.tube([0, 0, -0.168], [0, 0, -0.19], 0.085 * l, 0.085 * l, 6, trim, false); }),   // the boot top and its stripe
   };
 }
 // A pose: o.mode 'stand' (walking and running too: o.swing 0..1 and o.ph, the stride phase), 'swim' (o.body: body pitch, -pi/2 lying
@@ -2183,12 +2201,12 @@ function humanPose(o) {
       up[i] = b - 0.6 * sw * s; fore[i] = up[i] + 0.15 + 0.6 * sw; }
   }
   if (o.mode === 'stand') hipZ = Math.max(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => -d(thigh[i], H.thigh)[1] - x * Math.sin(shin[i]) + (H.shin + H.foot) * Math.cos(shin[i]))));   // the lower boot (heel or toe) on the ground
-  if (o.rod && o.mode !== 'swim') { up[1] = b + 0.35; fore[1] = up[1] + 1.15; }   // right forearm out in front, holding the rod
-  const hip = [0, hipZ], sh = [hip[0] - d(b, H.torso)[0], hip[1] - d(b, H.torso)[1]], add = (a, q) => [a[0] + q[0], a[1] + q[1]];
+  if (o.rod && o.mode !== 'swim') { up[1] = b + 0.3; fore[1] = up[1] + 1.05; }   // right forearm out in front, holding the rod
+  const hip = [0, hipZ], sh = [hip[0] - d(b, H.torso)[0], hip[1] - d(b, H.torso)[1]], add = (a, q) => [a[0] + q[0], a[1] + q[1]], arm = add(sh, d(b, 0.07));   // arm: the shoulder joint, a little below the top of the shoulders
   out.push(['hips', hip[0], 0, hip[1], b], ['torso', sh[0], 0, sh[1], b], ['head', sh[0], 0, sh[1], b]);
   let hand = null;
-  for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, knee = add(hip, d(thigh[i], H.thigh)), elbow = add(sh, d(up[i], H.upper));
-    out.push(['thigh', hip[0], side * H.hip, hip[1], thigh[i]], ['shin', knee[0], side * H.hip, knee[1], shin[i]], ['upper', sh[0], side * H.shoulder, sh[1], up[i]], ['fore', elbow[0], side * H.shoulder, elbow[1], fore[i]]);
+  for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, knee = add(hip, d(thigh[i], H.thigh)), elbow = add(arm, d(up[i], H.upper));
+    out.push(['thigh', hip[0], side * H.hip, hip[1], thigh[i]], ['shin', knee[0], side * H.hip, knee[1], shin[i]], ['upper', arm[0], side * H.shoulder, arm[1], up[i]], ['fore', elbow[0], side * H.shoulder, elbow[1], fore[i]]);
     if (i) { const h = add(elbow, d(fore[i], H.fore + 0.04)); hand = [h[0], side * H.shoulder, h[1]]; } }
   const hc = add(sh, [-Math.sin(b) * (H.neck + H.head), Math.cos(b) * (H.neck + H.head)]);
   return { parts: out, hand, head: [hc[0], 0, hc[1]] };
@@ -6556,7 +6574,7 @@ Object.assign(Engine, {
   },
   drawHuman(gl, L) {
     const hp = this.hPose; if (!hp) return;
-    const M = this._hParts || (this._hParts = humanParts()), P = this.P; sample(P.x, P.y); const wl = SW, mk = WATER[SK].murk;
+    const M = this._hParts || (this._hParts = humanParts(BUILTIN.angler[0])), P = this.P; sample(P.x, P.y); const wl = SW, mk = WATER[SK].murk;
     gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.roll, 0);
     for (const q of hp.pose.parts) { const g = this.tackleGpu('human:' + q[0], () => M[q[0]]), p = hp.w([q[1], q[2], q[3]]);
       this.upInst(g, [p[0], p[1], p[2], 1, hp.rot, 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); }
@@ -10518,7 +10536,7 @@ globalThis.Urchin = {
 // built-in fish, boats and tackle: <script type="application/json" data-builtin="fish|boat|tackle"> blocks at the end of this
 // file, one per definition; they're parsed at boot, after the loading screen has painted (parsing hundreds of KB of JSON is quick,
 // but parsing it as JavaScript object literals before the page could draw was not)
-const BUILTIN = { fish: [], boat: [], tackle: [], feature: [] };   // feature: map features (src/features/*.json)
+const BUILTIN = { fish: [], boat: [], tackle: [], feature: [], angler: [] };   // feature: map features (src/features/*.json); angler: your look in third person (src/angler/angler.json)
 function readBuiltins() {
   for (const el of document.querySelectorAll('script[data-builtin]')) {
     try { BUILTIN[el.dataset.builtin].push(JSON.parse(el.textContent)); } catch (e) { console.error('Bad built-in', el.dataset.builtin, 'JSON:', e.message); }
@@ -10577,6 +10595,25 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <!-- built-in fish species, boats and tackle: one JSON block each, the same format as files you drop onto the game -->
+<script type="application/json" data-builtin="angler">
+{
+  "schema": "embercrown-angler/1",
+  "name": "The angler",
+  "build": "male",
+  "skin": "#dba985",
+  "hair": { "style": "short", "color": "#573826" },
+  "outfit": {
+    "cap": "#80946a",
+    "shirt": "#80946a",
+    "vest": "#4a5c33",
+    "trim": "#cc9433",
+    "trousers": "#333330",
+    "patches": "#242421",
+    "boots": "#3d4733",
+    "boot_band": "#80946a"
+  }
+}
+</script>
 <script type="application/json" data-builtin="feature">
 {
   "id": "sea_stacks",
