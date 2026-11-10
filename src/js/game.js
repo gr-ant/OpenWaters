@@ -70,10 +70,14 @@
   const biomes = on => { menu.hidden = on; bio.hidden = !on; (on ? bio.querySelector('.ti-bio') : document.getElementById('tiNew')).focus({ preventScroll: true }); };
   document.getElementById('tiNew').onclick = () => biomes(true);
   document.getElementById('tiBioBack').onclick = () => biomes(false);
-  bio.onclick = e => { const b = e.target.closest('[data-climate]'); if (!b) return;
+  const seedIn = document.getElementById('tiSeed');
+  seedIn.oninput = () => { const v = seedIn.value.replace(/\D/g, '').slice(0, 10); if (v !== seedIn.value) seedIn.value = v; };
+  const go = climate => {   // the island number typed (if any; it may also say the climate) in that climate, or a random island in it
+    const sd = +seedIn.value > 0 && +seedIn.value <= 4294967295 ? +seedIn.value : 0, h = sd ? `#seed-${sd}${climate ? '&climate-' + climate : ''}&pick` : climate ? '#climate-' + climate : '';
     T.hidden = true; document.body.classList.remove('title-on'); Engine.titleOpen = false;
-    try { history.replaceState(null, '', location.pathname + location.search + '#climate-' + b.dataset.climate); } catch (e) { location.hash = 'climate-' + b.dataset.climate; }
+    try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) { location.hash = h.slice(1); }
     location.reload(); };
+  bio.onclick = e => { const b = e.target.closest('[data-climate]'); if (b) go(b.dataset.climate); };
   // from the start menu, Settings is a single page: Back (or Esc) closes it and returns to the menu
   const pauseShow = Engine.pauseShow;
   Engine.pauseShow = function (page) {
@@ -84,10 +88,12 @@
   // while the menu is up the game hears no keys (the menu's own buttons still work: Enter / Space / arrows)
   const hold = e => {
     if (!Engine.titleOpen || Engine.pauseOpen) return;
+    if (e.target === seedIn && e.type === 'keydown' && e.code === 'Enter') { e.preventDefault(); e.stopPropagation(); if (seedIn.value) go(null); return; }   // the island number alone: its own climate
+    if (e.target === seedIn && !/^(Escape|ArrowUp|ArrowDown)$/.test(e.code)) return;   // typing it (the game ignores keys typed into a box)
     e.stopPropagation();
     if (e.type === 'keydown' && e.code === 'Escape' && !bio.hidden) { e.preventDefault(); biomes(false); }   // out of the island choice, back to the menu
     else if (e.type === 'keydown' && /^Arrow(Down|Up|Left|Right)$/.test(e.code)) {   // the menu's items, or the island choice (its three, then Back)
-      e.preventDefault(); const L = [...T.querySelectorAll(bio.hidden ? '.ti-menu button.ti-item' : '#tiBiomes button')], i = L.indexOf(document.activeElement);
+      e.preventDefault(); const L = [...T.querySelectorAll(bio.hidden ? '.ti-menu button.ti-item' : '#tiBiomes button, #tiSeed')], i = L.indexOf(document.activeElement);
       L[(i + (e.code === 'ArrowDown' || e.code === 'ArrowRight' ? 1 : -1) + L.length) % L.length].focus();
     } else if (e.type === 'keydown' && e.code === 'Enter' && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#title button'))) { e.preventDefault(); startGame(); }
   };

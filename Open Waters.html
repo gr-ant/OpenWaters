@@ -487,9 +487,14 @@ button.ti-item:hover, button.ti-item:focus-visible { box-shadow: 0 0 0 3px rgba(
 /* New island: the three climates and Back take the cards' place */
 .ti-biomes { grid-template-columns: repeat(3, 1fr) .7fr; }
 .ti-bio-title { position: absolute; left: 4px; bottom: 100%; margin: 0 0 12px; font: italic 700 clamp(20px, 1.9vw, 30px) var(--serif); color: #f6ecd2; text-shadow: 0 2px 4px rgba(0,0,0,.7); }
+.ti-seed { position: absolute; right: 4px; bottom: 100%; margin: 0 0 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px 10px; font: 600 clamp(13px, 1.1vw, 17px) var(--sans); text-transform: uppercase; letter-spacing: 1.5px; color: #f3e6c6; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+.ti-seed input { width: 11ch; padding: 7px 10px; border-radius: 10px; border: 2px solid #c4a86c; background: rgba(14,40,26,.9); color: #f6ecd2; font: 600 16px var(--sans); letter-spacing: 1px; text-align: center; }
+.ti-seed input:focus { outline: none; border-color: var(--gold-hi); box-shadow: 0 0 0 3px rgba(240,213,138,.3); } .ti-seed input::placeholder { color: rgba(243,230,198,.45); text-transform: none; }
+.ti-seed small { flex-basis: 100%; text-align: right; font: 11px var(--sans); letter-spacing: .3px; text-transform: none; color: rgba(243,230,198,.75); }
 .ti-bio small { font: 12px/1.25 var(--sans); color: #d8cfb4; text-align: center; white-space: normal; }
 .ti-back { display: flex; align-items: center; justify-content: center; font: 400 56px/1 var(--serif); color: #e8c46a; }
 @media (max-width: 760px) {
+  .ti-seed { position: static; grid-column: 1 / -1; justify-content: flex-start; margin: 0; } .ti-seed small { text-align: left; }
   .ti-row { grid-template-columns: repeat(3, 1fr); bottom: 40px; } .ti-biomes { grid-template-columns: repeat(2, 1fr); }
   .ti-item { min-height: 96px; font-size: 16px; } .ti-ic { width: 60px; }
   #title { background: radial-gradient(ellipse 70% 40% at 30% 14%, rgba(10,36,22,.5), rgba(10,36,22,0) 70%), linear-gradient(0deg, rgba(12,44,28,.96) 0%, rgba(14,48,30,.85) 40%, rgba(16,52,34,0) 62%); }
@@ -544,6 +549,7 @@ button.ti-item:hover, button.ti-item:focus-visible { box-shadow: 0 0 0 3px rgba(
     </nav>
     <div id="tiBiomes" class="ti-biomes ti-row" role="group" aria-labelledby="tiBioTitle" hidden>
       <p id="tiBioTitle" class="ti-bio-title">Choose an island</p>
+      <label class="ti-seed">Island no. <input id="tiSeed" type="text" inputmode="numeric" maxlength="10" placeholder="random" autocomplete="off" spellcheck="false" aria-describedby="tiSeedHint"><small id="tiSeedHint">a number for a particular island · Enter: its own climate</small></label>
       <button class="ti-item ti-bio" type="button" data-climate="temperate"><span class="ti-ic" data-icon="dock.island" aria-hidden="true"></span><b>Temperate</b><small>woods, lakes and rivers</small></button>
       <button class="ti-item ti-bio" type="button" data-climate="tropical"><span class="ti-ic" data-icon="dock.islandTropical" aria-hidden="true"></span><b>Tropical</b><small>palms, reefs, warm water</small></button>
       <button class="ti-item ti-bio" type="button" data-climate="arctic"><span class="ti-ic" data-icon="dock.islandArctic" aria-hidden="true"></span><b>Arctic</b><small>ice, tundra and taiga</small></button>
@@ -893,7 +899,7 @@ const params = new URLSearchParams(location.search);
 // with &map in the address: that keeps its seed and goes straight back into play.
 const HASH = location.hash;   // read once: the seed is written back into the address below, and the other options must survive that
 const TITLE = !/[#&]map(?=&|$)/.test(HASH);
-const hashSeed = TITLE ? undefined : (HASH.match(/seed-?(\d+)/) || [])[1]; // #seed-123 works where query strings don't (e.g. hosted artifacts)
+const hashSeed = TITLE && !/[#&]pick(?=&|$)/.test(HASH) ? undefined : (HASH.match(/seed-?(\d+)/) || [])[1];   // the menu rolls a fresh island, unless one was picked by number (&pick: New island) // #seed-123 works where query strings don't (e.g. hosted artifacts)
 const SEED = (parseInt(params.get('seed') || hashSeed) || (Math.random() * 1e9 | 0)) >>> 0;
 const HASH_OPTS = (HASH.match(/(?:climate|season|weather)-\w+/g) || []).join('&');   // #climate-arctic, #season-winter, #weather-rain (kept with the seed)
 try { if (!hashSeed) history.replaceState(null, '', '#seed-' + SEED + (HASH_OPTS ? '&' + HASH_OPTS : '')); } catch (e) { /* sandboxed: fine */ }
@@ -10466,10 +10472,14 @@ Game.on('catch', () => Birds.excite());
   const biomes = on => { menu.hidden = on; bio.hidden = !on; (on ? bio.querySelector('.ti-bio') : document.getElementById('tiNew')).focus({ preventScroll: true }); };
   document.getElementById('tiNew').onclick = () => biomes(true);
   document.getElementById('tiBioBack').onclick = () => biomes(false);
-  bio.onclick = e => { const b = e.target.closest('[data-climate]'); if (!b) return;
+  const seedIn = document.getElementById('tiSeed');
+  seedIn.oninput = () => { const v = seedIn.value.replace(/\D/g, '').slice(0, 10); if (v !== seedIn.value) seedIn.value = v; };
+  const go = climate => {   // the island number typed (if any; it may also say the climate) in that climate, or a random island in it
+    const sd = +seedIn.value > 0 && +seedIn.value <= 4294967295 ? +seedIn.value : 0, h = sd ? `#seed-${sd}${climate ? '&climate-' + climate : ''}&pick` : climate ? '#climate-' + climate : '';
     T.hidden = true; document.body.classList.remove('title-on'); Engine.titleOpen = false;
-    try { history.replaceState(null, '', location.pathname + location.search + '#climate-' + b.dataset.climate); } catch (e) { location.hash = 'climate-' + b.dataset.climate; }
+    try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) { location.hash = h.slice(1); }
     location.reload(); };
+  bio.onclick = e => { const b = e.target.closest('[data-climate]'); if (b) go(b.dataset.climate); };
   // from the start menu, Settings is a single page: Back (or Esc) closes it and returns to the menu
   const pauseShow = Engine.pauseShow;
   Engine.pauseShow = function (page) {
@@ -10480,10 +10490,12 @@ Game.on('catch', () => Birds.excite());
   // while the menu is up the game hears no keys (the menu's own buttons still work: Enter / Space / arrows)
   const hold = e => {
     if (!Engine.titleOpen || Engine.pauseOpen) return;
+    if (e.target === seedIn && e.type === 'keydown' && e.code === 'Enter') { e.preventDefault(); e.stopPropagation(); if (seedIn.value) go(null); return; }   // the island number alone: its own climate
+    if (e.target === seedIn && !/^(Escape|ArrowUp|ArrowDown)$/.test(e.code)) return;   // typing it (the game ignores keys typed into a box)
     e.stopPropagation();
     if (e.type === 'keydown' && e.code === 'Escape' && !bio.hidden) { e.preventDefault(); biomes(false); }   // out of the island choice, back to the menu
     else if (e.type === 'keydown' && /^Arrow(Down|Up|Left|Right)$/.test(e.code)) {   // the menu's items, or the island choice (its three, then Back)
-      e.preventDefault(); const L = [...T.querySelectorAll(bio.hidden ? '.ti-menu button.ti-item' : '#tiBiomes button')], i = L.indexOf(document.activeElement);
+      e.preventDefault(); const L = [...T.querySelectorAll(bio.hidden ? '.ti-menu button.ti-item' : '#tiBiomes button, #tiSeed')], i = L.indexOf(document.activeElement);
       L[(i + (e.code === 'ArrowDown' || e.code === 'ArrowRight' ? 1 : -1) + L.length) % L.length].focus();
     } else if (e.type === 'keydown' && e.code === 'Enter' && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#title button'))) { e.preventDefault(); startGame(); }
   };

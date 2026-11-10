@@ -5,7 +5,7 @@ const params = new URLSearchParams(location.search);
 // with &map in the address: that keeps its seed and goes straight back into play.
 const HASH = location.hash;   // read once: the seed is written back into the address below, and the other options must survive that
 const TITLE = !/[#&]map(?=&|$)/.test(HASH);
-const hashSeed = TITLE ? undefined : (HASH.match(/seed-?(\d+)/) || [])[1]; // #seed-123 works where query strings don't (e.g. hosted artifacts)
+const hashSeed = TITLE && !/[#&]pick(?=&|$)/.test(HASH) ? undefined : (HASH.match(/seed-?(\d+)/) || [])[1];   // the menu rolls a fresh island, unless one was picked by number (&pick: New island) // #seed-123 works where query strings don't (e.g. hosted artifacts)
 const SEED = (parseInt(params.get('seed') || hashSeed) || (Math.random() * 1e9 | 0)) >>> 0;
 const HASH_OPTS = (HASH.match(/(?:climate|season|weather)-\w+/g) || []).join('&');   // #climate-arctic, #season-winter, #weather-rain (kept with the seed)
 try { if (!hashSeed) history.replaceState(null, '', '#seed-' + SEED + (HASH_OPTS ? '&' + HASH_OPTS : '')); } catch (e) { /* sandboxed: fine */ }
