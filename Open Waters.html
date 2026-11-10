@@ -457,39 +457,44 @@
 #hSettings { position: fixed; top: 13px; right: 52px; pointer-events: auto; border: 1px solid #d4e4e088; border-radius: 9px; background: #182219b8; color: var(--cream); padding: 6px 8px; font: 12px var(--sans); cursor: pointer; }
 </style>
 <style>
-/* ---- start menu: a dark green panel fading in from the left, over the live scene ---- */
-#title { position: fixed; inset: 0; z-index: 4; display: flex; align-items: flex-start; justify-content: flex-start; padding: clamp(56px, 13vh, 120px) 0 0 clamp(28px, 7vw, 130px); box-sizing: border-box;
-  background: linear-gradient(90deg, rgba(14,46,30,.94) 0%, rgba(16,52,34,.86) 22%, rgba(18,56,36,.55) 34%, rgba(18,56,36,0) 46%); transition: opacity .6s ease; }
+/* ---- start menu: the logo top left, a row of picture cards along the bottom, over the live scene ---- */
+#title { position: fixed; inset: 0; z-index: 4; transition: opacity .6s ease;
+  background: radial-gradient(ellipse 40% 45% at 12% 18%, rgba(10,36,22,.45), rgba(10,36,22,0) 70%), linear-gradient(0deg, rgba(12,44,28,.96) 0%, rgba(14,48,30,.85) 20%, rgba(16,52,34,.35) 32%, rgba(16,52,34,0) 42%); }
 #title[hidden] { display: none; }
 #title.leaving { opacity: 0; pointer-events: none; }
-#title.busy .ti-menu { opacity: .45; pointer-events: none; } #title.busy .ti-sub { color: var(--gold-hi); }
+#title.busy .ti-row { opacity: .45; pointer-events: none; } #title.busy .ti-sub { color: var(--gold-hi); }
 body.title-on #hud, body.title-on #tui, body.title-on #overlay { visibility: hidden !important; }
-.ti-card { position: static; width: min(400px, calc(100vw - 40px)); color: #f6ecd2; font-family: var(--serif); text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 2px 14px rgba(0,0,0,.35); }
-#tiName { margin: 0; font: 600 clamp(56px, 7.4vw, 92px)/.92 var(--serif); letter-spacing: -1px; color: #f2e6c8; }
-.ti-line { display: block; width: min(320px, 82%); height: auto; margin: 6px 0 0 4px; overflow: visible; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
-.ti-sub { margin: 14px 0 44px 2px; font: 500 clamp(16px, 1.4vw, 21px) var(--sans); color: #ece2c6; min-height: 1em; letter-spacing: .2px; }
-.ti-menu { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-.ti-item { position: relative; display: flex; align-items: center; padding: 6px 0 6px 28px; text-align: left; font: 700 clamp(22px, 1.9vw, 30px) var(--serif); color: #f2e6c8;
-  background: transparent; border: 0; cursor: pointer; text-shadow: inherit; transition: color .15s, transform .15s, background .15s, border-color .15s; }
-button.ti-item:not(.ti-primary)::before { content: '›'; position: absolute; left: 8px; opacity: 0; color: var(--gold-hi); transition: opacity .15s; }
-button.ti-item:hover, button.ti-item:focus-visible { color: var(--gold-hi); transform: translateX(4px); outline: none; }
-button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1; }
-.ti-primary { gap: 18px; width: 100%; margin: 0 0 22px; padding: 14px 24px 14px 44px; font-style: italic; font-size: clamp(26px, 2.3vw, 36px); color: #f6ecd2;
-  background: linear-gradient(180deg, rgba(40,66,32,.92), rgba(28,50,24,.92)); border: 2px solid #c4a86c; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08); }
-.ti-primary:hover, .ti-primary:focus-visible { border-color: var(--gold-hi); background: linear-gradient(180deg, rgba(52,82,40,.95), rgba(34,60,28,.95)); }
-.ti-play { font-style: normal; font-size: .62em; color: #e8c46a; }
+.ti-card { position: absolute; inset: 0; color: #f6ecd2; font-family: var(--serif); }
+/* the logo */
+.ti-logo { position: absolute; left: clamp(20px, 5.5vw, 110px); top: clamp(24px, 6vh, 64px); width: min(460px, 60vw); }
+#tiName { margin: 0; font: 900 clamp(48px, 6.6vw, 104px)/.86 'Rockwell Extra Bold', Rockwell, 'Roboto Slab', 'Clarendon', Georgia, serif; text-transform: uppercase; letter-spacing: 1px; color: #f6e5bd;
+  text-shadow: 0 3px 0 #7a5330, 0 5px 0 #5b3c22, 0 10px 18px rgba(0,0,0,.45); }
+.ti-line { display: block; width: 86%; height: auto; margin: 2px 0 0 4%; overflow: visible; filter: drop-shadow(0 2px 2px rgba(0,0,0,.45)); }
+.ti-sub { margin: 10px 0 0 8%; font: 600 clamp(13px, 1.25vw, 20px) var(--sans); text-transform: uppercase; letter-spacing: 2px; color: #f3e6c6; text-shadow: 0 1px 3px rgba(0,0,0,.7); min-height: 1em; }
+/* the cards */
+.ti-row { position: absolute; left: clamp(16px, 3.4vw, 64px); right: clamp(16px, 3.4vw, 64px); bottom: clamp(44px, 6.5vh, 64px); display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(10px, 2vw, 36px); }
+.ti-row[hidden] { display: none; }
+.ti-item { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; min-height: clamp(110px, 17vh, 150px); padding: 12px 8px 14px; box-sizing: border-box; cursor: pointer;
+  color: #f6ecd2; font: 700 clamp(17px, 1.75vw, 30px)/1.1 var(--serif); text-shadow: 0 2px 3px rgba(0,0,0,.6);
+  background: linear-gradient(180deg, rgba(28,72,50,.94), rgba(18,54,36,.96)); border: 2px solid #c4a86c; border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.07);
+  transition: transform .15s, border-color .15s, background .15s, box-shadow .15s; }
+.ti-item b { font: inherit; white-space: nowrap; }
+.ti-ic { display: block; width: clamp(64px, 6.4vw, 112px); aspect-ratio: 4 / 3; } .ti-ic svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 3px 3px rgba(0,0,0,.45)); }
+.ti-primary { background: linear-gradient(180deg, rgba(46,104,74,.96), rgba(30,80,54,.97)); border-color: #f0d58a; box-shadow: 0 0 0 2px rgba(240,213,138,.25), 0 0 22px rgba(240,213,138,.35), 0 6px 18px rgba(0,0,0,.35); }
+button.ti-item:hover, button.ti-item:focus-visible { transform: translateY(-4px); border-color: var(--gold-hi); outline: none; background: linear-gradient(180deg, rgba(50,110,78,.97), rgba(32,84,56,.98)); }
+.ti-primary:hover, .ti-primary:focus-visible { box-shadow: 0 0 0 3px rgba(240,213,138,.4), 0 0 28px rgba(240,213,138,.5), 0 8px 20px rgba(0,0,0,.4); }
 .ti-soon { cursor: not-allowed; }
-.ti-foot { position: absolute; right: clamp(20px, 3vw, 48px); bottom: clamp(24px, 6vh, 56px); margin: 0; font: 15px var(--sans); color: rgba(242,230,196,.85); letter-spacing: .3px; }
-/* New island: three island pictures to choose from, then Back */
-.ti-biomes[hidden], .ti-menu[hidden] { display: none; }
-.ti-bio-title { margin: 0 0 14px 2px; font: italic 600 clamp(22px, 1.9vw, 28px) var(--serif); color: #f2e6c8; }
-.ti-bio-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
-.ti-bio { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px 10px; border-radius: 16px; cursor: pointer; color: #f2e6c8; text-shadow: inherit;
-  background: linear-gradient(180deg, rgba(40,66,32,.85), rgba(28,50,24,.85)); border: 1.5px solid rgba(196,168,108,.7); transition: border-color .15s, transform .15s, background .15s; }
-.ti-bio span { width: 84px; height: 60px; } .ti-bio span svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 3px 3px #0008); }
-.ti-bio b { font: 700 19px var(--serif); } .ti-bio small { font: 12px/1.25 var(--sans); color: #d8cfb4; text-align: center; }
-.ti-bio:hover, .ti-bio:focus-visible { border-color: var(--gold-hi); transform: translateY(-2px); outline: none; background: linear-gradient(180deg, rgba(52,82,40,.95), rgba(34,60,28,.95)); }
-@media (max-width: 600px) { #title { padding: 48px 20px 0; background: linear-gradient(180deg, rgba(14,46,30,.92) 0%, rgba(16,52,34,.8) 60%, rgba(18,56,36,.4) 100%); } .ti-card { width: 100%; } .ti-foot { right: 20px; } }
+.ti-foot { position: absolute; left: clamp(20px, 3.8vw, 72px); bottom: clamp(12px, 2.2vh, 22px); margin: 0; font: 600 clamp(11px, .95vw, 15px) var(--sans); text-transform: uppercase; letter-spacing: 1.5px; color: rgba(243,230,198,.9); text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+/* New island: the three climates and Back take the cards' place */
+.ti-biomes { grid-template-columns: repeat(3, 1fr) .7fr; }
+.ti-bio-title { position: absolute; left: 4px; bottom: 100%; margin: 0 0 12px; font: italic 700 clamp(20px, 1.9vw, 30px) var(--serif); color: #f6ecd2; text-shadow: 0 2px 4px rgba(0,0,0,.7); }
+.ti-bio small { font: 12px/1.25 var(--sans); color: #d8cfb4; text-align: center; white-space: normal; }
+.ti-back { display: flex; align-items: center; justify-content: center; font: 400 56px/1 var(--serif); color: #e8c46a; }
+@media (max-width: 760px) {
+  .ti-row { grid-template-columns: repeat(3, 1fr); bottom: 40px; } .ti-biomes { grid-template-columns: repeat(2, 1fr); }
+  .ti-item { min-height: 96px; font-size: 16px; } .ti-ic { width: 60px; }
+  #title { background: radial-gradient(ellipse 70% 40% at 30% 14%, rgba(10,36,22,.5), rgba(10,36,22,0) 70%), linear-gradient(0deg, rgba(12,44,28,.96) 0%, rgba(14,48,30,.85) 40%, rgba(16,52,34,0) 62%); }
+}
 </style>
 <style>
 /* ---- glass menus: tinted with the scene's average colour (boot.js sets --tint), thin light edge ---- */
@@ -523,25 +528,27 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 <canvas id="canvas3d"></canvas>
 <div id="title" hidden>
   <div class="ti-card" role="dialog" aria-labelledby="tiName">
-    <h1 id="tiName">Open<br>Waters</h1>
-    <svg class="ti-line" viewBox="0 0 320 34" aria-hidden="true"><path d="M2 22 C 60 10, 110 10, 160 18 S 260 30, 296 16" fill="none" stroke="#f2e6c4" stroke-width="2" stroke-linecap="round"/>
-      <line x1="300" y1="2" x2="300" y2="9" stroke="#2a2216" stroke-width="2"/><circle cx="300" cy="17" r="8.5" fill="#f4efe2" stroke="#2a2216" stroke-width="1.5"/><path d="M291.5 17 a8.5 8.5 0 0 0 17 0 Z" fill="#c8322a" stroke="#2a2216" stroke-width="1.5"/></svg>
-    <p class="ti-sub" id="tiSub">&nbsp;</p>
-    <nav class="ti-menu" aria-label="Start menu">
-      <button id="tiStart" class="ti-item ti-primary" type="button"><span class="ti-play" aria-hidden="true">▶</span>Start fishing</button>
-      <button id="tiTut" class="ti-item" type="button">Tutorial</button>
-      <button id="tiNew" class="ti-item" type="button">New island</button>
-      <button id="tiSettings" class="ti-item" type="button">Settings</button>
-      <div class="ti-item ti-soon" aria-disabled="true" title="Coming soon">Sandbox</div>
+    <header class="ti-logo">
+      <h1 id="tiName">Open<br>Waters</h1>
+      <svg class="ti-line" viewBox="0 0 360 54" aria-hidden="true"><path d="M4 30 C 70 14, 130 14, 190 26 S 290 40, 318 24" fill="none" stroke="#f3e2b8" stroke-width="5" stroke-linecap="round"/>
+        <ellipse cx="326" cy="44" rx="30" ry="6" fill="none" stroke="#f3e2b8" stroke-opacity=".6" stroke-width="2"/><ellipse cx="326" cy="44" rx="17" ry="3.5" fill="none" stroke="#f3e2b8" stroke-opacity=".8" stroke-width="2"/>
+        <line x1="326" y1="6" x2="326" y2="15" stroke="#3a2416" stroke-width="3" stroke-linecap="round"/><circle cx="326" cy="29" r="14" fill="#f6efe0" stroke="#3a2416" stroke-width="2.5"/><path d="M312 29 a14 14 0 0 1 28 0 Z" fill="#d23a2a" stroke="#3a2416" stroke-width="2.5"/><ellipse cx="320" cy="22" rx="4" ry="2.5" fill="#fff" opacity=".55"/></svg>
+      <p class="ti-sub" id="tiSub">&nbsp;</p>
+    </header>
+    <nav class="ti-menu ti-row" aria-label="Start menu">
+      <button id="tiStart" class="ti-item ti-primary" type="button"><span class="ti-ic" aria-hidden="true"><svg viewBox="0 0 96 72"><ellipse cx="48" cy="60" rx="38" ry="8" fill="none" stroke="#e9dcb6" stroke-opacity=".45" stroke-width="2"/><ellipse cx="48" cy="60" rx="22" ry="4.5" fill="none" stroke="#e9dcb6" stroke-opacity=".7" stroke-width="2"/>
+        <line x1="48" y1="4" x2="48" y2="20" stroke="#3a2416" stroke-width="3" stroke-linecap="round"/><circle cx="48" cy="40" r="19" fill="#f6efe0" stroke="#3a2416" stroke-width="2.5"/><path d="M29 40 a19 19 0 0 1 38 0 Z" fill="#d23a2a" stroke="#3a2416" stroke-width="2.5"/><ellipse cx="40" cy="31" rx="6" ry="3.5" fill="#fff" opacity=".5"/></svg></span><b>Start fishing</b></button>
+      <button id="tiTut" class="ti-item" type="button"><span class="ti-ic" data-icon="dock.journal" aria-hidden="true"></span><b>Tutorial</b></button>
+      <button id="tiNew" class="ti-item" type="button"><span class="ti-ic" data-icon="dock.islandTropical" aria-hidden="true"></span><b>New island</b></button>
+      <button id="tiSettings" class="ti-item" type="button"><span class="ti-ic" data-icon="dock.gear" aria-hidden="true"></span><b>Settings</b></button>
+      <div class="ti-item ti-soon" aria-disabled="true" title="Coming soon"><span class="ti-ic" data-icon="dock.tackleBox" aria-hidden="true"></span><b>Sandbox</b></div>
     </nav>
-    <div id="tiBiomes" class="ti-biomes" role="group" aria-labelledby="tiBioTitle" hidden>
+    <div id="tiBiomes" class="ti-biomes ti-row" role="group" aria-labelledby="tiBioTitle" hidden>
       <p id="tiBioTitle" class="ti-bio-title">Choose an island</p>
-      <div class="ti-bio-row">
-        <button class="ti-bio" type="button" data-climate="temperate"><span data-icon="dock.island"></span><b>Temperate</b><small>woods, lakes and rivers</small></button>
-        <button class="ti-bio" type="button" data-climate="tropical"><span data-icon="dock.islandTropical"></span><b>Tropical</b><small>palms, reefs, warm water</small></button>
-        <button class="ti-bio" type="button" data-climate="arctic"><span data-icon="dock.islandArctic"></span><b>Arctic</b><small>ice, tundra and taiga</small></button>
-      </div>
-      <button id="tiBioBack" class="ti-item" type="button">‹ Back</button>
+      <button class="ti-item ti-bio" type="button" data-climate="temperate"><span class="ti-ic" data-icon="dock.island" aria-hidden="true"></span><b>Temperate</b><small>woods, lakes and rivers</small></button>
+      <button class="ti-item ti-bio" type="button" data-climate="tropical"><span class="ti-ic" data-icon="dock.islandTropical" aria-hidden="true"></span><b>Tropical</b><small>palms, reefs, warm water</small></button>
+      <button class="ti-item ti-bio" type="button" data-climate="arctic"><span class="ti-ic" data-icon="dock.islandArctic" aria-hidden="true"></span><b>Arctic</b><small>ice, tundra and taiga</small></button>
+      <button id="tiBioBack" class="ti-item" type="button"><span class="ti-ic ti-back" aria-hidden="true">‹</span><b>Back</b></button>
     </div>
     <p class="ti-foot" id="tiFoot"></p>
   </div>

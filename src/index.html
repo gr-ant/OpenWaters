@@ -19,25 +19,27 @@
 <canvas id="canvas3d"></canvas>
 <div id="title" hidden>
   <div class="ti-card" role="dialog" aria-labelledby="tiName">
-    <h1 id="tiName">Open<br>Waters</h1>
-    <svg class="ti-line" viewBox="0 0 320 34" aria-hidden="true"><path d="M2 22 C 60 10, 110 10, 160 18 S 260 30, 296 16" fill="none" stroke="#f2e6c4" stroke-width="2" stroke-linecap="round"/>
-      <line x1="300" y1="2" x2="300" y2="9" stroke="#2a2216" stroke-width="2"/><circle cx="300" cy="17" r="8.5" fill="#f4efe2" stroke="#2a2216" stroke-width="1.5"/><path d="M291.5 17 a8.5 8.5 0 0 0 17 0 Z" fill="#c8322a" stroke="#2a2216" stroke-width="1.5"/></svg>
-    <p class="ti-sub" id="tiSub">&nbsp;</p>
-    <nav class="ti-menu" aria-label="Start menu">
-      <button id="tiStart" class="ti-item ti-primary" type="button"><span class="ti-play" aria-hidden="true">▶</span>Start fishing</button>
-      <button id="tiTut" class="ti-item" type="button">Tutorial</button>
-      <button id="tiNew" class="ti-item" type="button">New island</button>
-      <button id="tiSettings" class="ti-item" type="button">Settings</button>
-      <div class="ti-item ti-soon" aria-disabled="true" title="Coming soon">Sandbox</div>
+    <header class="ti-logo">
+      <h1 id="tiName">Open<br>Waters</h1>
+      <svg class="ti-line" viewBox="0 0 360 54" aria-hidden="true"><path d="M4 30 C 70 14, 130 14, 190 26 S 290 40, 318 24" fill="none" stroke="#f3e2b8" stroke-width="5" stroke-linecap="round"/>
+        <ellipse cx="326" cy="44" rx="30" ry="6" fill="none" stroke="#f3e2b8" stroke-opacity=".6" stroke-width="2"/><ellipse cx="326" cy="44" rx="17" ry="3.5" fill="none" stroke="#f3e2b8" stroke-opacity=".8" stroke-width="2"/>
+        <line x1="326" y1="6" x2="326" y2="15" stroke="#3a2416" stroke-width="3" stroke-linecap="round"/><circle cx="326" cy="29" r="14" fill="#f6efe0" stroke="#3a2416" stroke-width="2.5"/><path d="M312 29 a14 14 0 0 1 28 0 Z" fill="#d23a2a" stroke="#3a2416" stroke-width="2.5"/><ellipse cx="320" cy="22" rx="4" ry="2.5" fill="#fff" opacity=".55"/></svg>
+      <p class="ti-sub" id="tiSub">&nbsp;</p>
+    </header>
+    <nav class="ti-menu ti-row" aria-label="Start menu">
+      <button id="tiStart" class="ti-item ti-primary" type="button"><span class="ti-ic" aria-hidden="true"><svg viewBox="0 0 96 72"><ellipse cx="48" cy="60" rx="38" ry="8" fill="none" stroke="#e9dcb6" stroke-opacity=".45" stroke-width="2"/><ellipse cx="48" cy="60" rx="22" ry="4.5" fill="none" stroke="#e9dcb6" stroke-opacity=".7" stroke-width="2"/>
+        <line x1="48" y1="4" x2="48" y2="20" stroke="#3a2416" stroke-width="3" stroke-linecap="round"/><circle cx="48" cy="40" r="19" fill="#f6efe0" stroke="#3a2416" stroke-width="2.5"/><path d="M29 40 a19 19 0 0 1 38 0 Z" fill="#d23a2a" stroke="#3a2416" stroke-width="2.5"/><ellipse cx="40" cy="31" rx="6" ry="3.5" fill="#fff" opacity=".5"/></svg></span><b>Start fishing</b></button>
+      <button id="tiTut" class="ti-item" type="button"><span class="ti-ic" data-icon="dock.journal" aria-hidden="true"></span><b>Tutorial</b></button>
+      <button id="tiNew" class="ti-item" type="button"><span class="ti-ic" data-icon="dock.islandTropical" aria-hidden="true"></span><b>New island</b></button>
+      <button id="tiSettings" class="ti-item" type="button"><span class="ti-ic" data-icon="dock.gear" aria-hidden="true"></span><b>Settings</b></button>
+      <div class="ti-item ti-soon" aria-disabled="true" title="Coming soon"><span class="ti-ic" data-icon="dock.tackleBox" aria-hidden="true"></span><b>Sandbox</b></div>
     </nav>
-    <div id="tiBiomes" class="ti-biomes" role="group" aria-labelledby="tiBioTitle" hidden>
+    <div id="tiBiomes" class="ti-biomes ti-row" role="group" aria-labelledby="tiBioTitle" hidden>
       <p id="tiBioTitle" class="ti-bio-title">Choose an island</p>
-      <div class="ti-bio-row">
-        <button class="ti-bio" type="button" data-climate="temperate"><span data-icon="dock.island"></span><b>Temperate</b><small>woods, lakes and rivers</small></button>
-        <button class="ti-bio" type="button" data-climate="tropical"><span data-icon="dock.islandTropical"></span><b>Tropical</b><small>palms, reefs, warm water</small></button>
-        <button class="ti-bio" type="button" data-climate="arctic"><span data-icon="dock.islandArctic"></span><b>Arctic</b><small>ice, tundra and taiga</small></button>
-      </div>
-      <button id="tiBioBack" class="ti-item" type="button">‹ Back</button>
+      <button class="ti-item ti-bio" type="button" data-climate="temperate"><span class="ti-ic" data-icon="dock.island" aria-hidden="true"></span><b>Temperate</b><small>woods, lakes and rivers</small></button>
+      <button class="ti-item ti-bio" type="button" data-climate="tropical"><span class="ti-ic" data-icon="dock.islandTropical" aria-hidden="true"></span><b>Tropical</b><small>palms, reefs, warm water</small></button>
+      <button class="ti-item ti-bio" type="button" data-climate="arctic"><span class="ti-ic" data-icon="dock.islandArctic" aria-hidden="true"></span><b>Arctic</b><small>ice, tundra and taiga</small></button>
+      <button id="tiBioBack" class="ti-item" type="button"><span class="ti-ic ti-back" aria-hidden="true">‹</span><b>Back</b></button>
     </div>
     <p class="ti-foot" id="tiFoot"></p>
   </div>
