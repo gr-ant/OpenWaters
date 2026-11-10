@@ -5,10 +5,10 @@ Object.assign(Engine, {
   contextKeys() {
     const A = this.ang, b = this.boat, out = [], K = id => Controls.key(id), drag = `${K('dragDown')} ${K('dragUp')}`;   // keys as currently bound
     if (A && A.out && A.phase === 'card') return [[K('keep'), 'Keep'], [K('release'), 'Release']];
-    if (this.rodInHand()) {
-      if (A.phase === 'ready') out.push([drag, 'Drag']);
-      else if (A.phase === 'water') out.push([K('run'), 'Reel faster'], [K('bail'), A.bail ? 'Close bail' : A.S.reel && A.S.reel.kind !== 'spinning' ? 'Free spool' : 'Open bail']);
-      else if (A.phase === 'fight') out.push([K('run'), 'Reel harder'], [drag, 'Drag']);
+    if (this.rodInHand()) { const onReel = !this.touchUI && this.showReelKeys !== false && !(b && this.boatMode !== 'deck');   // the bail and drag keys are already shown on the reel itself (hud/reel.js): not twice
+      if (A.phase === 'ready') { if (!onReel) out.push([drag, 'Drag']); }
+      else if (A.phase === 'water') { out.push([K('run'), 'Reel faster']); if (!onReel) out.push([K('bail'), A.bail ? 'Close bail' : A.S.reel && A.S.reel.kind !== 'spinning' ? 'Free spool' : 'Open bail']); }
+      else if (A.phase === 'fight') { out.push([K('run'), 'Reel harder']); if (!onReel) out.push([drag, 'Drag']); }
     }
     if (b) {
       if (this.boatMode === 'deck') out.push([K('helm'), 'Helm'], [K('dive'), this.boatSit ? 'Stand' : 'Sit']);
