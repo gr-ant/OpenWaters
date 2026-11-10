@@ -140,6 +140,14 @@
   #catch i { display:block; font-size:12px; color:#c8bfa0; margin-bottom:6px; }
   #ccSize { font-size:16px; } #ccNote { font-size:12.5px; color:#9ad8ff; margin:4px 0 10px; }
   #catch button { background:#0003; border:1.5px solid var(--gold); color:#fff; border-radius:16px; padding:8px 18px; margin:0 4px; font:600 14px system-ui, sans-serif; cursor:pointer; }
+  /* what a net or a pot brought up: keep or let go, one by one or all at once */
+  #haul { position:fixed; z-index:4; left:50%; bottom:28px; transform:translateX(-50%); width:min(340px, calc(100vw - 24px)); max-height:60vh; overflow-y:auto; padding:12px 14px; box-sizing:border-box; text-align:center; }
+  #haul[hidden] { display:none; }
+  #haul > b { display:block; font:700 22px Georgia, serif; color:var(--cream); } #haul > i { display:block; font-size:12px; color:#c8bfa0; margin-bottom:8px; } #haul > small { display:block; margin-top:6px; font-size:11px; color:#c8bfa0; }
+  #haul ul { list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:5px; }
+  #haul li { display:flex; align-items:baseline; gap:8px; padding:6px 10px; border-radius:10px; border:1px solid #d4e4e055; background:#ffffff06; cursor:pointer; text-align:left; opacity:.7; }
+  #haul li.on { opacity:1; border-color:var(--gold-hi); background:#ffffff12; } #haul li span { flex:1; font:600 15px var(--serif); } #haul li small { font-size:12px; color:#d8cfb4; } #haul li em { font:600 12px var(--sans); font-style:normal; color:var(--gold-hi); min-width:44px; text-align:right; }
+  #haul button { background:#0003; border:1.5px solid var(--gold); color:#fff; border-radius:16px; padding:8px 14px; margin:0 3px; font:600 13px system-ui, sans-serif; cursor:pointer; } #haul #haulKeep { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }
   #catch { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }   /* the 3D view keeps animating behind it: a live blur costs every frame */
   #catch #ccTurn { display:block; margin-top:8px; font-size:11px; color:#c8bfa0; } body.touch #catch #ccTurn { display:none; }
   #catch button#ccKeep { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }
@@ -10374,9 +10382,9 @@ Game.on('catch', () => Birds.excite());
   const { MT } = Game;
   const KINDS = {
     cast_net: { name: 'Cast net', icon: 'net', use: 'Throw', blurb: 'Thrown by hand over small fish and shrimp, up to 9 m out.' },
-    crab_pot: { name: 'Crab pot', icon: 'pot', use: 'Set', max: 4, holds: 6, blurb: 'Crabs, and crayfish in fresh water.', buoy: [1.5, 0.55, 0.12],
+    crab_pot: { name: 'Crab pot', icon: 'pot', use: 'Set', max: 2, holds: 6, blurb: 'Crabs, and crayfish in fresh water.', buoy: [1.5, 0.55, 0.12],
       takes: D => D.body.plan === 'crab' ? 1 : D.body.plan === 'lobster' ? (D.size.length_cm.typical <= 15 ? 1 : 0.2) : 0 },
-    lobster_cage: { name: 'Lobster cage', icon: 'cage', use: 'Set', max: 4, holds: 4, blurb: 'Lobsters, and the odd crab.', buoy: [1.3, 0.12, 0.1],
+    lobster_cage: { name: 'Lobster cage', icon: 'cage', use: 'Set', max: 2, holds: 4, blurb: 'Lobsters, and the odd crab.', buoy: [1.3, 0.12, 0.1],
       takes: D => D.body.plan === 'lobster' ? (D.size.length_cm.typical <= 15 ? 0.3 : 1) : D.body.plan === 'crab' ? 0.3 : 0 },
   };
   const T = Engine.traps = { hand: null, set: [], net: null, busy: 0, saveT: 0 };
@@ -10445,15 +10453,29 @@ Game.on('catch', () => Birds.excite());
   const soaked = h => h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : `${h.toFixed(1)} h`;
 
   // ---- catches go straight in the creel and the journal ----
-  const bank = (gear, kd, list) => {   // list: [{ species, name, lengthCm, weightKg }]; returns "2 × Blue crab · 1 × …"
-    if (!list.length) return '';
-    const recs = list.map(f => ({ species: f.species, name: f.name, cm: +f.lengthCm.toFixed(1), kg: +f.weightKg.toFixed(3), t: Date.now(), rig: gear, kept: true, water: WATER_KEYS[kd], climate: CLIMATE.key, seed: SEED }));
+  const record = (gear, kd, list) => {   // list: [{ species, name, lengthCm, weightKg, kept }], into the journal
+    if (!list.length) return;
+    const recs = list.map(f => ({ species: f.species, name: f.name, cm: +f.lengthCm.toFixed(1), kg: +f.weightKg.toFixed(3), t: Date.now(), rig: gear, kept: !!f.kept, water: WATER_KEYS[kd], climate: CLIMATE.key, seed: SEED }));
     const log = Engine.catchLog(); log.push(...recs); try { localStorage.setItem(Engine.catchKey(), JSON.stringify(log.slice(-500))); } catch (e) { /* */ }
     for (const r of recs) Game.emit('catch', r, null);
     if (Engine.journalOpen) Engine.journalRender();
-    const n = {}; for (const f of list) n[f.name] = (n[f.name] || 0) + 1;
-    return Object.entries(n).map(([name, k]) => `${k} × ${name}`).join(' · ');
   };
+  const tally = list => { const n = {}; for (const f of list) n[f.name] = (n[f.name] || 0) + 1; return Object.entries(n).map(([name, k]) => `${k} × ${name}`).join(' · '); };   // "2 × Blue crab · 1 × …"
+  // ---- what came up: keep it or let it go, one by one or all at once (E keeps what's marked, X lets the lot go) ----
+  // items: [{ species, name, lengthCm, weightKg, keep(), free() }]: keep() takes the animal out of the world, free() puts it back
+  let cardEl = null;
+  const cardDraw = () => { const Cd = T.card; if (!cardEl) { cardEl = document.createElement('div'); cardEl.id = 'haul'; cardEl.className = 'panel'; document.body.appendChild(cardEl);
+      cardEl.addEventListener('click', e => { const t = e.target, row = t.closest && t.closest('[data-i]'); if (!T.card) return; if (t.id === 'haulKeep') return decide(false); if (t.id === 'haulFree') return decide(true); if (row) { const it = T.card.items[+row.dataset.i]; it.kept = !it.kept; cardDraw(); } }); }
+    cardEl.hidden = !Cd; if (!Cd) return; const esc = v => String(v).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])), kg = w => w < 1 ? `${(w * 1000).toFixed(0)} g` : `${w.toFixed(2)} kg`, n = Cd.items.filter(i => i.kept).length;
+    cardEl.innerHTML = `<b>${esc(Cd.gear)}</b><i>${esc(tally(Cd.items))}</i><ul>${Cd.items.map((it, i) => `<li data-i="${i}" class="${it.kept ? 'on' : ''}"><span>${esc(it.name)}</span><small>${it.lengthCm.toFixed(1)} cm · ${kg(it.weightKg)}</small><em>${it.kept ? 'Keep' : 'Let go'}</em></li>`).join('')}</ul>`
+      + `<div class="haul-btns"><button id="haulKeep">${n === Cd.items.length ? 'Keep all' : n ? `Keep ${n}, let ${Cd.items.length - n} go` : 'Let them go'}${Engine.touchUI ? '' : ` (${Controls.key('keep')})`}</button><button id="haulFree">Let them all go${Engine.touchUI ? '' : ` (${Controls.key('release')})`}</button></div><small>Tap one to change it</small>`; };
+  const offer = (gear, kd, items) => { if (!items.length) return false; for (const it of items) it.kept = true; T.card = { gear, kd, items };
+    if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock(); cardDraw(); return true; };
+  const decide = freeAll => { const Cd = T.card; if (!Cd) return; T.card = null; cardDraw();
+    for (const it of Cd.items) { if (freeAll) it.kept = false; if (it.kept) it.keep(); else it.free(); }
+    record(Cd.gear, Cd.kd, Cd.items); const k = Cd.items.filter(i => i.kept), g = Cd.items.length - k.length;
+    say(k.length ? `In the creel: ${tally(k)}${g ? ` · let ${g} go` : ''}` : `Let ${g === 1 ? 'it' : `all ${g}`} go`, k.length ? 4 : 2.5); if (Engine.tackleOpen) Engine.tackleRender(); };
+  Game.on('key', code => { if (!T.card) return; if (code === 'KeyE') decide(false); else if (code === 'KeyX') decide(true); });
   const takeLive = f => { Engine.removeFish(f); Engine.fish = Engine.fish.filter(q => q !== f); for (const c of Engine.fishCells.values()) { const i = c.fish.indexOf(f); if (i >= 0) { c.fish.splice(i, 1); break; } } };
 
   // ---- the water in front of you: under the crosshair when that's in reach, else a few metres ahead ----
@@ -10464,7 +10486,7 @@ Game.on('catch', () => Birds.excite());
 
   // ---- throwing and hauling are seen: things fly out in an arc, sink, and come back hand over hand ----
   // (props are drawn from buffers that only refill when the set changes, so anything moving asks for a refill each frame: Engine.propKey = null)
-  const ease = u => u * u * (3 - 2 * u), lerp = (a, b, u) => a + (b - a) * u, hands = () => { const P = Game.player; return [P.x + Math.cos(P.a) * 0.5, P.y + Math.sin(P.a) * 0.5, P.z + 1.1]; };
+  const ease = u => u * u * (3 - 2 * u), lerp = (a, b, u) => a + (b - a) * u, hands = () => { const P = Game.player, c = Math.cos(P.a), q = Math.sin(P.a); if (Engine.thirdP && Engine.hPose && Engine.hPose.hand) return Engine.hPose.hand.slice(); return [P.x + c * 0.55 - q * 0.22, P.y + q * 0.55 + c * 0.22, P.z + 1.2]; };   // in front and a little to the right (turning right is +angle); the figure's right hand in third person
   const haulKey = () => Engine.touchUI ? 'Use' : Controls.key('cast');
   T.act = null;   // what your arms are doing, for the third-person figure: { toss: 0..1 } or { pull: radians }
 
@@ -10474,7 +10496,7 @@ Game.on('catch', () => Birds.excite());
     if (Game.swimming) return say("You can't throw a net while swimming", 2);
     const p = aim(9); if (!p) return say('Face the water: the net reaches about 9 m');
     if (Game.waterAt(p.x, p.y).iced) return say("It's frozen over there", 2);
-    const h = hands(); T.net = { x: p.x, y: p.y, from: h, t0: Engine.time, stage: 'fly', got: [], prop: Game.addProp('cast_net', h[0], h[1], { z: h[2], scale: 0.2, rot: 0 }) }; say('Net away…', 1);
+    const h = hands(), prop = T.held || Game.addProp('cast_net', h[0], h[1], { z: h[2], scale: 0.2, rot: 0 }); T.held = null; T.net = { x: p.x, y: p.y, from: h, t0: Engine.time, stage: 'fly', got: [], prop }; say('Net away…', 1);   // the bundle in your hand is what flies
   };
   const haulNet = () => { const N = T.net; if (!N || N.stage !== 'down') return false; N.stage = 'haul'; N.t0 = Engine.time; N.back = [N.prop.x, N.prop.y, N.prop.z]; Game.ripple(N.x, N.y, 1); return true; };
   const netStep = dt => { const N = T.net; if (!N) return; const t = Engine.time - N.t0, pr = N.prop; if (N.stage !== 'down' || t < 1.4) Engine.propKey = null;   // (moving: redraw; lying on the bed it needn't)
@@ -10482,12 +10504,15 @@ Game.on('catch', () => Birds.excite());
       pr.x = lerp(N.from[0], N.x, u); pr.y = lerp(N.from[1], N.y, u); pr.z = lerp(N.from[2], w.level, u) + 1.5 * Math.sin(Math.PI * u); pr.scale = 0.2 + 0.8 * ease(u); pr.rot += dt * 7;
       if (u >= 1) { N.stage = 'down'; N.t0 = Engine.time; N.kd = w.kindId; N.wl = w.level; N.bed = Math.max(w.ground + 0.06, w.level - 1.4); Game.splash(N.x, N.y, 24); Game.sound('plop', { x: N.x, y: N.y });
         N.got = Game.fishNear(N.x, N.y, NET_R).filter(f => !f.hooked && f.lengthCm <= 40 && ['fish', 'shrimp'].includes(f.def.body.plan || 'fish') && f.z > N.wl - 3.5 && Math.random() < 0.8).slice(0, 12);   // small fish and shrimp under it, down to 3.5 m
-        N.got.forEach(takeLive); Game.disturb(N.x, N.y, 1.5); say(`Net down · ${haulKey()} to pull it in`, 2.5); } }
+        for (const f of N.got) f.hooked = 'net'; Game.disturb(N.x, N.y, 1.5); say(`Net down · ${haulKey()} to pull it in`, 2.5); } }   // held under it (still in the world until you decide)
     else if (N.stage === 'down') { pr.z = lerp(N.wl - 0.05, N.bed, ease(Math.min(1, t / 1.2))); T.act = null;   // sinking, then lying there
       if (!T.hand || Math.hypot(N.x - Game.player.x, N.y - Game.player.y) > 25) haulNet(); }   // put away or walked off: it comes in
     else { const u = Math.min(1, t / 0.9), h = hands(); T.act = { pull: Engine.time * 9 };   // gathered up and drawn back to your hands
       pr.x = lerp(N.back[0], h[0], ease(u)); pr.y = lerp(N.back[1], h[1], ease(u)); pr.z = lerp(N.back[2], h[2], ease(u)); pr.scale = 1 - 0.75 * ease(u);
-      if (u >= 1) { unplace([pr]); T.net = null; T.act = null; T.busy = Engine.time + 0.4; const sum = bank('Cast net', N.kd, N.got); say(sum ? `Cast net: ${sum}` : 'The net came up empty', sum ? 5 : 2.5); } } };
+      N.got.forEach((f, i) => { f.x = pr.x + Math.cos(i * 2.4) * 0.25 * pr.scale; f.y = pr.y + Math.sin(i * 2.4) * 0.25 * pr.scale; f.z = pr.z - 0.1; });   // the catch comes in with it
+      if (u >= 1) { unplace([pr]); T.net = null; T.act = null; T.busy = Engine.time + 0.4;
+        const back = f => { sample(N.x, N.y); f.hooked = false; f.x = N.x; f.y = N.y; f.z = Math.max(hW(SE) + 0.05, SW - 0.4); f.state = 'flee'; f.stress = 1; f.thx = Game.player.x; f.thy = Game.player.y; f.tNext = 0; };   // back where the net came down, and off it goes
+        if (!offer('Cast net', N.kd, N.got.map(f => ({ species: f.species, name: f.name, lengthCm: f.lengthCm, weightKg: f.weightKg, keep: () => { f.hooked = false; takeLive(f); }, free: () => back(f) })))) say('The net came up empty', 2.5); } } };
 
   // ---- pots and cages: thrown (or dropped) in an arc, they sink to the bed; at the stake or buoy, R pulls one up ----
   T.fly = [];   // pots in the air: { tr, prop, from, t0, dur }
@@ -10524,10 +10549,10 @@ Game.on('catch', () => Birds.excite());
   const haul = tr => { if (tr.pull || tr.sink) return; tr.pull = { t0: Engine.time, from: tr.props[0].z }; Game.ripple(tr.x, tr.y, 0.8); say(`Hauling the ${KINDS[tr.kind].name.toLowerCase()}…`, 1.5); };
   const landPot = tr => { const K = KINDS[tr.kind], C = candidates(tr), work = 1 - Math.exp(-tr.h / SOAK_H), got = [];   // it's up: what's in it?
     for (const c of C) { if (got.length >= K.holds) break; if (Math.random() < c.w * work * Math.sqrt(1 - c.d / POT_R)) got.push(c); }
-    for (const { sp } of got) { const live = Engine.fish.find(f => f.id === sp.id); if (live) takeLive(live); else Engine.removeFish({ id: sp.id }); }
     T.set = T.set.filter(t => t !== tr); unplace(tr.props); save(); Game.splash(tr.x, tr.y, 14);
-    const sum = bank(K.name, tr.kd, got.map(({ sp, D }) => ({ species: D.id, name: D.name, lengthCm: sp.size.cm, weightKg: sp.size.kg })));
-    say(sum ? `${K.name}: ${sum}` : `${K.name} came up empty: ${!C.length ? 'nothing for it lives round here' : tr.h < 0.5 ? 'give it longer' : 'no luck this time'}`, sum ? 5 : 3.5);
+    const gone = sp => { const live = Engine.fish.find(f => f.id === sp.id); if (live) takeLive(live); else Engine.removeFish({ id: sp.id }); };   // kept: out of the world for a while; let go: it never left
+    if (!offer(K.name, tr.kd, got.map(({ sp, D }) => ({ species: D.id, name: D.name, lengthCm: sp.size.cm, weightKg: sp.size.kg, keep: () => gone(sp), free: () => {} }))))
+      say(`${K.name} came up empty: ${!C.length ? 'nothing for it lives round here' : tr.h < 0.5 ? 'give it longer' : 'no luck this time'}`, 3.5);
     if (Engine.tackleOpen) Engine.tackleRender();
   };
 
@@ -10542,12 +10567,13 @@ Game.on('catch', () => Birds.excite());
   Engine.trapUseLabel = useLabel;   // the touch Use button's word (overlay.js)
   const baseAction = Engine.action;
   Engine.action = function () { const near = !T.hand && nearTrap();
+    if (T.card) return;   // decide about what came up first (E / X, or its buttons)
     if (T.net) { haulNet(); return; }   // the net's out: Use pulls it in too (the touch button)
     if (T.hand) return T.hand === 'cast_net' ? throwNet() : setPot(T.hand);
     if (near) return haul(near);
     return baseAction.call(this); };
   // R (the cast / reel key) pulls things in: the net that's down, or the pot whose stake or buoy you're at
-  Game.on('key', code => { if (code !== 'KeyR' || !rodAway()) return; if (netDown()) { haulNet(); return; } const near = !T.hand && nearTrap(); if (near) haul(near); });
+  Game.on('key', code => { if (code !== 'KeyR' || !rodAway() || T.card) return; if (netDown()) { haulNet(); return; } const near = !T.hand && nearTrap(); if (near) haul(near); });
   const baseRod = Engine.toggleRod;
   Engine.toggleRod = function (on = !this.ang.out) { if (on) T.hand = null; return baseRod.call(this, on); };   // the rod out puts the net or pot away
   const baseKeys = Engine.contextKeys;
@@ -10556,6 +10582,9 @@ Game.on('catch', () => Birds.excite());
   Game.on('update', dt => {
     for (const tr of T.set) tr.h += Engine.dtH || 0;
     T.act = null; netStep(dt || 0); potStep(dt || 0);
+    const hold = T.hand === 'cast_net' && !T.net && !T.card && !Game.swimming;   // the net bundled in your hand, ready to throw
+    if (hold) { const h = hands(); if (!T.held) T.held = Game.addProp('cast_net', h[0], h[1], { z: h[2], scale: 0.2, rot: 0 }); T.held.x = h[0]; T.held.y = h[1]; T.held.z = h[2] - 0.12; T.held.rot = Game.player.a; Engine.propKey = null; }
+    else if (T.held) { unplace([T.held]); T.held = null; }
     if (T.set.length && Engine.time - T.saveT > 20) { T.saveT = Engine.time; save(); }   // soak time survives a reload
   });
   Game.on('ready', () => { if (!CONFIG.saveProgress) return;
@@ -10567,6 +10596,10 @@ Game.on('catch', () => Birds.excite());
     if (netDown()) Engine.hudDetail = `Cast net out  ·  ${haulKey()} to pull it in`;
     else if (tr) Engine.hudDetail = `${KINDS[tr.kind].name}  ·  set ${soaked(tr.h)} ago  ·  ${haulKey()} to haul`;
     else if (T.hand) Engine.hudDetail = `${KINDS[T.hand].name} in hand  ·  ${useKey()} to ${T.hand === 'cast_net' ? 'throw' : Engine.boat || Game.swimming ? 'drop under a buoy' : 'set from the bank'}`; });
+  // the net's hand line: from your hand out to the net, paying out as it flies, slack while it lies, coming in as you haul
+  Game.onHud(c => { const N = T.net; if (!N || !c || Engine.showMap) return; const h = hands(), pr = N.prop, a = Game.project(h[0], h[1], h[2] - 0.05), b = Game.project(pr.x, pr.y, pr.z + 0.05); if (!a || !b) return;
+    const d = Math.hypot(pr.x - h[0], pr.y - h[1]), sag = N.stage === 'down' ? 0.25 + 0.05 * d : 0.06 * d, m = Game.project((h[0] + pr.x) / 2, (h[1] + pr.y) / 2, (h[2] + pr.z) / 2 - sag);
+    c.save(); c.lineCap = 'round'; for (const [w, col] of [[3.2, 'rgba(40,30,16,.55)'], [1.8, 'rgba(226,208,150,.95)']]) { c.lineWidth = w; c.strokeStyle = col; c.beginPath(); c.moveTo(a[0], a[1]); if (m) c.quadraticCurveTo(2 * m[0] - (a[0] + b[0]) / 2, 2 * m[1] - (a[1] + b[1]) / 2, b[0], b[1]); else c.lineTo(b[0], b[1]); c.stroke(); } c.restore(); });
   // on the map: a dot where each pot is hauled from
   Game.onMap((c, toPx, inside) => { for (const tr of T.set) { const [x, y] = anchor(tr), [px, py] = toPx(x, y); if (inside && !inside(px, py)) continue;
     const [r, g, b] = KINDS[tr.kind].buoy; c.beginPath(); c.arc(px, py, 4, 0, 6.2832); c.fillStyle = `rgb(${Math.min(255, r * 170) | 0},${Math.min(255, g * 170) | 0},${Math.min(255, b * 170) | 0})`; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#fff'; c.stroke(); } });

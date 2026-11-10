@@ -71,6 +71,14 @@
   #catch i { display:block; font-size:12px; color:#c8bfa0; margin-bottom:6px; }
   #ccSize { font-size:16px; } #ccNote { font-size:12.5px; color:#9ad8ff; margin:4px 0 10px; }
   #catch button { background:#0003; border:1.5px solid var(--gold); color:#fff; border-radius:16px; padding:8px 18px; margin:0 4px; font:600 14px system-ui, sans-serif; cursor:pointer; }
+  /* what a net or a pot brought up: keep or let go, one by one or all at once */
+  #haul { position:fixed; z-index:4; left:50%; bottom:28px; transform:translateX(-50%); width:min(340px, calc(100vw - 24px)); max-height:60vh; overflow-y:auto; padding:12px 14px; box-sizing:border-box; text-align:center; }
+  #haul[hidden] { display:none; }
+  #haul > b { display:block; font:700 22px Georgia, serif; color:var(--cream); } #haul > i { display:block; font-size:12px; color:#c8bfa0; margin-bottom:8px; } #haul > small { display:block; margin-top:6px; font-size:11px; color:#c8bfa0; }
+  #haul ul { list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:5px; }
+  #haul li { display:flex; align-items:baseline; gap:8px; padding:6px 10px; border-radius:10px; border:1px solid #d4e4e055; background:#ffffff06; cursor:pointer; text-align:left; opacity:.7; }
+  #haul li.on { opacity:1; border-color:var(--gold-hi); background:#ffffff12; } #haul li span { flex:1; font:600 15px var(--serif); } #haul li small { font-size:12px; color:#d8cfb4; } #haul li em { font:600 12px var(--sans); font-style:normal; color:var(--gold-hi); min-width:44px; text-align:right; }
+  #haul button { background:#0003; border:1.5px solid var(--gold); color:#fff; border-radius:16px; padding:8px 14px; margin:0 3px; font:600 13px system-ui, sans-serif; cursor:pointer; } #haul #haulKeep { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }
   #catch { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }   /* the 3D view keeps animating behind it: a live blur costs every frame */
   #catch #ccTurn { display:block; margin-top:8px; font-size:11px; color:#c8bfa0; } body.touch #catch #ccTurn { display:none; }
   #catch button#ccKeep { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }

@@ -1,9 +1,9 @@
 // Smoke test for fishing/nets-traps.js in a stubbed engine: node tests/nets-traps.cjs
 const fs = require('fs'), vm = require('vm'), R = __dirname + '/../src/js/';
-const store = {}, said = [], listeners = {}, hud = [], map = [];
+const store = {}, said = [], listeners = {}, hud = [], map = [], cards = [];
 const ctx = { console, Math, JSON, Date, performance, isFinite, Object, Float32Array, Uint32Array, Uint16Array, Int32Array, Map, Set,
   localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = v; } },
-  document: { getElementById: () => ({ addEventListener() {} }) },
+  document: { getElementById: () => ({ addEventListener() {} }), createElement: () => ({ hidden: false, innerHTML: '', addEventListener(n, f) { this.onclick = f; } }), body: { appendChild(e) { cards.push(e); } } }, cards, sample() {}, hW: () => -2.2, SE: 0, SW: -0.2,
   CONFIG: { saveName: 't', saveProgress: true }, SEED: 5, CLIMATE: { key: 'temperate' }, WATER_KEYS: ['sea', 'lake', 'pond', 'river', 'creek'], FISH_CELL: 16,
   Controls: { key: () => 'F' }, uiIcon: n => `<svg ${n}/>`,
   FishDB: { list: [{ id: 'blue_crab', name: 'Blue crab', body: { plan: 'crab' }, size: { length_cm: { typical: 15 } } }, { id: 'american_lobster', name: 'American lobster', body: { plan: 'lobster' }, size: { length_cm: { typical: 25 } } }] },
@@ -42,29 +42,40 @@ map.forEach(f => f({ beginPath() {}, arc() {}, fill() {}, stroke() {} }, (x, y) 
 A(/Crab pot/.test(Engine.trapsHTML()) && /Out now/.test(Engine.trapsHTML()), 'tab html');
 run(21); A(/"kind":"crab_pot"/.test(localStorage.getItem('engine-traps-t-5')), 'saved');
 // R at the stake: it comes up over a moment (arms hauling), then you see what's in it
+const key = k => Game.emit('key', k), card = () => cards[0];
 T.set[0].h = 0; R(); A(T.set.length === 1 && T.set[0].pull && /Hauling/.test(said.at(-1)), 'R starts the haul'); run(0.5); A(T.set[0].props[0].z > -2.2 && T.act && T.act.pull !== undefined, 'coming up, arms pulling');
-run(1.2); A(/give it longer/.test(said.at(-1)) && !T.set.length && !Engine.props.length && !T.act, 'empty when hauled at once: ' + said.at(-1));
+run(1.2); A(/give it longer/.test(said.at(-1)) && !T.set.length && !Engine.props.length && !T.act && !T.card, 'empty when hauled at once: ' + said.at(-1));
+// after a soak there's a catch, and a card to keep it or let it go; nothing is logged or taken until you choose
 T.hand = 'crab_pot'; Engine.action(); T.hand = null; run(3, 12); R(); run(1.7);
-A(/Crab pot: .*\\d × Blue crab/.test(said.at(-1)), 'catches crabs after a soak: ' + said.at(-1));   // (a lobster or two may be listed first)
-const log = Engine.catchLog(); A(log.length >= 1 && log.length <= 6 && log.every(r => r.rig === 'Crab pot' && r.kept && r.water === 'sea' && r.cm > 0), 'journal records');
-A(Object.keys(Engine.gone).length === log.length, 'caught animals stay gone');
+A(T.card && T.card.gear === 'Crab pot' && T.card.items.length >= 1 && T.card.items.length <= 6 && T.card.items.some(i => i.name === 'Blue crab'), 'a card with the catch'); A(card() && !card().hidden && /Keep all/.test(card().innerHTML) && /Blue crab/.test(card().innerHTML), 'card shown');
+A(!Engine.catchLog().length && !Object.keys(Engine.gone).length, 'nothing decided yet'); Engine.based = false; Engine.action(); R(); A(!Engine.based && T.card, 'the card waits for an answer');
+const n1 = T.card.items.length; card().onclick({ target: { closest: () => ({ dataset: { i: '0' } }) } }); A(!T.card.items[0].kept && (n1 === 1 ? /Let them go/ : /Keep \\d+, let 1 go/).test(card().innerHTML), 'tap one to let it go: ' + card().innerHTML.match(/<button id="haulKeep">[^<]*/)[0]);
+key('KeyE'); A(!T.card && card().hidden, 'E decides'); const log = Engine.catchLog(); A(log.length === n1 && log.filter(r => !r.kept).length === 1 && log.every(r => r.rig === 'Crab pot' && r.water === 'sea' && r.cm > 0), 'journal: kept and released');
+A(Object.keys(Engine.gone).length === n1 - 1, 'only the kept ones leave the water'); A(n1 === 1 ? /Let it go/.test(said.at(-1)) : /In the creel: .* · let 1 go/.test(said.at(-1)), 'said: ' + said.at(-1));
+// X lets the lot go
+T.hand = 'crab_pot'; Engine.action(); T.hand = null; run(3, 12); R(); run(1.7); const before = Object.keys(Engine.gone).length; A(T.card, 'another catch'); key('KeyX'); A(!T.card && Object.keys(Engine.gone).length === before && /Let (it|all \\d+) go/.test(said.at(-1)), 'X releases all: ' + said.at(-1));
 // with the rod out, R is the rod's: it doesn't haul
-T.hand = 'crab_pot'; Engine.action(); T.hand = null; run(3); Engine.ang.out = true; R(); A(!T.set[0].pull, 'rod out: R is for the rod'); Engine.ang.out = false; R(); run(1.7); A(!T.set.length, 'hauled once the rod is away');
-// lobster cages under buoys from a boat; four at most; Use works for hauling too (the touch button)
-Engine.boat = {}; Game.player.x = 40; for (let k = 0; k < 4; k++) { T.hand = 'lobster_cage'; Engine.action(); run(1.2); }
-A(T.set.length === 4 && T.set.every(t => t.ax === null) && T.hand === null && /none left/.test(said.at(-1)), 'four cages under buoys: ' + said.at(-1));
-T.hand = 'lobster_cage'; Engine.action(); A(/All 4 are out/.test(said.at(-1)), 'no fifth');
-T.hand = null; run(3); Engine.action(); A(T.set.some(t => t.pull), 'Use hauls at a buoy'); run(1.7); A(T.set.length === 3, 'one up');
-A(JSON.parse(localStorage.getItem('engine-traps-t-5')).set.length === 3, 'saved three');
-// cast net: thrown out spinning open, it stays down until R; the catch is what was under it
-Engine.boat = null; Game.player.x = 0; Engine.fish = [{ id: 'm1', x: 5.5, y: 0.3, z: -1, lengthCm: 8, weightKg: 0.01, species: 'mummichog', name: 'Mummichog', def: { body: {} } }, { id: 'big', x: 5.4, y: 0, z: -1, lengthCm: 80, weightKg: 4, species: 'pike', name: 'Pike', def: { body: {} } }];
-const r0 = Math.random; Math.random = () => 0.1; T.hand = 'cast_net'; Engine.action(); A(T.net && T.net.stage === 'fly' && pose('cast_net').scale < 0.3, 'net thrown, still bunched: ' + said.at(-1));
-run(0.4); A(pose('cast_net').scale > 0.5 && pose('cast_net').z > -0.2 && T.act && T.act.toss > 0, 'opening in the air'); run(0.5); A(T.net.stage === 'down' && Engine.fish.length === 1, 'down over the small fish');
+T.hand = 'crab_pot'; Engine.action(); T.hand = null; run(3); Engine.ang.out = true; R(); A(!T.set[0].pull, 'rod out: R is for the rod'); Engine.ang.out = false; R(); run(1.7); A(!T.set.length, 'hauled once the rod is away'); if (T.card) key('KeyX');
+// lobster cages under buoys from a boat; two at most; Use works for hauling too (the touch button)
+Engine.boat = {}; Game.player.x = 40; for (let k = 0; k < 2; k++) { T.hand = 'lobster_cage'; Engine.action(); run(1.2); }
+A(T.set.length === 2 && T.set.every(t => t.ax === null) && T.hand === null && /none left/.test(said.at(-1)), 'two cages under buoys: ' + said.at(-1));
+T.hand = 'lobster_cage'; Engine.action(); A(/All 2 are out/.test(said.at(-1)), 'no third');
+T.hand = null; run(3); Engine.action(); A(T.set.some(t => t.pull), 'Use hauls at a buoy'); run(1.7); A(T.set.length === 1, 'one up'); if (T.card) key('KeyE');
+A(JSON.parse(localStorage.getItem('engine-traps-t-5')).set.length === 1, 'saved one');
+// cast net: seen bundled in your hand; thrown, it opens and stays down until R; what was under it is held there, then comes in with it
+Engine.boat = null; Game.player.x = 0; const small = { id: 'm1', x: 5.5, y: 0.3, z: -1, lengthCm: 8, weightKg: 0.01, species: 'mummichog', name: 'Mummichog', def: { body: {} } };
+Engine.fish = [small, { id: 'big', x: 5.4, y: 0, z: -1, lengthCm: 80, weightKg: 4, species: 'pike', name: 'Pike', def: { body: {} } }];
+T.hand = 'cast_net'; step(0.05); A(T.held && pose('cast_net') === T.held && T.held.scale < 0.3, 'the net in your hand'); const inHand = T.held;
+const r0 = Math.random; Math.random = () => 0.1; Engine.action(); A(T.net && T.net.stage === 'fly' && T.net.prop === inHand && !T.held, 'the bundle in your hand is what flies: ' + said.at(-1));
+run(0.4); A(pose('cast_net').scale > 0.5 && pose('cast_net').z > -0.2 && T.act && T.act.toss > 0, 'opening in the air'); run(0.5); A(T.net.stage === 'down' && small.hooked === 'net' && Engine.fish.length === 2, 'down over the small fish, which is held under it');
 Math.random = r0; run(5); A(T.net && T.net.stage === 'down' && pose('cast_net').z < -1, 'it stays down, on the bottom, until you pull'); A(Engine.contextKeys()[0][1] === 'Haul net' && Engine.trapUseLabel() === 'Haul', 'haul hints');
-hud.forEach(f => f()); A(/pull it in/.test(Engine.hudDetail), 'hud says how'); Engine.action(); A(T.net.stage === 'down' || T.net.stage === 'haul', 'Use pulls too');
-T.net.stage === 'down' && R(); run(0.5); A(T.net && T.net.stage === 'haul' && pose('cast_net').scale < 1 && T.act && T.act.pull !== undefined, 'coming in, gathered up');
-run(0.6); A(!T.net && /Cast net: 1 × Mummichog/.test(said.at(-1)) && !pose('cast_net'), 'net catch: ' + said.at(-1));
+hud.forEach(f => f()); A(/pull it in/.test(Engine.hudDetail), 'hud says how'); const lines = []; Game.project = (x, y, z) => [x, z]; hud.forEach(f => f({ save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {}, quadraticCurveTo() { lines.push(1); }, stroke() {} })); A(lines.length === 2, 'the hand line is drawn out to the net');
+R(); run(0.5); A(T.net && T.net.stage === 'haul' && pose('cast_net').scale < 1 && T.act && T.act.pull !== undefined && Math.abs(small.x - pose('cast_net').x) < 0.3, 'coming in, gathered up, the catch with it');
+run(0.6); A(!T.net && T.card && T.card.gear === 'Cast net' && T.card.items.length === 1 && !pose('cast_net'), 'net up: a card for the catch'); step(0.05); A(!T.held, 'hands full until you decide');
+key('KeyX'); A(!T.card && small.hooked === false && small.state === 'flee' && Math.abs(small.x - 5.4) < 1e-9 && Engine.fish.length === 2 && /Let it go/.test(said.at(-1)), 'let go: back in the water where the net came down: ' + said.at(-1));
+step(0.05); A(T.held, 'the net is back in your hand'); run(0.5); Math.random = () => 0.1; small.x = 5.5; small.y = 0.3; Engine.action(); run(1); R(); run(1.6); Math.random = r0; A(T.card, 'caught again'); key('KeyE');
+A(Engine.fish.length === 1 && /In the creel: 1 × Mummichog/.test(said.at(-1)) && Engine.catchLog().at(-1).kept === true && Engine.catchLog().at(-1).rig === 'Cast net', 'kept: ' + said.at(-1));
 // putting the net away while it's down brings it in
-T.hand = 'cast_net'; run(0.5); Engine.action(); run(1); A(T.net && T.net.stage === 'down', 'down again'); T.hand = null; run(1.2); A(!T.net && /empty/.test(said.at(-1)), 'put away: it came in');
+run(0.5); Engine.action(); run(1); A(T.net && T.net.stage === 'down', 'down again'); T.hand = null; run(1.2); A(!T.net && /empty/.test(said.at(-1)) && !T.held, 'put away: it came in');
 console.log('ok:', said.slice(-3).join(' | '));
 `, ctx);
