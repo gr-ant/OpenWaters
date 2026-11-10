@@ -54,7 +54,10 @@ function world(x, y) {
   if (inGrid(x, y)) {
     const I = ISL, gi = Math.round((x - I.ox) / I.C), gj = Math.round((y - I.oy) / I.C), id = I.lakeNear[gj * I.N + gi];
     if (id >= 0) { obj = I.lakes[id]; lev = obj.lev; kind = obj.kind; }
-    const n = nearChannels(x, y);
+    const n = nearChannels(x, y), lk = obj, inLake = id >= 0 && I.lakeId[gj * I.N + gi] >= 0;
+    let gap = 1e9;   // how far outside the water of a river or creek running well below this lake (or its shore) we are: see below
+    if (lk) for (let k = 0; k < n; k++) if (CH_S[k] < lk.lev - 0.3) gap = Math.min(gap, CH_D[k] - CH_W[k]);   // (an outlet leaving the lake is at its level at first, so not 'below' it)
+    const lowerBy = gap < 12;
     let best = 1e9;
     for (let k = 0; k < n; k++) {
       let lipK = (obj ? sstep(lev - 0.5, lev + 0.5, h0) : 1) * sstep(WLW - 0.5, WLW + 0.5, h0);   // no levee inside a lake or the sea
@@ -65,9 +68,10 @@ function world(x, y) {
         // the channel's own level, unless a lake owns this spot; on a lake's shore the inflowing creek keeps its
         // (higher) level until it reaches the lake, so its last metres aren't left dry
         const lakeLev = obj && obj.kind !== undefined && kind !== RIVER && kind !== CREEK ? obj.lev : null;
-        if (h0 > WLW + 0.2 && (lakeLev === null || (CH_S[k] > lakeLev + 0.05 && h0 > lakeLev))) { lev = Math.max(CH_S[k], WLW); kind = CH_K[k]; obj = null; }
+        if (h0 > WLW + 0.2 && (lakeLev === null || (CH_S[k] > lakeLev + 0.05 && h0 > lakeLev) || (lowerBy && CH_S[k] < lakeLev - 0.3 && CH_D[k] < CH_W[k] + (inLake ? 0 : 1.5)))) { lev = Math.max(CH_S[k], WLW); kind = CH_K[k]; obj = null; }   // (a lower river past a lake keeps its own level)
       }
     }
+    if (lowerBy && obj === lk) h = Math.max(h, gap < 6 ? lk.lev + 0.15 : inLake ? h : Math.min(h0, lk.lev + 0.15));   // and the lake keeps a bank between them: no lake water left hanging over the river
     if (!obj && kind === OCEAN) { const c = cenoteAt(x, y), hb = h;   // a cenote: the pit's wall spans 4 m+ (2+ terrain cells) so its colours don't smear
       if (c) { const floor = c.lev - c.D * (1 - Math.min(1, CEN_D / CEN_R) ** 2), b = sstep(CEN_R - Math.max(4, 0.25 * CEN_R), CEN_R, CEN_D);
         h = Math.min(h, floor + (h - floor) * b); if (CEN_D < CEN_R) { lev = c.lev; kind = LAKE; obj = c; } }
