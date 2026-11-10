@@ -11,13 +11,14 @@ const api = new Function('location', 'history', 'matchMedia', 'localStorage', so
 const { BoatDB, Engine: E, oarPose, oarXform, VS, buildBoat, MT, helmPose } = api;
 for (const [, name] of read('src/index.html').matchAll(/data-builtin="boat" src="([^"]+)"/g)) assert.ok(BoatDB.register(JSON.parse(read(`src/${name}`)), { quiet: true }).def, name);
 assert.ok(BoatDB.list.length >= 13);
-// the wheel stands clear of its console however far it's turned (none of it inside the console box)
+// the wheel and throttle lever stand clear of the console and its dash however they're turned or pushed
 let consoles = 0;
 for (const D of BoatDB.list) { const cs = D.features.console; if (!cs || !D._helm) continue; consoles++;
   const S = D._shape, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), top = D.hull.floor_m + (cs.height ?? 0.95);
   const out = new Float32Array(D._helm.wheel.length + D._helm.lever.length);
-  for (const ang of [0, 0.8, -1.4]) { helmPose(D, ang, 0, out); for (let i = 0; i < D._helm.wheel.length; i += VS) {
-    const inside = out[i] > x - 0.3 && out[i] < x + 0.25 && Math.abs(out[i + 1] - oy) < w && out[i + 2] < top; assert.ok(!inside, `${D.id}: the wheel (turned ${ang}) is sunk into the console at ${[...out.slice(i, i + 3)].map(v => v.toFixed(2))}`); } } }
+  for (const [ang, thr] of [[0, 0], [0.8, 1], [-1.4, -1]]) { helmPose(D, ang, thr, out); for (let i = 0; i < out.length; i += VS) {
+    const X = out[i], inBox = X > x - 0.3 && X < x + 0.25 && out[i + 2] < top, inDash = X > x - 0.3 && X < x - 0.05 && out[i + 2] < top + (X - (x - 0.3)) - 0.03;   // the console, and the 45 degree dash on its aft end
+    assert.ok(Math.abs(out[i + 1] - oy) >= w || !(inBox || inDash), `${D.id}: the ${i < D._helm.wheel.length ? 'wheel' : 'throttle lever'} (wheel ${ang}, throttle ${thr}) is sunk into the console at ${[...out.slice(i, i + 3)].map(v => v.toFixed(2))}`); } } }
 assert.ok(consoles >= 3, 'boats with a console');
 
 // trim and fittings (boat-detail.js): every boat gets some, and nothing is flung far off the hull

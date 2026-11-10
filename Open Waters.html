@@ -4422,7 +4422,7 @@ function boatDetail(D, S, M, C, X) {
   const ring = (c, r, u, v, th, col, n = 16) => { for (let i = 0; i < n; i++) { const a0 = i / n * TAU, a1 = (i + 1) / n * TAU, at = a => [c[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * r, c[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * r, c[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * r]; rod(at(a0), at(a1), th, col); } };
   // the wheel (centre wc) and throttle lever (pivot lp): their own small meshes in D._helm, turned and pushed as you drive (helmPose, boats.js)
   const part = fn => { const keep = M, B = meshBuilder(true); B.mat = keep.mat; M = B; fn(); M = keep; return new Float32Array(B.v); };
-  const helm = (wc, lp) => { const u = [0, 1, 0], v = [-0.42, 0, 0.91], r = 0.15;
+  const helm = (wc, lp, v = [-0.42, 0, 0.91]) => { const u = [0, 1, 0], r = 0.15;   // v: the wheel's 'up' (its plane is u, v)
     D._helm = { c: wc, u, v, n: norm3(cross3(u, v)), r, lp,
       wheel: part(() => { ring(wc, r, u, v, 0.012, dark, 12); for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 0.5; rod(wc, [wc[0] + v[0] * Math.sin(a) * r, wc[1] + Math.cos(a) * r, wc[2] + v[2] * Math.sin(a) * r], 0.009, steel, 3); } }),
       lever: part(() => { rod(lp, [lp[0] - 0.07, lp[1], lp[2] + 0.15], 0.012, steel); M.blob([lp[0] - 0.075, lp[1], lp[2] + 0.165], 0.022, 0.022, 0.025, 3, 6, dark); }) }; };
@@ -4477,8 +4477,12 @@ function boatDetail(D, S, M, C, X) {
 
   // ---- the helm ----
   if (F.console) { const cs = F.console, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), h = cs.height ?? 0.95, top = fz + h, scr = cs.screen ?? 0.3;
-    M.mat = MT.METAL; helm([x - 0.39, oy, top + 0.02], [x - 0.05, oy + w * 0.75, top]);   // a spoked wheel, raked back, standing clear of the console's aft face (x - 0.3) on a short column; the throttle lever on top beside it
-    rod([x - 0.3, oy, top - 0.03], [x - 0.39, oy, top + 0.02], 0.02, steel);
+    { const D0 = 0.25, xa = x - 0.3, xb = xa + D0, y0 = oy - w, y1 = oy + w, nf = [-Math.SQRT1_2, 0, Math.SQRT1_2], ctr = [xb - 0.08, oy, top + 0.08];   // an angled dash on the aft end of the console top: a 45 degree face toward the helm
+      const on = (f, out) => [xa + D0 * f + nf[0] * out, oy, top + D0 * f + nf[2] * out];   // f: how far up the face, out: standing off it
+      M.mat = MT.PLASTER; M.quad([xa, y0, top], [xa, y1, top], [xb, y1, top + D0], [xb, y0, top + D0], V3.mul(C.deck, 0.55), ctr); M.quad([xb, y0, top], [xb, y0, top + D0], [xb, y1, top + D0], [xb, y1, top], C.deck, ctr);
+      for (const y of [y0, y1]) M.tri([xa, y, top], [xb, y, top], [xb, y, top + D0], C.deck, ctr);
+      const wc = on(0.5, 0.09), hub = on(0.5, 0), lp = on(0.3, 0); lp[1] = oy + w * 0.72;
+      M.mat = MT.METAL; rod(hub, wc, 0.02, steel); helm(wc, lp, [Math.SQRT1_2, 0, Math.SQRT1_2]); }   // the wheel flat to the dash on a short hub, the throttle lever on the dash beside it
     M.mat = MT.PLASTER; for (const sy of [-0.45, 0.1]) M.blob([x + 0.02, oy + sy * w, top + 0.008], 0.045, 0.045, 0.008, 2, 8, dark);   // gauges
     M.mat = MT.METAL; const a = [x + 0.25, oy - w, top], b = [x + 0.25 + scr * 0.25, oy - w, top + scr], c = [x + 0.25 + scr * 0.25, oy + w, top + scr], e = [x + 0.25, oy + w, top];   // windscreen frame and a grab rail over it
     rod(a, b, 0.011, steel); rod(b, c, 0.011, steel); rod(c, e, 0.011, steel);
