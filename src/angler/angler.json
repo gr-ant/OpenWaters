@@ -3,14 +3,18 @@
   "name": "The angler",
   "skin": "#dba985",
   "hair": { "style": "short", "color": "#573826" },
-  "outfit": {
-    "cap": "#80946a",
-    "shirt": "#80946a",
-    "vest": "#4a5c33",
-    "trim": "#cc9433",
-    "trousers": "#333330",
-    "patches": "#242421",
-    "boots": "#3d4733",
-    "boot_band": "#80946a"
+  "outfits": {
+    "temperate": {
+      "hat": "cap", "top": "flannel", "bottom": "trousers", "feet": "boots",
+      "colors": { "hat": "#80946a", "top": "#a13b2f", "accent": "#33262a", "vest": "#4a5c33", "trim": "#cc9433", "bottom": "#333330", "patches": "#242421", "feet": "#3d4733", "band": "#80946a" }
+    },
+    "arctic": {
+      "hat": "beanie", "top": "jacket", "bottom": "trousers", "feet": "boots",
+      "colors": { "hat": "#b5412f", "top": "#d58a2c", "accent": "#e9e3d3", "trim": "#2f3a44", "gloves": "#2f3a44", "bottom": "#2b2f36", "patches": "#22262c", "feet": "#26282b", "band": "#e9e3d3" }
+    },
+    "tropical": {
+      "hat": "sun_hat", "top": "tank", "bottom": "shorts", "feet": "sandals",
+      "colors": { "hat": "#dcc48e", "top": "#ece8dc", "trim": "#3a7ca5", "bottom": "#3a7ca5", "feet": "#5a3d28" }
+    }
   }
 }

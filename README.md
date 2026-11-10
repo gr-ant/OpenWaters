@@ -115,18 +115,18 @@ You can add these to the URL: `#seed-12345` picks a fixed world, and `#climate-�
 
 ## The angler's look
 
-`src/angler/angler.json` is how you look in third-person view (H). The model is built from it once, at start (`src/js/models/human.js`).
+`src/angler/angler.json` is how you look in third-person view (H): skin, hair, and an outfit for each island climate. The model is built from it once, at start (`src/js/models/human.js`).
 
 | Field | Values |
 |---|---|
 | `skin` | a colour, `"#rrggbb"` |
 | `hair.style` | `"short"`, `"long"`, `"ponytail"` or `"none"` |
 | `hair.color` | a colour |
-| `outfit.cap` | cap colour, or `null` for no cap |
-| `outfit.shirt` | the hooded shirt: sleeves, hood and collar |
-| `outfit.vest` | fishing vest colour, or `null` for no vest |
-| `outfit.trim` | vest shoulders and tabs, cuffs, the cap's button and strap, the boot stripe |
-| `outfit.trousers`, `outfit.patches` | trousers and their knee patches |
-| `outfit.boots`, `outfit.boot_band` | wellingtons and the band round their tops |
+| `outfits.temperate`, `.arctic`, `.tropical` | what's worn on that kind of island: |
+| …`.hat` | `"cap"`, `"beanie"`, `"sun_hat"` or `null` |
+| …`.top` | `"flannel"` (banded in `top` and `accent`), `"jacket"` (quilted, hooded, with gloves) or `"tank"` (bare arms) |
+| …`.bottom` | `"trousers"` or `"shorts"` |
+| …`.feet` | `"boots"` or `"sandals"` |
+| …`.colors` | `hat`, `top`, `accent` (flannel's second colour, the jacket's fur collar, the beanie's bobble), `vest` (over a flannel; leave out for none), `trim` (vest shoulders, cuffs, hat band, boot stripe), `gloves`, `bottom`, `patches` (knees), `feet`, `band` (boot tops) |
 
-Anything left out falls back to the default in `human.js` (`ANGLER_LOOK`).
+Anything left out falls back to a default in `human.js`.
