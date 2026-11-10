@@ -2212,7 +2212,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
 }
 // A pose: o.mode 'jump' (in the air: o.rise), 'stand' (o.crouch after a landing; moving too: o.swing 0..1 how much, o.gait 0 walk .. 1 jog .. 2 run, o.ph the stride phase, o.stride the metres a whole cycle covers), 'swim' (o.body: body pitch, -pi/2 lying
 // face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet;
-// o.paddle; o.helm). o.rod: the right hand holds a rod out in front (o.castW, o.castF: casting). Returns the parts as [part, forward, side, up, pitch, roll, yaw],
+// o.paddle; o.helm). o.rod: the right hand holds a rod out in front (o.castW, o.castF: casting; o.hands2: the left hand on it too, o.crank: winding). Returns the parts as [part, forward, side, up, pitch, roll, yaw],
 // the right hand and the head centre, all relative to the feet (standing, sitting) under the body's own heading. Every part hangs
 // down from its joint, is rolled out to the side (roll, + to the right), pitched forward (pitch), then turned (yaw): the order the
 // lit shader applies them, so a limb can swing sideways and the shoulders can turn against the hips.
@@ -2264,6 +2264,15 @@ function humanPose(o) {
   const leg = i => { const side = i ? 1 : -1, hipJ = [-side * H.hip * Math.sin(turn), sway + side * H.hip * Math.cos(turn), 0], knee = end(hipJ, H.thigh, thigh[i], thR[i], turn), ankle = end(knee, H.shin, shin[i], shR[i], turn); return { hipJ, knee, ankle }; };
   if (o.mode === 'jump') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i]))));   // in the air the lowest heel or toe is where your feet are
   const hip = [0, sway, hipZ], sh = [-Math.sin(b) * H.torso, sway, hipZ + Math.cos(b) * H.torso], arm2 = end(sh, 0.15, b);   // the shoulders: up the (leaning) spine from the hips; arm2: the shoulder joints' height, well below the top of the sloping shoulders
+  if (o.rod && o.hands2 && o.mode !== 'swim') {   // both hands on the rod (casting, reeling): the left arm reaches across to it. o.crank: the left hand turns the reel handle
+    const ct = Math.cos(twist), st = Math.sin(twist), JR = [arm2[0] - H.shoulder * st, arm2[1] + H.shoulder * ct, arm2[2]], hR = end(end(JR, H.upper, up[1], upR[1], twist), H.fore + 0.04, fore[1], foR[1], twist);
+    const JL = [arm2[0] + H.shoulder * st, arm2[1] - H.shoulder * ct, arm2[2]], ck = o.crank, a = H.upper, bl = H.fore + 0.04;
+    const T = ck !== undefined ? [hR[0] + 0.03 + 0.035 * Math.cos(ck), hR[1] - 0.1, hR[2] - 0.05 + 0.035 * Math.sin(ck)] : [hR[0] - 0.07, hR[1] - 0.05, hR[2] - 0.1];   // on the reel handle, going round; or on the butt below the other hand
+    const v = [T[0] - JL[0], T[1] - JL[1], T[2] - JL[2]], far = Math.hypot(...v) || 1, n = v.map(x => x / far), dd = clamp(far, Math.abs(a - bl) + 0.02, a + bl - 0.01);   // as far as the arm reaches
+    const along = (a * a + dd * dd - bl * bl) / (2 * dd), rise = Math.sqrt(Math.max(0, a * a - along * along)), pd = -0.6 * n[1] - n[2], pole = [-pd * n[0], -0.6 - pd * n[1], -1 - pd * n[2]], pl = Math.hypot(...pole) || 1;   // the elbow drops down and out to the left
+    const El = JL.map((x, k) => x + n[k] * along + pole[k] / pl * rise), Tc = JL.map((x, k) => x + n[k] * dd);
+    const aim = (p, q) => { const w = [q[0] - p[0], q[1] - p[1], q[2] - p[2]], l = Math.hypot(...w) || 1; return [Math.atan2((w[0] * ct + w[1] * st) / l, -w[2] / l), Math.asin(clamp((-w[0] * st + w[1] * ct) / l, -1, 1))]; };   // the pitch and roll that point a limb from p to q
+    [up[0], upR[0]] = aim(JL, El); [fore[0], foR[0]] = aim(El, Tc); }
   out.push(['hips', hip[0], hip[1], hip[2], b, sway * 2, turn], ['torso', sh[0], sh[1], sh[2], b, -sway * 1.5, twist],   // the hips tip and the chest leans a little over the standing foot
     ['head', sh[0], sh[1], sh[2], headP, 0, twist * 0.3]);
   let hand = null;
@@ -6918,6 +6927,7 @@ Object.assign(Engine, {
       o = { mode: 'stand', swing: this.hAmp, gait: g, stride: this.hStride, ph: this.hPh, rod, crouch: this.hCrouch }; }
     if (rod && A.phase === 'charge') { const u = A.stroke == null ? 0 : clamp(A.stroke / 0.26, 0, 1); o.castW = (0.3 + 0.7 * A.charge) * (1 - u); o.castF = u; }   // the cast: wound back as you hold, then the throw
     else if (rod && A.phase === 'flight') o.castF = Math.exp(-(A.t - A.castAt) * 3.2);   // and the follow-through easing off
+    if (rod && !A.holder && (A.phase === 'charge' || A.phase === 'fight' || (A.phase === 'flight' && A.t - A.castAt < 0.6) || (A.reelS || 0) > 0.05)) { o.hands2 = true; if (A.reeling || A.phase === 'fight') o.crank = A.crank || 0; }   // both hands to cast; the left one winds
     const pose = humanPose(o), sm = this.hSm;
     if (sm && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
       const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
@@ -7703,15 +7713,15 @@ Object.assign(Engine, {
       // What bends the rod with no fish on is only what the line is dragging: the lure through the water (winding, a current, the boat
       // towing it) and how hard you're winding. A lure sinking in deep water on a tight line hangs nearly dead weight, so the rod stays easy.
       A.reelS = (A.reelS || 0) + ((btn ? 0.5 + 0.5 * fast : 0) - (A.reelS || 0)) * (1 - Math.exp(-dt * 6));
-      const drag = clamp((L.spd || 0) / 2.5, 0, 1), most = 0.04 + 0.2 * drag + 0.14 * A.reelS + (A.flow || 0) * 0.03;
+      const drag = clamp((L.spd || 0) / 2.5, 0, 1), hard = Math.max(0, A.reelS - 0.5) * 2, most = 0.04 + 0.2 * drag + 0.12 * A.reelS + 0.3 * hard + (A.flow || 0) * 0.03;   // hard: 0 winding steadily .. 1 winding flat out
       if (A.phase === 'water') { tb = Math.min(most, Math.max(A.overS * 1.2, 0.5 * most * A.reelS)) + (S.lure ? 0.025 * S.lure.action * drag * Math.sin(A.t * 42) : 0);   // (a working lure throbs in the tip)
         if (btn) { A.crank = (A.crank || 0) + dt * (7 + 9 * fast); dp = 0.014 * Math.sin(A.crank); dyw = 0.008 * Math.cos(A.crank); }   // the rod rocks a touch with each turn of the handle…
-        dp -= 0.05 * A.reelS; }   // …and dips toward the line while you wind
+        dp += 0.02 * A.reelS + 0.2 * hard; }   // …and the faster you wind the higher it comes up and the more it bends
       if (A.phase === 'bite') { if (!(H && H.on)) this.biteStep(dt, press, btn); }   // a fish that set itself on the holder rod is held by rod-holder.js
       else if ((A.scanT = (A.scanT || 0) - dt) <= 0) { A.scanT = 0.25; this.lureScan(); }
     } else if (A.phase === 'fight') {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
-      tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') { tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1); if (btn) { A.crank = (A.crank || 0) + dt * (5 + 6 * fast); dp = 0.05 * Math.sin(A.crank * 0.6); } }   // pump and wind: the rod lifts and drops as you gain line
+      tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') { tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1); if (btn) { A.crank = (A.crank || 0) + dt * (5 + 6 * fast); dp = 0.05 * Math.sin(A.crank * 0.6) + 0.12 * fast; } }   // pump and wind: the rod lifts and drops as you gain line
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
     if (H) { ty = H.yaw; tp = HOLDER_PITCH; if (A.phase === 'bite') tb = 0.2 + 0.12 * Math.sin(A.t * (H.on ? 9 : 16)); }   // standing in the holder; the tip nods while something has the bait
     else if (!helm && A.phase !== 'charge') { const aim = this.thirdP ? [P.a - 0.08, clamp(0.55 + 0.35 * P.pitch, 0.15, 1.1)] : this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)

@@ -43,15 +43,15 @@ Object.assign(Engine, {
       // What bends the rod with no fish on is only what the line is dragging: the lure through the water (winding, a current, the boat
       // towing it) and how hard you're winding. A lure sinking in deep water on a tight line hangs nearly dead weight, so the rod stays easy.
       A.reelS = (A.reelS || 0) + ((btn ? 0.5 + 0.5 * fast : 0) - (A.reelS || 0)) * (1 - Math.exp(-dt * 6));
-      const drag = clamp((L.spd || 0) / 2.5, 0, 1), most = 0.04 + 0.2 * drag + 0.14 * A.reelS + (A.flow || 0) * 0.03;
+      const drag = clamp((L.spd || 0) / 2.5, 0, 1), hard = Math.max(0, A.reelS - 0.5) * 2, most = 0.04 + 0.2 * drag + 0.12 * A.reelS + 0.3 * hard + (A.flow || 0) * 0.03;   // hard: 0 winding steadily .. 1 winding flat out
       if (A.phase === 'water') { tb = Math.min(most, Math.max(A.overS * 1.2, 0.5 * most * A.reelS)) + (S.lure ? 0.025 * S.lure.action * drag * Math.sin(A.t * 42) : 0);   // (a working lure throbs in the tip)
         if (btn) { A.crank = (A.crank || 0) + dt * (7 + 9 * fast); dp = 0.014 * Math.sin(A.crank); dyw = 0.008 * Math.cos(A.crank); }   // the rod rocks a touch with each turn of the handle…
-        dp -= 0.05 * A.reelS; }   // …and dips toward the line while you wind
+        dp += 0.02 * A.reelS + 0.2 * hard; }   // …and the faster you wind the higher it comes up and the more it bends
       if (A.phase === 'bite') { if (!(H && H.on)) this.biteStep(dt, press, btn); }   // a fish that set itself on the holder rod is held by rod-holder.js
       else if ((A.scanT = (A.scanT || 0) - dt) <= 0) { A.scanT = 0.25; this.lureScan(); }
     } else if (A.phase === 'fight') {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
-      tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') { tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1); if (btn) { A.crank = (A.crank || 0) + dt * (5 + 6 * fast); dp = 0.05 * Math.sin(A.crank * 0.6); } }   // pump and wind: the rod lifts and drops as you gain line
+      tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') { tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1); if (btn) { A.crank = (A.crank || 0) + dt * (5 + 6 * fast); dp = 0.05 * Math.sin(A.crank * 0.6) + 0.12 * fast; } }   // pump and wind: the rod lifts and drops as you gain line
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
     if (H) { ty = H.yaw; tp = HOLDER_PITCH; if (A.phase === 'bite') tb = 0.2 + 0.12 * Math.sin(A.t * (H.on ? 9 : 16)); }   // standing in the holder; the tip nods while something has the bait
     else if (!helm && A.phase !== 'charge') { const aim = this.thirdP ? [P.a - 0.08, clamp(0.55 + 0.35 * P.pitch, 0.15, 1.1)] : this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)

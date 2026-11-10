@@ -53,6 +53,11 @@ for (const [gait, stride] of [[0, 0.5], [0, 1.4], [1, 2.4], [2, 3.1]]) for (cons
 // casting: wound back, the rod hand is up, back and out to the right; following through, it's out in front and lower
 { const hand = o => ctx.humanPose(Object.assign({ mode: 'stand', rod: true }, o)).hand, rest = hand({}), back = hand({ castW: 1 }), thru = hand({ castF: 1 });
   assert.ok(back[2] > rest[2] + 0.25 && back[0] < rest[0] - 0.1 && back[1] > rest[1] + 0.05, `wound back: ${back} from ${rest}`); assert.ok(thru[0] > rest[0] + 0.05 && thru[2] < back[2], `follow-through: ${thru}`); bounds(ctx.humanPose({ mode: 'stand', rod: true, castW: 1 })); }
+// both hands: casting or winding, the left hand comes across to the rod by the right one (and goes round with the reel handle)
+{ const left = o => { const P = ctx.humanPose(Object.assign({ mode: 'stand', rod: true }, o)), q = P.parts.filter(x => x[0] === 'fore')[0]; bounds(P); return [ctx.humanPlace(q, 0, 0, -0.31), P.hand]; }, gap = ([l, r]) => Math.hypot(l[0] - r[0], l[1] - r[1], l[2] - r[2]);
+  assert.ok(gap(left({})) > 0.35, `one-handed: the left hand hangs by the side (${gap(left({}))})`);
+  for (const o of [{ hands2: true }, { hands2: true, castW: 1 }, { hands2: true, castF: 1 }, { hands2: true, crank: 1 }, { hands2: true, crank: 4, mode: 'sit', hipZ: 0.45 }]) assert.ok(gap(left(o)) < 0.2, `both hands ${JSON.stringify(o)}: ${gap(left(o))}`);
+  const a = left({ hands2: true, crank: 0 })[0], b = left({ hands2: true, crank: Math.PI })[0]; assert.ok(Math.hypot(a[0] - b[0], a[2] - b[2]) > 0.04, 'the winding hand goes round'); }
 // three gaits: a walker's arms hang long and a foot is always down; a jogger's elbows are bent; a runner lifts the knee highest and leaves the ground
 { const G = g => { let elbow = 0, knee = -9, air = 0; for (let ph = 0; ph < 6.3; ph += 0.05) { const P = ctx.humanPose({ mode: 'stand', swing: 1, gait: g, ph }), by = n => P.parts.filter(q => q[0] === n);
     elbow = Math.max(elbow, by('fore')[0][4] - by('upper')[0][4]); knee = Math.max(knee, by('thigh')[1][4]); air = Math.max(air, bounds(P).lo[2]); } return { elbow, knee, air }; }, w = G(0), j = G(1), r = G(2);

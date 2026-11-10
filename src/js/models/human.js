@@ -52,7 +52,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
 }
 // A pose: o.mode 'jump' (in the air: o.rise), 'stand' (o.crouch after a landing; moving too: o.swing 0..1 how much, o.gait 0 walk .. 1 jog .. 2 run, o.ph the stride phase, o.stride the metres a whole cycle covers), 'swim' (o.body: body pitch, -pi/2 lying
 // face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet;
-// o.paddle; o.helm). o.rod: the right hand holds a rod out in front (o.castW, o.castF: casting). Returns the parts as [part, forward, side, up, pitch, roll, yaw],
+// o.paddle; o.helm). o.rod: the right hand holds a rod out in front (o.castW, o.castF: casting; o.hands2: the left hand on it too, o.crank: winding). Returns the parts as [part, forward, side, up, pitch, roll, yaw],
 // the right hand and the head centre, all relative to the feet (standing, sitting) under the body's own heading. Every part hangs
 // down from its joint, is rolled out to the side (roll, + to the right), pitched forward (pitch), then turned (yaw): the order the
 // lit shader applies them, so a limb can swing sideways and the shoulders can turn against the hips.
@@ -104,6 +104,15 @@ function humanPose(o) {
   const leg = i => { const side = i ? 1 : -1, hipJ = [-side * H.hip * Math.sin(turn), sway + side * H.hip * Math.cos(turn), 0], knee = end(hipJ, H.thigh, thigh[i], thR[i], turn), ankle = end(knee, H.shin, shin[i], shR[i], turn); return { hipJ, knee, ankle }; };
   if (o.mode === 'jump') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i]))));   // in the air the lowest heel or toe is where your feet are
   const hip = [0, sway, hipZ], sh = [-Math.sin(b) * H.torso, sway, hipZ + Math.cos(b) * H.torso], arm2 = end(sh, 0.15, b);   // the shoulders: up the (leaning) spine from the hips; arm2: the shoulder joints' height, well below the top of the sloping shoulders
+  if (o.rod && o.hands2 && o.mode !== 'swim') {   // both hands on the rod (casting, reeling): the left arm reaches across to it. o.crank: the left hand turns the reel handle
+    const ct = Math.cos(twist), st = Math.sin(twist), JR = [arm2[0] - H.shoulder * st, arm2[1] + H.shoulder * ct, arm2[2]], hR = end(end(JR, H.upper, up[1], upR[1], twist), H.fore + 0.04, fore[1], foR[1], twist);
+    const JL = [arm2[0] + H.shoulder * st, arm2[1] - H.shoulder * ct, arm2[2]], ck = o.crank, a = H.upper, bl = H.fore + 0.04;
+    const T = ck !== undefined ? [hR[0] + 0.03 + 0.035 * Math.cos(ck), hR[1] - 0.1, hR[2] - 0.05 + 0.035 * Math.sin(ck)] : [hR[0] - 0.07, hR[1] - 0.05, hR[2] - 0.1];   // on the reel handle, going round; or on the butt below the other hand
+    const v = [T[0] - JL[0], T[1] - JL[1], T[2] - JL[2]], far = Math.hypot(...v) || 1, n = v.map(x => x / far), dd = clamp(far, Math.abs(a - bl) + 0.02, a + bl - 0.01);   // as far as the arm reaches
+    const along = (a * a + dd * dd - bl * bl) / (2 * dd), rise = Math.sqrt(Math.max(0, a * a - along * along)), pd = -0.6 * n[1] - n[2], pole = [-pd * n[0], -0.6 - pd * n[1], -1 - pd * n[2]], pl = Math.hypot(...pole) || 1;   // the elbow drops down and out to the left
+    const El = JL.map((x, k) => x + n[k] * along + pole[k] / pl * rise), Tc = JL.map((x, k) => x + n[k] * dd);
+    const aim = (p, q) => { const w = [q[0] - p[0], q[1] - p[1], q[2] - p[2]], l = Math.hypot(...w) || 1; return [Math.atan2((w[0] * ct + w[1] * st) / l, -w[2] / l), Math.asin(clamp((-w[0] * st + w[1] * ct) / l, -1, 1))]; };   // the pitch and roll that point a limb from p to q
+    [up[0], upR[0]] = aim(JL, El); [fore[0], foR[0]] = aim(El, Tc); }
   out.push(['hips', hip[0], hip[1], hip[2], b, sway * 2, turn], ['torso', sh[0], sh[1], sh[2], b, -sway * 1.5, twist],   // the hips tip and the chest leans a little over the standing foot
     ['head', sh[0], sh[1], sh[2], headP, 0, twist * 0.3]);
   let hand = null;

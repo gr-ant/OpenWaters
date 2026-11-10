@@ -43,6 +43,7 @@ Object.assign(Engine, {
       o = { mode: 'stand', swing: this.hAmp, gait: g, stride: this.hStride, ph: this.hPh, rod, crouch: this.hCrouch }; }
     if (rod && A.phase === 'charge') { const u = A.stroke == null ? 0 : clamp(A.stroke / 0.26, 0, 1); o.castW = (0.3 + 0.7 * A.charge) * (1 - u); o.castF = u; }   // the cast: wound back as you hold, then the throw
     else if (rod && A.phase === 'flight') o.castF = Math.exp(-(A.t - A.castAt) * 3.2);   // and the follow-through easing off
+    if (rod && !A.holder && (A.phase === 'charge' || A.phase === 'fight' || (A.phase === 'flight' && A.t - A.castAt < 0.6) || (A.reelS || 0) > 0.05)) { o.hands2 = true; if (A.reeling || A.phase === 'fight') o.crank = A.crank || 0; }   // both hands to cast; the left one winds
     const pose = humanPose(o), sm = this.hSm;
     if (sm && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
       const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
