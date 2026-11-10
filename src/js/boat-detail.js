@@ -50,8 +50,8 @@ function boatDetail(D, S, M, C, X) {
   if (!kayak && L >= 4) for (const t of [0.07, 0.86]) for (const sd of [1, -1]) { const p = inner(t, sd, S.gun(t)), x = p[0], y = p[1] + sd * 0.01, z = p[2] + 0.004;   // cleats, fore and aft
       rod([x - 0.07 * k, y, z + 0.035], [x + 0.07 * k, y, z + 0.035], 0.011 * k, steel); for (const dx of [-0.025, 0.025]) rod([x + dx * k, y, z], [x + dx * k, y, z + 0.035], 0.012 * k, steel); }
   if (!blunt && !kayak && L >= 3.5) M.blob([S.x(1) + 0.01, 0, S.gun(1) * 0.5], 0.035 * k, 0.02 * k, 0.03 * k, 3, 6, steel);   // bow eye
-  if (powered) { M.mat = MT.GLOW;   // navigation lights: red to port, green to starboard, a white all-round light on a pole aft
-    for (const [sd, col] of [[1, [1.5, 0.12, 0.1]], [-1, [0.1, 1.4, 0.25]]]) { const p = P(0.9, 1, sd); M.blob([p[0], p[1] - sd * 0.04, p[2] + 0.03], 0.03, 0.02, 0.022, 3, 6, col); }
+  if (powered) { M.mat = MT.GLOW;   // navigation lights: red to port (-y: turning right is +angle here, so +y is starboard), green to starboard, a white all-round light on a pole aft
+    for (const [sd, col] of [[-1, [1.5, 0.12, 0.1]], [1, [0.1, 1.4, 0.25]]]) { const p = P(0.9, 1, sd); M.blob([p[0], p[1] - sd * 0.04, p[2] + 0.03], 0.03, 0.02, 0.022, 3, 6, col); }
     if (L >= 5 && !F.cabin) { const p = inner(0.03, -1, S.gun(0.03)); M.mat = MT.METAL; rod([p[0], p[1], p[2]], [p[0], p[1], p[2] + 0.9], 0.012, steel); M.mat = MT.GLOW; M.blob([p[0], p[1], p[2] + 0.93], 0.03, 0.03, 0.035, 3, 6, [1.5, 1.5, 1.4]); } }
   if (!kayak && (H.decks.bow || 0) > 0.05 && L >= 4) { const t = 1 - H.decks.bow * 0.55, x = S.x(t), z = deckZ(t);   // on the foredeck: a coil of rope and a small anchor
     M.mat = MT.CLOTH; for (let i = 0; i < 3; i++) ring([x, 0.02, z + 0.012 + i * 0.016], 0.085 * k - i * 0.012, [1, 0, 0], [0, 1, 0], 0.011, rope, 10);

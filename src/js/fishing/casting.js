@@ -20,14 +20,19 @@ Object.assign(Engine, {
       if (A.baitLeft <= 0 && S.bait) { A.baitLeft = S.bait.lasts; this.say(`Fresh ${S.bait.name.toLowerCase()} on the hook`, 1.5); }
       if (press && !this.showMap) { A.phase = 'charge'; A.charge = 0; A.stroke = null; }
     } else if (A.phase === 'charge') {
-      const c = A.charge * A.charge * (3 - 2 * A.charge), back = 1.15 + 0.5 * c, side = P.a - 0.38 - 0.5 * c;   // the rod drawn back and well out to the right (a three-quarter cast), further the longer you hold
-      if (A.stroke == null) { A.charge = Math.min(1, A.charge + dt / 1.05); tp = back; ty = side; tb = 0.1 + 0.22 * A.charge;   // wind-up: the tip loaded by the lure hanging behind
+      // The cast is a three-quarter one, off the right shoulder: seen from behind the rod leans like a "/". It's steered as a direction in your
+      // own frame [forward, right, up] (turning right is +angle here), so "back and to the right" really is; yaw and pitch follow from that.
+      const c = A.charge * A.charge * (3 - 2 * A.charge), mixD = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t];
+      const wound = mixD([0.5, 0.3, 0.8], [-0.55, 0.6, 0.6], c);   // drawn back over the right shoulder, further the longer you hold
+      let d = wound;
+      if (A.stroke == null) { A.charge = Math.min(1, A.charge + dt / 1.05); tb = 0.03 * c;   // wind-up: the rod is still, all but straight
         if (release) A.stroke = 0; }
-      else { A.stroke += dt; const u = Math.min(1, A.stroke / 0.26), e = u * u * u * (u * (u * 6 - 15) + 10);   // the forward stroke, eased in and out: one sweep from back-right round to the front
-        tp = back + (0.8 - back) * e; ty = side + (P.a - 0.2 - side) * e; tb = 0.3 + 0.5 * A.charge * Math.sin(Math.PI * Math.min(1, u * 1.1));   // bent deep against the lure, which goes as the rod comes past upright
+      else { A.stroke += dt; const u = Math.min(1, A.stroke / 0.26), e = u * u * u * (u * (u * 6 - 15) + 10);   // the forward stroke, eased in and out: one sweep up past the right ear and out in front
+        d = mixD(wound, [0.75, 0.14, 0.62], e); tb = 0.25 * A.charge * Math.max(0, (u - 0.7) / 0.3);   // it only starts to bend forward as the stroke stops and the tip carries on
         if (u >= 1) { A.stroke = null; this.castLure(); } }
+      ty = P.a + Math.atan2(d[1], d[0]); tp = Math.atan2(d[2], Math.hypot(d[0], d[1]));
     } else if (A.phase === 'flight') {
-      const ft = A.t - A.castAt; tp = 0.15 + 0.2 * P.pitch; dp = -0.45 * Math.exp(-ft * 3.2); dyw = -0.1 * Math.exp(-ft * 3.2); tb = 0.16 * Math.exp(-ft * 7) * Math.abs(Math.sin(ft * 34));   // follow-through: the tip carries on down toward the water and quivers as it unloads
+      const ft = A.t - A.castAt; tp = 0.15 + 0.2 * P.pitch; dp = -0.45 * Math.exp(-ft * 3.2); dyw = 0.12 * Math.exp(-ft * 3.2); tb = (A.charge || 0) * (0.5 * Math.exp(-ft * 9) + 0.14 * Math.exp(-ft * 5) * Math.abs(Math.sin(ft * 30)));   // follow-through: the rod stops, the tip whips on forward (the deep bend comes here, as the lure goes), then quivers as it settles from the right
       this.lureFlight(dt, press);
     } else if (A.phase === 'water' || A.phase === 'bite') {
       const ah = Math.atan2(L.y - A.hand[1], L.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.15, -0.5, 0.4);
