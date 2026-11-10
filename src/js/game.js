@@ -59,11 +59,15 @@
   };
   start.onclick = startGame;
   document.getElementById('tiSettings').onclick = () => { Engine.titleSettings = true; Engine.togglePause(true); Engine.pauseShow('settings'); };
-  document.getElementById('tiNew').onclick = () => {   // a fresh island: the page reloads with the menu kept up, and the new pond fades in behind it
-    if (T.classList.contains('busy')) return; T.classList.add('busy'); document.getElementById('tiSub').textContent = 'Shaping a new island…';
-    try { sessionStorage.setItem('ow-new-island', '1'); } catch (e) { /* fine */ }
-    setTimeout(() => { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* */ } location.reload(); }, 150);
-  };
+  // New island: choose temperate, tropical or arctic, then straight to the loading screen (the page reloads on a random seed in that climate, back to this menu)
+  const menu = T.querySelector('.ti-menu'), bio = document.getElementById('tiBiomes');
+  const biomes = on => { menu.hidden = on; bio.hidden = !on; (on ? bio.querySelector('.ti-bio') : document.getElementById('tiNew')).focus({ preventScroll: true }); };
+  document.getElementById('tiNew').onclick = () => biomes(true);
+  document.getElementById('tiBioBack').onclick = () => biomes(false);
+  bio.onclick = e => { const b = e.target.closest('[data-climate]'); if (!b) return;
+    T.hidden = true; document.body.classList.remove('title-on'); Engine.titleOpen = false;
+    try { history.replaceState(null, '', location.pathname + location.search + '#climate-' + b.dataset.climate); } catch (e) { location.hash = 'climate-' + b.dataset.climate; }
+    location.reload(); };
   // from the start menu, Settings is a single page: Back (or Esc) closes it and returns to the menu
   const pauseShow = Engine.pauseShow;
   Engine.pauseShow = function (page) {
@@ -75,18 +79,13 @@
   const hold = e => {
     if (!Engine.titleOpen || Engine.pauseOpen) return;
     e.stopPropagation();
-    if (e.type === 'keydown' && (e.code === 'ArrowDown' || e.code === 'ArrowUp')) {
-      e.preventDefault(); const L = [...T.querySelectorAll('button.ti-item')], i = L.indexOf(document.activeElement);
-      L[(i + (e.code === 'ArrowDown' ? 1 : -1) + L.length) % L.length].focus();
+    if (e.type === 'keydown' && e.code === 'Escape' && !bio.hidden) { e.preventDefault(); biomes(false); }   // out of the island choice, back to the menu
+    else if (e.type === 'keydown' && /^Arrow(Down|Up|Left|Right)$/.test(e.code)) {   // the menu's items, or the island choice (its three, then Back)
+      e.preventDefault(); const L = [...T.querySelectorAll(bio.hidden ? '.ti-menu button.ti-item' : '#tiBiomes button')], i = L.indexOf(document.activeElement);
+      L[(i + (e.code === 'ArrowDown' || e.code === 'ArrowRight' ? 1 : -1) + L.length) % L.length].focus();
     } else if (e.type === 'keydown' && e.code === 'Enter' && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#title button'))) { e.preventDefault(); startGame(); }
   };
   addEventListener('keydown', hold, true); addEventListener('keyup', hold, true);
-  let fromNew = false; try { fromNew = sessionStorage.getItem('ow-new-island') === '1'; sessionStorage.removeItem('ow-new-island'); } catch (e) { /* */ }
-  if (fromNew && TITLE) {   // straight back to the menu while the island is built behind it
-    document.body.classList.add('title-loading'); T.hidden = false; T.classList.add('busy'); document.getElementById('tiSub').textContent = 'Shaping a new island…';
-    const cv = document.getElementById('canvas3d'); cv.style.opacity = '0'; cv.style.transition = 'opacity .8s ease';
-    Game.on('ready', () => { document.body.classList.remove('title-loading'); T.classList.remove('busy'); requestAnimationFrame(() => { cv.style.opacity = ''; }); });
-  }
   Game.on('ready', () => {
     if (!TITLE) return;
     Engine.titleOpen = true; T.hidden = false; document.body.classList.add('title-on');

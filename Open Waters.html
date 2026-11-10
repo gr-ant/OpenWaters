@@ -462,7 +462,6 @@
   background: linear-gradient(90deg, rgba(14,46,30,.94) 0%, rgba(16,52,34,.86) 22%, rgba(18,56,36,.55) 34%, rgba(18,56,36,0) 46%); transition: opacity .6s ease; }
 #title[hidden] { display: none; }
 #title.leaving { opacity: 0; pointer-events: none; }
-body.title-loading #loading { z-index: 3; } body.title-loading #loading > * { visibility: hidden; }   /* the menu stays up while a new island is shaped */
 #title.busy .ti-menu { opacity: .45; pointer-events: none; } #title.busy .ti-sub { color: var(--gold-hi); }
 body.title-on #hud, body.title-on #tui, body.title-on #overlay { visibility: hidden !important; }
 .ti-card { position: static; width: min(400px, calc(100vw - 40px)); color: #f6ecd2; font-family: var(--serif); text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 2px 14px rgba(0,0,0,.35); }
@@ -481,6 +480,15 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 .ti-play { font-style: normal; font-size: .62em; color: #e8c46a; }
 .ti-soon { cursor: not-allowed; }
 .ti-foot { position: absolute; right: clamp(20px, 3vw, 48px); bottom: clamp(24px, 6vh, 56px); margin: 0; font: 15px var(--sans); color: rgba(242,230,196,.85); letter-spacing: .3px; }
+/* New island: three island pictures to choose from, then Back */
+.ti-biomes[hidden], .ti-menu[hidden] { display: none; }
+.ti-bio-title { margin: 0 0 14px 2px; font: italic 600 clamp(22px, 1.9vw, 28px) var(--serif); color: #f2e6c8; }
+.ti-bio-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.ti-bio { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px 10px; border-radius: 16px; cursor: pointer; color: #f2e6c8; text-shadow: inherit;
+  background: linear-gradient(180deg, rgba(40,66,32,.85), rgba(28,50,24,.85)); border: 1.5px solid rgba(196,168,108,.7); transition: border-color .15s, transform .15s, background .15s; }
+.ti-bio span { width: 84px; height: 60px; } .ti-bio span svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 3px 3px #0008); }
+.ti-bio b { font: 700 19px var(--serif); } .ti-bio small { font: 12px/1.25 var(--sans); color: #d8cfb4; text-align: center; }
+.ti-bio:hover, .ti-bio:focus-visible { border-color: var(--gold-hi); transform: translateY(-2px); outline: none; background: linear-gradient(180deg, rgba(52,82,40,.95), rgba(34,60,28,.95)); }
 @media (max-width: 600px) { #title { padding: 48px 20px 0; background: linear-gradient(180deg, rgba(14,46,30,.92) 0%, rgba(16,52,34,.8) 60%, rgba(18,56,36,.4) 100%); } .ti-card { width: 100%; } .ti-foot { right: 20px; } }
 </style>
 <style>
@@ -526,6 +534,15 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
       <button id="tiSettings" class="ti-item" type="button">Settings</button>
       <div class="ti-item ti-soon" aria-disabled="true" title="Coming soon">Sandbox</div>
     </nav>
+    <div id="tiBiomes" class="ti-biomes" role="group" aria-labelledby="tiBioTitle" hidden>
+      <p id="tiBioTitle" class="ti-bio-title">Choose an island</p>
+      <div class="ti-bio-row">
+        <button class="ti-bio" type="button" data-climate="temperate"><span data-icon="dock.island"></span><b>Temperate</b><small>woods, lakes and rivers</small></button>
+        <button class="ti-bio" type="button" data-climate="tropical"><span data-icon="dock.islandTropical"></span><b>Tropical</b><small>palms, reefs, warm water</small></button>
+        <button class="ti-bio" type="button" data-climate="arctic"><span data-icon="dock.islandArctic"></span><b>Arctic</b><small>ice, tundra and taiga</small></button>
+      </div>
+      <button id="tiBioBack" class="ti-item" type="button">‹ Back</button>
+    </div>
     <p class="ti-foot" id="tiFoot"></p>
   </div>
 </div>
@@ -10425,11 +10442,15 @@ Game.on('catch', () => Birds.excite());
   };
   start.onclick = startGame;
   document.getElementById('tiSettings').onclick = () => { Engine.titleSettings = true; Engine.togglePause(true); Engine.pauseShow('settings'); };
-  document.getElementById('tiNew').onclick = () => {   // a fresh island: the page reloads with the menu kept up, and the new pond fades in behind it
-    if (T.classList.contains('busy')) return; T.classList.add('busy'); document.getElementById('tiSub').textContent = 'Shaping a new island…';
-    try { sessionStorage.setItem('ow-new-island', '1'); } catch (e) { /* fine */ }
-    setTimeout(() => { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* */ } location.reload(); }, 150);
-  };
+  // New island: choose temperate, tropical or arctic, then straight to the loading screen (the page reloads on a random seed in that climate, back to this menu)
+  const menu = T.querySelector('.ti-menu'), bio = document.getElementById('tiBiomes');
+  const biomes = on => { menu.hidden = on; bio.hidden = !on; (on ? bio.querySelector('.ti-bio') : document.getElementById('tiNew')).focus({ preventScroll: true }); };
+  document.getElementById('tiNew').onclick = () => biomes(true);
+  document.getElementById('tiBioBack').onclick = () => biomes(false);
+  bio.onclick = e => { const b = e.target.closest('[data-climate]'); if (!b) return;
+    T.hidden = true; document.body.classList.remove('title-on'); Engine.titleOpen = false;
+    try { history.replaceState(null, '', location.pathname + location.search + '#climate-' + b.dataset.climate); } catch (e) { location.hash = 'climate-' + b.dataset.climate; }
+    location.reload(); };
   // from the start menu, Settings is a single page: Back (or Esc) closes it and returns to the menu
   const pauseShow = Engine.pauseShow;
   Engine.pauseShow = function (page) {
@@ -10441,18 +10462,13 @@ Game.on('catch', () => Birds.excite());
   const hold = e => {
     if (!Engine.titleOpen || Engine.pauseOpen) return;
     e.stopPropagation();
-    if (e.type === 'keydown' && (e.code === 'ArrowDown' || e.code === 'ArrowUp')) {
-      e.preventDefault(); const L = [...T.querySelectorAll('button.ti-item')], i = L.indexOf(document.activeElement);
-      L[(i + (e.code === 'ArrowDown' ? 1 : -1) + L.length) % L.length].focus();
+    if (e.type === 'keydown' && e.code === 'Escape' && !bio.hidden) { e.preventDefault(); biomes(false); }   // out of the island choice, back to the menu
+    else if (e.type === 'keydown' && /^Arrow(Down|Up|Left|Right)$/.test(e.code)) {   // the menu's items, or the island choice (its three, then Back)
+      e.preventDefault(); const L = [...T.querySelectorAll(bio.hidden ? '.ti-menu button.ti-item' : '#tiBiomes button')], i = L.indexOf(document.activeElement);
+      L[(i + (e.code === 'ArrowDown' || e.code === 'ArrowRight' ? 1 : -1) + L.length) % L.length].focus();
     } else if (e.type === 'keydown' && e.code === 'Enter' && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#title button'))) { e.preventDefault(); startGame(); }
   };
   addEventListener('keydown', hold, true); addEventListener('keyup', hold, true);
-  let fromNew = false; try { fromNew = sessionStorage.getItem('ow-new-island') === '1'; sessionStorage.removeItem('ow-new-island'); } catch (e) { /* */ }
-  if (fromNew && TITLE) {   // straight back to the menu while the island is built behind it
-    document.body.classList.add('title-loading'); T.hidden = false; T.classList.add('busy'); document.getElementById('tiSub').textContent = 'Shaping a new island…';
-    const cv = document.getElementById('canvas3d'); cv.style.opacity = '0'; cv.style.transition = 'opacity .8s ease';
-    Game.on('ready', () => { document.body.classList.remove('title-loading'); T.classList.remove('busy'); requestAnimationFrame(() => { cv.style.opacity = ''; }); });
-  }
   Game.on('ready', () => {
     if (!TITLE) return;
     Engine.titleOpen = true; T.hidden = false; document.body.classList.add('title-on');

@@ -3,7 +3,6 @@
   background: linear-gradient(90deg, rgba(14,46,30,.94) 0%, rgba(16,52,34,.86) 22%, rgba(18,56,36,.55) 34%, rgba(18,56,36,0) 46%); transition: opacity .6s ease; }
 #title[hidden] { display: none; }
 #title.leaving { opacity: 0; pointer-events: none; }
-body.title-loading #loading { z-index: 3; } body.title-loading #loading > * { visibility: hidden; }   /* the menu stays up while a new island is shaped */
 #title.busy .ti-menu { opacity: .45; pointer-events: none; } #title.busy .ti-sub { color: var(--gold-hi); }
 body.title-on #hud, body.title-on #tui, body.title-on #overlay { visibility: hidden !important; }
 .ti-card { position: static; width: min(400px, calc(100vw - 40px)); color: #f6ecd2; font-family: var(--serif); text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 2px 14px rgba(0,0,0,.35); }
@@ -22,4 +21,13 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 .ti-play { font-style: normal; font-size: .62em; color: #e8c46a; }
 .ti-soon { cursor: not-allowed; }
 .ti-foot { position: absolute; right: clamp(20px, 3vw, 48px); bottom: clamp(24px, 6vh, 56px); margin: 0; font: 15px var(--sans); color: rgba(242,230,196,.85); letter-spacing: .3px; }
+/* New island: three island pictures to choose from, then Back */
+.ti-biomes[hidden], .ti-menu[hidden] { display: none; }
+.ti-bio-title { margin: 0 0 14px 2px; font: italic 600 clamp(22px, 1.9vw, 28px) var(--serif); color: #f2e6c8; }
+.ti-bio-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.ti-bio { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px 10px; border-radius: 16px; cursor: pointer; color: #f2e6c8; text-shadow: inherit;
+  background: linear-gradient(180deg, rgba(40,66,32,.85), rgba(28,50,24,.85)); border: 1.5px solid rgba(196,168,108,.7); transition: border-color .15s, transform .15s, background .15s; }
+.ti-bio span { width: 84px; height: 60px; } .ti-bio span svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 3px 3px #0008); }
+.ti-bio b { font: 700 19px var(--serif); } .ti-bio small { font: 12px/1.25 var(--sans); color: #d8cfb4; text-align: center; }
+.ti-bio:hover, .ti-bio:focus-visible { border-color: var(--gold-hi); transform: translateY(-2px); outline: none; background: linear-gradient(180deg, rgba(52,82,40,.95), rgba(34,60,28,.95)); }
 @media (max-width: 600px) { #title { padding: 48px 20px 0; background: linear-gradient(180deg, rgba(14,46,30,.92) 0%, rgba(16,52,34,.8) 60%, rgba(18,56,36,.4) 100%); } .ti-card { width: 100%; } .ti-foot { right: 20px; } }
