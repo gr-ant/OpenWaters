@@ -14,9 +14,10 @@ Object.assign(Engine, {
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
     const one = (g, x, y, z, s, rot, wl, mk, pitch) => { this.upInst(g, [x, y, z, s, rot, 0.5, wl, mk, 0, pitch]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); };
     const lvl = rodBendLevel(A.bend), rk = `rod:${A.rigId}:${rv}:${lvl}`;
-    const held = this.boat && this.boatMode === 'deck';   // in your hands on deck: drawn over the boat, so it can't poke through the hull
+    const held = this.boat && this.boatMode === 'deck' && !A.holder;   // in your hands on deck: drawn over the boat, so it can't poke through the hull
     if (held) gl.depthRange(0, 0.1);
     one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
+    if (A.holder) { const H = A.holder; one(this.tackleGpu('holder:' + !!H.boat, () => holderMesh(H.up + (H.boat ? 0 : 0.3))), A.hand[0], A.hand[1], A.hand[2], 1, H.yaw, -1e4, 0, 0); }   // the spike or gunwale holder the rod stands in
     if (held) gl.depthRange(0, 1);
     if (A.phase === 'card') return;
     const endKey = S.lure ? `lure:${S.lure.id}:${rv}` : `bait:${S.bait.id}:${S.hook.id}:${rv}`, endMesh = () => S.lure ? lureMesh(S.lure) : baitMesh(S);
@@ -82,6 +83,6 @@ Object.assign(Engine, {
     this.drawLine(c);
     if (A.phase === 'card') return;
     const S = A.S, k = this.touchUI ? 0.92 : 1;   // the status panel itself is HTML now (fishingStatus in js/hud/status-keys.js)
-    if (A.phase === 'bite' && A.took && S.hookKind !== 'circle') { const a = 0.6 + 0.4 * Math.sin(this.time * 20); c.font = `bold ${30 * k}px Georgia, serif`; c.textAlign = 'center'; c.fillStyle = `rgba(255,208,64,${a})`; c.fillText('STRIKE!', Wd / 2, Ht / 2 - 60); c.textAlign = 'left'; }
+    if (A.phase === 'bite' && A.took && S.hookKind !== 'circle' && !A.holder) { const a = 0.6 + 0.4 * Math.sin(this.time * 20); c.font = `bold ${30 * k}px Georgia, serif`; c.textAlign = 'center'; c.fillStyle = `rgba(255,208,64,${a})`; c.fillText('STRIKE!', Wd / 2, Ht / 2 - 60); c.textAlign = 'left'; }
   },
 });

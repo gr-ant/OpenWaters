@@ -5,7 +5,7 @@ Object.assign(Engine, {
   contextKeys() {
     const A = this.ang, b = this.boat, out = [], K = id => Controls.key(id), drag = `${K('dragDown')} ${K('dragUp')}`;   // keys as currently bound
     if (A && A.out && A.phase === 'card') return [[K('keep'), 'Keep'], [K('release'), 'Release']];
-    if (A && A.out) {
+    if (this.rodInHand()) {
       if (A.phase === 'ready') out.push([drag, 'Drag']);
       else if (A.phase === 'water') out.push([K('run'), 'Reel faster'], [K('bail'), A.bail ? 'Close bail' : A.S.reel && A.S.reel.kind !== 'spinning' ? 'Free spool' : 'Open bail']);
       else if (A.phase === 'fight') out.push([K('run'), 'Reel harder'], [drag, 'Drag']);

@@ -114,7 +114,7 @@ const Engine = {
       if (this.pauseOpen || this.recentTouch()) return; // touches are handled in setupTouch
       if (this.invClick(e.clientX, e.clientY)) return;
       if (this.menuClick(e.clientX, e.clientY)) return;
-      if (document.pointerLockElement === ov) { if (!(this.ang && this.ang.out)) this.action(); return; }   // with the rod out the mouse casts and reels
+      if (document.pointerLockElement === ov) { if (!this.rodInHand()) this.action(); return; }   // with the rod out the mouse casts and reels
       if (this.dragged) { this.dragged = false; return; } // end of a mouse-drag look
       this.requestMouseLook();
     });

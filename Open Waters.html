@@ -36,6 +36,7 @@
   #tui .a-bail.open { border-color:var(--gold-hi); color:var(--gold-hi); }
   #tui .a-drdn { right:94px; bottom:112px; width:68px; }
   #tui .a-drup { right:18px; bottom:112px; width:68px; }
+  #tui .a-hold { right:170px; bottom:112px; width:66px; }   /* line out: stand the rod in a holder */
   #tui.rod-out .a-helm { right:94px; bottom:160px; width:68px; }   /* aboard with the rod out: Helm and Sit / Stand go above the drag */
   #tui.rod-out.aboard .a-dive { right:25px; bottom:152px; }
   #tui.rod-out .a-jump, #tui.rod-out:not(.aboard) .a-dive { display: none; }   /* with the rod out: no jumping, and no diving from the bank (on a deck it's Sit / Stand) */
@@ -227,6 +228,10 @@
   #hMsg { position: absolute; left: 50%; bottom: 122px; transform: translateX(-50%); max-width: min(720px, calc(100vw - 40px)); padding: 7px 18px; border-radius: 14px; text-align: center;
     background: rgba(20,26,20,.82); border: 1.5px solid #c4a86caa; font: 600 16px var(--serif); color: var(--cream); box-shadow: 0 4px 14px #0008; transition: opacity .2s; }
   #hMsg:empty { display: none; }
+  #holderChip { position: fixed; z-index: 40; left: 50%; top: 14px; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 7px 16px; border-radius: 14px; pointer-events: none; text-align: center;   /* a bite at the rod holder: stays up, over menus and the map, until you pick the rod up (fishing/rod-holder.js) */
+    background: rgba(70,52,10,.9); border: 1.5px solid #ffe08a; font: 600 15px var(--serif); color: #fff3c8; box-shadow: 0 4px 14px #0008; animation: holderPulse 1.1s ease-in-out infinite; }
+  #holderChip[hidden] { display: none; }
+  @keyframes holderPulse { 50% { border-color: #c4a86c55; } }
   /* shortcut dock: small pictures with their key on top, then the controls that matter right now */
   #hDock { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 6px; align-items: flex-end; }
   #hDock button, #hMapBtns button { position: relative; width: 64px; height: 50px; background: none; border: 0; padding: 0; cursor: pointer; }
@@ -610,7 +615,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
     <small id="hSeedInfo"></small>
   </div>
   <div id="hHelp" class="panel" hidden><header><h2>Controls</h2><button class="round-x" data-icon="ui.close" data-help-close></button></header>
-    <dl><dt>WASD</dt><dd>move · Shift run · Space jump · C dive</dd><dt>Q</dt><dd>rod out / away</dd><dt>R / mouse</dt><dd>cast (hold, let go) · reel (Shift: faster) · strike</dd><dt>[ ]</dt><dd>drag</dd><dt>G</dt><dd>open / close the bail: line pays out so the lure sinks straight down (reeling closes it)</dd>
+    <dl><dt>WASD</dt><dd>move · Shift run · Space jump · C dive</dd><dt>Q</dt><dd>rod out / away</dd><dt>R / mouse</dt><dd>cast (hold, let go) · reel (Shift: faster) · strike</dd><dt>[ ]</dt><dd>drag</dd><dt>G</dt><dd>open / close the bail: line pays out so the lure sinks straight down (reeling closes it)</dd><dt>H</dt><dd>rod holder: stand the rod in a holder with its line out (a spike on the bank, a holder on the gunwale); a bell rings at a bite; F at the holder picks it up</dd>
     <dt>E / X</dt><dd>keep / release a catch</dd><dt>I · J · B</dt><dd>tackle box · journal · boats</dd><dt>↑ ↓ · ← → · Tab</dt><dd>in a menu: move · category · tab · Enter chooses</dd><dt>F</dt><dd>use · get in a boat · V helm</dd>
     <dt>2</dt><dd>fish radar</dd><dt>M</dt><dd>map · arrows move · W/S zoom · Enter travels to the crosshair</dd><dt>T</dt><dd>hold for fast time · Y season · U weather</dd><dt>Esc</dt><dd>pause · mouse sensitivity</dd><dt>? /</dt><dd>this card</dd></dl><small id="hDebug"></small></div>
   <button id="hSettings" title="Pause and settings (Esc)" aria-label="Pause and settings">Esc</button>
@@ -637,6 +642,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
   <button id="bHelm" class="act a-pill a-helm" data-k="KeyV" hidden>Stand</button>
   <button id="bCast" class="act a-main" data-k="KeyR" data-hold="1" hidden>Cast</button>
   <button id="bBail" class="act a-bail" data-k="KeyG" hidden>Bail</button>
+  <button id="bHold" class="act a-pill a-hold" data-k="KeyH" hidden>Holder</button>
   <button id="bDrDn" class="act a-pill a-drdn" data-k="BracketLeft" hidden>Drag −</button>
   <button id="bDrUp" class="act a-pill a-drup" data-k="BracketRight" hidden>Drag +</button>
   <button id="bFast" class="act a-pill a-fast" data-k="KeyT" data-hold="1" hidden>Fast ⏩</button>
@@ -688,6 +694,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
    I opens the tackle box (rigs, a rig builder, all your gear, the catch log); Q takes the rod out; hold R or the mouse
    to cast and let go to throw; hold R to reel (Shift faster); strike with R when the float goes under; [ ] set drag.
    From the helm of a powered boat the rod goes in a holder and you troll. E keeps a catch, X lets it go.
+   H with the line out stands the rod in a rod holder (a spike on the bank, the gunwale afloat); a bell rings at a bite.
      Game.loadTackle(urlOrJson, { save }), Game.tackle, Game.rigStats('bass_crankbait'), Game.equipRig(id), Game.rod(true)
      Game.angler (phase, lure, lineOut, tension, fish...), Game.catches, Game.openTackleBox()
      Game.on('cast' | 'follow' | 'refuse' | 'bite' | 'miss' | 'hooked' | 'lost' | 'landed' | 'catch', ...)
@@ -775,7 +782,7 @@ const CONTROL_ACTIONS = [   // [id, canonical code, group, label]
   ['dive', 'KeyC', 'Moving', 'Dive · sit / stand on deck'], ['use', 'KeyF', 'Moving', 'Use · board / leave a boat'],
   ['torch', 'KeyL', 'Moving', 'Dive light (deep water)'],
   ['rod', 'KeyQ', 'Fishing', 'Rod out / away'], ['cast', 'KeyR', 'Fishing', 'Cast · reel · strike (left mouse too)'],
-  ['bail', 'KeyG', 'Fishing', 'Open / close the bail'], ['dragDown', 'BracketLeft', 'Fishing', 'Drag down'], ['dragUp', 'BracketRight', 'Fishing', 'Drag up'],
+  ['bail', 'KeyG', 'Fishing', 'Open / close the bail'], ['holder', 'KeyH', 'Fishing', 'Rod holder: set the rod down / pick it up'], ['dragDown', 'BracketLeft', 'Fishing', 'Drag down'], ['dragUp', 'BracketRight', 'Fishing', 'Drag up'],
   ['keep', 'KeyE', 'Fishing', 'Keep a catch'], ['release', 'KeyX', 'Fishing', 'Release a catch'],
   ['boats', 'KeyB', 'Boats', 'Boats menu'], ['helm', 'KeyV', 'Boats', 'Take / leave the helm'],
   ['map', 'KeyM', 'Map', 'Big map'], ['zoomIn', 'Equal', 'Map', 'Zoom in'], ['zoomOut', 'Minus', 'Map', 'Zoom out'],
@@ -4420,7 +4427,7 @@ const Engine = {
       if (this.pauseOpen || this.recentTouch()) return; // touches are handled in setupTouch
       if (this.invClick(e.clientX, e.clientY)) return;
       if (this.menuClick(e.clientX, e.clientY)) return;
-      if (document.pointerLockElement === ov) { if (!(this.ang && this.ang.out)) this.action(); return; }   // with the rod out the mouse casts and reels
+      if (document.pointerLockElement === ov) { if (!this.rodInHand()) this.action(); return; }   // with the rod out the mouse casts and reels
       if (this.dragged) { this.dragged = false; return; } // end of a mouse-drag look
       this.requestMouseLook();
     });
@@ -5352,16 +5359,17 @@ Object.assign(Engine, {
     l.x = eye[0] + f[0] * 2.4; l.y = eye[1] + f[1] * 2.4; l.z = eye[2] + f[2] * 2.4; l.intensity = 4.5;
   },
   updateTui() { // touch buttons follow what you're doing: Helm/Stand appears in a boat, Dive becomes Sit/Stand on deck, Cast/Reel/Strike while fishing
-    if (!this.touchUI) return; const A = this.ang, fp = A && A.out ? A.phase + (A.took ? 't' : '') + (A.bail ? 'b' : '') : 'x', st = (this.boat ? this.boatMode + (this.boatSit ? 's' : 'u') : '') + fp;
+    if (!this.touchUI) return; const A = this.ang, inH = this.rodInHand(), fp = inH ? A.phase + (A.took ? 't' : '') + (A.bail ? 'b' : '') : A && A.holder ? 'h' : 'x', st = (this.boat ? this.boatMode + (this.boatSit ? 's' : 'u') : '') + fp;
     if (st === this.tuiState) return; this.tuiState = st;
-    { const rb = document.getElementById('bRod'), cb = document.getElementById('bCast'), out = A && A.out, ph = out ? A.phase : '';
+    { const rb = document.getElementById('bRod'), cb = document.getElementById('bCast'), out = inH, ph = out ? A.phase : '';
       if (rb) { rb.querySelector('b').textContent = out ? 'Stow' : 'Rod'; rb.hidden = ph === 'card'; }
       const ub = document.getElementById('bUse'); if (ub) ub.hidden = !!out;   // with the rod out, the big button casts and reels
       if (cb) { cb.hidden = !out || ph === 'card'; cb.textContent = ph === 'water' ? 'Reel' : ph === 'fight' ? 'Reel' : ph === 'bite' ? (A.took ? 'Strike!' : '…') : ph === 'flight' ? 'Stop' : 'Cast'; cb.classList.toggle('lit', ph === 'bite' && !!A.took); cb.classList.toggle('reel', ph === 'water' || ph === 'fight'); }
       for (const id of ['bDrDn', 'bDrUp', 'bBail']) { const b = document.getElementById(id); if (b) b.hidden = !out || ph === 'card'; }
       { const b = document.getElementById('bBail'); if (b) b.classList.toggle('open', !!(out && A.bail)); }
+      { const b = document.getElementById('bHold'); if (b) b.hidden = ph !== 'water'; }   // Holder: set the rod down with its line out (fishing/rod-holder.js)
       { const b = document.getElementById('bFast'); if (b) b.hidden = true; } }   // the Reel button pulls down to wind faster instead
-    { const tui = document.getElementById('tui'); if (tui) { tui.classList.toggle('rod-out', !!(A && A.out)); tui.classList.toggle('aboard', !!this.boat); } }   // fishing: no Jump, and no Dive ashore (CSS)
+    { const tui = document.getElementById('tui'); if (tui) { tui.classList.toggle('rod-out', inH); tui.classList.toggle('aboard', !!this.boat); } }   // fishing: no Jump, and no Dive ashore (CSS)
     const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');
     if (h) { h.hidden = !this.boat; h.textContent = this.boatMode === 'deck' ? 'Helm' : (this.boat && !this.boatCanStand(this.boat.def) ? 'Fish' : 'Stand'); }
     if (dv) dv.textContent = this.boat && this.boatMode === 'deck' ? (this.boatSit ? 'Stand' : 'Sit') : 'Dive';
@@ -6010,7 +6018,7 @@ Object.assign(Engine, {
       const l = this.tlook;
       if (l && e.pointerId === l.id) {
         this.tlook = null;
-        if (tap && l.moved < 16 && e.timeStamp - l.t < CONFIG.tapMaxMs && !this.openMenu(x, y) && !(this.ang && this.ang.out)) this.action(); // tap the minimap = travel menu (a stray tap while fishing does nothing)
+        if (tap && l.moved < 16 && e.timeStamp - l.t < CONFIG.tapMaxMs && !this.openMenu(x, y) && !this.rodInHand()) this.action(); // tap the minimap = travel menu (a stray tap while fishing does nothing)
       }
     };
     addEventListener('pointerup', end); addEventListener('pointercancel', end);
@@ -6833,8 +6841,8 @@ Object.assign(Engine, {
       c.font = 'bold 14px Georgia, serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; const tw = c.measureText(t).width;
       c.fillStyle = 'rgba(0,0,0,.55)'; c.fillRect(Wd / 2 - tw / 2 - 10, Ht / 2 + 22, tw + 20, 24); c.fillStyle = it.css; c.fillText(t, Wd / 2, Ht / 2 + 34); c.textAlign = 'left';
     }
-    const cb = this.useBtn || (this.useBtn = document.getElementById('bUse')), tl = !tg && this.trapUseLabel && this.trapUseLabel(), mode = tg ? 'take' : tl || 'use'; // touch button label follows what F would do (Throw / Set / Haul: fishing/nets-traps.js)
-    if (this.touchUI && cb.dataset.mode !== mode) { cb.dataset.mode = mode; cb.textContent = tg ? 'Take' : tl || 'Use'; }
+    const cb = this.useBtn || (this.useBtn = document.getElementById('bUse')), pk = !tg && this.holderNear && this.holderNear(), tl = !tg && !pk && this.trapUseLabel && this.trapUseLabel(), mode = tg ? 'take' : pk ? 'pick' : tl || 'use'; // touch button label follows what F would do (Pick up: the rod in its holder; Throw / Set / Haul: fishing/nets-traps.js)
+    if (this.touchUI && cb.dataset.mode !== mode) { cb.dataset.mode = mode; cb.textContent = tg ? 'Take' : pk ? 'Pick up' : tl || 'Use'; }
     if (!this.showMap) { // crosshair: dot + four ticks, dark outline so it reads on any background
       const X = Wd / 2, Y = Ht / 2, tick = (w, col) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { c.moveTo(X + dx * 5, Y + dy * 5); c.lineTo(X + dx * 11, Y + dy * 11); } c.stroke(); };
       tick(3.5, 'rgba(0,0,0,.55)'); tick(1.6, 'rgba(255,255,255,.95)');
@@ -7430,6 +7438,7 @@ Object.assign(Engine, {
     try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* */ }
     try { const ms = Array.isArray(p) ? p.reduce((a, b) => a + b, 0) : p; for (const g of navigator.getGamepads ? navigator.getGamepads() : []) if (g && g.vibrationActuator) g.vibrationActuator.playEffect('dual-rumble', { duration: ms, strongMagnitude: Math.min(1, ms / 150), weakMagnitude: 0.8 }).catch(() => {}); } catch (e) { /* */ }
   },
+  rodInHand() { const A = this.ang; return !!(A && A.out && !A.holder); },   // out and not standing in a rod holder
   boatTrolls(D) { return CONFIG.trolling && ['outboard', 'inboard'].includes(D.propulsion.type); },
   toggleRod(on = !this.ang.out) {
     const A = this.ang; if (!A) return;
@@ -7459,13 +7468,13 @@ Object.assign(Engine, {
 Object.assign(Engine, {
   angStep(dt) {
     const A = this.ang; if (!A) return;
-    const bt = this.boat, helm = bt && this.boatMode !== 'deck';
-    if (A.out && (this.swim || (helm && !this.boatTrolls(bt.def)))) this.toggleRod(false);
+    const H = A.holder, bt = this.boat, helm = bt && this.boatMode !== 'deck' && !H;   // H: the rod stands in a rod holder (fishing/rod-holder.js)
+    if (A.out && !H && (this.swim || (helm && !this.boatTrolls(bt.def)))) this.toggleRod(false);
     if (!A.out || !A.S) return;
     const K = this.keys, P = this.P, S = A.S, ca = Math.cos(P.a), sa = Math.sin(P.a);
-    const btn = !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
+    const btn = !H && !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
     const fast = K.ShiftLeft || K.ShiftRight ? 1 : this.reelPull || 0;   // 0..1: Shift is flat out; on touch, how far the Reel button is pulled down
-    const eye = [P.x, P.y, P.z + EYE]; A.hand = this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
+    const eye = [P.x, P.y, P.z + EYE]; A.hand = H ? this.holderHand(H) : this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
     if (helm) { const cb = Math.cos(bt.a), sb = Math.sin(bt.a), Lh = bt.def.hull.length_m; A.hand = [bt.x - cb * Lh * 0.4 - sb * 0.35, bt.y - sb * Lh * 0.4 + cb * 0.35, bt.z + bt.def.hull.depth_m * 0.75]; }   // at the helm the rod sits in a holder at the stern
     A.t = (A.t || 0) + dt; A.reeling = false;
     if (A.bail && (press || (A.phase !== 'water' && A.phase !== 'bite' && A.phase !== 'flight'))) { A.bail = false; if (A.lure) this.say('Bail closed', 1); }   // turning the handle flips the bail shut
@@ -7486,13 +7495,14 @@ Object.assign(Engine, {
       // the line load jumps about frame to frame (current, swell, a boat under you): the blank answers to its average, not every flicker
       A.overS = (A.overS || 0) + ((A.over || 0) - (A.overS || 0)) * (1 - Math.exp(-dt * 3));
       if (A.phase === 'water') tb = clamp(A.overS * 1.2 + (A.flow || 0) * 0.04 * sstep(0, 0.1, A.overS), 0, 0.55);
-      if (A.phase === 'bite') this.biteStep(dt, press, btn);
+      if (A.phase === 'bite') { if (!(H && H.on)) this.biteStep(dt, press, btn); }   // a fish that set itself on the holder rod is held by rod-holder.js
       else if ((A.scanT = (A.scanT || 0) - dt) <= 0) { A.scanT = 0.25; this.lureScan(); }
     } else if (A.phase === 'fight') {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
       tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1);
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
-    if (!helm && A.phase !== 'charge') { const aim = this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
+    if (H) { ty = H.yaw; tp = HOLDER_PITCH; if (A.phase === 'bite') tb = 0.2 + 0.12 * Math.sin(A.t * (H.on ? 9 : 16)); }   // standing in the holder; the tip nods while something has the bait
+    else if (!helm && A.phase !== 'charge') { const aim = this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
     const k = 1 - Math.exp(-dt * (A.phase === 'flight' && A.t - A.castAt < 0.25 ? 18 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;
@@ -8015,9 +8025,10 @@ Object.assign(Engine, {
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
     const one = (g, x, y, z, s, rot, wl, mk, pitch) => { this.upInst(g, [x, y, z, s, rot, 0.5, wl, mk, 0, pitch]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); };
     const lvl = rodBendLevel(A.bend), rk = `rod:${A.rigId}:${rv}:${lvl}`;
-    const held = this.boat && this.boatMode === 'deck';   // in your hands on deck: drawn over the boat, so it can't poke through the hull
+    const held = this.boat && this.boatMode === 'deck' && !A.holder;   // in your hands on deck: drawn over the boat, so it can't poke through the hull
     if (held) gl.depthRange(0, 0.1);
     one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
+    if (A.holder) { const H = A.holder; one(this.tackleGpu('holder:' + !!H.boat, () => holderMesh(H.up + (H.boat ? 0 : 0.3))), A.hand[0], A.hand[1], A.hand[2], 1, H.yaw, -1e4, 0, 0); }   // the spike or gunwale holder the rod stands in
     if (held) gl.depthRange(0, 1);
     if (A.phase === 'card') return;
     const endKey = S.lure ? `lure:${S.lure.id}:${rv}` : `bait:${S.bait.id}:${S.hook.id}:${rv}`, endMesh = () => S.lure ? lureMesh(S.lure) : baitMesh(S);
@@ -8083,7 +8094,7 @@ Object.assign(Engine, {
     this.drawLine(c);
     if (A.phase === 'card') return;
     const S = A.S, k = this.touchUI ? 0.92 : 1;   // the status panel itself is HTML now (fishingStatus in js/hud/status-keys.js)
-    if (A.phase === 'bite' && A.took && S.hookKind !== 'circle') { const a = 0.6 + 0.4 * Math.sin(this.time * 20); c.font = `bold ${30 * k}px Georgia, serif`; c.textAlign = 'center'; c.fillStyle = `rgba(255,208,64,${a})`; c.fillText('STRIKE!', Wd / 2, Ht / 2 - 60); c.textAlign = 'left'; }
+    if (A.phase === 'bite' && A.took && S.hookKind !== 'circle' && !A.holder) { const a = 0.6 + 0.4 * Math.sin(this.time * 20); c.font = `bold ${30 * k}px Georgia, serif`; c.textAlign = 'center'; c.fillStyle = `rgba(255,208,64,${a})`; c.fillText('STRIKE!', Wd / 2, Ht / 2 - 60); c.textAlign = 'left'; }
   },
 });
 </script>
@@ -8168,7 +8179,7 @@ Object.assign(Engine, {
     });
     document.getElementById('ccKeep').onclick = () => this.finishCatch(true);
     document.getElementById('ccRel').onclick = () => this.finishCatch(false);
-    this.ov.addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement === this.ov && this.ang && this.ang.out) this.keys.Mouse0 = true; });
+    this.ov.addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement === this.ov && this.rodInHand()) this.keys.Mouse0 = true; });
     addEventListener('mouseup', e => { if (e.button === 0) this.keys.Mouse0 = false; });
   },
 });
@@ -9106,7 +9117,7 @@ Object.assign(Engine, {
   // line) and the drag knob / star / lever (drag down / up). They follow the 3D parts every frame.
   reelKeysHud() {
     const el = this.rkEl || (this.rkEl = document.getElementById('hReelKeys')), A = this.ang;
-    const on = !!(el && this.showReelKeys !== false && A && A.out && A.S && A.hand && !this.showMap && !this.pauseOpen && !['card', 'charge', 'flight'].includes(A.phase) && !(this.boat && this.boatMode !== 'deck'));
+    const on = !!(el && this.showReelKeys !== false && this.rodInHand() && A.S && A.hand && !this.showMap && !this.pauseOpen && !['card', 'charge', 'flight'].includes(A.phase) && !(this.boat && this.boatMode !== 'deck'));
     if (!el) return; if (el.hidden === on) el.hidden = !on; if (!on) return;
     const k = REEL_PARTS[A.S.reel.kind] ? A.S.reel.kind : 'spinning', Pp = REEL_PARTS[k];
     if (!this.rkChips || this.rkKind !== k) { this.rkKind = k;
@@ -9143,7 +9154,7 @@ Object.assign(Engine, {
   contextKeys() {
     const A = this.ang, b = this.boat, out = [], K = id => Controls.key(id), drag = `${K('dragDown')} ${K('dragUp')}`;   // keys as currently bound
     if (A && A.out && A.phase === 'card') return [[K('keep'), 'Keep'], [K('release'), 'Release']];
-    if (A && A.out) {
+    if (this.rodInHand()) {
       if (A.phase === 'ready') out.push([drag, 'Drag']);
       else if (A.phase === 'water') out.push([K('run'), 'Reel faster'], [K('bail'), A.bail ? 'Close bail' : A.S.reel && A.S.reel.kind !== 'spinning' ? 'Free spool' : 'Open bail']);
       else if (A.phase === 'fight') out.push([K('run'), 'Reel harder'], [drag, 'Drag']);
@@ -10284,6 +10295,120 @@ Game.on('catch', () => Birds.excite());
     if (T.hand === kind) { take(null); Engine.tackleRender(); return; }
     if (K.max && T.set.filter(t => t.kind === kind).length >= K.max) return say(`All ${K.max} are out: haul one first`);
     take(kind); });
+})();
+</script>
+<script>
+'use strict';
+// FISHING: rod holders. With the line out in the water, H (touch: Holder) stands the rod in a holder: a spike planted
+// just in front of you on the bank, or a holder on the gunwale of the boat you're in (it rides with the boat). The rod
+// keeps fishing on its own while you walk off (it's still Engine.ang, so its bait keeps its fish cells alive), and a
+// bite rings a bell at the rod, nods the tip and puts up a notice that stays (over menus too) until you come back.
+// Use (F) or H at the holder picks it up: a fish that's on is straight into the fight, otherwise the line is still out.
+// Nobody comes: the take lasts 4x longer than in hand (the fish runs off with the bait against the holder), then it
+// sets itself with the usual chance for the hook (circle 90%, treble 40%, J 12%, times the rig's hold) or drops the
+// bait. A fish that set itself stays on, the bell ringing, for HOLD_S seconds, then throws the hook (bait gone).
+//   Engine.ang.holder -> { boat, lx, ly, lz, ya (on a boat, in its frame) | x, y, z, yaw (bank), up, on, onT, alert }
+const HOLDER_PITCH = 0.8;   // how steeply a rod stands in a holder (rad)
+function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilted up by HOLDER_PITCH: a tube for the butt on a stem down `drop` m
+  const B = meshBuilder(), c = Math.cos(HOLDER_PITCH), s = Math.sin(HOLDER_PITCH), at = k => [k * c, 0, k * s], g = [0.32, 0.33, 0.35], q = at(-0.36); B.mat = MT.METAL;
+  B.tube(at(-0.38), at(-0.08), 0.024, 0.024, 7, g, true); B.tube(q, [q[0], 0, -drop], 0.012, 0.009, 5, g, true); B.tube([q[0] - 0.05, 0, q[2] - 0.02], [q[0] + 0.03, 0, q[2] - 0.02], 0.016, 0.016, 5, g, false);
+  return new Float32Array(B.v);
+}
+(() => {
+  const HOLD_S = 45, REACH = 2.5;   // how long a self-hooked fish stays on; how close you must be to pick the rod up (m)
+  const E = Engine, useKey = () => E.touchUI ? 'Use' : Controls.key('use');
+  Sounds.register('bell', {   // a bite-alarm bell: three quick strikes, a bright inharmonic ring each
+    volume: 0.55, range: 140, near: 6, jitter: [-0.5, 0.5],
+    layers: [0, 0.11, 0.24].flatMap((d, i) => [
+      { wave: 'sine', gain: 0.8 - i * 0.15, freq: [1960], delay: d, attack: 0.002, decay: 0.7 },
+      { wave: 'sine', gain: 0.3, freq: [5300], delay: d, attack: 0.001, decay: 0.25 },
+      { wave: 'triangle', gain: 0.18, freq: [3150], delay: d, attack: 0.001, decay: 0.4 }]),
+  });
+  const ring = H => { const [x, y, z] = E.holderHand(H); Game.sound('bell', { x, y, z }); H.ringT = 1.4 + Math.random() * 1.6; };
+  const away = H => Math.round(Math.hypot(H.x - E.P.x, H.y - E.P.y));
+
+  Object.assign(Engine, {
+    // where the reel seat sits: the holder's top, following the boat it's clamped to
+    holderHand(H) { const b = H.boat;
+      if (b) { const ca = Math.cos(b.a), sa = Math.sin(b.a); H.x = b.x + ca * H.lx - sa * H.ly; H.y = b.y + sa * H.lx + ca * H.ly; H.z = b.z + H.lz + Math.sin(b.pitch || 0) * H.lx - Math.sin(b.roll || 0) * H.ly; H.yaw = b.a + H.ya; }
+      return [H.x, H.y, H.z + H.up]; },
+    holderNear() { const A = this.ang, H = A && A.holder, P = this.P; return !!H && Math.hypot(H.x - P.x, H.y - P.y) < REACH && Math.abs(H.z - P.z) < 2.5; },
+    setHolder() {
+      const A = this.ang, P = this.P, L = A.lure, b = this.boat;
+      if (A.phase !== 'water' || !L || L.land || L.kd < 0) return this.say('Cast first: the holder takes a rod with its line in the water', 2.5);
+      if (b && this.boatMode !== 'deck') return this.say('At the helm the rod is already in a holder', 2);
+      let H;
+      if (b) { const D = b.def, S = D._shape, q = this.boatLocal(b, P.x, P.y), t = clamp(q[3], 0.15, 0.85), side = this.boatLocal(b, L.x, L.y)[1] >= 0 ? 1 : -1;   // the gunwale beside you, on the side the line is
+        H = { boat: b, lx: (t - 0.5) * D.hull.length_m, ly: side * S.hb(t) * 0.92, lz: S.gun(t), ya: 0, up: 0.3 }; this.holderHand(H); H.ya = Math.atan2(L.y - H.y, L.x - H.x) - b.a; }
+      else { const a = Math.atan2(L.y - P.y, L.x - P.x), x = P.x + Math.cos(a) * 0.6, y = P.y + Math.sin(a) * 0.6, dry = !Game.isWater(x, y);   // a step toward the water, or at your feet at the edge
+        H = { boat: null, x: dry ? x : P.x, y: dry ? y : P.y, z: dry ? Game.groundAt(x, y) : P.z, yaw: a, up: 0.75 }; }
+      H.on = false; H.onT = 0; H.ringT = 0; H.alert = ''; H.was = 'water'; H.born = this.time;
+      A.holder = H; A.bail = false; A.btnWas = false; this.keys.KeyR = this.keys.Mouse0 = false;
+      this.say(`Rod in the holder · walk off and listen for the bell · ${this.touchUI ? 'Pick up' : useKey()} at the holder to take it back`, 3.5);
+      this.tuiState = null; this.updateTui();
+    },
+    pickUpHolder() {
+      const A = this.ang, H = A.holder, P = this.P; if (!H) return;
+      A.holder = null; A.btnWas = false;
+      const eye = [P.x, P.y, P.z + EYE], aim = this.rodAim(eye); A.yaw = aim[0]; A.pitch = aim[1]; A.hand = this.handForReel(A, eye); A.tip = this.rodTip(A);   // in your hands now, so the fight starts from here
+      if (A.phase === 'bite' && H.on && A.fish) this.startFight(A.fish);
+      else this.say(A.phase === 'bite' ? (A.S.hookKind === 'circle' ? 'Bite! Just reel…' : 'Strike!') : A.lure ? 'Rod in hand · line still out' : 'Rod in hand', 1.5);
+      this.tuiState = null; this.updateTui();
+    },
+  });
+
+  // the take lasts longer off a holder; a fish that sets itself waits for you instead of fighting an empty rod
+  const baseTake = E.fishTake; E.fishTake = function (f) { baseTake.call(this, f); if (this.ang.holder && this.ang.fish === f) this.ang.window *= 4; };
+  const baseFight = E.startFight; E.startFight = function (f) { const H = this.ang.holder;
+    if (!H) return baseFight.call(this, f);
+    H.on = true; H.onT = 0; f.hooked = 'bite'; f.state = 'hooked'; ring(H); this.buzz([70, 40, 140]);
+    H.alert = 'Fish on at the rod holder!'; this.say(`${H.alert} ${away(H)} m away · get there before it throws the hook`, 4); };
+  // Q while the rod is in a holder: you have to go and get it. Anything else that puts the rod away (travel) takes the holder too.
+  const baseKey = E.keyPress; E.keyPress = function (code, e, card) {
+    if (!card && code === 'KeyQ' && this.ang && this.ang.holder) { this.keys[code] = true; if (!e.repeat) this.say(`Your rod is in its holder ${away(this.ang.holder)} m away: ${useKey()} there to pick it up`, 2.5); return; }
+    return baseKey.call(this, code, e, card); };
+  const baseRod = E.toggleRod; E.toggleRod = function (on = !this.ang.out) { if (!on && this.ang && this.ang.holder) this.ang.holder = null; return baseRod.call(this, on); };
+  const baseAction = E.action; E.action = function () { if (this.holderNear()) return this.pickUpHolder(); return baseAction.call(this); };   // before boarding / leaving a boat
+  Game.on('key', code => { if (code !== 'KeyH') return; const A = E.ang;
+    if (A && A.holder) return E.holderNear() ? E.pickUpHolder() : E.say(`Your rod is in its holder ${away(A.holder)} m away`, 2);
+    if (E.rodInHand()) return E.setHolder();
+    E.say('Take the rod out and cast first', 2); });
+
+  // the panel and the key hints
+  const baseKeys = E.contextKeys; E.contextKeys = function () { const out = baseKeys.call(this), A = this.ang;
+    if (A && A.holder) return this.holderNear() ? [[Controls.key('use'), 'Pick up rod'], ...out].slice(0, 4) : out;
+    return this.rodInHand() && A.phase === 'water' ? [[Controls.key('holder'), 'Rod holder'], ...out].slice(0, 4) : out; };
+  const baseStatus = E.fishingStatus; E.fishingStatus = function () { const A = this.ang, H = A && A.holder; if (!H) return baseStatus.call(this);
+    const near = this.holderNear(), key = near && !this.touchUI ? Controls.key('use') : '', act = near ? 'Pick up' : '', sub = near ? 'right here' : `${away(H)} m away`;
+    if (A.phase === 'bite') return H.on ? { title: 'Fish on at the holder!', sub: `${sub} · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s`, key, act, bite: 'strike', alert: true } : { title: 'Bite at the holder!', sub, key, act, bite: 'strike' };
+    return { title: 'Rod in the holder', sub: H.alert ? `${sub} · ${H.alert.toLowerCase()}` : sub, key, act }; };
+
+  // the notice that stays up (above menus and the map) from a bite until you're back at the rod
+  let chip = null;
+  const showChip = t => { if (!chip) { chip = document.createElement('div'); chip.id = 'holderChip'; chip.setAttribute('role', 'status'); chip.setAttribute('aria-live', 'polite'); document.body.appendChild(chip); }
+    if (chip.textContent !== t) chip.textContent = t; chip.hidden = !t; };
+  Game.on('update', dt => {
+    const A = E.ang, H = A && A.holder;
+    if (!H || !A.out) { if (A && H) A.holder = null; if (chip && !chip.hidden) showChip(''); return; }
+    const st = A.phase === 'bite' ? (H.on ? 'on' : 'bite') : A.phase;
+    if (st === 'bite' && H.was !== 'bite') { ring(H); H.alert = 'Bite at the rod holder!'; E.say(`Bell! ${H.alert} ${away(H)} m away`, 4); }
+    else if (st !== 'bite' && st !== 'on' && (H.was === 'bite' || H.was === 'on')) H.alert = H.was === 'on' ? 'The fish at the holder threw the hook' : 'Missed a bite at the holder';
+    H.was = st;
+    if (st === 'bite' && (H.ringT -= dt) <= 0) ring(H);
+    if (st === 'on') { // the fish on the holder rod: thrashing where it took, the bell going, until it throws the hook
+      const f = A.fish, L = A.lure; H.onT += dt;
+      if (!f || f.dead) { A.fish = null; A.phase = 'water'; H.on = false; }
+      else if (H.onT > HOLD_S) { H.on = false; E.loseFish('The fish at your rod holder threw the hook', 'thrown'); }
+      else { f.ph = (f.ph + dt * 14) % 6.2832; f.open = 0.5; f.a += Math.sin(E.time * 5) * dt * 2; f.x = L.x - Math.cos(f.a) * f.len * 0.5; f.y = L.y - Math.sin(f.a) * f.len * 0.5; f.z = L.z;
+        if (A.float) A.float.dip = Math.max(A.float.dip, 3 + 2 * Math.sin(E.time * 7));
+        if ((H.ringT -= dt) <= 0) { ring(H); E.addRipple(L.x, L.y, 0.2 + f.len * 0.5); } }
+    }
+    const t = H.alert && (st === 'bite' || st === 'on' ? H.alert : `${H.alert} · rod still in the holder`);
+    showChip(t ? `${t} ${away(H)} m away${st === 'on' ? ` · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s` : ''}` : '');
+  });
+  // on the map: a dot where the rod stands
+  Game.onMap((c, toPx) => { const H = E.ang && E.ang.holder; if (!H) return; const [px, py] = toPx(H.x, H.y);
+    c.beginPath(); c.arc(px, py, 4.5, 0, 6.2832); c.fillStyle = H.on || (E.ang.phase === 'bite') ? '#ffd040' : '#e9cf8e'; c.fill(); c.lineWidth = 1.5; c.strokeStyle = '#1c1608'; c.stroke(); });
 })();
 </script>
 <style>
