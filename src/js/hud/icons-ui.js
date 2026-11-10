@@ -15,6 +15,7 @@ UI_ICONS.ui = (() => {
   const needles = []; for (let t = .08; t < .95; t += .055) { const x = 8 + 50 * t, y = 58 - 50 * t; needles.push(`M${x.toFixed(1)} ${y.toFixed(1)}l${(-3 + 12 * (1 - t * .3)).toFixed(1)} ${(-5 + 4).toFixed(1)}M${x.toFixed(1)} ${y.toFixed(1)}l${-5} ${(-11 * (1 - t * .3)).toFixed(1)}`); }
   return {
     hook: L('<circle cx="15" cy="3.6" r="1.7"/><path d="M15 5.3V15a5 5 0 0 1-10 0v-3l3 2.6"/>'),
+    home: L('<path d="M3.5 11.5 12 4l8.5 7.5"/><path d="M5.5 10v10h5v-5.5h3V20h5V10"/>'),
     gear: L(`<path d="${cog}"/><circle cx="12" cy="12" r="2.8"/>`),
     book: L('<path d="M12 6.5C10 5 7 4.5 3 5v13c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5ZM12 6.5V19"/>'),
     pad: L('<path d="M7 7h10a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.4 2.4 0 0 1-4.1 1.1L14 15.5h-4l-2.4 2.4a2.4 2.4 0 0 1-4.1-1.1l-.9-4.4A4.5 4.5 0 0 1 7 7Z"/><path d="M8 10v3M6.5 11.5h3"/><circle cx="15.5" cy="10.8" r=".5" fill="currentColor"/><circle cx="17" cy="12.6" r=".5" fill="currentColor"/>'),

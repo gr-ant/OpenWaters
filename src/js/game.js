@@ -78,6 +78,9 @@
     try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) { location.hash = h.slice(1); }
     location.reload(); };
   bio.onclick = e => { const b = e.target.closest('[data-climate]'); if (b) go(b.dataset.climate); };
+  // the pause menu's Main menu: back to the start menu on this same island (the page reloads; what you have is saved as you go)
+  document.getElementById('pmTitle').onclick = () => { const h = '#seed-' + SEED + (HASH_OPTS ? '&' + HASH_OPTS : '') + '&pick';
+    try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) { location.hash = h.slice(1); } location.reload(); };
   // from the start menu, Settings is a single page: Back (or Esc) closes it and returns to the menu
   const pauseShow = Engine.pauseShow;
   Engine.pauseShow = function (page) {
