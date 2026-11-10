@@ -45,7 +45,7 @@ run(21); A(/"kind":"crab_pot"/.test(localStorage.getItem('engine-traps-t-5')), '
 T.set[0].h = 0; R(); A(T.set.length === 1 && T.set[0].pull && /Hauling/.test(said.at(-1)), 'R starts the haul'); run(0.5); A(T.set[0].props[0].z > -2.2 && T.act && T.act.pull !== undefined, 'coming up, arms pulling');
 run(1.2); A(/give it longer/.test(said.at(-1)) && !T.set.length && !Engine.props.length && !T.act, 'empty when hauled at once: ' + said.at(-1));
 T.hand = 'crab_pot'; Engine.action(); T.hand = null; run(3, 12); R(); run(1.7);
-A(/Crab pot: \\d × Blue crab/.test(said.at(-1)), 'catches crabs after a soak: ' + said.at(-1));
+A(/Crab pot: .*\\d × Blue crab/.test(said.at(-1)), 'catches crabs after a soak: ' + said.at(-1));   // (a lobster or two may be listed first)
 const log = Engine.catchLog(); A(log.length >= 1 && log.length <= 6 && log.every(r => r.rig === 'Crab pot' && r.kept && r.water === 'sea' && r.cm > 0), 'journal records');
 A(Object.keys(Engine.gone).length === log.length, 'caught animals stay gone');
 // with the rod out, R is the rod's: it doesn't haul
