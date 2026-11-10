@@ -601,6 +601,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
     <button data-dock="boats" title="Boats"><span data-icon="dock.boat"></span><kbd>B</kbd></button>
     <button data-dock="rod" title="Rod"><span data-icon="dock.rod"></span><kbd>Q</kbd></button>
     <button data-dock="map" title="Map"><span data-icon="dock.map"></span><kbd>M</kbd></button>
+    <button data-dock="view" id="hView" title="First / third-person view"><span data-icon="dock.view1"></span><kbd>K</kbd></button>
     <button data-dock="torch" id="hTorch" title="Dive light" hidden><span data-icon="dock.torch"></span><kbd>L</kbd></button>
   </div>
   <div id="hKeys"></div>
@@ -6888,7 +6889,7 @@ Object.assign(Engine, {
 Object.assign(Engine, {
   toggleView() {
     this.thirdP = !this.thirdP; this.camD = 0; this.hPose = null;
-    const b = document.getElementById('bView'); if (b) b.querySelector('.ic').innerHTML = uiIcon(this.thirdP ? 'dock.view3' : 'dock.view1');   // the picture shows the view you're in
+    for (const sel of ['#bView .ic', '#hView span']) { const el = document.querySelector(sel); if (el) el.innerHTML = uiIcon(this.thirdP ? 'dock.view3' : 'dock.view1'); }   // the picture (touch rail, desktop dock) shows the view you're in
     this.say(this.thirdP ? 'Third-person view' : 'First-person view', 1.2);
   },
   // the camera: 3.2 m back along the view from just over your head, pulled in so it stays above the ground and on your side of
@@ -9235,7 +9236,7 @@ Object.assign(Engine, {
     this.hud = { root: $('hud'), map: $('hMap'), memo: {} };
     for (const id of ['hLocName', 'hLocSub', 'hTime', 'hSky', 'hTemp', 'hWindArrow', 'hWindV', 'hMapName', 'hScale', 'hMsg', 'hStatus', 'hDepth', 'hDepthLine', 'hDepthMark', 'hDepthV', 'hDepthB', 'hStIcon', 'hStTitle', 'hStSub', 'hStBar', 'hStKey', 'hStAct', 'hHelp', 'hDebug', 'hKeys', 'hSeedInfo']) this.hud[id] = $(id);
     for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = uiIcon(el.dataset.icon);
-    for (const b of document.querySelectorAll('#hDock [data-dock]')) b.onclick = () => this.ang && this.ang.phase === 'card' ? null : ({ tackle: () => this.toggleTackle(), journal: () => this.openJournal(), boats: () => this.openSpawn('boats'), rod: () => this.toggleRod(), map: () => this.toggleBigMap(), torch: () => this.toggleTorch() })[b.dataset.dock]();
+    for (const b of document.querySelectorAll('#hDock [data-dock]')) b.onclick = () => this.ang && this.ang.phase === 'card' ? null : ({ tackle: () => this.toggleTackle(), journal: () => this.openJournal(), boats: () => this.openSpawn('boats'), rod: () => this.toggleRod(), map: () => this.toggleBigMap(), view: () => this.toggleView(), torch: () => this.toggleTorch() })[b.dataset.dock]();
     document.querySelector('[data-help-close]').onclick = () => this.toggleHelp(false);
     document.getElementById('hHint').onclick = () => this.toggleHelp();
     document.getElementById('jnClose').onclick = () => this.toggleJournal(false);
