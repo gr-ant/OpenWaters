@@ -13,7 +13,7 @@ Object.assign(Engine, {
     const cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)];
     const R = [-Math.sin(P.a), Math.cos(P.a), 0];
     const U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
-    const E = [P.x, P.y, P.z + EYE], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const E = this.camE = this.thirdP ? this.camPos(F) : [P.x, P.y, P.z + EYE], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];   // third person: the camera sits behind you (third-person.js)
     const tx = Math.tan(FOV / 2), ty = tx * Hh / W, near = 0.1; this.tanX = tx; this.tanY = ty;
     const view = new Float32Array([R[0], U[0], -F[0], 0, R[1], U[1], -F[1], 0, R[2], U[2], -F[2], 0, -dot(R, E), -dot(U, E), dot(F, E), 1]);
     const proj = new Float32Array([1 / tx, 0, 0, 0, 0, 1 / ty, 0, 0, 0, 0, (FAR + near) / (near - FAR), -1, 0, 0, 2 * FAR * near / (near - FAR), 0]);
@@ -156,6 +156,7 @@ Object.assign(Engine, {
       gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (globalThis.Birds) Birds.draw(this, gl, L, E);   // birds: in the air, on the water, on perches and boats
+    if (this.thirdP) this.drawHuman(gl, L);   // you, seen from behind
     if (this.ang && this.ang.out) { this.drawTackle(gl, L, E); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
     // props (static decorations) and pickups, instanced per mesh; the pickup you'd collect pulses
     const drawInst = (m, arr) => { if (!arr.length) return; this.upInst(m, arr); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, arr.length / 6); };

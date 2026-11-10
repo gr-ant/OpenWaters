@@ -119,7 +119,8 @@ Object.assign(Engine, {
     const d = Math.max(0.3, f.len / (0.9 * tx), f.len / (1.3 * ty)), cp = Math.cos(P.pitch);   // far enough that it fits, whichever way it's turned
     A.cardYaw = (A.cardYaw || 0) + ((K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0)) * dt * 2.4;
     A.cardTilt = clamp((A.cardTilt || 0) + ((K.KeyW || K.ArrowUp ? 1 : 0) - (K.KeyS || K.ArrowDown ? 1 : 0)) * dt * 1.8, -1.4, 1.4);
-    f.x = P.x + Math.cos(P.a) * cp * d; f.y = P.y + Math.sin(P.a) * cp * d; f.z = P.z + EYE + Math.sin(P.pitch) * d;   // dead centre, on the line of sight
+    const E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];   // third person: in front of the camera, the same card
+    f.x = E[0] + Math.cos(P.a) * cp * d; f.y = E[1] + Math.sin(P.a) * cp * d; f.z = E[2] + Math.sin(P.pitch) * d;   // dead centre, on the line of sight
     f.a = P.a + Math.PI / 2 + A.cardYaw; f.pitch = A.cardTilt;
     f.ph = (f.ph + dt * (2 + 3 * Math.max(0, Math.sin(this.time * 1.7)))) % 6.2832; f.open = 0.25 + 0.2 * Math.sin(this.time * 3);
   },

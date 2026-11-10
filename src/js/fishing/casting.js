@@ -10,6 +10,7 @@ Object.assign(Engine, {
     const btn = !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
     const fast = K.ShiftLeft || K.ShiftRight ? 1 : this.reelPull || 0;   // 0..1: Shift is flat out; on touch, how far the Reel button is pulled down
     const eye = [P.x, P.y, P.z + EYE]; A.hand = this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
+    if (this.thirdP && !helm && this.hPose) A.hand = this.hPose.hand;   // third person: in the angler's right hand
     if (helm) { const cb = Math.cos(bt.a), sb = Math.sin(bt.a), Lh = bt.def.hull.length_m; A.hand = [bt.x - cb * Lh * 0.4 - sb * 0.35, bt.y - sb * Lh * 0.4 + cb * 0.35, bt.z + bt.def.hull.depth_m * 0.75]; }   // at the helm the rod sits in a holder at the stern
     A.t = (A.t || 0) + dt; A.reeling = false;
     if (A.bail && (press || (A.phase !== 'water' && A.phase !== 'bite' && A.phase !== 'flight'))) { A.bail = false; if (A.lure) this.say('Bail closed', 1); }   // turning the handle flips the bail shut
@@ -36,7 +37,7 @@ Object.assign(Engine, {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
       tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1);
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
-    if (!helm && A.phase !== 'charge') { const aim = this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
+    if (!helm && A.phase !== 'charge') { const aim = this.thirdP ? [P.a - 0.08, clamp(0.55 + 0.35 * P.pitch, 0.15, 1.1)] : this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
     const k = 1 - Math.exp(-dt * (A.phase === 'flight' && A.t - A.castAt < 0.25 ? 18 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;

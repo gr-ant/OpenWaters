@@ -14,7 +14,7 @@ Object.assign(Engine, {
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
     const one = (g, x, y, z, s, rot, wl, mk, pitch) => { this.upInst(g, [x, y, z, s, rot, 0.5, wl, mk, 0, pitch]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); };
     const lvl = rodBendLevel(A.bend), rk = `rod:${A.rigId}:${rv}:${lvl}`;
-    const held = this.boat && this.boatMode === 'deck';   // in your hands on deck: drawn over the boat, so it can't poke through the hull
+    const held = !this.thirdP && this.boat && this.boatMode === 'deck';   // in your hands on deck: drawn over the boat, so it can't poke through the hull
     if (held) gl.depthRange(0, 0.1);
     one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
     if (held) gl.depthRange(0, 1);
@@ -48,7 +48,7 @@ Object.assign(Engine, {
       c.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`; c.lineWidth = w; c.beginPath(); c.moveTo(pa[0], pa[1]);
       if (pm && sag > 0.01) c.quadraticCurveTo(2 * pm[0] - (pa[0] + pb[0]) / 2, 2 * pm[1] - (pa[1] + pb[1]) / 2, pb[0], pb[1]); else c.lineTo(pb[0], pb[1]); c.stroke();
     };
-    const w = A.S.line.material === 'braid' ? 1.5 : 1.1, P = this.P, E = [P.x, P.y, P.z + EYE];
+    const w = A.S.line.material === 'braid' ? 1.5 : 1.1, P = this.P, E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];
     const px = (x, y, z) => clamp(w * 0.9 / Math.max(0.3, Math.hypot(x - E[0], y - E[1], z - E[2])), 0.5, w);   // thinner with distance
     c.save(); c.lineCap = 'butt'; c.lineJoin = 'round';
     const R = A.rope; if (!R) { c.restore(); return; }

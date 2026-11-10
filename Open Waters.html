@@ -624,6 +624,7 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
     <button data-k="KeyJ"><span class="ic" data-icon="dock.journal"></span><b>Journal</b></button>
     <button data-k="KeyB"><span class="ic" data-icon="dock.boat"></span><b>Boats</b></button>
     <button id="bRod" data-k="KeyQ"><span class="ic" data-icon="dock.rod"></span><b>Rod</b></button>
+    <button id="bView" class="line" data-k="KeyH"><span class="ic">1st</span><b>View</b></button>
     <button id="bTorch" data-k="KeyL" hidden><span class="ic" data-icon="dock.torch"></span><b>Light</b></button>
   </nav>
   <nav class="tui-rail tui-more" aria-label="Settings and dev tools">
@@ -773,7 +774,7 @@ const CONTROL_ACTIONS = [   // [id, canonical code, group, label]
   ['left', 'KeyA', 'Moving', 'Step left · steer left'], ['right', 'KeyD', 'Moving', 'Step right · steer right'],
   ['run', 'ShiftLeft', 'Moving', 'Run · reel faster · boat power'], ['jump', 'Space', 'Moving', 'Jump · swim up'],
   ['dive', 'KeyC', 'Moving', 'Dive · sit / stand on deck'], ['use', 'KeyF', 'Moving', 'Use · board / leave a boat'],
-  ['torch', 'KeyL', 'Moving', 'Dive light (deep water)'],
+  ['torch', 'KeyL', 'Moving', 'Dive light (deep water)'], ['view', 'KeyH', 'Moving', 'First / third-person view'],
   ['rod', 'KeyQ', 'Fishing', 'Rod out / away'], ['cast', 'KeyR', 'Fishing', 'Cast · reel · strike (left mouse too)'],
   ['bail', 'KeyG', 'Fishing', 'Open / close the bail'], ['dragDown', 'BracketLeft', 'Fishing', 'Drag down'], ['dragUp', 'BracketRight', 'Fishing', 'Drag up'],
   ['keep', 'KeyE', 'Fishing', 'Keep a catch'], ['release', 'KeyX', 'Fishing', 'Release a catch'],
@@ -2132,6 +2133,58 @@ function meshBuilder(smooth = false) { // smooth: round, smooth-shaded blobs (fi
 }
 const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 const norm3 = a => { const l = Math.hypot(...a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+</script>
+<script>
+'use strict';
+// The angler seen from behind (third-person view): a very low-detail person, just the silhouette. Each part is its own small
+// mesh hanging down -z from its joint (the head sits up +z from the neck), so a pose is only a joint position and a pitch per
+// part: every bend is about the shoulders' side-to-side axis, which is what the instanced fish pitch (ipt) already does.
+const HUMAN = { foot: 0.08, shin: 0.42, thigh: 0.43, torso: 0.52, neck: 0.08, head: 0.12, upper: 0.3, fore: 0.27, shoulder: 0.19, hip: 0.1 };
+// the part meshes, in the frame above: x forward, y to the right, z up, joint at the origin
+function humanParts() {
+  const H = HUMAN, skin = [0.86, 0.66, 0.52], shirt = [0.22, 0.38, 0.56], pants = [0.27, 0.26, 0.22], boot = [0.2, 0.15, 0.11];
+  const part = (mat, f) => { const B = meshBuilder(); B.mat = mat; f(B); return new Float32Array(B.v); };
+  return {
+    head: part(MT.GEN, B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.05, 0.045, 6, skin, false); B.blob([0.01, 0, H.neck + H.head], 0.105, 0.09, H.head, 4, 6, skin); }),
+    torso: part(MT.CLOTH, B => B.blob([0, 0, -H.torso / 2], 0.12, H.shoulder + 0.02, H.torso / 2 + 0.03, 4, 6, shirt)),
+    hips: part(MT.CLOTH, B => B.blob([0, 0, 0], 0.11, H.hip + 0.07, 0.1, 3, 6, pants)),
+    upper: part(MT.CLOTH, B => B.tube([0, 0, 0.02], [0, 0, -H.upper], 0.055, 0.045, 5, shirt, true)),
+    fore: part(MT.GEN, B => { B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.042, 0.035, 5, skin, false); B.blob([0, 0, -H.fore - 0.04], 0.035, 0.03, 0.05, 3, 5, skin); }),
+    thigh: part(MT.CLOTH, B => B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.075, 0.055, 6, pants, true)),
+    shin: part(MT.CLOTH, B => { B.tube([0, 0, 0.02], [0, 0, -H.shin], 0.055, 0.045, 6, pants, false); B.blob([0.05, 0, -H.shin - H.foot + 0.045], 0.12, 0.05, 0.045, 3, 6, boot); }),
+  };
+}
+// A pose: o.mode 'stand' (walking and running too: o.swing 0..1 and o.ph, the stride phase), 'swim' (o.body: body pitch, -pi/2 lying
+// face down along the heading; o.ph the stroke) or 'sit' (o.hipZ: seat height over the feet; o.paddle; o.helm). o.rod: the right
+// hand holds a rod out in front. Returns [part, forward, side, up, pitch] per part, the right hand and the head centre, all
+// relative to the feet (standing, sitting) under the body's own heading.
+function humanPose(o) {
+  const H = HUMAN, d = (p, L) => [Math.sin(p) * L, -Math.cos(p) * L], ph = o.ph || 0, sw = o.swing || 0, out = [];
+  let b = 0, hipZ = 0; const thigh = [0, 0], shin = [0, 0], up = [0, 0], fore = [0, 0];
+  for (let i = 0; i < 2; i++) { const s = Math.sin(ph + i * Math.PI), c = Math.cos(ph + i * Math.PI);   // i: 0 left, 1 right, half a stride apart
+    if (o.mode === 'swim') { b = o.body ?? -Math.PI / 2; const k = o.tread ? 0.5 : 0.25;
+      thigh[i] = b + k * Math.sin(ph * 2 + i * Math.PI); shin[i] = thigh[i] - 0.25;   // a flutter kick
+      up[i] = o.tread ? b + 1.1 + 0.35 * s : b + ph + i * Math.PI; fore[i] = up[i] + 0.25; }   // treading water, or a crawl: the arms windmill
+    else if (o.mode === 'sit') { b = o.paddle ? -0.12 : 0; hipZ = o.hipZ;
+      thigh[i] = Math.PI / 2 - 0.1; shin[i] = Math.acos(clamp((hipZ - H.foot) / H.shin, 0, 1));   // thighs along the seat, shins down to the floor (straight out in a kayak)
+      up[i] = o.paddle ? 0.75 + 0.4 * s : 0.45; fore[i] = up[i] + (o.paddle ? 0.5 : 0.9); }
+    else { b = -0.12 * sw * sw;   // leaning into a run
+      thigh[i] = b + 0.55 * sw * s; shin[i] = thigh[i] - sw * 1.1 * Math.max(0, c);   // the knee folds as the leg comes through
+      up[i] = b - 0.6 * sw * s; fore[i] = up[i] + 0.15 + 0.6 * sw; }
+  }
+  if (o.mode === 'stand') hipZ = Math.max(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => -d(thigh[i], H.thigh)[1] - x * Math.sin(shin[i]) + (H.shin + H.foot) * Math.cos(shin[i]))));   // the lower boot (heel or toe) on the ground
+  if (o.rod && o.mode !== 'swim') { up[1] = b + 0.35; fore[1] = up[1] + 1.15; }   // right forearm out in front, holding the rod
+  const hip = [0, hipZ], sh = [hip[0] - d(b, H.torso)[0], hip[1] - d(b, H.torso)[1]], add = (a, q) => [a[0] + q[0], a[1] + q[1]];
+  out.push(['hips', hip[0], 0, hip[1], b], ['torso', sh[0], 0, sh[1], b], ['head', sh[0], 0, sh[1], b]);
+  let hand = null;
+  for (let i = 0; i < 2; i++) { const side = i ? 1 : -1, knee = add(hip, d(thigh[i], H.thigh)), elbow = add(sh, d(up[i], H.upper));
+    out.push(['thigh', hip[0], side * H.hip, hip[1], thigh[i]], ['shin', knee[0], side * H.hip, knee[1], shin[i]], ['upper', sh[0], side * H.shoulder, sh[1], up[i]], ['fore', elbow[0], side * H.shoulder, elbow[1], fore[i]]);
+    if (i) { const h = add(elbow, d(fore[i], H.fore + 0.04)); hand = [h[0], side * H.shoulder, h[1]]; } }
+  const hc = add(sh, [-Math.sin(b) * (H.neck + H.head), Math.cos(b) * (H.neck + H.head)]);
+  return { parts: out, hand, head: [hc[0], 0, hc[1]] };
+}
+// one part's vertex (x, y, z in its own frame) in the body's frame: the same pitch the lit shader applies, then the joint offset
+function humanPlace(q, x, y, z) { const cp = Math.cos(q[4]), sp = Math.sin(q[4]); return [q[1] + x * cp - z * sp, q[2] + y, q[3] + x * sp + z * cp]; }
 </script>
 <script>
 'use strict';
@@ -4088,6 +4141,7 @@ const Engine = {
     if (code === 'KeyV' && !e.repeat && this.boat) this.toggleBoatMode();                       // take the helm / leave it to move about the boat
     if (code === 'KeyC' && !e.repeat && this.boat && this.boatMode === 'deck') this.toggleBoatSit();   // sit down / stand up
     if (code === 'KeyM' && !e.repeat) this.toggleBigMap();
+    if (code === 'KeyH' && !e.repeat) this.toggleView();                                          // first / third person
     if (code === 'KeyN' && !e.repeat && this.showMap) this.seedPress();                       // the map screen's icons: a new island (pick its biome), pin the minimap
     if (code === 'KeyP' && !e.repeat && this.showMap) this.togglePin();
     if ((code === 'Enter' || code === 'NumpadEnter') && !e.repeat && this.showMap) { this.menu = null; this.say('Travelling…', 1); setTimeout(() => this.travel(this.mapCX, this.mapCY, CONFIG.travelSymbol), 30); }   // to the crosshair
@@ -4632,9 +4686,9 @@ Object.assign(Engine, {
   // first water surface along the view ray within 70 m (null if the ground is hit first)
   lookWater() {
     if (this.uw) return null;
-    const P = this.P, cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)], z0 = P.z + EYE;
+    const P = this.P, cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)], E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];   // third person: along the camera's ray, so the crosshair means what it shows
     for (let s = 0.5; s < 70; s += s < 12 ? 0.4 : 1) {
-      const x = P.x + F[0] * s, y = P.y + F[1] * s, z = z0 + F[2] * s; sample(x, y); const g = hW(SE);
+      const x = E[0] + F[0] * s, y = E[1] + F[1] * s, z = E[2] + F[2] * s; sample(x, y); const g = hW(SE);
       if (z < SW && g < SW) return { x, y, dist: s };
       if (z < g) return null;
     }
@@ -5590,7 +5644,7 @@ Object.assign(Engine, {
       this.emitN(26 + 30 * mk, dt, () => { const a = Math.random() * 6.2832, r = this.rnd(0.8, 8); this.spawn(MOTE, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, P.z + EYE + this.rnd(-3, 3), this.rnd(-0.08, 0.08), this.rnd(-0.08, 0.08), 0, this.rnd(2.5, 5), this.rnd(0.02, 0.045), { top: wl0 - 0.05, col: mk > 0.5 ? [0.55, 0.6, 0.35] : null }); });
     }
     this.torchStep();
-    this.updateFish(dt); this.updateIdleBoats(dt); this.angStep(dt);
+    this.updateFish(dt); this.updateIdleBoats(dt); if (this.thirdP) this.humanStep(dt); this.angStep(dt);
     this.updateTui();
     // what water is under the crosshair (for the HUD and games)
     if ((this.lookT -= dt) <= 0) { this.lookT = 0.12; const h = this.lookWater(); this.look = h ? Object.assign(waterInfo(h.x, h.y), { x: h.x, y: h.y, dist: h.dist }) : null; }
@@ -6236,7 +6290,7 @@ Object.assign(Engine, {
     const cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)];
     const R = [-Math.sin(P.a), Math.cos(P.a), 0];
     const U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
-    const E = [P.x, P.y, P.z + EYE], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const E = this.camE = this.thirdP ? this.camPos(F) : [P.x, P.y, P.z + EYE], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];   // third person: the camera sits behind you (third-person.js)
     const tx = Math.tan(FOV / 2), ty = tx * Hh / W, near = 0.1; this.tanX = tx; this.tanY = ty;
     const view = new Float32Array([R[0], U[0], -F[0], 0, R[1], U[1], -F[1], 0, R[2], U[2], -F[2], 0, -dot(R, E), -dot(U, E), dot(F, E), 1]);
     const proj = new Float32Array([1 / tx, 0, 0, 0, 0, 1 / ty, 0, 0, 0, 0, (FAR + near) / (near - FAR), -1, 0, 0, 2 * FAR * near / (near - FAR), 0]);
@@ -6379,6 +6433,7 @@ Object.assign(Engine, {
       gl.uniform1f(L.u.roll, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (globalThis.Birds) Birds.draw(this, gl, L, E);   // birds: in the air, on the water, on perches and boats
+    if (this.thirdP) this.drawHuman(gl, L);   // you, seen from behind
     if (this.ang && this.ang.out) { this.drawTackle(gl, L, E); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
     // props (static decorations) and pickups, instanced per mesh; the pickup you'd collect pulses
     const drawInst = (m, arr) => { if (!arr.length) return; this.upInst(m, arr); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, arr.length / 6); };
@@ -6445,6 +6500,58 @@ Object.assign(Engine, {
     this.drawOverlay();
   },
 
+});
+</script>
+<script>
+'use strict';
+// Engine: the third-person view (prototype): a camera behind and above you, the low-detail angler (models/human.js) posed for
+// what you're doing, and the rod in that angler's right hand. Off (this.thirdP false), nothing here runs and the view is first person.
+Object.assign(Engine, {
+  toggleView() {
+    this.thirdP = !this.thirdP; this.camD = 0; this.hPose = null;
+    const b = document.getElementById('bView'); if (b) b.querySelector('.ic').textContent = this.thirdP ? '3rd' : '1st';
+    this.say(this.thirdP ? 'Third-person view' : 'First-person view', 1.2);
+  },
+  // the camera: 3.2 m back along the view from just over your head, pulled in so it stays above the ground and on your side of
+  // the water surface (above it while you're above, under it while you dive).
+  // shortcut: ground and water only, not trees, rocks, boat cabins or cave roofs; upgrade to a sphere cast against those
+  camPos(F) {
+    const P = this.P, o = [P.x, P.y, P.z + EYE + 0.35]; sample(o[0], o[1]);
+    const under = o[2] < SW && hW(SE) < SW, D = 3.2; let d = D;
+    for (let s = 0.25; s <= D; s += 0.25) { const x = o[0] - F[0] * s, y = o[1] - F[1] * s, z = o[2] - F[2] * s; sample(x, y); const g = hW(SE), wet = g < SW;
+      if (z < g + 0.3 || (wet && (under ? z > SW - 0.2 : z < SW + 0.2))) { d = s - 0.25; break; } }
+    this.camD = d < (this.camD || 0) ? d : (this.camD || 0) + (d - (this.camD || 0)) * 0.08;   // in at once when something's in the way, back out gently
+    return [o[0] - F[0] * this.camD, o[1] - F[1] * this.camD, o[2] - F[2] * this.camD];
+  },
+  // per frame, before the rod: what you're doing picks the pose; the stride follows how far you've actually moved
+  humanStep(dt) {
+    const P = this.P, b = this.boat, A = this.ang, rod = !!(A && A.out), H = HUMAN;
+    const lx = b ? this.boatLX || 0 : P.x, ly = b ? this.boatLY || 0 : P.y, moved = Math.hypot(lx - (this.hLX ?? lx), ly - (this.hLY ?? ly)); this.hLX = lx; this.hLY = ly;
+    const dist = moved < 3 ? moved : 0, spd = dt > 0 ? dist / dt : 0;   // a jump (travel, boarding) isn't a stride
+    let o, base = P.z, rot = P.a;
+    if (b) { const D = b.def, helm = this.boatMode !== 'deck', sit = helm || this.boatSit, eye = helm ? D.crew.eye_height_m : sit ? (D.hull.cockpit ? D.crew.eye_height_m : 0.95) : 1.62;
+      base = P.z + EYE - eye; if (helm) rot = b.a;   // feet on the floor (or deck) under the eye the boat code puts you at; at the helm you face the bow
+      this.hAmp = (this.hAmp || 0) + (clamp(spd * 0.5, 0, 0.5) - (this.hAmp || 0)) * Math.min(1, dt * 8); this.hPh = ((this.hPh || 0) + dist * 4.5) % 6.2832;
+      o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, ph: this.hPh, rod }; }
+    else if (this.swim) { const go = this.moving; this.hPh = ((this.hPh || 0) + dt * (go ? 3.2 : 1.8)) % 6.2832;
+      o = { mode: 'swim', tread: !go, body: go ? -Math.PI / 2 + (this.under ? clamp(P.pitch, -1.2, 1.2) : 0) : -0.25, ph: this.hPh }; }
+    else { const run = spd > (CONFIG.walkSpeed + CONFIG.runSpeed) / 2 * Game.speedMultiplier * 0.9;
+      this.hAmp = (this.hAmp || 0) + ((spd > 0.3 ? (run ? 1 : 0.55) : 0) - (this.hAmp || 0)) * Math.min(1, dt * 8);
+      this.hPh = ((this.hPh || 0) + dist * 6.2832 / (run ? 2.2 : 1.5)) % 6.2832;   // one stride cycle per 1.5 m walking, 2.2 m running
+      o = { mode: 'stand', swing: this.hAmp, ph: this.hPh, rod }; }
+    const pose = humanPose(o);
+    if (o.mode === 'swim') base = P.z + EYE - (o.tread ? 0.12 : 0.3) - pose.head[2];   // head where the first-person eye is (treading water), or lying low in the water swimming
+    const c = Math.cos(rot), s = Math.sin(rot), w = q => [P.x + c * q[0] - s * q[1], P.y + s * q[0] + c * q[1], base + q[2]];
+    this.hPose = { pose, rot, base, w, hand: w(pose.hand) };
+  },
+  drawHuman(gl, L) {
+    const hp = this.hPose; if (!hp) return;
+    const M = this._hParts || (this._hParts = humanParts()), P = this.P; sample(P.x, P.y); const wl = SW, mk = WATER[SK].murk;
+    gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.roll, 0);
+    for (const q of hp.pose.parts) { const g = this.tackleGpu('human:' + q[0], () => M[q[0]]), p = hp.w([q[1], q[2], q[3]]);
+      this.upInst(g, [p[0], p[1], p[2], 1, hp.rot, 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); }
+    gl.uniform1f(L.u.fsh, 0);
+  },
 });
 </script>
 <script>
@@ -7178,6 +7285,7 @@ Object.assign(Engine, {
     const btn = !!(K.KeyR || K.Mouse0) && !this.showMap && !this.tackleOpen && !this.journalOpen && A.phase !== 'card', press = btn && !A.btnWas, release = !btn && A.btnWas; A.btnWas = btn;
     const fast = K.ShiftLeft || K.ShiftRight ? 1 : this.reelPull || 0;   // 0..1: Shift is flat out; on touch, how far the Reel button is pulled down
     const eye = [P.x, P.y, P.z + EYE]; A.hand = this.handForReel(A, eye);   // right hand, placed so the butt stays planted below the bottom-right corner (the reel sits in the bottom-right of the view
+    if (this.thirdP && !helm && this.hPose) A.hand = this.hPose.hand;   // third person: in the angler's right hand
     if (helm) { const cb = Math.cos(bt.a), sb = Math.sin(bt.a), Lh = bt.def.hull.length_m; A.hand = [bt.x - cb * Lh * 0.4 - sb * 0.35, bt.y - sb * Lh * 0.4 + cb * 0.35, bt.z + bt.def.hull.depth_m * 0.75]; }   // at the helm the rod sits in a holder at the stern
     A.t = (A.t || 0) + dt; A.reeling = false;
     if (A.bail && (press || (A.phase !== 'water' && A.phase !== 'bite' && A.phase !== 'flight'))) { A.bail = false; if (A.lure) this.say('Bail closed', 1); }   // turning the handle flips the bail shut
@@ -7204,7 +7312,7 @@ Object.assign(Engine, {
       const f = A.fish, ah = Math.atan2(f.y - A.hand[1], f.x - A.hand[0]); ty = P.a + clamp(Math.atan2(Math.sin(ah - P.a), Math.cos(ah - P.a)) - 0.1, -0.6, 0.5);
       tp = 0.42 + 0.2 * P.pitch; this.fightStep(dt, btn, press, fast); if (A.phase === 'fight') tb = clamp(A.tension / Math.max(0.1, S.rod.line_lb.max * LB * 0.45), 0, 1);
     } else if (A.phase === 'card') { tp = 0.2; this.cardStep(dt); }
-    if (!helm && A.phase !== 'charge') { const aim = this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
+    if (!helm && A.phase !== 'charge') { const aim = this.thirdP ? [P.a - 0.08, clamp(0.55 + 0.35 * P.pitch, 0.15, 1.1)] : this.rodAim(eye); ty = aim[0]; tp = aim[1]; }   // the rod points up the middle of the view, 75% of the way up (the wind-up swings it back)
     if (helm) { ty = bt.a + Math.PI - 0.25; tp = A.phase === 'fight' ? 0.75 : 0.55; if (A.phase === 'charge') tb = 0; }
     const k = 1 - Math.exp(-dt * (A.phase === 'flight' && A.t - A.castAt < 0.25 ? 18 : 7));
     A.pitch += (tp - A.pitch) * k; A.yaw += Math.atan2(Math.sin(ty - A.yaw), Math.cos(ty - A.yaw)) * k;
@@ -7690,7 +7798,8 @@ Object.assign(Engine, {
     const d = Math.max(0.3, f.len / (0.9 * tx), f.len / (1.3 * ty)), cp = Math.cos(P.pitch);   // far enough that it fits, whichever way it's turned
     A.cardYaw = (A.cardYaw || 0) + ((K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0)) * dt * 2.4;
     A.cardTilt = clamp((A.cardTilt || 0) + ((K.KeyW || K.ArrowUp ? 1 : 0) - (K.KeyS || K.ArrowDown ? 1 : 0)) * dt * 1.8, -1.4, 1.4);
-    f.x = P.x + Math.cos(P.a) * cp * d; f.y = P.y + Math.sin(P.a) * cp * d; f.z = P.z + EYE + Math.sin(P.pitch) * d;   // dead centre, on the line of sight
+    const E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];   // third person: in front of the camera, the same card
+    f.x = E[0] + Math.cos(P.a) * cp * d; f.y = E[1] + Math.sin(P.a) * cp * d; f.z = E[2] + Math.sin(P.pitch) * d;   // dead centre, on the line of sight
     f.a = P.a + Math.PI / 2 + A.cardYaw; f.pitch = A.cardTilt;
     f.ph = (f.ph + dt * (2 + 3 * Math.max(0, Math.sin(this.time * 1.7)))) % 6.2832; f.open = 0.25 + 0.2 * Math.sin(this.time * 3);
   },
@@ -7727,7 +7836,7 @@ Object.assign(Engine, {
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
     const one = (g, x, y, z, s, rot, wl, mk, pitch) => { this.upInst(g, [x, y, z, s, rot, 0.5, wl, mk, 0, pitch]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); };
     const lvl = rodBendLevel(A.bend), rk = `rod:${A.rigId}:${rv}:${lvl}`;
-    const held = this.boat && this.boatMode === 'deck';   // in your hands on deck: drawn over the boat, so it can't poke through the hull
+    const held = !this.thirdP && this.boat && this.boatMode === 'deck';   // in your hands on deck: drawn over the boat, so it can't poke through the hull
     if (held) gl.depthRange(0, 0.1);
     one(this.tackleGpu(rk, () => rodMesh(S, lvl / (ROD_BEND_STEPS - 1)).mesh), A.hand[0], A.hand[1], A.hand[2], 1, A.yaw, -1e4, 0, A.pitch); this.drawReelParts(one, rv);
     if (held) gl.depthRange(0, 1);
@@ -7761,7 +7870,7 @@ Object.assign(Engine, {
       c.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`; c.lineWidth = w; c.beginPath(); c.moveTo(pa[0], pa[1]);
       if (pm && sag > 0.01) c.quadraticCurveTo(2 * pm[0] - (pa[0] + pb[0]) / 2, 2 * pm[1] - (pa[1] + pb[1]) / 2, pb[0], pb[1]); else c.lineTo(pb[0], pb[1]); c.stroke();
     };
-    const w = A.S.line.material === 'braid' ? 1.5 : 1.1, P = this.P, E = [P.x, P.y, P.z + EYE];
+    const w = A.S.line.material === 'braid' ? 1.5 : 1.1, P = this.P, E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];
     const px = (x, y, z) => clamp(w * 0.9 / Math.max(0.3, Math.hypot(x - E[0], y - E[1], z - E[2])), 0.5, w);   // thinner with distance
     c.save(); c.lineCap = 'butt'; c.lineJoin = 'round';
     const R = A.rope; if (!R) { c.restore(); return; }

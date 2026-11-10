@@ -17,6 +17,8 @@ node tests/performance.mjs <baseline-revision>
 
 Do not regenerate fixtures simply to make a failing comparison pass. Intentional species or world-generation changes may require a new baseline.
 
+`node tests/human-model.mjs` checks the third-person angler (src/js/models/human.js): every part builds with finite vertices, standing it is 1.7–1.8 m tall with its feet at z = 0, and the stride, swim, seated and rod-holding poses stay sane.
+
 ## Browser image comparisons
 
 Start an isolated headless Chrome instance in a separate terminal:

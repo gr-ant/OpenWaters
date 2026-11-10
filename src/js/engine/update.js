@@ -126,7 +126,7 @@ Object.assign(Engine, {
       this.emitN(26 + 30 * mk, dt, () => { const a = Math.random() * 6.2832, r = this.rnd(0.8, 8); this.spawn(MOTE, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, P.z + EYE + this.rnd(-3, 3), this.rnd(-0.08, 0.08), this.rnd(-0.08, 0.08), 0, this.rnd(2.5, 5), this.rnd(0.02, 0.045), { top: wl0 - 0.05, col: mk > 0.5 ? [0.55, 0.6, 0.35] : null }); });
     }
     this.torchStep();
-    this.updateFish(dt); this.updateIdleBoats(dt); this.angStep(dt);
+    this.updateFish(dt); this.updateIdleBoats(dt); if (this.thirdP) this.humanStep(dt); this.angStep(dt);
     this.updateTui();
     // what water is under the crosshair (for the HUD and games)
     if ((this.lookT -= dt) <= 0) { this.lookT = 0.12; const h = this.lookWater(); this.look = h ? Object.assign(waterInfo(h.x, h.y), { x: h.x, y: h.y, dist: h.dist }) : null; }
