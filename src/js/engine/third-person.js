@@ -28,7 +28,7 @@ Object.assign(Engine, {
       base = P.z + EYE - eye; if (helm) rot = b.a;   // feet on the floor (or deck) under the eye the boat code puts you at; at the helm you face the bow
       this.hAmp = (this.hAmp || 0) + (clamp(spd * 0.5, 0, 0.5) - (this.hAmp || 0)) * Math.min(1, dt * 8); this.hPh = ((this.hPh || 0) + dist * 4.5) % 6.2832;
       o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, ph: this.hPh, rod }; }
-    else if (this.swim) { const go = this.moving; this.hPh = ((this.hPh || 0) + dt * (go ? 3.2 : 1.8)) % 6.2832;
+    else if (this.swim) { const go = this.moving; this.hPh = ((this.hPh || 0) + dt * (go ? 3.6 : 1.8)) % 6.2832;   // a breaststroke every 1.75 s
       o = { mode: 'swim', tread: !go, body: go ? -Math.PI / 2 + (this.under ? clamp(P.pitch, -1.2, 1.2) : 0) : -0.25, ph: this.hPh }; }
     else { const run = spd > (CONFIG.walkSpeed + CONFIG.runSpeed) / 2 * Game.speedMultiplier * 0.9;
       this.hAmp = (this.hAmp || 0) + ((spd > 0.3 ? (run ? 1 : 0.55) : 0) - (this.hAmp || 0)) * Math.min(1, dt * 8);

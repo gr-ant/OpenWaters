@@ -21,6 +21,11 @@ for (let ph = 0; ph < 6.3; ph += 0.7) { const w = bounds(ctx.humanPose({ mode: '
 const sp = ctx.humanPose({ mode: 'swim', ph: 1 }), swim = bounds(sp), hp = sp.parts.find(q => q[0] === 'hips'); assert.ok(Math.abs(sp.head[2] - hp[3]) < 0.05 && sp.head[0] - hp[1] > 0.6, `swimming lies flat, head first: ${sp.head} ${hp}`);
 const sit = ctx.humanPose({ mode: 'sit', hipZ: 0.45 }), st = bounds(sit); assert.ok(Math.abs(st.lo[2]) < 0.05 && st.hi[2] < 1.4, 'seated: feet on the floor, head lower');
 const rod = ctx.humanPose({ mode: 'stand', rod: true }); assert.ok(rod.hand[0] > 0.2 && rod.hand[1] > 0 && rod.hand[2] > 0.9, `rod hand out in front, on the right: ${rod.hand}`);
+// breaststroke: both arms and both legs move together; arms reach past the head on the glide and point down mid-pull; knees draw up before the kick
+for (let ph = 0; ph < 6.3; ph += 0.3) { const q = ctx.humanPose({ mode: 'swim', ph }).parts, of = n => q.filter(x => x[0] === n); bounds({ parts: q, hand: [0, 0, 0], head: [0, 0, 0] });
+  for (const n of ['upper', 'fore', 'thigh', 'shin']) { const [l, r] = of(n); assert.equal(l[4], r[4], `${n} together at ${ph}`); assert.equal(l[2], -r[2], `${n} mirrored at ${ph}`); } }
+const sw = ph => Object.fromEntries(ctx.humanPose({ mode: 'swim', ph }).parts.map(q => [q[0], q[4] + Math.PI / 2]));   // angles from the body's line
+assert.ok(Math.abs(sw(5.8).upper - Math.PI) < 0.01 && Math.abs(sw(5.8).thigh) < 0.01, 'glide: arms out ahead, legs straight'); assert.ok(sw(2.1).upper < 1.3, 'pull: arms down under the shoulders'); assert.ok(sw(3.7).shin < -0.8 && sw(3.7).thigh > 0.6, 'knees drawn up before the kick');
 // the look is data (src/angler/angler.json): the shipped file, and a different build, hair and outfit, all still build
 const shipped = JSON.parse(fs.readFileSync('src/angler/angler.json', 'utf8')), count = m => Object.values(m).reduce((a, p) => a + p.length, 0);
 for (const look of [shipped, { build: 'female', skin: '#8d5a3c', hair: { style: 'ponytail', color: '#111111' }, outfit: { cap: null, vest: null, shirt: '#aa3344' } }, { hair: { style: 'long' } }, { hair: { style: 'none' }, skin: 'nonsense' }]) {
