@@ -7,7 +7,7 @@ node tests/performance.mjs
 python3 build.py
 ```
 
-The CPU checks compare terrain sampling with direct full-grid Float32 calculations, interleave sampling and mesh generation, exercise bounded-cache eviction, and compare plant/cover/spawn records with fixtures from commit `31e2068` (jellies added). They use seed 42 in all three climates and the game's species load order. Mesh checks reconstruct the original vertex stream bit for bit and cover the 16-bit index restart boundary.
+The CPU checks compare terrain sampling with direct full-grid Float32 calculations, interleave sampling and mesh generation, exercise bounded-cache eviction, and compare plant/cover/spawn records with fixtures from commit `89d60b1` (rivers past ponds keep their own level). They use seed 42 in all three climates and the game's species load order. Mesh checks reconstruct the original vertex stream bit for bit and cover the 16-bit index restart boundary.
 
 To deliberately regenerate fixtures from a reviewed baseline revision:
 
