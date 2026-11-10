@@ -90,6 +90,7 @@ Object.assign(Engine, {
       if (K.Space && P.z <= floor + 0.05) P.vz = CONFIG.jumpSpeed * (1 - 0.5 * wade);
       P.vz -= CONFIG.gravity * dt; P.z += P.vz * dt;
     }
+    this.airH = swim ? 0 : P.z - floor;   // how far your feet are off the ground (third-person jump pose)
     if (P.z <= floor) { P.z = floor; if (P.vz < 0) P.vz = 0; }
     oSwim = swim; oUnder = under; oWade = wade; oWl = wl0;
     }

@@ -45,6 +45,11 @@ for (const [gait, stride] of [[0, 0.5], [0, 1.4], [1, 2.4], [2, 3.1]]) for (cons
   for (let ph = 0; ph < 6.2832; ph += 0.02) { const P = ctx.humanPose({ mode: 'stand', swing: 1, gait, stride, ph }), ft = P.parts.filter(q => q[0] === 'foot')[leg];
     if (Math.abs(ft[4]) < 1e-6 && ft[3] < 0.085) spots.push(ft[1] + ph / 6.2832 * stride); }   // flat and down: where it is on the ground (the body has gone ph / 2pi of a stride)
   assert.ok(spots.length > 5 && Math.max(...spots) - Math.min(...spots) < 0.012, `gait ${gait}, stride ${stride} m, leg ${leg}: planted foot stays put (${spots.length} samples, drift ${Math.max(...spots) - Math.min(...spots)})`); }
+// jumping: off the ground legs straight and arms up, knees tucked at the top, legs reaching down to land; then the knees take the landing
+{ const J = r => { const P = ctx.humanPose({ mode: 'jump', rise: r }), by = n => P.parts.filter(q => q[0] === n)[1]; return { P, knee: by('thigh')[4] - by('shin')[4], arm: by('upper')[4], out: Math.abs(by('upper')[5]), lo: bounds(P).lo[2] }; }, up = J(1), top = J(0), down = J(-1);
+  for (const j of [up, top, down]) assert.ok(Math.abs(j.lo) < 0.03, `jump: feet are the lowest point (${j.lo})`);
+  assert.ok(up.knee < 0.5 && top.knee > 1.4 && down.knee < 1, `knees: ${up.knee} ${top.knee} ${down.knee}`); assert.ok(up.arm > 1.6 && down.out > up.out + 0.3, `arms up, then out: ${up.arm} ${up.out} ${down.out}`);
+  const hipOf = o => ctx.humanPose(o).parts[0][3]; assert.ok(hipOf({ mode: 'stand', crouch: 1 }) < hipOf({ mode: 'stand' }) - 0.15 && Math.abs(bounds(ctx.humanPose({ mode: 'stand', crouch: 1 })).lo[2]) < 0.03, 'landing: the hips drop, the feet stay down'); }
 // three gaits: a walker's arms hang long and a foot is always down; a jogger's elbows are bent; a runner lifts the knee highest and leaves the ground
 { const G = g => { let elbow = 0, knee = -9, air = 0; for (let ph = 0; ph < 6.3; ph += 0.05) { const P = ctx.humanPose({ mode: 'stand', swing: 1, gait: g, ph }), by = n => P.parts.filter(q => q[0] === n);
     elbow = Math.max(elbow, by('fore')[0][4] - by('upper')[0][4]); knee = Math.max(knee, by('thigh')[1][4]); air = Math.max(air, bounds(P).lo[2]); } return { elbow, knee, air }; }, w = G(0), j = G(1), r = G(2);

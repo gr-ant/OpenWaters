@@ -34,13 +34,15 @@ Object.assign(Engine, {
       o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, stride: this.hStride, ph: this.hPh, rod }; }
     else if (this.swim) { const go = this.moving; this.hPh = ((this.hPh || 0) + dt * (go ? 3.6 : 1.8)) % 6.2832;   // a breaststroke every 1.75 s
       o = { mode: 'swim', tread: !go, body: go ? -Math.PI / 2 + (this.under ? clamp(P.pitch, -1.2, 1.2) : 0) : -0.25, ph: this.hPh }; }
-    else { const M = Game.speedMultiplier, gait = clamp((spd / M - 2.6) / 0.8, 0, 1) + clamp((spd / M - 4.2) / 1, 0, 1);   // by how fast you're really going: walk, jog (about 3.4 to 4.2 m/s), run
+    else if (this.airH > 0.15 || (this.airH > 0.05 && P.vz > 1)) { this.hAir = P.vz; o = { mode: 'jump', rise: P.vz / CONFIG.jumpSpeed, rod }; }   // off the ground (not just a step down a bank): going up, over the top, coming down
+    else { if (this.hAir !== undefined) { this.hCrouch = clamp(-this.hAir / 6, 0.35, 1); this.hAir = undefined; } this.hCrouch = Math.max(0, (this.hCrouch || 0) - dt * 3);   // landed: the knees take it, deeper the harder you came down
+      const M = Game.speedMultiplier, gait = clamp((spd / M - 2.6) / 0.8, 0, 1) + clamp((spd / M - 4.2) / 1, 0, 1);   // by how fast you're really going: walk, jog (about 3.4 to 4.2 m/s), run
       this.hGait = (this.hGait || 0) + (gait - (this.hGait || 0)) * Math.min(1, dt * 5); this.hAmp = (this.hAmp || 0) + ((spd > 0.3 ? 1 : 0) - (this.hAmp || 0)) * Math.min(1, dt * 8);
       const g = this.hGait, v = spd / M, rate = g < 1 ? (0.9 + 0.32 * Math.min(v, 2.6)) * (1 - g) + 1.6 * g : 1.6 + 0.15 * (g - 1), L = spd > 0.05 ? v / rate : 0;   // strides a second for this pace, so the ground one stride covers
       this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist / M * 6.2832 / this.hStride) % 6.2832;   // the stride moves on by exactly the ground covered: planted feet don't slide
-      o = { mode: 'stand', swing: this.hAmp, gait: g, stride: this.hStride, ph: this.hPh, rod }; }
+      o = { mode: 'stand', swing: this.hAmp, gait: g, stride: this.hStride, ph: this.hPh, rod, crouch: this.hCrouch }; }
     const pose = humanPose(o), sm = this.hSm;
-    if (sm && sm.mode === o.mode && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
+    if (sm && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
       const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
       pose.parts.forEach((q, n) => { const w = sm.parts[n]; for (let j = 1; j < 3; j++) q[j] = ease(w[j], q[j]); q[3] = w[3] + (q[3] - w[3]) * Math.min(1, dt * 60); for (let j = 4; j < 7; j++) q[j] = turn(w[j], q[j]); });   // (height follows faster: the rise and fall of each step should show)
       pose.hand = pose.hand.map((v, j) => ease(sm.hand[j], v)); }

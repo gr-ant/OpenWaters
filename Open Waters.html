@@ -2187,7 +2187,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
     foot: part('foot', B => { B.blob([0, 0, 0], 0.056, 0.054, 0.05, 3, 6, skin); B.blob([0.055, 0, -H.foot + 0.055], 0.115, 0.058, 0.04, 4, 8, skin); }),   // ankle, foot (the sole is H.foot below the ankle)
   };
 }
-// A pose: o.mode 'stand' (moving too: o.swing 0..1 how much, o.gait 0 walk .. 1 jog .. 2 run, o.ph the stride phase, o.stride the metres a whole cycle covers), 'swim' (o.body: body pitch, -pi/2 lying
+// A pose: o.mode 'jump' (in the air: o.rise), 'stand' (o.crouch after a landing; moving too: o.swing 0..1 how much, o.gait 0 walk .. 1 jog .. 2 run, o.ph the stride phase, o.stride the metres a whole cycle covers), 'swim' (o.body: body pitch, -pi/2 lying
 // face down along the heading; o.ph the stroke: breaststroke, or o.tread treading water) or 'sit' (o.hipZ: seat height over the feet;
 // o.paddle; o.helm). o.rod: the right hand holds a rod out in front. Returns the parts as [part, forward, side, up, pitch, roll, yaw],
 // the right hand and the head centre, all relative to the feet (standing, sitting) under the body's own heading. Every part hangs
@@ -2211,13 +2211,19 @@ function humanPose(o) {
     else if (o.mode === 'sit') { b = o.paddle ? -0.12 : 0; hipZ = o.hipZ; headP = b * 0.4;
       thigh[i] = PI / 2 - 0.1; shin[i] = Math.acos(clamp((hipZ - H.foot) / H.shin, 0, 1)); foot[i] = shin[i]; thR[i] = side * 0.14;   // thighs along the seat, knees a little apart, shins down to the floor (straight out in a kayak)
       up[i] = o.paddle ? 0.75 + 0.4 * s : 0.45; fore[i] = up[i] + (o.paddle ? 0.5 : 0.9); upR[i] = side * 0.1; foR[i] = -side * 0.12; }
+    else if (o.mode === 'jump') { const r = clamp(o.rise ?? 0, -1, 1), tuck = 1 - Math.abs(r), upw = Math.max(r, 0), dn = Math.max(-r, 0);   // in the air. o.rise: 1 just off the ground .. 0 at the top .. -1 coming down
+      b = -0.12 * upw + 0.06 * dn; headP = b * 0.4;   // thrown forward going up, a touch back coming down
+      thigh[i] = b + 0.15 + 0.85 * tuck + 0.25 * dn + side * 0.12; shin[i] = thigh[i] - 0.15 - 1.35 * tuck - 0.3 * dn; thR[i] = side * (0.04 + 0.08 * dn);   // legs straight off the ground, knees up at the top (one a little ahead), reaching down to land
+      foot[i] = shin[i] - 0.7 * upw - 0.6 * shin[i] * dn;   // toes pointed on the way up, feet levelling for the ground
+      up[i] = b + 0.5 + 1.5 * upw + 0.5 * tuck + 0.3 * dn; fore[i] = up[i] + 0.5 + 0.4 * tuck; upR[i] = side * (0.15 + 0.2 * tuck + 0.5 * dn); foR[i] = upR[i] * 0.5; }   // arms thrown up, then out wide for balance
     else { const g = clamp(o.gait || 0, 0, 2), G3 = (w, j, r) => g < 1 ? w + (j - w) * g : j + (r - j) * (g - 1), sm = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };   // o.gait 0 walk .. 1 jog .. 2 run: G3(walk, jog, run) blends a setting between them
       // The legs are driven by the feet. o.stride is the ground one whole cycle (two steps) covers, and the caller advances o.ph by exactly
       // that, so a foot on the ground goes back under the body just as fast as the body goes forward: it stays where it was put down.
       const L = o.stride ?? sw * G3(1.3, 2.4, 3.1), T = H.thigh, S2 = H.shin, duty = G3(0.58, 0.36, 0.28), S = duty * L, xF = 0.38 * S, big = Math.min(1, S / 0.3);   // duty: the part of the cycle a foot is down; S: how far it travels under you meanwhile; big: 0 for a shuffle .. 1 a real step
       const c = Math.cos(p), u = ((p / 6.2832) % 1 + 1) % 1, u0 = ((ph / 6.2832) % 1 + 1) % 1, high = duty / 2 + 0.25 * sm((0.56 - duty) / 0.12), A = big * G3(0.026, 0.045, 0.07);   // the body rises and falls twice a stride: highest over the standing leg walking, in mid-air running
-      hipZ = H.foot + Math.sqrt(Math.max(0.01, ((T + S2) * 0.985) ** 2 - xF * xF)) - A + A * Math.cos(12.5664 * (u0 - high));
-      b = -sw * G3(0.03, 0.1, 0.2) + big * G3(0.02, 0.03, 0.04) * Math.cos(12.5664 * (u0 - high) + 0.9); headP = -sw * G3(0.03, 0.1, 0.2) * 0.4;   // upright walking, leaning into a jog, well forward at a run, and the chest nods a little as each foot lands; the head stays level
+      const cr = clamp(o.crouch || 0, 0, 1);   // o.crouch: 1 = knees taking a landing, easing back to 0
+      hipZ = H.foot + Math.sqrt(Math.max(0.01, ((T + S2) * 0.985) ** 2 - xF * xF)) - A + A * Math.cos(12.5664 * (u0 - high)) - 0.2 * cr;
+      b = -sw * G3(0.03, 0.1, 0.2) + big * G3(0.02, 0.03, 0.04) * Math.cos(12.5664 * (u0 - high) + 0.9) - 0.3 * cr; headP = -sw * G3(0.03, 0.1, 0.2) * 0.4;   // upright walking, leaning into a jog, well forward at a run, and the chest nods a little as each foot lands; the head stays level
       const fOn = big * G3(0.3, 0.12, 0), fOff = -big * G3(0.55, 0.75, 0.9); let x, z = H.foot, f;   // the foot's tilt as the heel lands (toes up, walking) and as the toes push off
       if (u < duty) { const t = u / duty, on = Math.max(0, 1 - t / 0.25); f = fOn * on * on + fOff * sm((t - 0.65) / 0.35); x = xF - t * S;   // on the ground: straight back under the hips, rolling from heel to toe
         if (f > 0) { x -= 0.07 * (1 - Math.cos(f)); z += 0.07 * Math.sin(f); } else { x += 0.17 * (1 - Math.cos(f)); z -= 0.17 * Math.sin(f); } }   // (the ankle rides up over the heel, then over the toes, which stay put)
@@ -2225,12 +2231,13 @@ function humanPose(o) {
         x = xo + (xi - xo) * e; z += zo + (zi - zo) * e + big * Math.sin(PI * t) * (G3(0.06, 0.12, 0.2) + G3(0, 0.1, 0.25) * (1 - t)); f = fOff + (fOn - fOff) * e - 0.25 * big * Math.sin(PI * t); }   // lifted through, the heel kicked up behind at a run
       const dz = hipZ - z, D = Math.min(Math.hypot(x, dz), T + S2 - 0.001), ac = v => Math.acos(clamp(v, -1, 1));   // hip to ankle: the knee (always forward) takes up the slack
       thigh[i] = Math.atan2(x, dz) + ac((T * T + D * D - S2 * S2) / (2 * T * D)); shin[i] = thigh[i] - (PI - ac((T * T + S2 * S2 - D * D) / (2 * T * S2))); foot[i] = f; thR[i] = side * 0.03;
-      const ca = Math.cos(p - 0.3); up[i] = b - sw * G3(0.35, 0.5, 0.85) * ca; fore[i] = up[i] + 0.15 + sw * (G3(0.1, 1.2, 1.45) + G3(0.25, 0.2, 0.3) * (0.5 - 0.5 * ca));   // (the arms trail the legs a touch)   // arms against the legs: long and loose walking, elbows bent to a right angle jogging, pumping at a run
+      const ca = Math.cos(p - 0.3); up[i] = b - sw * G3(0.35, 0.5, 0.85) * ca - 0.35 * cr; fore[i] = up[i] + 0.15 + sw * (G3(0.1, 1.2, 1.45) + G3(0.25, 0.2, 0.3) * (0.5 - 0.5 * ca));   // (the arms trail the legs a touch)   // arms against the legs: long and loose walking, elbows bent to a right angle jogging, pumping at a run
       upR[i] = side * (0.08 + 0.02 * sw * g); foR[i] = -side * G3(0.04, 0.14, 0.1);
       if (i) { twist = G3(0.1, 0.14, 0.2) * sw * c; turn = -G3(0.03, 0.04, 0.05) * sw * c; sway = G3(0.02, 0.012, 0.005) * big * Math.sin(6.2832 * (u - duty / 2) + PI / 2); } }   // right leg forward: right shoulder back, right hip forward; a walker's weight shifts over the standing foot
   }
   if (o.rod && o.mode !== 'swim') { up[1] = b + 0.45; fore[1] = up[1] + 1.25; upR[1] = 0.06; foR[1] = -0.16; }   // right forearm out in front, the hand in toward the middle, holding the rod
   const leg = i => { const side = i ? 1 : -1, hipJ = [-side * H.hip * Math.sin(turn), sway + side * H.hip * Math.cos(turn), 0], knee = end(hipJ, H.thigh, thigh[i], thR[i], turn), ankle = end(knee, H.shin, shin[i], shR[i], turn); return { hipJ, knee, ankle }; };
+  if (o.mode === 'jump') hipZ = -Math.min(...[0, 1].flatMap(i => [-0.07, 0.17].map(x => leg(i).ankle[2] + x * Math.sin(foot[i]) - H.foot * Math.cos(foot[i]))));   // in the air the lowest heel or toe is where your feet are
   const hip = [0, sway, hipZ], sh = [-Math.sin(b) * H.torso, sway, hipZ + Math.cos(b) * H.torso], arm2 = end(sh, 0.15, b);   // the shoulders: up the (leaning) spine from the hips; arm2: the shoulder joints' height, well below the top of the sloping shoulders
   out.push(['hips', hip[0], hip[1], hip[2], b, sway * 2, turn], ['torso', sh[0], sh[1], sh[2], b, -sway * 1.5, twist],   // the hips tip and the chest leans a little over the standing foot
     ['head', sh[0], sh[1], sh[2], headP, 0, twist * 0.3]);
@@ -5669,6 +5676,7 @@ Object.assign(Engine, {
       if (K.Space && P.z <= floor + 0.05) P.vz = CONFIG.jumpSpeed * (1 - 0.5 * wade);
       P.vz -= CONFIG.gravity * dt; P.z += P.vz * dt;
     }
+    this.airH = swim ? 0 : P.z - floor;   // how far your feet are off the ground (third-person jump pose)
     if (P.z <= floor) { P.z = floor; if (P.vz < 0) P.vz = 0; }
     oSwim = swim; oUnder = under; oWade = wade; oWl = wl0;
     }
@@ -6602,13 +6610,15 @@ Object.assign(Engine, {
       o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, stride: this.hStride, ph: this.hPh, rod }; }
     else if (this.swim) { const go = this.moving; this.hPh = ((this.hPh || 0) + dt * (go ? 3.6 : 1.8)) % 6.2832;   // a breaststroke every 1.75 s
       o = { mode: 'swim', tread: !go, body: go ? -Math.PI / 2 + (this.under ? clamp(P.pitch, -1.2, 1.2) : 0) : -0.25, ph: this.hPh }; }
-    else { const M = Game.speedMultiplier, gait = clamp((spd / M - 2.6) / 0.8, 0, 1) + clamp((spd / M - 4.2) / 1, 0, 1);   // by how fast you're really going: walk, jog (about 3.4 to 4.2 m/s), run
+    else if (this.airH > 0.15 || (this.airH > 0.05 && P.vz > 1)) { this.hAir = P.vz; o = { mode: 'jump', rise: P.vz / CONFIG.jumpSpeed, rod }; }   // off the ground (not just a step down a bank): going up, over the top, coming down
+    else { if (this.hAir !== undefined) { this.hCrouch = clamp(-this.hAir / 6, 0.35, 1); this.hAir = undefined; } this.hCrouch = Math.max(0, (this.hCrouch || 0) - dt * 3);   // landed: the knees take it, deeper the harder you came down
+      const M = Game.speedMultiplier, gait = clamp((spd / M - 2.6) / 0.8, 0, 1) + clamp((spd / M - 4.2) / 1, 0, 1);   // by how fast you're really going: walk, jog (about 3.4 to 4.2 m/s), run
       this.hGait = (this.hGait || 0) + (gait - (this.hGait || 0)) * Math.min(1, dt * 5); this.hAmp = (this.hAmp || 0) + ((spd > 0.3 ? 1 : 0) - (this.hAmp || 0)) * Math.min(1, dt * 8);
       const g = this.hGait, v = spd / M, rate = g < 1 ? (0.9 + 0.32 * Math.min(v, 2.6)) * (1 - g) + 1.6 * g : 1.6 + 0.15 * (g - 1), L = spd > 0.05 ? v / rate : 0;   // strides a second for this pace, so the ground one stride covers
       this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist / M * 6.2832 / this.hStride) % 6.2832;   // the stride moves on by exactly the ground covered: planted feet don't slide
-      o = { mode: 'stand', swing: this.hAmp, gait: g, stride: this.hStride, ph: this.hPh, rod }; }
+      o = { mode: 'stand', swing: this.hAmp, gait: g, stride: this.hStride, ph: this.hPh, rod, crouch: this.hCrouch }; }
     const pose = humanPose(o), sm = this.hSm;
-    if (sm && sm.mode === o.mode && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
+    if (sm && sm.parts.length === pose.parts.length && dt < 0.2) {   // ease every joint toward where the pose wants it: no snapping when the rod comes up, you speed up or you stop
       const k = Math.min(1, dt * 24), ease = (a, b) => a + (b - a) * k, turn = (a, b) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
       pose.parts.forEach((q, n) => { const w = sm.parts[n]; for (let j = 1; j < 3; j++) q[j] = ease(w[j], q[j]); q[3] = w[3] + (q[3] - w[3]) * Math.min(1, dt * 60); for (let j = 4; j < 7; j++) q[j] = turn(w[j], q[j]); });   // (height follows faster: the rise and fall of each step should show)
       pose.hand = pose.hand.map((v, j) => ease(sm.hand[j], v)); }
