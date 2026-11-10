@@ -6,11 +6,19 @@ import fs from 'node:fs';
 const read = p => fs.readFileSync(p, 'utf8');
 const files = ['config', 'world/worldgen', 'models/mesh-builder', 'creatures/fish', 'creatures/cephalopods-shellfish', 'boats', 'boat-builder', 'boat-detail'];
 const source = 'var BUILTIN = { fish: [], boat: [], tackle: [], feature: [] }; var Engine = {};\n' + files.map(f => read(`src/js/${f}.js`)).join('\n') + '\n' + read('src/js/engine/on-board.js');
-const api = new Function('location', 'history', 'matchMedia', 'localStorage', source + '\nBOAT_PARTS = ' + read('src/boats/parts.json') + ';\nreturn { BoatDB, Engine, oarPose, oarXform, VS, buildBoat, MT };')(
+const api = new Function('location', 'history', 'matchMedia', 'localStorage', source + '\nBOAT_PARTS = ' + read('src/boats/parts.json') + ';\nreturn { BoatDB, Engine, oarPose, oarXform, VS, buildBoat, MT, helmPose };')(
   { search: '', hash: '' }, { replaceState() {} }, () => ({ matches: false }), { getItem() { return null; } });
-const { BoatDB, Engine: E, oarPose, oarXform, VS, buildBoat, MT } = api;
+const { BoatDB, Engine: E, oarPose, oarXform, VS, buildBoat, MT, helmPose } = api;
 for (const [, name] of read('src/index.html').matchAll(/data-builtin="boat" src="([^"]+)"/g)) assert.ok(BoatDB.register(JSON.parse(read(`src/${name}`)), { quiet: true }).def, name);
 assert.ok(BoatDB.list.length >= 13);
+// the wheel stands clear of its console however far it's turned (none of it inside the console box)
+let consoles = 0;
+for (const D of BoatDB.list) { const cs = D.features.console; if (!cs || !D._helm) continue; consoles++;
+  const S = D._shape, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), top = D.hull.floor_m + (cs.height ?? 0.95);
+  const out = new Float32Array(D._helm.wheel.length + D._helm.lever.length);
+  for (const ang of [0, 0.8, -1.4]) { helmPose(D, ang, 0, out); for (let i = 0; i < D._helm.wheel.length; i += VS) {
+    const inside = out[i] > x - 0.3 && out[i] < x + 0.25 && Math.abs(out[i + 1] - oy) < w && out[i + 2] < top; assert.ok(!inside, `${D.id}: the wheel (turned ${ang}) is sunk into the console at ${[...out.slice(i, i + 3)].map(v => v.toFixed(2))}`); } } }
+assert.ok(consoles >= 3, 'boats with a console');
 
 // trim and fittings (boat-detail.js): every boat gets some, and nothing is flung far off the hull
 for (const D of BoatDB.list) { const m = D._mesh, H = D.hull, tall = (D.features.cabin ? (D.features.cabin.height ?? 1.1) + 1.2 : D.features.console ? 2.6 : 1.4) + H.depth_m; let n = 0;

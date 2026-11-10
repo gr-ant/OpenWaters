@@ -73,8 +73,8 @@ function boatDetail(D, S, M, C, X) {
 
   // ---- the helm ----
   if (F.console) { const cs = F.console, t = cs.at ?? 0.45, x = S.x(t), oy = -(cs.side ?? 0) * S.hb(t), w = Math.min(0.35, S.hb(t) * (cs.side ? 0.25 : 0.45)), h = cs.height ?? 0.95, top = fz + h, scr = cs.screen ?? 0.3;
-    M.mat = MT.METAL; helm([x - 0.2, oy, top - 0.1], [x - 0.05, oy + w * 0.75, top]);   // a spoked wheel, raked back on the aft face, and the throttle lever beside it
-    rod([x - 0.3, oy, top - 0.14], [x - 0.2, oy, top - 0.1], 0.02, steel);
+    M.mat = MT.METAL; helm([x - 0.39, oy, top + 0.02], [x - 0.05, oy + w * 0.75, top]);   // a spoked wheel, raked back, standing clear of the console's aft face (x - 0.3) on a short column; the throttle lever on top beside it
+    rod([x - 0.3, oy, top - 0.03], [x - 0.39, oy, top + 0.02], 0.02, steel);
     M.mat = MT.PLASTER; for (const sy of [-0.45, 0.1]) M.blob([x + 0.02, oy + sy * w, top + 0.008], 0.045, 0.045, 0.008, 2, 8, dark);   // gauges
     M.mat = MT.METAL; const a = [x + 0.25, oy - w, top], b = [x + 0.25 + scr * 0.25, oy - w, top + scr], c = [x + 0.25 + scr * 0.25, oy + w, top + scr], e = [x + 0.25, oy + w, top];   // windscreen frame and a grab rail over it
     rod(a, b, 0.011, steel); rod(b, c, 0.011, steel); rod(c, e, 0.011, steel);
