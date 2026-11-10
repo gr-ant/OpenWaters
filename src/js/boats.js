@@ -128,8 +128,9 @@ function boatMesh(D) {
     M.mat = MT.METAL; M.tube([x - 0.05, oy, z0 + h + 0.02], [x - 0.15, oy, z0 + h + 0.12], 0.012, 0.012, 5, [0.2, 0.2, 0.22]); M.blob([x - 0.16, oy, z0 + h + 0.13], 0.11, 0.11, 0.015, 2, 10, [0.15, 0.15, 0.16]);   // wheel
     if (F.fish_finder) { const fw = Math.min(0.09, w * 0.5); M.mat = MT.GLOW; M.quad([x + 0.12, oy - fw, z0 + h + 0.01], [x + 0.12, oy + fw, z0 + h + 0.01], [x + 0.16, oy + fw, z0 + h + 0.11], [x + 0.16, oy - fw, z0 + h + 0.11], [0.25, 0.75, 0.9], [x - 1, 0, 0]); } }
   else if (F.fish_finder) { const t = clamp(D.crew.seat_at + 0.1, 0, 0.95), x = S.x(t), g = S.gun(t); M.mat = MT.GLOW; M.quad([x, -0.08, g + 0.04], [x, 0.08, g + 0.04], [x + 0.03, 0.08, g + 0.16], [x + 0.03, -0.08, g + 0.16], [0.3, 0.9, 1.1], [x - 1, 0, 0]); }
+  const motorAt = [];
   { const list = Array.isArray(F.motors) && F.motors.length ? F.motors : F.motor ? [F.motor] : [], room = Math.max(0.1, S.hb(0) * 2 * (H.stern === 'transom' ? H.transom_width : 0.5));   // an outboard per engine, side by side on the transom
-    list.forEach((mo, k) => { const hp = clamp(mo.hp ?? 25, 2, 450), sc = 0.55 + 0.35 * Math.log10(hp), x = S.x(0) - 0.12 * sc, g = S.gun(0), col = hexRGB(mo.color || '#202020'), y = (k - (list.length - 1) / 2) * Math.min(0.75, room / list.length);
+    list.forEach((mo, k) => { const hp = clamp(mo.hp ?? 25, 2, 450), sc = 0.55 + 0.35 * Math.log10(hp), x = S.x(0) - 0.12 * sc, g = S.gun(0), col = hexRGB(mo.color || '#202020'), y = (k - (list.length - 1) / 2) * Math.min(0.75, room / list.length); motorAt.push([x, y, sc, g, col, hp]);
     M.mat = MT.METAL; M.blob([x - 0.08 * sc, y, g + 0.22 * sc], 0.22 * sc, 0.17 * sc, 0.25 * sc, 4, 10, col);
     M.tube([x, y, g], [x, y, -S.keel(0) - 0.25 * sc], 0.06 * sc, 0.045 * sc, 6, V3.mul(col, 0.85));
     M.blob([x + 0.02, y, -S.keel(0) - 0.25 * sc], 0.14 * sc, 0.05 * sc, 0.05 * sc, 3, 8, V3.mul(col, 0.8));
@@ -144,6 +145,7 @@ function boatMesh(D) {
       for (const [u0, u1, za, zb] of [[0, 1, z0, zs], [0, 1, zt, z1], [0, 0.1, zs, zt], [0.9, 1, zs, zt]])
         M.quad(L(p, q, u0, za), L(p, q, u1, za), L(p, q, u1, zb), L(p, q, u0, zb), C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
     M.quad([x0 - 0.05, -w - 0.05, z1], [x1 + 0.05, -w - 0.05, z1], [x1 + 0.05, w + 0.05, z1], [x0 - 0.05, w + 0.05, z1], C.trim, [x0, 0, 0]); }
+  if (typeof boatDetail === 'function') boatDetail(D, S, M, C, { inner, P, fz, decked, motors: motorAt });   // trim and fittings (boat-detail.js)
   D._hullN = M.v.length / VS;   // the hull's own vertices; the oars / paddle (at rest) follow, for the menu picture
   const O = D._oars = boatOars(D, S, C); if (O) { const m = new Float32Array(O.mesh.length); for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(D, O, 0, 0, sd, false, O.m); oarXform(O.mesh, O.m, m); for (const v of m) M.v.push(v); } }
   return new Float32Array(M.v);

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 // Boat logic without a browser: the built-in boats, the oar / paddle stroke, the hull rocking under your weight, hulls being solid.
 // Run from the repository root: node tests/boats.mjs
 const read = p => fs.readFileSync(p, 'utf8');
-const files = ['config', 'world/worldgen', 'models/mesh-builder', 'creatures/fish', 'creatures/cephalopods-shellfish', 'boats', 'boat-builder'];
+const files = ['config', 'world/worldgen', 'models/mesh-builder', 'creatures/fish', 'creatures/cephalopods-shellfish', 'boats', 'boat-builder', 'boat-detail'];
 const source = 'var BUILTIN = { fish: [], boat: [], tackle: [], feature: [] }; var Engine = {};\n' + files.map(f => read(`src/js/${f}.js`)).join('\n') + '\n' + read('src/js/engine/on-board.js');
 const api = new Function('location', 'history', 'matchMedia', 'localStorage', source + '\nBOAT_PARTS = ' + read('src/boats/parts.json') + ';\nreturn { BoatDB, Engine, oarPose, oarXform, VS, buildBoat, MT };')(
   { search: '', hash: '' }, { replaceState() {} }, () => ({ matches: false }), { getItem() { return null; } });
@@ -12,6 +12,10 @@ const { BoatDB, Engine: E, oarPose, oarXform, VS, buildBoat, MT } = api;
 for (const [, name] of read('src/index.html').matchAll(/data-builtin="boat" src="([^"]+)"/g)) assert.ok(BoatDB.register(JSON.parse(read(`src/${name}`)), { quiet: true }).def, name);
 assert.ok(BoatDB.list.length >= 13);
 
+// trim and fittings (boat-detail.js): every boat gets some, and nothing is flung far off the hull
+for (const D of BoatDB.list) { const m = D._mesh, H = D.hull, tall = (D.features.cabin ? (D.features.cabin.height ?? 1.1) + 1.2 : D.features.console ? 2.6 : 1.4) + H.depth_m; let n = 0;
+  for (let i = 0; i < D._hullN * VS; i += VS) { n++; assert.ok(m[i] > -H.length_m / 2 - 1.3 && m[i] < H.length_m / 2 + 0.4 && Math.abs(m[i + 1]) < H.beam_m / 2 + 0.25 && m[i + 2] > -H.draft_m - 1.2 && m[i + 2] < tall, `${D.id}: a vertex at ${[m[i], m[i + 1], m[i + 2]].map(v => v.toFixed(2))}`); }
+  assert.ok(n > 1500, `${D.id}: ${n} vertices`); }
 // boats built from parts (boat-builder.js, boats/parts.json): a short definition becomes a whole boat
 { const B = id => BoatDB.byId[id], short = { id: 't', name: 'T', size: 'medium', build: 'vee' }, why = d => buildBoat(Object.assign({}, short, d)).errors.join('; ');
   assert.equal(B('pack_canoe').propulsion.type, 'paddle'); assert.equal(B('pack_canoe').features.motor, null);
