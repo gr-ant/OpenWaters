@@ -9,9 +9,11 @@
 // bait. A fish that set itself stays on, the bell ringing, for HOLD_S seconds, then throws the hook (bait gone).
 //   Engine.ang.holder -> { boat, lx, ly, lz, ya (on a boat, in its frame) | x, y, z, yaw (bank), up, on, onT, alert }
 const HOLDER_PITCH = 0.8;   // how steeply a rod stands in a holder (rad)
-function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilted up by HOLDER_PITCH: a tube for the butt on a stem down `drop` m
-  const B = meshBuilder(), c = Math.cos(HOLDER_PITCH), s = Math.sin(HOLDER_PITCH), at = k => [k * c, 0, k * s], g = [0.32, 0.33, 0.35], q = at(-0.36); B.mat = MT.METAL;
-  B.tube(at(-0.38), at(-0.08), 0.024, 0.024, 7, g, true); B.tube(q, [q[0], 0, -drop], 0.012, 0.009, 5, g, true); B.tube([q[0] - 0.05, 0, q[2] - 0.02], [q[0] + 0.03, 0, q[2] - 0.02], 0.016, 0.016, 5, g, false);
+function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilted up by HOLDER_PITCH: a bright steel tube for the butt with an orange band at its mouth, on a stem down `drop` m
+  const B = meshBuilder(true), c = Math.cos(HOLDER_PITCH), s = Math.sin(HOLDER_PITCH), at = k => [k * c, 0, k * s], g = [0.8, 0.81, 0.84], o = [0.98, 0.42, 0.08], q = at(-0.38); B.mat = MT.METAL;
+  B.tube(at(-0.42), at(-0.1), 0.036, 0.034, 12, g, true); B.tube(at(-0.1), at(-0.05), 0.04, 0.04, 12, o, false);   // the tube the butt drops into, and its band
+  B.tube(q, [q[0], 0, -drop], 0.022, 0.018, 10, g, true); B.blob([q[0], 0, q[2]], 0.03, 0.03, 0.03, 4, 10, g);   // the stem (a spike in the bank, or the post down to the gunwale clamp)
+  B.tube([q[0] - 0.07, 0, -drop + 0.04], [q[0] + 0.07, 0, -drop + 0.04], 0.025, 0.025, 10, o, true);   // the clamp / the spike's foot bar, orange so it's easy to find
   return new Float32Array(B.v);
 }
 (() => {
@@ -44,7 +46,7 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
         H = { boat: null, x: dry ? x : P.x, y: dry ? y : P.y, z: dry ? Game.groundAt(x, y) : P.z, yaw: a, up: 0.75 }; }
       H.on = false; H.onT = 0; H.ringT = 0; H.alert = ''; H.was = 'water'; H.born = this.time;
       A.holder = H; A.bail = false; A.btnWas = false; this.keys.KeyR = this.keys.Mouse0 = false;
-      this.say(`Rod in the holder · walk off and listen for the bell · ${this.touchUI ? 'Pick up' : useKey()} at the holder to take it back`, 3.5);
+      this.say(`Rod in the holder · walk off and listen for the bell · ${pickKey()} at the holder to take it back`, 3.5);
       this.tuiState = null; this.updateTui();
     },
     pickUpHolder() {
@@ -65,10 +67,13 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
     H.alert = 'Fish on at the rod holder!'; this.say(`${H.alert} ${away(H)} m away · get there before it throws the hook`, 4); };
   // Q while the rod is in a holder: you have to go and get it. Anything else that puts the rod away (travel) takes the holder too.
   const baseKey = E.keyPress; E.keyPress = function (code, e, card) {
-    if (!card && code === 'KeyQ' && this.ang && this.ang.holder) { this.keys[code] = true; if (!e.repeat) this.say(`Your rod is in its holder ${away(this.ang.holder)} m away: ${useKey()} there to pick it up`, 2.5); return; }
+    if (!card && code === 'KeyQ' && this.ang && this.ang.holder) { this.keys[code] = true; if (!e.repeat) this.say(`Your rod is in its holder ${away(this.ang.holder)} m away: ${pickKey()} there to pick it up`, 2.5); return; }
     return baseKey.call(this, code, e, card); };
   const baseRod = E.toggleRod; E.toggleRod = function (on = !this.ang.out) { if (!on && this.ang && this.ang.holder) this.ang.holder = null; return baseRod.call(this, on); };
-  const baseAction = E.action; E.action = function () { if (this.holderNear()) return this.pickUpHolder(); return baseAction.call(this); };   // before boarding / leaving a boat
+  // Use picks the rod up from a holder ashore; aboard it's for the boat (leaving it, the helm), and H picks the rod up
+  E.holderByUse = function () { return !this.boat && this.holderNear(); };
+  const pickKey = () => E.touchUI ? 'Pick up' : E.boat ? Controls.key('holder') : useKey();
+  const baseAction = E.action; E.action = function () { if (this.holderByUse()) return this.pickUpHolder(); return baseAction.call(this); };
   Game.on('key', code => { if (code !== 'KeyH') return; const A = E.ang;
     if (A && A.holder) return E.holderNear() ? E.pickUpHolder() : E.say(`Your rod is in its holder ${away(A.holder)} m away`, 2);
     if (E.rodInHand()) return E.setHolder();
@@ -76,10 +81,10 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
 
   // the panel and the key hints
   const baseKeys = E.contextKeys; E.contextKeys = function () { const out = baseKeys.call(this), A = this.ang;
-    if (A && A.holder) return this.holderNear() ? [[Controls.key('use'), 'Pick up rod'], ...out].slice(0, 4) : out;
+    if (A && A.holder) return this.holderNear() ? [[this.boat ? Controls.key('holder') : Controls.key('use'), 'Pick up rod'], ...out].slice(0, 4) : out;
     return this.rodInHand() && A.phase === 'water' ? [[Controls.key('holder'), 'Rod holder'], ...out].slice(0, 4) : out; };
   const baseStatus = E.fishingStatus; E.fishingStatus = function () { const A = this.ang, H = A && A.holder; if (!H) return baseStatus.call(this);
-    const near = this.holderNear(), key = near && !this.touchUI ? Controls.key('use') : '', act = near ? 'Pick up' : '', sub = near ? 'right here' : `${away(H)} m away`;
+    const near = this.holderNear(), key = near && !this.touchUI ? (this.boat ? Controls.key('holder') : Controls.key('use')) : '', act = near ? 'Pick up' : '', sub = near ? 'right here' : `${away(H)} m away`;
     if (A.phase === 'bite') return H.on ? { title: 'Fish on at the holder!', sub: `${sub} · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s`, key, act, bite: 'strike', alert: true } : { title: 'Bite at the holder!', sub, key, act, bite: 'strike' };
     return { title: 'Rod in the holder', sub: H.alert ? `${sub} · ${H.alert.toLowerCase()}` : sub, key, act }; };
 

@@ -150,7 +150,6 @@ Object.assign(Engine, {
       if (cb) { cb.hidden = !out || ph === 'card'; cb.textContent = ph === 'water' ? 'Reel' : ph === 'fight' ? 'Reel' : ph === 'bite' ? (A.took ? 'Strike!' : '…') : ph === 'flight' ? 'Stop' : 'Cast'; cb.classList.toggle('lit', ph === 'bite' && !!A.took); cb.classList.toggle('reel', ph === 'water' || ph === 'fight'); }
       for (const id of ['bDrDn', 'bDrUp', 'bBail']) { const b = document.getElementById(id); if (b) b.hidden = !out || ph === 'card'; }
       { const b = document.getElementById('bBail'); if (b) b.classList.toggle('open', !!(out && A.bail)); }
-      { const b = document.getElementById('bHold'); if (b) b.hidden = ph !== 'water'; }   // Holder: set the rod down with its line out (fishing/rod-holder.js)
       { const b = document.getElementById('bFast'); if (b) b.hidden = true; } }   // the Reel button pulls down to wind faster instead
     { const tui = document.getElementById('tui'); if (tui) { tui.classList.toggle('rod-out', inH); tui.classList.toggle('aboard', !!this.boat); } }   // fishing: no Jump, and no Dive ashore (CSS)
     const h = document.getElementById('bHelm'), dv = document.querySelector('#tui [data-k="KeyC"]');

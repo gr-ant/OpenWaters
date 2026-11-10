@@ -43,5 +43,5 @@
     return basePick.call(this); };
   const baseKeys = E.contextKeys; E.contextKeys = function () { const out = baseKeys.call(this), A = this.ang;
     if (A && A.holder && !this.ang2 && !nearMine.call(this)) return [[Controls.key('rod'), 'Second rod'], ...out].slice(0, 4);
-    return A && !A.holder && nearOther() ? [[Controls.key('use'), 'Pick up rod'], ...out].slice(0, 4) : out; };
+    return A && !A.holder && nearOther() ? [[this.boat ? Controls.key('holder') : Controls.key('use'), 'Pick up rod'], ...out].slice(0, 4) : out; };
 })();

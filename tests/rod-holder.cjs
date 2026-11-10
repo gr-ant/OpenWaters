@@ -67,7 +67,13 @@ Math.random = r0; Ang.out = true; Ang.phase = 'water'; Ang.lure = { x: 0, y: 8, 
 const b = E.boat = { x: 0, y: 0, z: 0.1, a: 0, pitch: 0, roll: 0, def: { hull: { length_m: 5 }, _shape: { hb: () => 0.7, gun: () => 0.5 } } };
 key('KeyH'); const B = Ang.holder; A(B.boat === b && B.ly > 0 && Math.abs(B.ly - 0.644) < 1e-9 && B.lz === 0.5 && B.up === 0.3, 'gunwale holder on the lure side');
 b.x = 20; b.a = Math.PI / 2; const h = E.holderHand(B); A(Math.abs(h[0] - (20 - B.ly)) < 1e-9 && Math.abs(B.yaw - (Math.PI / 2 + B.ya)) < 1e-9, 'moves and turns with the boat');
-E.boatMode = 'drive'; Ang.holder = null; key('KeyH'); A(!Ang.holder && /helm/.test(said.at(-1)), 'not from the helm');
+// aboard, Use is for the boat (leaving it); H picks the rod up; leave the boat and the rod keeps fishing from its holder, the bell and all
+E.P.x = 20; E.P.y = 0.3; E.based = false; A(E.holderNear() && E.contextKeys()[0][0] === 'H', 'aboard: H to pick up'); E.action(); A(E.based && Ang.holder === B, 'Use aboard leaves the boat, the rod stays in its holder');
+E.boat = null; E.P.x = 24; step(0.016); A(Ang.out && Ang.holder === B && !E.rodInHand(), 'ashore: still in the holder');
+Math.random = () => 0; E.fishTake(fish()); step(0.016); A(/Bite at the rod holder/.test(els[0].textContent), 'it still rings from the boat: ' + els[0].textContent); Math.random = r0;
+b.x = 26; E.holderHand(B); A(Math.abs(B.x - (26 - B.ly)) < 1e-9, 'and drifts with it');
+E.P.x = 25.5; E.P.y = 0; A(E.holderNear(), 'swum back to it'); E.based = false; E.action(); A(!Ang.holder && Ang.out, 'Use from the water picks it up');
+E.boat = b; E.boatMode = 'drive'; Ang.holder = null; Ang.phase = 'water'; key('KeyH'); A(!Ang.holder && /helm/.test(said.at(-1)), 'not from the helm');
 map.forEach(f => f({ beginPath() {}, arc() {}, fill() {}, stroke() {} }, (x, y) => [x, y]));
 console.log('ok:', said.slice(-4).join(' | '));
 `, ctx);
