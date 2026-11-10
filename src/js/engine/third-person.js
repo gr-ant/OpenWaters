@@ -21,11 +21,14 @@ Object.assign(Engine, {
   // per frame, before the rod: what you're doing picks the pose; the stride follows how far you've actually moved
   humanStep(dt) {
     const P = this.P, b = this.boat, A = this.ang, rod = !!(A && A.out), H = HUMAN;
-    const lx = b ? this.boatLX || 0 : P.x, ly = b ? this.boatLY || 0 : P.y, moved = Math.hypot(lx - (this.hLX ?? lx), ly - (this.hLY ?? ly)); this.hLX = lx; this.hLY = ly;
+    const lx = b ? this.boatLX || 0 : P.x, ly = b ? this.boatLY || 0 : P.y, mx = lx - (this.hLX ?? lx), my = ly - (this.hLY ?? ly), moved = Math.hypot(mx, my); this.hLX = lx; this.hLY = ly;
     const dist = moved < 3 ? moved : 0, spd = dt > 0 ? dist / dt : 0;   // a jump (travel, boarding) isn't a stride
-    let o, base = P.z, rot = P.a;
+    // he faces the way he's going (sideways and backwards too: he turns, he doesn't shuffle), turning smoothly; with the rod out, the way you're looking
+    const going = dist > 0 && spd > 0.3 && !rod, to = going ? Math.atan2(my, mx) + (b ? b.a : 0) : rod || this.hFace === undefined ? P.a : this.hFace, was = this.hFace ?? P.a;
+    this.hFace = was + Math.atan2(Math.sin(to - was), Math.cos(to - was)) * Math.min(1, dt * 10);
+    let o, base = P.z, rot = this.hFace;
     if (b) { const D = b.def, helm = this.boatMode !== 'deck', sit = helm || this.boatSit, eye = helm ? D.crew.eye_height_m : sit ? (D.hull.cockpit ? D.crew.eye_height_m : 0.95) : 1.62;
-      base = P.z + EYE - eye; if (helm) rot = b.a;   // feet on the floor (or deck) under the eye the boat code puts you at; at the helm you face the bow
+      base = P.z + EYE - eye; if (helm) rot = this.hFace = b.a; else if (sit) rot = this.hFace = P.a;   // feet on the floor (or deck) under the eye the boat code puts you at; at the helm you face the bow
       this.hAmp = (this.hAmp || 0) + (clamp(spd, 0, 1) - (this.hAmp || 0)) * Math.min(1, dt * 8); const L = spd > 0.05 ? spd / (0.9 + 0.32 * Math.min(spd, 2.6)) : 0;   // on deck you walk
       this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist * 6.2832 / this.hStride) % 6.2832;
       o = sit ? { mode: 'sit', hipZ: Math.max(H.foot + 0.05, eye - 0.7), paddle: helm && /paddle|oars/.test(D.propulsion.type) && Math.abs(b.v || 0) > 0.2, rod, ph: this.time * 3 } : { mode: 'stand', swing: this.hAmp, stride: this.hStride, ph: this.hPh, rod }; }
