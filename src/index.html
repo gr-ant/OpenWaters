@@ -19,15 +19,16 @@
 <canvas id="canvas3d"></canvas>
 <div id="title" hidden>
   <div class="ti-card" role="dialog" aria-labelledby="tiName">
-    <p class="ti-kicker">a fishing island</p>
-    <h1 id="tiName">Open Waters</h1>
+    <h1 id="tiName">Open<br>Waters</h1>
+    <svg class="ti-line" viewBox="0 0 320 34" aria-hidden="true"><path d="M2 22 C 60 10, 110 10, 160 18 S 260 30, 296 16" fill="none" stroke="#f2e6c4" stroke-width="2" stroke-linecap="round"/>
+      <line x1="300" y1="2" x2="300" y2="9" stroke="#2a2216" stroke-width="2"/><circle cx="300" cy="17" r="8.5" fill="#f4efe2" stroke="#2a2216" stroke-width="1.5"/><path d="M291.5 17 a8.5 8.5 0 0 0 17 0 Z" fill="#c8322a" stroke="#2a2216" stroke-width="1.5"/></svg>
     <p class="ti-sub" id="tiSub">&nbsp;</p>
     <nav class="ti-menu" aria-label="Start menu">
-      <button id="tiStart" class="ti-item ti-primary" type="button">Start</button>
+      <button id="tiStart" class="ti-item ti-primary" type="button"><span class="ti-play" aria-hidden="true">▶</span>Start fishing</button>
       <button id="tiTut" class="ti-item" type="button">Tutorial</button>
       <button id="tiNew" class="ti-item" type="button">New island</button>
       <button id="tiSettings" class="ti-item" type="button">Settings</button>
-      <div class="ti-item ti-soon" aria-disabled="true">Sandbox</div>
+      <div class="ti-item ti-soon" aria-disabled="true" title="Coming soon">Sandbox</div>
     </nav>
     <p class="ti-foot" id="tiFoot"></p>
   </div>

@@ -54,6 +54,7 @@
     Engine.titleOpen = false; Engine.keys = {}; T.classList.add('leaving'); document.body.classList.remove('title-on');
     setTimeout(() => { T.hidden = true; }, 650);
     Engine.ov.focus({ preventScroll: true }); Engine.requestMouseLook();
+    if (Engine.ang && Engine.ang.S && !Engine.ang.out && !Engine.swim && !Engine.boat) Engine.toggleRod(true);   // straight to fishing: the rod in your hand
     Game.say(`Welcome to Open Waters · ${CLIMATE.name} island`, 4);
   };
   start.onclick = startGame;
@@ -91,7 +92,7 @@
     Engine.titleOpen = true; T.hidden = false; document.body.classList.add('title-on');
     if (innerWidth > 700 && Engine.titleA !== undefined) Engine.titleA -= 0.3;   // look a little left of the canoe so it sits clear of the menu card
     const w = Game.waterAt(Engine.P.x + Math.cos(Engine.P.a) * 8, Engine.P.y + Math.sin(Engine.P.a) * 8);
-    document.getElementById('tiSub').textContent = `${CLIMATE.name} island${w && w.depth > 0 ? ' · ' + w.name : ''}`;
+    document.getElementById('tiSub').textContent = `${CLIMATE.name} Island${w && w.depth > 0 ? ' · ' + w.name : ''}`;
     document.getElementById('tiFoot').textContent = `Island no. ${SEED}`;
     setTimeout(() => start.focus({ preventScroll: true }), 50);
   });

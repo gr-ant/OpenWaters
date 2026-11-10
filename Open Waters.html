@@ -457,28 +457,31 @@
 #hSettings { position: fixed; top: 13px; right: 52px; pointer-events: auto; border: 1px solid #d4e4e088; border-radius: 9px; background: #182219b8; color: var(--cream); padding: 6px 8px; font: 12px var(--sans); cursor: pointer; }
 </style>
 <style>
-/* ---- start menu: text floating over the scene, no card ---- */
-#title { position: fixed; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: flex-start; padding: 0 0 0 clamp(24px, 8vw, 130px);
-  background: radial-gradient(ellipse 55% 70% at 18% 50%, rgba(0,0,0,.28) 0%, rgba(0,0,0,0) 70%); transition: opacity .6s ease; }
+/* ---- start menu: a dark green panel fading in from the left, over the live scene ---- */
+#title { position: fixed; inset: 0; z-index: 4; display: flex; align-items: flex-start; justify-content: flex-start; padding: clamp(56px, 13vh, 120px) 0 0 clamp(28px, 7vw, 130px); box-sizing: border-box;
+  background: linear-gradient(90deg, rgba(14,46,30,.94) 0%, rgba(16,52,34,.86) 22%, rgba(18,56,36,.55) 34%, rgba(18,56,36,0) 46%); transition: opacity .6s ease; }
 #title[hidden] { display: none; }
 #title.leaving { opacity: 0; pointer-events: none; }
 body.title-loading #loading { z-index: 3; } body.title-loading #loading > * { visibility: hidden; }   /* the menu stays up while a new island is shaped */
 #title.busy .ti-menu { opacity: .45; pointer-events: none; } #title.busy .ti-sub { color: var(--gold-hi); }
 body.title-on #hud, body.title-on #tui, body.title-on #overlay { visibility: hidden !important; }
-.ti-card { position: relative; width: min(340px, calc(100vw - 40px)); color: #fff8e8; font-family: var(--serif);
-  text-shadow: 0 1px 2px rgba(0,0,0,.75), 0 2px 18px rgba(0,0,0,.55); }
-.ti-kicker { margin: 0 0 4px; font: italic 16px var(--serif); color: #f2e6c4; letter-spacing: .5px; }
-#tiName { margin: 0; font: 400 64px/1 var(--serif); letter-spacing: -.5px; color: #fffaf0; }
-.ti-sub { margin: 10px 0 26px; font: 14px var(--sans); color: #f2e6c4; min-height: 1em; }
-.ti-menu { display: flex; flex-direction: column; gap: 4px; }
-.ti-item { position: relative; display: flex; align-items: center; width: 100%; padding: 8px 0 8px 18px; text-align: left; font: 600 26px var(--serif); color: #fff8e8;
-  background: transparent; border: 0; cursor: pointer; text-shadow: inherit; transition: color .15s, transform .15s; }
-button.ti-item::before { content: '›'; position: absolute; left: 0; opacity: 0; color: var(--gold-hi); transition: opacity .15s; }
+.ti-card { position: static; width: min(400px, calc(100vw - 40px)); color: #f6ecd2; font-family: var(--serif); text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 2px 14px rgba(0,0,0,.35); }
+#tiName { margin: 0; font: 600 clamp(56px, 7.4vw, 92px)/.92 var(--serif); letter-spacing: -1px; color: #f2e6c8; }
+.ti-line { display: block; width: min(320px, 82%); height: auto; margin: 6px 0 0 4px; overflow: visible; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+.ti-sub { margin: 14px 0 44px 2px; font: 500 clamp(16px, 1.4vw, 21px) var(--sans); color: #ece2c6; min-height: 1em; letter-spacing: .2px; }
+.ti-menu { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.ti-item { position: relative; display: flex; align-items: center; padding: 6px 0 6px 28px; text-align: left; font: 700 clamp(22px, 1.9vw, 30px) var(--serif); color: #f2e6c8;
+  background: transparent; border: 0; cursor: pointer; text-shadow: inherit; transition: color .15s, transform .15s, background .15s, border-color .15s; }
+button.ti-item:not(.ti-primary)::before { content: '›'; position: absolute; left: 8px; opacity: 0; color: var(--gold-hi); transition: opacity .15s; }
 button.ti-item:hover, button.ti-item:focus-visible { color: var(--gold-hi); transform: translateX(4px); outline: none; }
 button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1; }
-.ti-soon { cursor: not-allowed; color: rgba(255,248,232,.35); }
-.ti-foot { margin: 22px 0 0 18px; font: 11px var(--sans); color: rgba(242,230,196,.8); letter-spacing: .4px; }
-@media (max-width: 600px) { #title { justify-content: center; padding: 0; } #tiName { font-size: 48px; } }
+.ti-primary { gap: 18px; width: 100%; margin: 0 0 22px; padding: 14px 24px 14px 44px; font-style: italic; font-size: clamp(26px, 2.3vw, 36px); color: #f6ecd2;
+  background: linear-gradient(180deg, rgba(40,66,32,.92), rgba(28,50,24,.92)); border: 2px solid #c4a86c; border-radius: 18px; box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08); }
+.ti-primary:hover, .ti-primary:focus-visible { border-color: var(--gold-hi); background: linear-gradient(180deg, rgba(52,82,40,.95), rgba(34,60,28,.95)); }
+.ti-play { font-style: normal; font-size: .62em; color: #e8c46a; }
+.ti-soon { cursor: not-allowed; }
+.ti-foot { position: absolute; left: clamp(28px, 7vw, 130px); bottom: clamp(24px, 6vh, 56px); margin: 0; font: 15px var(--sans); color: rgba(242,230,196,.85); letter-spacing: .3px; }
+@media (max-width: 600px) { #title { padding: 48px 20px 0; background: linear-gradient(180deg, rgba(14,46,30,.92) 0%, rgba(16,52,34,.8) 60%, rgba(18,56,36,.4) 100%); } .ti-card { width: 100%; } .ti-foot { left: 20px; } }
 </style>
 <style>
 /* ---- glass menus: tinted with the scene's average colour (boot.js sets --tint), thin light edge ---- */
@@ -512,15 +515,16 @@ button.ti-item:hover::before, button.ti-item:focus-visible::before { opacity: 1;
 <canvas id="canvas3d"></canvas>
 <div id="title" hidden>
   <div class="ti-card" role="dialog" aria-labelledby="tiName">
-    <p class="ti-kicker">a fishing island</p>
-    <h1 id="tiName">Open Waters</h1>
+    <h1 id="tiName">Open<br>Waters</h1>
+    <svg class="ti-line" viewBox="0 0 320 34" aria-hidden="true"><path d="M2 22 C 60 10, 110 10, 160 18 S 260 30, 296 16" fill="none" stroke="#f2e6c4" stroke-width="2" stroke-linecap="round"/>
+      <line x1="300" y1="2" x2="300" y2="9" stroke="#2a2216" stroke-width="2"/><circle cx="300" cy="17" r="8.5" fill="#f4efe2" stroke="#2a2216" stroke-width="1.5"/><path d="M291.5 17 a8.5 8.5 0 0 0 17 0 Z" fill="#c8322a" stroke="#2a2216" stroke-width="1.5"/></svg>
     <p class="ti-sub" id="tiSub">&nbsp;</p>
     <nav class="ti-menu" aria-label="Start menu">
-      <button id="tiStart" class="ti-item ti-primary" type="button">Start</button>
+      <button id="tiStart" class="ti-item ti-primary" type="button"><span class="ti-play" aria-hidden="true">▶</span>Start fishing</button>
       <button id="tiTut" class="ti-item" type="button">Tutorial</button>
       <button id="tiNew" class="ti-item" type="button">New island</button>
       <button id="tiSettings" class="ti-item" type="button">Settings</button>
-      <div class="ti-item ti-soon" aria-disabled="true">Sandbox</div>
+      <div class="ti-item ti-soon" aria-disabled="true" title="Coming soon">Sandbox</div>
     </nav>
     <p class="ti-foot" id="tiFoot"></p>
   </div>
@@ -10413,6 +10417,7 @@ Game.on('catch', () => Birds.excite());
     Engine.titleOpen = false; Engine.keys = {}; T.classList.add('leaving'); document.body.classList.remove('title-on');
     setTimeout(() => { T.hidden = true; }, 650);
     Engine.ov.focus({ preventScroll: true }); Engine.requestMouseLook();
+    if (Engine.ang && Engine.ang.S && !Engine.ang.out && !Engine.swim && !Engine.boat) Engine.toggleRod(true);   // straight to fishing: the rod in your hand
     Game.say(`Welcome to Open Waters · ${CLIMATE.name} island`, 4);
   };
   start.onclick = startGame;
@@ -10450,7 +10455,7 @@ Game.on('catch', () => Birds.excite());
     Engine.titleOpen = true; T.hidden = false; document.body.classList.add('title-on');
     if (innerWidth > 700 && Engine.titleA !== undefined) Engine.titleA -= 0.3;   // look a little left of the canoe so it sits clear of the menu card
     const w = Game.waterAt(Engine.P.x + Math.cos(Engine.P.a) * 8, Engine.P.y + Math.sin(Engine.P.a) * 8);
-    document.getElementById('tiSub').textContent = `${CLIMATE.name} island${w && w.depth > 0 ? ' · ' + w.name : ''}`;
+    document.getElementById('tiSub').textContent = `${CLIMATE.name} Island${w && w.depth > 0 ? ' · ' + w.name : ''}`;
     document.getElementById('tiFoot').textContent = `Island no. ${SEED}`;
     setTimeout(() => start.focus({ preventScroll: true }), 50);
   });
