@@ -27,7 +27,7 @@ for (let ph = 0; ph < 6.3; ph += 0.3) { const q = ctx.humanPose({ mode: 'swim', 
   for (const n of ['upper', 'fore', 'thigh', 'shin', 'foot']) { const [l, r] = of(n); assert.equal(l[4], r[4], `${n} together at ${ph}`); assert.ok(Math.abs(l[2] + r[2]) < 1e-9 && l[5] === -r[5], `${n} mirrored at ${ph}`); } }
 { const q = ctx.humanPose({ mode: 'swim', ph: 1.1 }).parts.filter(x => x[0] === 'fore'), wide = Math.abs(ctx.humanPlace(q[1], 0, 0, -0.3)[1]); assert.ok(wide > 0.3, `hands sweep wide on the pull: ${wide}`); }
 // walking: the shoulders turn against the hips, each ankle rolls (toes up to land, down to push off), and the pose is continuous round the stride
-{ const at = ph => Object.fromEntries(ctx.humanPose({ mode: 'stand', swing: 0.55, ph }).parts.map(q => [q[0], q])), a = at(Math.PI / 2 + Math.PI);   // the right leg at its furthest forward
+{ const at = ph => Object.fromEntries(ctx.humanPose({ mode: 'stand', swing: 0.55, ph }).parts.map(q => [q[0], q])), a = at(Math.PI);   // the right leg just landing, out in front
   assert.ok(a.torso[6] > 0.03 && a.hips[6] < -0.01, 'right leg forward: shoulders turn one way, hips the other');
   const feet = []; for (let ph = 0; ph < 6.3; ph += 0.1) feet.push(ctx.humanPose({ mode: 'stand', swing: 0.55, ph }).parts.filter(q => q[0] === 'foot')[1][4]);
   assert.ok(Math.max(...feet) > 0.1 && Math.min(...feet) < -0.2, `the ankle rolls: ${Math.min(...feet)} .. ${Math.max(...feet)}`);
@@ -40,6 +40,11 @@ assert.ok(Math.abs(sw(5.8).upper - Math.PI) < 0.01 && Math.abs(sw(5.8).thigh) < 
   for (const pose of [ctx.humanPose({ mode: 'stand' }), ctx.humanPose({ mode: 'swim', ph: 3.6 }), ctx.humanPose({ mode: 'sit', hipZ: 0.45 })]) for (const name of ['hips', 'thigh']) { const v = m[name]; let far = 0, farSkin = 0;
     for (let i = 0; i < v.length; i += ctx.VS) { const r = Math.hypot(v[i], v[i + 1], Math.min(0, v[i + 2] + 0.02) * 0), isSkin = Math.abs(v[i + 6] - skinC[0]) < 0.01 && Math.abs(v[i + 7] - skinC[1]) < 0.01; if (v[i + 2] > -0.05) { if (isSkin) farSkin = Math.max(farSkin, r); else far = Math.max(far, r); } }
     assert.ok(farSkin < far - 0.005, `${name}: cloth stands off the skin (${farSkin} < ${far})`); } }
+// every step moves the body the ground it takes: while a foot is flat on the ground it stays at one spot as the body travels on
+for (const [gait, stride] of [[0, 0.5], [0, 1.4], [1, 2.4], [2, 3.1]]) for (const leg of [0, 1]) { const spots = [];
+  for (let ph = 0; ph < 6.2832; ph += 0.02) { const P = ctx.humanPose({ mode: 'stand', swing: 1, gait, stride, ph }), ft = P.parts.filter(q => q[0] === 'foot')[leg];
+    if (Math.abs(ft[4]) < 1e-6 && ft[3] < 0.085) spots.push(ft[1] + ph / 6.2832 * stride); }   // flat and down: where it is on the ground (the body has gone ph / 2pi of a stride)
+  assert.ok(spots.length > 5 && Math.max(...spots) - Math.min(...spots) < 0.012, `gait ${gait}, stride ${stride} m, leg ${leg}: planted foot stays put (${spots.length} samples, drift ${Math.max(...spots) - Math.min(...spots)})`); }
 // three gaits: a walker's arms hang long and a foot is always down; a jogger's elbows are bent; a runner lifts the knee highest and leaves the ground
 { const G = g => { let elbow = 0, knee = -9, air = 0; for (let ph = 0; ph < 6.3; ph += 0.05) { const P = ctx.humanPose({ mode: 'stand', swing: 1, gait: g, ph }), by = n => P.parts.filter(q => q[0] === n);
     elbow = Math.max(elbow, by('fore')[0][4] - by('upper')[0][4]); knee = Math.max(knee, by('thigh')[1][4]); air = Math.max(air, bounds(P).lo[2]); } return { elbow, knee, air }; }, w = G(0), j = G(1), r = G(2);
@@ -56,7 +61,7 @@ for (const climate of ['temperate', 'arctic', 'tropical']) { const m = wear[clim
   for (const [k, c] of Object.entries(O.colors)) assert.ok(mesh(m).has(hex(c)), `${climate}: ${k} colour on the model`);
   assert.ok(!mesh(m).has('128,128,128'), `${climate}: every shape found its colour`); assert.ok(count(m) > count(bare), `${climate}: dressed`); }
 for (const g of clothes) for (const [name, list] of Object.entries(g.parts)) { assert.ok(name in bare, `${g.id}: part ${name}`); for (const q of list) assert.ok(['blob', 'tube', 'oval', 'wrap'].filter(k => q[k]).length === 1 && q.color, `${g.id}.${name}: ${JSON.stringify(q)}`); }
-assert.deepEqual([...mesh(wear.tropical, 'upper')], [hex(shipped.skin)], 'tank top: bare arms'); assert.deepEqual([...mesh(wear.tropical, 'fore')], [hex(shipped.skin)], 'tank top: bare forearms');
+assert.ok(mesh(wear.tropical, 'upper').has(hex(shipped.outfits.tropical.colors.top)) && mesh(wear.tropical, 'fore').has(hex(shipped.outfits.tropical.colors.top)), 'sun shirt: long sleeves'); assert.deepEqual([...mesh(bare, 'upper')], [hex(shipped.skin)], 'nothing on: bare arms');
 assert.ok(mesh(wear.arctic, 'fore').has(hex(shipped.outfits.arctic.colors.gloves)), 'jacket: gloves'); assert.equal(mesh(wear.temperate, 'torso').size, 3, 'plain colours: skin, flannel, vest');
 // a garment made up on the spot, bad shapes skipped, unknown garments ignored
 const odd = ctx.humanParts({ hair: { style: 'ponytail', color: '#ff0000' }, outfits: { x: { wear: ['scarf', 'missing'], colors: { wool: '#00ff00' } } } }, 'x', [{ id: 'scarf', parts: { torso: [{ oval: [0.05, 0.09, 0.09, -0.02, 0.11, 0.11], color: 'wool' }, { blob: ['a'], color: 'wool' }, { tube: [0, 1], color: 'wool' }, null] } }]);

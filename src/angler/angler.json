@@ -13,7 +13,7 @@
       "colors": { "hat": "#b5412f", "top": "#d58a2c", "gloves": "#2f3a44", "bottom": "#2b2f36", "feet": "#26282b" }
     },
     "tropical": {
-      "wear": ["shorts", "sandals", "tank", "sun_hat"],
+      "wear": ["shorts", "sandals", "sunshirt", "sun_hat"],
       "colors": { "hat": "#dcc48e", "top": "#ece8dc", "bottom": "#3a7ca5", "feet": "#5a3d28" }
     }
   }

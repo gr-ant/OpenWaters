@@ -79,11 +79,22 @@
         {"blob": [0, 0, -0.31, 0.058, 0.0505, 0.077], "detail": [3, 5], "color": "gloves"}
       ]
     } },
-    { "id": "tank", "name": "Tank top", "parts": {
+    { "id": "sunshirt", "name": "Sun shirt", "parts": {
       "torso": [
-        {"blob": [0, 0.1, -0.045, 0.1, 0.03, 0.04], "mirror": true, "color": "top"},
-        {"wrap": [-0.11, -0.24, 0.006], "color": "top"},
-        {"wrap": [-0.24, -0.52, 0.006], "color": "top", "cap": true}
+        {"oval": [0.012, 0.08, 0.078, -0.04, 0.157, 0.107], "color": "top"},
+        {"oval": [-0.04, 0.157, 0.107, -0.11, 0.217, 0.117], "color": "top"},
+        {"wrap": [-0.11, -0.24, 0.012], "color": "top"},
+        {"wrap": [-0.24, -0.56, 0.012, 0.024], "color": "top", "cap": true},
+        {"oval": [0.045, 0.072, 0.078, -0.012, 0.104, 0.104], "color": "top"},
+        {"blob": [-0.105, 0, -0.05, 0.06, 0.11, 0.09], "color": "top"}
+      ],
+      "upper": [
+        {"blob": [0, 0, -0.02, 0.085, 0.085, 0.102], "detail": [4, 8], "color": "top"},
+        {"tube": [-0.04, 0.081, -0.3, 0.07], "color": "top", "cap": true}
+      ],
+      "fore": [
+        {"blob": [0, 0, 0, 0.07, 0.07, 0.07], "color": "top"},
+        {"tube": [0.02, 0.068, -0.255, 0.058], "color": "top", "cap": true}
       ]
     } },
     { "id": "trousers", "name": "Trousers", "parts": {
@@ -101,11 +112,12 @@
     } },
     { "id": "shorts", "name": "Shorts", "parts": {
       "hips": [
-        {"blob": [0, 0, 0, 0.146, 0.2, 0.136], "detail": [4, 8], "color": "bottom"}
+        {"blob": [0, 0, 0, 0.155, 0.21, 0.142], "detail": [4, 8], "color": "bottom"}
       ],
       "thigh": [
-        {"blob": [0, 0, 0, 0.111, 0.111, 0.111], "detail": [4, 8], "color": "bottom"},
-        {"tube": [0.03, 0.108, -0.25, 0.103], "color": "bottom"}
+        {"blob": [0, 0, 0, 0.12, 0.12, 0.115], "detail": [4, 8], "color": "bottom"},
+        {"tube": [0.03, 0.12, -0.31, 0.128], "color": "bottom"},
+        {"tube": [-0.31, 0.128, -0.3, 0.085], "color": "bottom"}
       ]
     } },
     { "id": "boots", "name": "Wellingtons", "parts": {
