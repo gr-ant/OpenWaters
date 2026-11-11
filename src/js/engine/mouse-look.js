@@ -22,14 +22,12 @@ Object.assign(Engine, {
     // Do not bank vertical motion behind the pitch limit.
     this.lookDY = clamp(this.P.pitch + this.lookDY, -1.4, 1.4) - this.P.pitch;
   },
-  stepMouseLook(dt) {
+  stepMouseLook() {
     if (this.mouseLookBlocked()) { this.lookDX = this.lookDY = 0; return; }
-    const k = -Math.expm1(-Math.max(0, dt) / 0.022);
-    const dx = (this.lookDX || 0) * k, dy = (this.lookDY || 0) * k;
+    // Consume input in the next frame: smoothing leaves the view trailing the mouse.
+    const dx = this.lookDX || 0, dy = this.lookDY || 0;
     this.P.a += dx; this.P.pitch = clamp(this.P.pitch + dy, -1.4, 1.4);
-    this.lookDX = (this.lookDX || 0) - dx; this.lookDY = (this.lookDY || 0) - dy;
-    if (Math.abs(this.lookDX) < 1e-7) this.lookDX = 0;
-    if (Math.abs(this.lookDY) < 1e-7 || Math.abs(this.P.pitch) >= 1.4) this.lookDY = 0;
+    this.lookDX = this.lookDY = 0;
   },
   requestMouseLook() {
     if (this.mouseLookBlocked() || this.recentTouch() || !this.ov.requestPointerLock) return;
