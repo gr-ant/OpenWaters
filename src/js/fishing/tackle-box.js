@@ -19,7 +19,7 @@ Object.assign(Engine, {
       let h = `<div class="subtabs">${catChips(cat, 'data-cat')}</div><ul class="cards">`;
       for (const r of rigs) { const S = rigStats(r), bad = S.errors.length, on = A && A.rigId === r.id;
         h += `<li data-rig="${esc(r.id)}" class="card${on ? ' on' : ''}${bad ? ' bad' : ''}">${rigIconHTML(S, r)}<span class="tx"><b>${esc(r.name)}</b>`
-          + `<small>${bad ? '⚠' : `${S.line.strength_lb} lb · ${S.castMax.toFixed(0)} m`}</small></span>${on ? '<em class="badge">Equipped</em>' : ''}`
+          + `<small>${bad ? '⚠' : `${S.line.strength_lb} lb · ${S.castMax.toFixed(0)} m`}</small>${on ? '<em class="badge">Equipped</em>' : ''}</span>`
           + `${r._custom ? `<i data-forget="${esc(r.id)}" title="Remove">✕</i>` : ''}<span class="chev">${uiIcon('ui.chevron')}</span></li>`; }
       body.innerHTML = h + (rigs.length ? '' : '<li class="none">No rigs for this water yet</li>') + '</ul>';
       foot.innerHTML = `<button id="tkBuild" class="big">${uiIcon('ui.wrench')}Build a rig</button>`; foot.hidden = false;

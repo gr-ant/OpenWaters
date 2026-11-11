@@ -187,6 +187,8 @@
   .rb-opts li.nofit { opacity: .45; cursor: not-allowed; filter: grayscale(.6); } .rb-opts li.nofit small { color: #ffb8a0; }
   #tkBody li.rb-nofit-head { border: 0; background: none; padding: 0; min-height: 0; cursor: default; } .rb-nofit-head { margin: 10px 4px 0; font: 700 11px var(--sans); letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); list-style: none; }
   .rb-depth { grid-column: 1 / -1; } .rb-depth output { color: var(--gold-hi); font-weight: 700; } .rb-depth input[type=range] { width: 100%; padding: 0; accent-color: var(--gold-hi); background: none; border: 0; }
+  #tkBody li.card .tx b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }   /* a long name: two lines at most */
+  #tkBody li.card .tx .badge { margin-top: 4px; }
 </style>
 <style>
   /* ---- HUD over the game (js/hud.js) ---- */
@@ -7670,9 +7672,10 @@ function rigFit(slot, d, P) {
   }
   return '';
 }
-// a rig's name from its parts: "Light spinning rod · Round bobber · Nightcrawler"
-function rigAutoName(P) { const n = s => P[s] && TackleDB.byId[P[s]] && TackleDB.byId[P[s]].name, end = P.lure ? n('lure') : n('bait'), how = n('float') ? 'under a ' + n('float').toLowerCase() : n('sinker') && !P.lure ? 'on the bottom' : '';
-  const rod = (n('rod') || '').replace(/ rod$/i, ''); return [end, how].filter(Boolean).join(' ') + (rod ? ' · ' + rod : '') || 'New rig'; }
+// a rig's name from its parts, short enough for a card: "Nightcrawler & bobber", "Bottom cut mackerel", "Minnow crankbait"
+function rigAutoName(P) { const n = s => P[s] && TackleDB.byId[P[s]] && TackleDB.byId[P[s]].name;
+  if (P.lure) return n('lure') || 'New rig'; const b = n('bait'); if (!b) return 'New rig';
+  if (n('float')) return `${b} & ${n('float').split(' ').pop().toLowerCase()}`; return n('sinker') ? `Bottom ${b.toLowerCase()}` : b; }
 </script>
 <script>
 'use strict';
@@ -8595,7 +8598,7 @@ Object.assign(Engine, {
       let h = `<div class="subtabs">${catChips(cat, 'data-cat')}</div><ul class="cards">`;
       for (const r of rigs) { const S = rigStats(r), bad = S.errors.length, on = A && A.rigId === r.id;
         h += `<li data-rig="${esc(r.id)}" class="card${on ? ' on' : ''}${bad ? ' bad' : ''}">${rigIconHTML(S, r)}<span class="tx"><b>${esc(r.name)}</b>`
-          + `<small>${bad ? '⚠' : `${S.line.strength_lb} lb · ${S.castMax.toFixed(0)} m`}</small></span>${on ? '<em class="badge">Equipped</em>' : ''}`
+          + `<small>${bad ? '⚠' : `${S.line.strength_lb} lb · ${S.castMax.toFixed(0)} m`}</small>${on ? '<em class="badge">Equipped</em>' : ''}</span>`
           + `${r._custom ? `<i data-forget="${esc(r.id)}" title="Remove">✕</i>` : ''}<span class="chev">${uiIcon('ui.chevron')}</span></li>`; }
       body.innerHTML = h + (rigs.length ? '' : '<li class="none">No rigs for this water yet</li>') + '</ul>';
       foot.innerHTML = `<button id="tkBuild" class="big">${uiIcon('ui.wrench')}Build a rig</button>`; foot.hidden = false;

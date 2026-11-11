@@ -207,6 +207,7 @@ function rigFit(slot, d, P) {
   }
   return '';
 }
-// a rig's name from its parts: "Light spinning rod · Round bobber · Nightcrawler"
-function rigAutoName(P) { const n = s => P[s] && TackleDB.byId[P[s]] && TackleDB.byId[P[s]].name, end = P.lure ? n('lure') : n('bait'), how = n('float') ? 'under a ' + n('float').toLowerCase() : n('sinker') && !P.lure ? 'on the bottom' : '';
-  const rod = (n('rod') || '').replace(/ rod$/i, ''); return [end, how].filter(Boolean).join(' ') + (rod ? ' · ' + rod : '') || 'New rig'; }
+// a rig's name from its parts, short enough for a card: "Nightcrawler & bobber", "Bottom cut mackerel", "Minnow crankbait"
+function rigAutoName(P) { const n = s => P[s] && TackleDB.byId[P[s]] && TackleDB.byId[P[s]].name;
+  if (P.lure) return n('lure') || 'New rig'; const b = n('bait'); if (!b) return 'New rig';
+  if (n('float')) return `${b} & ${n('float').split(' ').pop().toLowerCase()}`; return n('sinker') ? `Bottom ${b.toLowerCase()}` : b; }
