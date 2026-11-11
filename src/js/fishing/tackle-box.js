@@ -31,7 +31,7 @@ Object.assign(Engine, {
       let h = `<button id="tkBack" class="back">${uiIcon('ui.chevron')}Rigs</button>`;
       if (this.tkPick) {   // choosing a part: every option for that slot, then on down the line
         const slot = this.tkPick, k = steps.indexOf(slot), L = TackleDB.ofType(slot), opt = RIG_PARTS[slot];
-        h += `<div class="rb-pick-head"><button class="rb-step" data-pick="${steps[k - 1] || ''}" ${k > 0 ? '' : 'disabled'} aria-label="Previous part">‹</button><span><b>${opt.label}</b><i>${k + 1} of ${steps.length} · ${opt.tip}</i></span><button class="rb-step" data-pick="${steps[k + 1] || ''}" ${k < steps.length - 1 ? '' : 'disabled'} aria-label="Next part">›</button></div><ul class="rb-opts">`;
+        h += `<div class="rb-pick-head"><b>Choose a ${opt.label.toLowerCase()}</b><i>${opt.tip}</i></div><ul class="rb-opts">`;
         if (opt.optional) h += `<li data-choose="" class="card slim${P[slot] ? '' : ' on'}"><span class="ri rb-none">—</span><span class="tx"><b>None</b><small>${opt.none}</small></span></li>`;
         for (const d of L) h += `<li data-choose="${esc(d.id)}" class="card slim${P[slot] === d.id ? ' on' : ''}" title="${esc(d.description || '')}">${slot === 'line' || slot === 'leader' ? `<span class="ri">${pic(slot, d)}</span>` : gearIconHTML(d)}<span class="tx"><b>${esc(d.name)}</b><small>${esc(gearSummary(d))}</small></span></li>`;
         h += `</ul><button class="rb-done" data-pick="">Back to the rig</button>`;
@@ -40,11 +40,11 @@ Object.assign(Engine, {
       // the rig, top to bottom: rod and reel, then each part on the line down to the hook and bait, or the lure
       const node = (slot, side) => { const d = g(slot), o = RIG_PARTS[slot];
         return `<div class="rb-node ${side}${d ? '' : ' empty'}" data-pick="${slot}"><span class="rb-lab"><small>${o.label}</small>${d ? esc(d.name) : 'Choose…'}</span><span class="rb-ic">${pic(slot, d)}</span></div>`; };
-      h += `<div class="rb-head"><b>Build a rig</b><i>Tap a part to change it</i></div><div class="rb-top">`;
-      for (const slot of ['rod', 'reel']) { const d = g(slot); h += `<button class="rb-card${d ? '' : ' empty'}" data-pick="${slot}">${d ? gearIconHTML(d) : ''}<b>${d ? esc(d.name) : 'Choose a ' + slot}</b></button>`; }
-      h += '</div><div class="rb-chain">';
+      h += `<div class="rb-head"><b>Build a rig</b><i>Tap a part to change it</i></div>`;
+      { const d = g('rod'); h += `<button class="rb-rod${d ? '' : ' empty'}" data-pick="rod">${d ? gearIconHTML(d) : ''}<span class="rb-lab"><small>Rod</small>${d ? esc(d.name) : 'Choose…'}</span></button>`; }   // the rod itself, big, across the top
+      h += '<div class="rb-chain">';
       let side = 'l'; const adds = [];
-      for (const slot of steps.slice(2)) { if (RIG_PARTS[slot].optional && !g(slot)) { adds.push(slot); continue; } h += node(slot, side); side = side === 'l' ? 'r' : 'l'; }
+      for (const slot of steps.slice(1)) { if (RIG_PARTS[slot].optional && !g(slot)) { adds.push(slot); continue; } h += node(slot, side); side = side === 'l' ? 'r' : 'l'; }
       h += `</div><div class="rb-end" role="radiogroup" aria-label="The end of the line"><button data-end="bait" aria-checked="${!lureEnd}" role="radio">Hook &amp; bait</button><button data-end="lure" aria-checked="${lureEnd}" role="radio">Lure</button></div>`;
       if (adds.length) h += `<div class="rb-adds">${adds.map(slot => `<button data-pick="${slot}">+ ${RIG_PARTS[slot].label}</button>`).join('')}</div>`;
       h += '<div class="tkform">';
@@ -79,9 +79,9 @@ Object.assign(Engine, {
         const B = this.tkBuild, P = B.parts, ch = e.target.closest('[data-choose]'), pk = e.target.closest('[data-pick]'), en = e.target.closest('[data-end]');
         if (ch) { const slot = this.tkPick, v = ch.dataset.choose || undefined; P[slot] = v;
           if (slot === 'lure' && v) P.hook = P.bait = undefined; if ((slot === 'bait' || slot === 'hook') && v) P.lure = undefined; if (slot === 'float') B.float_depth_m = null;
-          const steps = rigSteps(B.end === 'lure' || (!B.end && !!P.lure)), k = steps.indexOf(slot); this.tkPick = steps[k + 1] || null; this.tackleRender(); body.scrollTop = 0; return; }   // on down the line
+          this.tkPick = null; this.tackleRender(); body.scrollTop = 0; return; }   // back to the whole rig
         if (pk) { this.tkPick = pk.dataset.pick || null; this.tackleRender(); body.scrollTop = 0; return; }
-        if (en) { B.end = en.dataset.end; if (B.end === 'lure') P.hook = P.bait = undefined; else P.lure = undefined; this.tkPick = B.end === 'lure' ? 'lure' : 'hook'; this.tackleRender(); return; }
+        if (en) { B.end = en.dataset.end; if (B.end === 'lure') P.hook = P.bait = undefined; else P.lure = undefined; this.tackleRender(); return; }
       }
       const r = e.target.closest('[data-rig]'); if (r) { this.equipRig(r.dataset.rig); this.tackleRender(); return; }
       const g = e.target.closest('[data-gear]'); if (g) { const pre = document.getElementById('tkJson'); pre.textContent = TackleDB.json(g.dataset.gear); pre.hidden = false; pre.scrollIntoView({ block: 'nearest' }); return; }

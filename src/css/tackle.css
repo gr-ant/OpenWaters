@@ -87,6 +87,9 @@
   .rb-top { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .rb-card { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 6px 8px; border-radius: 12px; border: 1.5px solid #d4e4e077; background: #ffffff08; color: var(--cream); font: 600 15px var(--serif); cursor: pointer; }
   .rb-card .ri { width: 100%; height: 58px; } .rb-card:hover, .rb-node:hover .rb-lab, .rb-card.on { border-color: var(--gold-hi); } .rb-card.empty { border-style: dashed; color: var(--muted); min-height: 76px; justify-content: center; }
+  .rb-rod { position: relative; display: block; width: 100%; height: 130px; padding: 0; border-radius: 14px; border: 1.5px solid #d4e4e066; background: radial-gradient(ellipse at 50% 60%, #ffffff12, #ffffff04); cursor: pointer; }   /* the rod, big */
+  .rb-rod > .ri { position: absolute; inset: 0; width: auto; height: auto; overflow: hidden; border-radius: 14px; } .rb-rod > .ri img { transform: scale(1.75) translateY(-4%); }   /* the snapshot leaves room round the rod: fill the card with it */
+  .rb-rod > .rb-lab.rb-lab { position: absolute; left: 8px; bottom: 8px; text-align: left; } .rb-rod:hover, .rb-rod:focus-visible { border-color: var(--gold-hi); outline: none; } .rb-rod.empty { border-style: dashed; }
   .rb-chain { position: relative; margin: 4px 0 6px; }
   .rb-chain::before { content: ''; position: absolute; left: 50%; top: -6px; bottom: 26px; width: 2px; margin-left: -1px; background: linear-gradient(#e8dcb8cc, #e8dcb866); }   /* the line itself */
   .rb-node { position: relative; display: grid; grid-template-columns: 1fr 70px 1fr; align-items: center; min-height: 66px; cursor: pointer; }
@@ -103,7 +106,6 @@
   .rb-end button[aria-checked="true"] { background: linear-gradient(180deg, #f7ecd0, var(--parch2)); color: var(--ink); border-color: var(--gold-hi); }
   .rb-adds { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0; } .rb-adds button { padding: 7px 16px; border-radius: 12px; border: 1.5px dashed #d4e4e099; background: none; color: var(--cream); font: 600 14px var(--serif); cursor: pointer; } .rb-adds button:hover { border-color: var(--gold-hi); }
   .rb-name { grid-column: 1 / -1; }
-  .rb-pick-head { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; } .rb-pick-head span { flex: 1; text-align: center; } .rb-pick-head b { display: block; font: 700 22px var(--serif); } .rb-pick-head i { font: italic 13px var(--serif); color: var(--muted); }
-  .rb-step { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--gold); background: #0003; color: var(--cream); font: 600 24px/1 var(--serif); cursor: pointer; } .rb-step:disabled { opacity: .3; cursor: default; }
+  .rb-pick-head { text-align: center; margin: 4px 0 10px; } .rb-pick-head b { display: block; font: 700 22px var(--serif); } .rb-pick-head i { font: italic 13px var(--serif); color: var(--muted); }
   .rb-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; } .rb-none { display: flex; align-items: center; justify-content: center; font: 600 22px var(--serif); color: var(--muted); }
   .rb-done { display: block; width: 100%; margin: 10px 0 4px; padding: 9px; border-radius: 10px; border: 1.5px solid var(--gold); background: #0003; color: var(--cream); font: 600 15px var(--serif); cursor: pointer; }
