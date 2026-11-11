@@ -87,12 +87,18 @@
   .rb-top { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .rb-card { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 6px 8px; border-radius: 12px; border: 1.5px solid #d4e4e077; background: #ffffff08; color: var(--cream); font: 600 15px var(--serif); cursor: pointer; }
   .rb-card .ri { width: 100%; height: 58px; } .rb-card:hover, .rb-node:hover .rb-lab, .rb-card.on { border-color: var(--gold-hi); } .rb-card.empty { border-style: dashed; color: var(--muted); min-height: 76px; justify-content: center; }
-  .rb-rod { position: relative; display: block; width: 100%; height: 130px; padding: 0; border-radius: 14px; border: 1.5px solid #d4e4e066; background: radial-gradient(ellipse at 50% 60%, #ffffff12, #ffffff04); cursor: pointer; }   /* the rod, big */
-  .rb-rod > .ri { position: absolute; inset: 0; width: auto; height: auto; overflow: hidden; border-radius: 14px; } .rb-rod > .ri img { transform: scale(1.75) translateY(-4%); }   /* the snapshot leaves room round the rod: fill the card with it */
+  /* the assembled rig: the line drops from the rod tip (--tip from the right edge) straight down through every part */
+  #tkBody { --tip: 52px; }
+  .rb-rod { position: relative; display: block; width: 100%; height: 150px; border-radius: 14px; border: 1.5px solid #d4e4e066; background: radial-gradient(ellipse at 50% 40%, #ffffff12, #ffffff04); cursor: pointer; }
+  .rb-rod > .ri { position: absolute; left: 14px; right: calc(var(--tip) - 22px); top: 6px; height: 78px; width: auto; overflow: visible; } .rb-rod > .ri img { transform: scale(2.75); }   /* (the snapshot leaves a wide margin round the rod: butt at the left edge, tip over the line) */
   .rb-rod > .rb-lab.rb-lab { position: absolute; left: 8px; bottom: 8px; text-align: left; } .rb-rod:hover, .rb-rod:focus-visible { border-color: var(--gold-hi); outline: none; } .rb-rod.empty { border-style: dashed; }
+  .rb-reel { position: absolute; left: calc(34% - 36px); top: 30px; width: 72px; padding: 0; border: 0; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; color: var(--cream); }   /* on the reel seat, under the rod */
+  .rb-reel > .ri { width: 66px; height: 60px; } .rb-reel > .rb-lab.rb-lab { position: absolute; left: 64px; top: 40px; white-space: nowrap; padding: 3px 8px; } .rb-reel.empty { width: 40px; height: 40px; border: 2px dashed var(--muted); border-radius: 50%; font: 600 22px var(--serif); color: var(--muted); }
+  .rb-reel:hover .rb-lab, .rb-reel:focus-visible .rb-lab { border-color: var(--gold-hi); }
+  .rb-tipline { position: absolute; right: calc(var(--tip) - 1px); top: 62px; bottom: -2px; width: 2px; background: #e8dcb8cc; pointer-events: none; }   /* the line, off the rod tip */
   .rb-chain { position: relative; margin: 4px 0 6px; }
-  .rb-chain::before { content: ''; position: absolute; left: 50%; top: -6px; bottom: 26px; width: 2px; margin-left: -1px; background: linear-gradient(#e8dcb8cc, #e8dcb866); }   /* the line itself */
-  .rb-node { position: relative; display: grid; grid-template-columns: 1fr 70px 1fr; align-items: center; min-height: 66px; cursor: pointer; }
+  .rb-chain::before { content: ''; position: absolute; right: calc(var(--tip) - 1px); top: -6px; bottom: 26px; width: 2px; background: linear-gradient(#e8dcb8cc, #e8dcb866); }   /* the line itself, under the rod tip */
+  .rb-node { position: relative; display: grid; grid-template-columns: 1fr 70px calc(var(--tip) - 35px); align-items: center; min-height: 66px; cursor: pointer; }
   .rb-ic { grid-column: 2; grid-row: 1; width: 70px; height: 60px; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; }
   .rb-ic .ri { width: 70px; height: 60px; } .rb-svg { width: 64px; height: 56px; display: block; }
   .rb-node.empty .rb-ic::after { content: ''; width: 14px; height: 14px; border-radius: 50%; border: 2px dashed var(--muted); background: var(--pg2); }

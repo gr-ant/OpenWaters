@@ -41,10 +41,12 @@ Object.assign(Engine, {
       const node = (slot, side) => { const d = g(slot), o = RIG_PARTS[slot];
         return `<div class="rb-node ${side}${d ? '' : ' empty'}" data-pick="${slot}"><span class="rb-lab"><small>${o.label}</small>${d ? esc(d.name) : 'Choose…'}</span><span class="rb-ic">${pic(slot, d)}</span></div>`; };
       h += `<div class="rb-head"><b>Build a rig</b><i>Tap a part to change it</i></div>`;
-      { const d = g('rod'); h += `<button class="rb-rod${d ? '' : ' empty'}" data-pick="rod">${d ? gearIconHTML(d) : ''}<span class="rb-lab"><small>Rod</small>${d ? esc(d.name) : 'Choose…'}</span></button>`; }   // the rod itself, big, across the top
+      { const d = g('rod'), r = g('reel');   // the rod across the top with the reel on its seat; the line drops from the tip
+        h += `<div class="rb-rod${d ? '' : ' empty'}" data-pick="rod" role="button" tabindex="0">${d ? gearIconHTML(d) : ''}<span class="rb-lab"><small>Rod</small>${d ? esc(d.name) : 'Choose…'}</span>`
+          + `<button class="rb-reel${r ? '' : ' empty'}" data-pick="reel">${r ? gearIconHTML(r) : '+'}<span class="rb-lab"><small>Reel</small>${r ? esc(r.name) : 'Choose…'}</span></button><i class="rb-tipline"></i></div>`; }
       h += '<div class="rb-chain">';
       let side = 'l'; const adds = [];
-      for (const slot of steps.slice(1)) { if (RIG_PARTS[slot].optional && !g(slot)) { adds.push(slot); continue; } h += node(slot, side); side = side === 'l' ? 'r' : 'l'; }
+      for (const slot of steps.slice(2)) { if (RIG_PARTS[slot].optional && !g(slot)) { adds.push(slot); continue; } h += node(slot, 'l'); }   // labels to the left of the line
       h += `</div><div class="rb-end" role="radiogroup" aria-label="The end of the line"><button data-end="bait" aria-checked="${!lureEnd}" role="radio">Hook &amp; bait</button><button data-end="lure" aria-checked="${lureEnd}" role="radio">Lure</button></div>`;
       if (adds.length) h += `<div class="rb-adds">${adds.map(slot => `<button data-pick="${slot}">+ ${RIG_PARTS[slot].label}</button>`).join('')}</div>`;
       h += '<div class="tkform">';
