@@ -27,6 +27,12 @@ Object.assign(Engine, {
       const end = () => { y0 = null; this.reelPull = 0; rb.style.setProperty('--pull', '0'); };
       rb.addEventListener('pointerup', end); rb.addEventListener('pointercancel', end); rb.addEventListener('lostpointercapture', end); }
     const look = (dx, dy, k) => { k *= this.mouseSensitivity || 1; P.a += dx * k; P.pitch = clamp(P.pitch - dy * k, -1.4, 1.4); };   // the Settings slider scales touch look too
+    // the catch card: drag across the screen to turn the fish over (sideways spins it, up and down tilts it), as A/D and W/S do
+    ov.addEventListener('pointerdown', e => { const A = this.ang; if (this.pauseOpen || !A || A.phase !== 'card') return;
+      e.preventDefault(); this.cardDrag = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { ov.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ } });
+    ov.addEventListener('pointermove', e => { const D = this.cardDrag, A = this.ang; if (!D || D.id !== e.pointerId || !A || A.phase !== 'card') return;
+      A.cardYaw = (A.cardYaw || 0) + (e.clientX - D.x) * 0.012; A.cardTilt = clamp((A.cardTilt || 0) - (e.clientY - D.y) * 0.01, -1.4, 1.4); D.x = e.clientX; D.y = e.clientY; });
+    for (const ev of ['pointerup', 'pointercancel']) ov.addEventListener(ev, e => { if (this.cardDrag && this.cardDrag.id === e.pointerId) this.cardDrag = null; });
     ov.addEventListener('pointerdown', e => {
       if (this.pauseOpen || (this.ang && this.ang.phase === 'card')) return;
       const x = e.clientX, y = e.clientY;

@@ -149,7 +149,7 @@
   #haul li.on { opacity:1; border-color:var(--gold-hi); background:#ffffff12; } #haul li span { flex:1; font:600 15px var(--serif); } #haul li small { font-size:12px; color:#d8cfb4; } #haul li em { font:600 12px var(--sans); font-style:normal; color:var(--gold-hi); min-width:44px; text-align:right; }
   #haul button { background:#0003; border:1.5px solid var(--gold); color:#fff; border-radius:16px; padding:8px 14px; margin:0 3px; font:600 13px system-ui, sans-serif; cursor:pointer; } #haul #haulKeep { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }
   #catch { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }   /* the 3D view keeps animating behind it: a live blur costs every frame */
-  #catch #ccTurn { display:block; margin-top:8px; font-size:11px; color:#c8bfa0; } body.touch #catch #ccTurn { display:none; }
+  #catch #ccTurn { display:block; margin-top:8px; font-size:11px; color:#c8bfa0; } #catch .cc-touch, body.touch #catch .cc-keys { display:none; } body.touch #catch .cc-touch { display:inline; }   /* the hint: keys or drag on a desktop, drag on a touch screen */
   #catch button#ccKeep { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }
   /* the rig builder: rod and reel on top, then the line down to the hook and bait (or the lure), each part a picture on it */
   .rb-head { text-align: center; margin: 2px 0 10px; } .rb-head b { display: block; font: 700 24px var(--serif); } .rb-head i { font: italic 14px var(--serif); color: var(--muted); }
@@ -711,7 +711,7 @@ button.ti-item:hover, button.ti-item:focus-visible { box-shadow: 0 0 0 3px rgba(
   <button id="hSettings" title="Pause and settings (Esc)" aria-label="Pause and settings">Esc</button>
   <button id="hHint" title="Controls (?)">?</button>
 </div>
-<div id="catch" hidden><b id="ccName"></b><i id="ccSci"></i><div id="ccSize"></div><div id="ccNote"></div><button id="ccKeep">Keep (E)</button><button id="ccRel">Release (X)</button><small id="ccTurn">W A S D to turn it over</small></div>
+<div id="catch" hidden><b id="ccName"></b><i id="ccSci"></i><div id="ccSize"></div><div id="ccNote"></div><button id="ccKeep">Keep (E)</button><button id="ccRel">Release (X)</button><small id="ccTurn"><span class="cc-keys">W A S D or drag</span><span class="cc-touch">Drag</span> to turn it over</small></div>
 <div id="tui" hidden>
   <nav class="tui-rail" aria-label="Touch shortcuts">
     <button data-k="KeyM"><span class="ic" data-icon="dock.map"></span><b>Map</b></button>
@@ -6267,6 +6267,12 @@ Object.assign(Engine, {
       const end = () => { y0 = null; this.reelPull = 0; rb.style.setProperty('--pull', '0'); };
       rb.addEventListener('pointerup', end); rb.addEventListener('pointercancel', end); rb.addEventListener('lostpointercapture', end); }
     const look = (dx, dy, k) => { k *= this.mouseSensitivity || 1; P.a += dx * k; P.pitch = clamp(P.pitch - dy * k, -1.4, 1.4); };   // the Settings slider scales touch look too
+    // the catch card: drag across the screen to turn the fish over (sideways spins it, up and down tilts it), as A/D and W/S do
+    ov.addEventListener('pointerdown', e => { const A = this.ang; if (this.pauseOpen || !A || A.phase !== 'card') return;
+      e.preventDefault(); this.cardDrag = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { ov.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ } });
+    ov.addEventListener('pointermove', e => { const D = this.cardDrag, A = this.ang; if (!D || D.id !== e.pointerId || !A || A.phase !== 'card') return;
+      A.cardYaw = (A.cardYaw || 0) + (e.clientX - D.x) * 0.012; A.cardTilt = clamp((A.cardTilt || 0) - (e.clientY - D.y) * 0.01, -1.4, 1.4); D.x = e.clientX; D.y = e.clientY; });
+    for (const ev of ['pointerup', 'pointercancel']) ov.addEventListener(ev, e => { if (this.cardDrag && this.cardDrag.id === e.pointerId) this.cardDrag = null; });
     ov.addEventListener('pointerdown', e => {
       if (this.pauseOpen || (this.ang && this.ang.phase === 'card')) return;
       const x = e.clientX, y = e.clientY;
