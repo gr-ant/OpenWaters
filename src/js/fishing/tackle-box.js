@@ -33,7 +33,10 @@ Object.assign(Engine, {
         const slot = this.tkPick, k = steps.indexOf(slot), L = TackleDB.ofType(slot), opt = RIG_PARTS[slot];
         h += `<div class="rb-pick-head"><b>Choose a ${opt.label.toLowerCase()}</b><i>${opt.tip}</i></div><ul class="rb-opts">`;
         if (opt.optional) h += `<li data-choose="" class="card slim${P[slot] ? '' : ' on'}"><span class="ri rb-none">—</span><span class="tx"><b>None</b><small>${opt.none}</small></span></li>`;
-        for (const d of L) h += `<li data-choose="${esc(d.id)}" class="card slim${P[slot] === d.id ? ' on' : ''}" title="${esc(d.description || '')}">${slot === 'line' || slot === 'leader' ? `<span class="ri">${pic(slot, d)}</span>` : gearIconHTML(d)}<span class="tx"><b>${esc(d.name)}</b><small>${esc(gearSummary(d))}</small></span></li>`;
+        const card = (d, why) => `<li ${why ? 'aria-disabled="true"' : `data-choose="${esc(d.id)}"`} class="card slim${P[slot] === d.id ? ' on' : ''}${why ? ' nofit' : ''}" title="${esc(d.description || '')}">${slot === 'line' || slot === 'leader' ? `<span class="ri">${pic(slot, d)}</span>` : gearIconHTML(d)}<span class="tx"><b>${esc(d.name)}</b><small>${esc(why || gearSummary(d))}</small></span></li>`;
+        const fit = L.map(d => [d, rigFit(slot, d, P)]);   // only what suits the parts above it on the line can be chosen
+        h += fit.filter(f => !f[1]).map(f => card(f[0])).join('');
+        const no = fit.filter(f => f[1]); if (no.length) h += `<li class="rb-nofit-head">Doesn't suit this rig</li>` + no.map(f => card(f[0], f[1])).join('');
         h += `</ul><button class="rb-done" data-pick="">Back to the rig</button>`;
         body.innerHTML = h; return;
       }
@@ -50,8 +53,8 @@ Object.assign(Engine, {
       h += `</div><div class="rb-end" role="radiogroup" aria-label="The end of the line"><button data-end="bait" aria-checked="${!lureEnd}" role="radio">Hook &amp; bait</button><button data-end="lure" aria-checked="${lureEnd}" role="radio">Lure</button></div>`;
       if (adds.length) h += `<div class="rb-adds">${adds.map(slot => `<button data-pick="${slot}">+ ${RIG_PARTS[slot].label}</button>`).join('')}</div>`;
       h += '<div class="tkform">';
-      if (P.float) h += `<label>Float depth (m)<input id="tkDepth" type="number" min="0.1" max="30" step="0.1" value="${B.float_depth_m ?? (TackleDB.byId[P.float] || {}).depth_m ?? 1}"></label>`;
-      h += `<label class="rb-name">Name<input id="tkName" type="text" maxlength="40" placeholder="My rig" value="${esc(B.name)}"></label></div>`;
+      if (P.float) { const dv = B.float_depth_m ?? (TackleDB.byId[P.float] || {}).depth_m ?? 1; h += `<label class="rb-depth">Float depth <output id="tkDepthV">${(+dv).toFixed(1)} m</output><input id="tkDepth" type="range" min="0.2" max="8" step="0.1" value="${dv}"></label>`; }   // how far below the float the bait hangs
+      h += `<label class="rb-name">Name<input id="tkName" type="text" maxlength="40" value="${esc(B.nameSet ? B.name : rigAutoName(P))}"></label></div>`;   // named from its parts until you type your own
       if (S.errors.length) h += `<div class="tkstats bad">${S.errors.map(esc).join('<br>')}</div>`;
       else { h += `<div class="chips"><span>🎯 ${S.castMax.toFixed(0)} m</span><span>💪 ${S.strengthKg.toFixed(1)} kg</span><span>🧵 ${S.capM} m</span><span>⚖ ${S.castG.toFixed(0)} g</span></div>`;
         if (S.warnings.length) h += `<div class="tkwarn">${S.warnings.map(w => '⚠ ' + esc(w)).join('<br>')}</div>`; }
@@ -81,6 +84,9 @@ Object.assign(Engine, {
         const B = this.tkBuild, P = B.parts, ch = e.target.closest('[data-choose]'), pk = e.target.closest('[data-pick]'), en = e.target.closest('[data-end]');
         if (ch) { const slot = this.tkPick, v = ch.dataset.choose || undefined; P[slot] = v;
           if (slot === 'lure' && v) P.hook = P.bait = undefined; if ((slot === 'bait' || slot === 'hook') && v) P.lure = undefined; if (slot === 'float') B.float_depth_m = null;
+          { const steps = rigSteps(B.end === 'lure' || (!B.end && !!P.lure)), gone = [];   // anything further down the line that no longer suits it comes off
+            for (const s2 of steps.slice(steps.indexOf(slot) + 1)) { const d = P[s2] && TackleDB.byId[P[s2]]; if (d && rigFit(s2, d, P)) { gone.push(d.name.toLowerCase()); P[s2] = undefined; } }
+            if (gone.length) this.say(`Took off the ${gone.join(', ')}: ${gone.length > 1 ? "they don't" : "it doesn't"} suit the new ${RIG_PARTS[slot].label.toLowerCase()}`, 3.5); }
           this.tkPick = null; this.tackleRender(); body.scrollTop = 0; return; }   // back to the whole rig
         if (pk) { this.tkPick = pk.dataset.pick || null; this.tackleRender(); body.scrollTop = 0; return; }
         if (en) { B.end = en.dataset.end; if (B.end === 'lure') P.hook = P.bait = undefined; else P.lure = undefined; this.tackleRender(); return; }
@@ -88,7 +94,7 @@ Object.assign(Engine, {
       const r = e.target.closest('[data-rig]'); if (r) { this.equipRig(r.dataset.rig); this.tackleRender(); return; }
       const g = e.target.closest('[data-gear]'); if (g) { const pre = document.getElementById('tkJson'); pre.textContent = TackleDB.json(g.dataset.gear); pre.hidden = false; pre.scrollIntoView({ block: 'nearest' }); return; }
       if (e.target.id === 'tkUse' || e.target.id === 'tkExport') {
-        const B = this.tkBuild, nm = (B.name || 'My rig').trim(), id = 'my_' + (nm.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'rig');
+        const B = this.tkBuild, nm = ((B.nameSet && B.name) || rigAutoName(B.parts)).trim(), id = 'my_' + (nm.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'rig');
         const rig = { schema: TACKLE_SCHEMA, id, type: 'rig', name: nm, description: 'Built in the tackle box', parts: Object.fromEntries(Object.entries(B.parts).filter(([, v]) => v)), drag: B.drag };
         if (B.parts.float && B.float_depth_m) rig.float_depth_m = B.float_depth_m;
         if (e.target.id === 'tkUse') { const res = TackleDB.register(rig, { save: true }); if (res.def) { const was = this.ang.phase; if (was !== 'stowed' && was !== 'ready') this.say('Saved · reel in to tie it on', 2.5); else this.equipRig(id); this.tackleTab = 'rigs'; this.tackleRender(); } else this.say(res.errors[0], 3); }
@@ -99,11 +105,12 @@ Object.assign(Engine, {
             this.say(copied ? `${id}.json copied to the clipboard` : 'Could not copy or download here', 2.5); })(); }
       }
     });
+    body.addEventListener('input', e => { if (e.target.id === 'tkDepth') { const o = document.getElementById('tkDepthV'); if (o) o.textContent = (+e.target.value).toFixed(1) + ' m'; } });   // the slider's reading as you drag
     body.addEventListener('change', async e => {
       const t = e.target;
       if (t.dataset && t.dataset.slot) { this.tkBuild.parts[t.dataset.slot] = t.value || undefined; if (t.dataset.slot === 'lure' && t.value) { this.tkBuild.parts.hook = this.tkBuild.parts.bait = undefined; } if ((t.dataset.slot === 'bait' || t.dataset.slot === 'hook') && t.value) this.tkBuild.parts.lure = undefined; if (t.dataset.slot === 'float') this.tkBuild.float_depth_m = null; this.tackleRender(); }
       else if (t.id === 'tkDepth') { this.tkBuild.float_depth_m = clamp(+t.value || 1, 0.1, 30); this.tackleRender(); }
-      else if (t.id === 'tkName') { this.tkBuild.name = t.value; }
+      else if (t.id === 'tkName') { this.tkBuild.name = t.value; this.tkBuild.nameSet = !!t.value.trim(); }
       else if (t.id === 'tkFile') { const msgs = []; for (const file of t.files) { try { for (const r of await Game.loadTackle(JSON.parse(await file.text()), { save: true })) msgs.push(r.def ? `✓ ${r.def.name}` : `✗ ${r.errors[0]}`); } catch (er) { msgs.push(`✗ ${file.name}: ${er.message}`); } } this.say(msgs.join('   '), 6); this.tackleRender(); }
     });
     document.getElementById('ccKeep').onclick = () => this.finishCatch(true);

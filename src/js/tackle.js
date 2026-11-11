@@ -185,3 +185,28 @@ function spoolSVG(d) { const c = (d && d.colors && Object.values(d.colors)[0]) |
   return `<svg class="rb-svg" viewBox="0 0 64 56"><rect x="14" y="8" width="36" height="7" rx="2" fill="#b98a52" stroke="#3a2416" stroke-width="1.5"/><rect x="14" y="41" width="36" height="7" rx="2" fill="#b98a52" stroke="#3a2416" stroke-width="1.5"/><rect x="18" y="15" width="28" height="26" fill="${c}" stroke="#2a2216" stroke-width="1.2"/>${[19, 23, 27, 31, 35].map(y => `<path d="M18 ${y}h28" stroke="#000" stroke-opacity=".18" stroke-width="1"/>`).join('')}<path d="M32 0v8M32 48v8" stroke="${c}" stroke-width="2"/></svg>`; }
 function leaderSVG(d) { const c = (d && d.colors && Object.values(d.colors)[0]) || '#b8c0c8';
   return `<svg class="rb-svg" viewBox="0 0 64 56"><path d="M32 0v10" stroke="#c8c0a8" stroke-width="2"/><ellipse cx="32" cy="14" rx="4" ry="5" fill="none" stroke="#9aa2aa" stroke-width="2.5"/><rect x="28.5" y="18" width="7" height="10" rx="2" fill="#8a929a" stroke="#2a2a2e" stroke-width="1.2"/><ellipse cx="32" cy="32" rx="4" ry="5" fill="none" stroke="#9aa2aa" stroke-width="2.5"/><path d="M32 37q-3 5 0 9t0 10" fill="none" stroke="${c}" stroke-width="2.4"/></svg>`; }
+// does gear d fit the parts already chosen above it on the line (the builder goes rod, reel, line, float, sinker, leader, hook, bait / lure)?
+// '' if it does, otherwise why not (shown on the greyed-out choice). P: { slot: id }
+function rigFit(slot, d, P) {
+  const g = s => P[s] && TackleDB.byId[P[s]], rod = g('rod'), reel = g('reel'), line = g('line'), fl = g('float'), sinker = g('sinker'), hook = g('hook');
+  if (!rod || slot === 'rod') return '';
+  const lmax = l => rod.line_lb.max * (l.material === 'braid' ? 2 : 1), casts = w => w <= rod.lure_g.max * 1.5;   // (a bit over the rating still casts, if not sweetly: rigStats warns)
+  switch (slot) {
+    case 'reel': { const fits = { spinning: ['spinning'], casting: ['baitcaster', 'conventional'], conventional: ['conventional', 'baitcaster'] }[rod.reel] || [];
+      if (!fits.includes(d.kind)) return `needs a ${rod.reel === 'spinning' ? 'spinning' : 'baitcaster or conventional'} reel for this rod`;
+      if (d.capacity.line_lb < rod.line_lb.min * 0.5) return 'too small for this rod'; if (d.capacity.line_lb > rod.line_lb.max * 2.5) return 'too big for this rod'; return ''; }
+    case 'line': if (d.strength_lb < rod.line_lb.min) return `too light for this rod (${rod.line_lb.min}–${rod.line_lb.max} lb)`; if (d.strength_lb > lmax(d)) return `too heavy for this rod (${rod.line_lb.min}–${rod.line_lb.max} lb)`;
+      if (reel && d.material !== 'braid' && d.strength_lb > reel.capacity.line_lb * 4) return 'too thick for this reel'; return '';
+    case 'float': return rod.lure_g.min > 40 ? 'this rod is too heavy for a float' : '';
+    case 'sinker': if (fl && d.weight_g > fl.buoyancy_g) return `sinks the float (it holds ${fl.buoyancy_g} g)`; return casts(d.weight_g) ? '' : 'too heavy for this rod';
+    case 'leader': return line && (d.strength_lb < line.strength_lb * (line.material === 'braid' ? 0.25 : 0.5) || d.strength_lb > line.strength_lb * 4) ? `doesn't match ${line.strength_lb} lb line` : '';   // (braid is far stronger than its thickness: lighter leaders are usual)
+    case 'hook': return d.strength_lb < rod.line_lb.min ? 'too weak for this rod' : '';
+    case 'bait': { if (hook && hook.gap_mm > 15 && d.size_cm < 3) return 'too small for this hook';
+      return casts((hook ? hook.weight_g : 0) + d.weight_g + (sinker ? sinker.weight_g : 0)) ? '' : 'too heavy to cast on this rod'; }
+    case 'lure': if (d.weight_g < rod.lure_g.min * 0.5) return `too light for this rod (${rod.lure_g.min}–${rod.lure_g.max} g)`; if (!casts(d.weight_g)) return `too heavy for this rod (${rod.lure_g.min}–${rod.lure_g.max} g)`; return '';
+  }
+  return '';
+}
+// a rig's name from its parts: "Light spinning rod · Round bobber · Nightcrawler"
+function rigAutoName(P) { const n = s => P[s] && TackleDB.byId[P[s]] && TackleDB.byId[P[s]].name, end = P.lure ? n('lure') : n('bait'), how = n('float') ? 'under a ' + n('float').toLowerCase() : n('sinker') && !P.lure ? 'on the bottom' : '';
+  const rod = (n('rod') || '').replace(/ rod$/i, ''); return [end, how].filter(Boolean).join(' ') + (rod ? ' · ' + rod : '') || 'New rig'; }

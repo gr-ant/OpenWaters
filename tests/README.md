@@ -21,6 +21,8 @@ Do not regenerate fixtures simply to make a failing comparison pass. Intentional
 
 `node tests/boats.mjs` loads the boat definitions and the on-board engine code in Node and checks the oar / paddle stroke (blade in the water on the drive, sweeping aft), the hull heeling toward your weight and settling, and hulls being solid to swimmers and to other boats.
 
+`node tests/rig-fit.mjs` checks the rig builder only offers parts that suit what is above them on the line: every built-in rig passes the rules, every rod has something to put on it, and a baitcaster will not go on a spinning rod.
+
 `node tests/rowing-hands.mjs` rows and paddles every built-in boat that has oars or a paddle, in third person, and checks each hand stays on its grip all the way through the stroke; and at every wheel, the left hand stays on the rim as it turns and the right on the throttle lever; with the boat level, pitched and heeled.
 
 `node tests/human-model.mjs` checks the third-person angler (src/js/models/human.js): every part builds with finite vertices, standing it is 1.7–1.8 m tall with its feet at z = 0, and the stride, swim, seated and rod-holding poses stay sane.

@@ -115,3 +115,6 @@
   .rb-pick-head { text-align: center; margin: 4px 0 10px; } .rb-pick-head b { display: block; font: 700 22px var(--serif); } .rb-pick-head i { font: italic 13px var(--serif); color: var(--muted); }
   .rb-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; } .rb-none { display: flex; align-items: center; justify-content: center; font: 600 22px var(--serif); color: var(--muted); }
   .rb-done { display: block; width: 100%; margin: 10px 0 4px; padding: 9px; border-radius: 10px; border: 1.5px solid var(--gold); background: #0003; color: var(--cream); font: 600 15px var(--serif); cursor: pointer; }
+  .rb-opts li.nofit { opacity: .45; cursor: not-allowed; filter: grayscale(.6); } .rb-opts li.nofit small { color: #ffb8a0; }
+  #tkBody li.rb-nofit-head { border: 0; background: none; padding: 0; min-height: 0; cursor: default; } .rb-nofit-head { margin: 10px 4px 0; font: 700 11px var(--sans); letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); list-style: none; }
+  .rb-depth { grid-column: 1 / -1; } .rb-depth output { color: var(--gold-hi); font-weight: 700; } .rb-depth input[type=range] { width: 100%; padding: 0; accent-color: var(--gold-hi); background: none; border: 0; }
