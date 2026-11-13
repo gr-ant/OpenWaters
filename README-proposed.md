@@ -1,0 +1,177 @@
+# Open Waters
+
+A first-person fishing and exploration game that runs in the browser. It's built with WebGL2 and plain JavaScript, with no dependencies. The whole game ships as one file: **`Open Waters.html`**. Open it in a browser to play.
+
+![Title screen over Frog Pond](Screenshots/title.png)
+
+| Fishing at Frog Pond | Out on the sea | The island map |
+| --- | --- | --- |
+| ![Casting from the reeds at Frog Pond](Screenshots/fishing.png) | ![Driving a boat along the coast](Screenshots/boat.png) | ![Map of the island with travel crosshair](Screenshots/map.png) |
+
+Every island is generated from a seed, with lakes, ponds, rivers and sea. It has seasons and weather, 128 fish species (133 catchable, 182 creatures in all), boats, and tackle you build into rigs.
+
+## Download
+
+Play in the browser on **[itch.io](https://gra-nt.itch.io/open-waters)**, or get the desktop app:
+
+| System | Download |
+| --- | --- |
+| Windows | [Installer](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-win-x64.exe) · [Portable, no install](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-win-portable.exe) |
+| macOS | [Apple silicon (M1 and later)](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-mac-arm64.dmg) · [Intel](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-mac-x64.dmg) |
+| Linux | [AppImage](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-linux-x86_64.AppImage) · [.deb (Ubuntu, Debian)](https://github.com/gr-ant/OpenWaters/releases/latest/download/Open-Waters-linux-amd64.deb) |
+
+All versions are on the [Releases page](https://github.com/gr-ant/OpenWaters/releases). The apps aren't code-signed yet. On Windows, click **More info → Run anyway**. On macOS, right-click the app and choose **Open**. If macOS says it's damaged, run `xattr -cr "/Applications/Open Waters.app"` once.
+
+## Editing
+
+Edit the files in `src/`, then rebuild the single file:
+
+```sh
+python3 build.py
+```
+
+That writes `Open Waters.html`. It needs Python 3 and nothing else. Don't edit `Open Waters.html` by hand, because the next build overwrites it.
+
+## Desktop app (Linux, Windows, macOS)
+
+`electron/` wraps the built game in an Electron window. To run or package it on your machine:
+
+```sh
+cd electron && npm ci
+npm start                                      # play in a desktop window
+npm run game && npx electron-builder --linux   # or --win / --mac; output in electron/dist/
+```
+
+Push to the `desktop` branch (`git push origin main:desktop`) and GitHub builds all three and publishes them on the repo's Releases page. The builds aren't code-signed yet, so Windows SmartScreen and macOS Gatekeeper will warn the first time.
+
+## Layout
+
+```
+build.py              inlines src/ into "Open Waters.html"
+src/
+  index.html          page markup, plus the list of every script and data file, in load order
+  css/                styles, one file per part of the screen (glass.css last: the glass theme over them all;
+                      tutorial.css: the tutorial card)
+  js/
+    config.js         engine overview and CONFIG (tuning knobs)
+    controls.js       rebindable keys and presets
+    world/            island generation, seasons and weather, water temperature, habitat, fish populations
+    shaders/          GLSL for the lit world, water, particles and sky
+    models/           mesh builder, trees, water plants, particle kinds
+    creatures/        fish, cephalopods and shellfish, reptiles and amphibians
+    engine/           the Engine object: loop, rendering, chunks, map, inventory, boats, fish behaviour, touch
+    boats.js          boat definitions to hull meshes
+    tackle.js         rods, reels, lines, lures, rigs: gear rules, validation, rig stats
+    tackle-meshes.js  3D rod, reel, hook, lure, bait, float and sinker meshes
+    fishing/          casting, bites, the fight, tackle box, nets and traps
+    game-api.js       the public Game API
+    hud/              on-screen interface, icons, journal, menu keyboard navigation, tutorial
+    sounds.js         sound effects synthesized with Web Audio, defined as data
+    birds/            birds: flight, landing, perching, swimming; species are data
+    game.js           game-specific setup on top of the API
+    urchin.js         music synthesizer (see Music below)
+    boot.js           reads the built-in data and starts the game
+  music/*.urchin      songs (CSLT-1 JSON)
+  fish/*.json         one file per species   (schema "embercrown-fish/1")
+  boats/*.json        one file per boat      (schema "embercrown-boat/1")
+  tackle/*.json       one file per piece of gear or rig (schema "embercrown-tackle/1")
+  plants/*.json       one file per water plant, stone or ground cover (schema "embercrown-plant/1")
+  birds/*.json        one file per bird species
+```
+
+The scripts share one global scope and run in the order `src/index.html` lists them. Later files use names defined by earlier ones, so keep that order when you move things around.
+
+## Adding a fish, boat, tackle item, plant or bird
+
+1. Copy a similar `.json` file in `src/fish/`, `src/boats/`, `src/tackle/`, `src/plants/` or `src/birds/` and change it. Give it a new `id`, and use that id as the file name.
+2. Add a matching line to `src/index.html` next to its siblings. For example:
+   ```html
+   <script type="application/json" data-builtin="fish" src="fish/my_fish.json"></script>
+   ```
+   A rig must come after the parts it uses. Plants keep their order: a placed plant's number on the plant grid is its place in that list, so add new ones at the end of the placed plants (before `grass`).
+   For a plant, `place` says where it grows (its rules and fields are explained at the top of `src/js/world/water-plants-grid.js`) and `mesh.builder` picks a shape from `src/js/models/water-plants.js`; change the builder's numbers and colours in the JSON.
+   For a bird, every field and its default is listed in `DEFAULTS` in `src/js/birds/birds.js`; copy the gull, pelican, puffin, bluebird, flamingo or penguin. `climates` limits it to island climates, `habitat` sets the flock size by the kind of water near you, and `lands` weighs the places it comes down: `water`, `ground`, `prop` (rocks, stumps, icebergs), `tree`, `cliff` (sea stacks), `boat` and `wade` (standing in shallow water on its legs; `wade.depth` gives the depth range in metres and `wade.kinds` the kinds of water, e.g. `["sea"]`). `colony` is the flock size at its colony; `colonySite` is `"stacks"` (sea stacks) or `"islet"` (one small island of its own, the same one every time for a seed: the smallest offshore island with a low shore). `down` is the share already down when you arrive. `flightless` (`walk`, `swim`, `ashore`, `afloat`, `leap`, `leapTime`, `leapHeight`, `dive`, `under`, `depth`) makes a bird that walks and swims about its colony and never flies. In `look`: `mantle` (how much of the body is the back colour), `upright` (stands tipped up by this many radians, like a penguin), `bill.bend` and `bill.kink` (a bill turned down partway along), `wing.flipper`, `legs.trail` (legs stretched out behind in flight), `legs.oneLeg` (the chance it rests on one leg), `colors.patch` (a pale patch over the eye), and head poses `fly`, `rest`, `feed` (head down while wading) and `swim`.
+   For a fish, set `habitat.climates` to the island climates it lives in (`"temperate"`, `"arctic"`, `"tropical"`). Water temperature then decides where it lives within that climate. Leave it out and the species can show up in any climate.
+3. Run `python3 build.py`. It warns you about any file in `src/` that `index.html` doesn't list.
+
+## Music
+
+`src/js/urchin.js` is Urchin, a small synthesizer that plays CSLT-1 songs with 20 built-in instruments and no audio files. It's a copy of urchin's `src/urchin.js` plus one block at the end that exposes it as the global `Urchin`. To update it, copy the new `urchin.js` over and keep that block.
+
+Songs live in `src/music/*.urchin` (CSLT-1 JSON). Each one is listed in `src/index.html` like this:
+
+```html
+<script type="application/json" data-song="my-song" src="music/my-song.urchin"></script>
+```
+
+Play a song from game code. Browsers only allow sound after a click or key press, so call this from an input handler:
+
+```js
+const player = await Urchin.playSong('my-song');   // also: Urchin.play(jsonOrObject), Urchin.instruments
+player.stop();
+```
+
+See urchin's README for the song format (`A1P5@4q` means measure A, beat 1, instrument P, E4, a quarter note).
+
+## Playing options
+
+You can add these to the URL: `#seed-12345&pick` picks a fixed world (a plain `#seed-12345` opens the start menu on a random island; `?seed=12345` also works where query strings pass through), and `#climate-…`, `#season-…` and `#weather-…` set the starting conditions.
+
+## Boats from parts
+
+A boat can be a short definition that names a size, a build and what's fitted; the game builds the rest (`src/js/boat-builder.js`). The parts are data, in `src/boats/parts.json`.
+
+```json
+{ "schema": "embercrown-boat/2", "id": "bay_boat", "name": "Bay boat", "size": "medium", "build": "vee",
+  "engines": ["medium"], "hull": ["seat", "storage"], "deck": ["console", "casting_deck"], "colors": { "hull": "#f0f0ec" } }
+```
+
+| | Personal | Small | Medium | Large |
+|---|---|---|---|---|
+| Engine spots | 0 | 1 | 2 | 3 |
+| Hull spots | 0 | 1 | 2 | 3 |
+| Deck spots | 0 | 1 | 2 | 3 |
+
+| Field | Parts |
+|---|---|
+| `build` | `canoe` (personal, small), `kayak` (personal), `skiff` (small, medium), `vee` (small to large), `workboat` (medium, large) |
+| `engines` | `small` (1 spot, power 1, control 3), `medium` (2, 2, 2), `large` (3, 3, 1). Power adds up; control is the average. None: paddled or rowed |
+| `hull` | `seat`, `storage` (1 spot each) |
+| `deck` | `console`, `casting_deck`, `rod_holders`, `fish_finder`, `trolling_motor`, `livewell` (1 spot each), `cabin` (2 spots, medium and large) |
+
+`colors` is optional (the build has its own). To add a boat, put its file in `src/boats/` and a line for it in `src/index.html`, or call `Game.loadBoat(def)`. The older full definitions (`embercrown-boat/1`: every hull dimension spelled out) still work.
+
+## The angler's look
+
+How you look in third-person view (K) is data, in `src/angler/`. `src/js/models/human.js` only draws the bare body, then whatever these two files say is worn.
+
+**`angler.json`**: you.
+
+| Field | Values |
+|---|---|
+| `skin` | a colour, `"#rrggbb"` |
+| `hair.style` | `"short"`, `"long"`, `"ponytail"` or `"none"` |
+| `hair.color` | a colour |
+| `outfits.temperate`, `.arctic`, `.tropical` | what you wear on that kind of island |
+| …`.wear` | a list of garment ids from `clothes.json`, e.g. `["trousers", "boots", "flannel", "vest", "cap"]` |
+| …`.colors` | the colours those garments ask for by name: `hat`, `top`, `vest`, `gloves`, `bottom`, `feet` (one plain colour per garment for now) |
+
+**`clothes.json`**: every garment (`cap`, `beanie`, `sun_hat`, `flannel`, `vest`, `jacket`, `sunshirt`, `trousers`, `shorts`, `boots`, `sandals`). A garment lists shapes for each body part it covers (`head`, `torso`, `hips`, `upper` and `fore` arm, `thigh`, `shin`, `foot`; arms and legs are drawn once per side). Numbers are metres in that part's own frame: x forward, y to the right, z up from the joint (parts hang down, so most z are negative; the head goes up from the neck).
+
+| Shape | Meaning |
+|---|---|
+| `"blob": [x, y, z, rx, ry, rz]` | an ellipsoid; `"mirror": true` repeats it at -y; `"detail": [rings, segments]` |
+| `"tube": [z0, r0, z1, r1]` | a tapered tube down the part; `"at": [x, y]`, `"sides"`, `"cap": true` closes the far end |
+| `"oval": [z0, halfWidth0, halfDepth0, z1, halfWidth1, halfDepth1]` | an oval ring, for the torso |
+| `"wrap": [z0, z1, off0, off1]` | a ring that follows the torso's own shape, standing `off0` (and `off1` at the far end) off the skin |
+
+Every shape has a `"color"`: a name looked up in the outfit's `colors`, or `"skin"`, `"hair"`, or a literal `"#rrggbb"`. `"shade": 0.8` darkens it; `"mat": "plain"` is for things that aren't cloth. To add a garment, add an entry to `clothes.json` and put its id in an outfit's `wear`.
+
+## Multiplayer (planned)
+
+Nothing here is built yet. There is no multiplayer code in the game and no server or hosting set up. This is the plan for a first version, called a "charter":
+
+- One player creates a charter and gets a room code. Friends type in the code to join. The code is the only login, and solo play stays the same with no login.
+- Everyone in the room plays on the same island: the room shares the seed and climate, and anyone on a different island reloads into the right one.
+- A small server just passes messages between players. It syncs boat position, casts, catches and a little chat, about twice a second.
+- Fish aren't shared in v1. Each player's fish move and get caught on their own. Shared fish, where a fish one player catches disappears for everyone, is planned for v2.
