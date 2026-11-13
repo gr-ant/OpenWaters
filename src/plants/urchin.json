@@ -1,0 +1,27 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "urchin",
+  "name": "Sea urchins",
+  "description": "Dark spiny urchins grazing rocky sea bed.",
+  "cover": ["rocks"],
+  "place": [
+    {
+      "order": 40,
+      "water": ["sea"],
+      "depth": [0.5, 20],
+      "chance": { "from": 0.74, "width": 0.05, "times": ["rocky"] }
+    }
+  ],
+  "size": { "min": 0.5, "rand": 0.4 },
+  "lift": -0.03,
+  "stride": 32,
+  "sway": 0,
+  "view": 90,
+  "mesh": {
+    "builder": "urchins",
+    "balls": [[0, 0, 0.12], [0.26, 0.1, 0.09], [-0.2, 0.22, 0.1]],
+    "body": [0.12, 0.08, 0.16],
+    "spines": [0.2, 0.14, 0.26],
+    "shade": { "by": "height", "base": 0.7, "range": 0.3, "from": -0.1 }
+  }
+}

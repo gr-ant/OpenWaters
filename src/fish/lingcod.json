@@ -4,6 +4,7 @@
   "name": "Lingcod",
   "scientific": "Ophiodon elongatus",
   "description": "Long-bodied, big-mouthed greenling of the cold Pacific, blotched in brown and green over rocky reefs and kelp. A voracious ambusher that swallows rockfish and octopus whole.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 40,

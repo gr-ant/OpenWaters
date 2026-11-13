@@ -4,6 +4,7 @@
   "name": "Hawksbill sea turtle",
   "scientific": "Eretmochelys imbricata",
   "description": "The reef's turtle: a narrow hawk-like beak for picking sponges out of coral crevices, and the amber, overlapping shell that was once carved into tortoiseshell. Smaller and rarer than the green turtle, and almost never far from a reef. Length is carapace length.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 45,

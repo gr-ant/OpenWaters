@@ -211,13 +211,13 @@ function hullWaterTable(H, S) {
   return tab;
 }
 const BoatDB = {
-  list: [], byId: {}, gpu: [],
+  list: [], byId: {},
   register(raw, { quiet = false } = {}) {
     if (typeof isShortBoat === 'function' && isShortBoat(raw)) { const b = buildBoat(raw); if (!b.def) { if (!quiet) console.warn('Boat rejected:', raw && raw.id, b.errors); return b; } raw = b.def; }   // a boat named by its parts (boat-builder.js): built into a full definition first
     const r = validateBoat(raw);
     if (!r.def) { if (!quiet) console.warn('Boat rejected:', raw && raw.id, r.errors); return r; }
     const d = r.def; d._shape = hullShape(d.hull); d._mesh = boatMesh(d); d._wtab = hullWaterTable(d.hull, d._shape); d._fb = (d._shape.gun(0.25) + d._shape.gun(0.5) + d._shape.gun(0.75)) / 3;
-    const old = this.byId[d.id]; if (old) { const i = this.list.indexOf(old); this.list[i] = d; if (this.gpu[i]) this.gpu[i].stale = true; } else this.list.push(d);
+    const old = this.byId[d.id]; if (old) { this.list[this.list.indexOf(old)] = d; } else this.list.push(d);
     this.byId[d.id] = d; if (r.warnings.length && !quiet) console.info(`Boat "${d.id}" notes:`, r.warnings); return r;
   },
 };

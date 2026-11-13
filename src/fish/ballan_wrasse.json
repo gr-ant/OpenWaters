@@ -4,6 +4,7 @@
   "name": "Ballan wrasse",
   "scientific": "Labrus bergylta",
   "description": "Heavy-lipped, mottled wrasse that prowls rocky reefs and kelp, green to red-brown with pale spots. Crushes crabs, snails and mussels with strong pharyngeal teeth; long-lived and slow-growing.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 20,

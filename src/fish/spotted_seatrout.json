@@ -4,6 +4,7 @@
   "name": "Spotted seatrout",
   "scientific": "Cynoscion nebulosus",
   "description": "Silvery-grey estuary predator, peppered with black spots on the back and tail, with two sharp canine teeth at the front of its yellow mouth. Hunts shrimp and mullet over seagrass flats and grassy channels, often at dawn.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 25,

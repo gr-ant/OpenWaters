@@ -4,6 +4,7 @@
   "name": "Longnose gar",
   "scientific": "Lepisosteus osseus",
   "description": "Ancient armoured fish with long needle jaws full of teeth. Hangs near the surface in warm rivers and lakes like a floating stick, gulps air, then snaps sideways at small fish.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 50,

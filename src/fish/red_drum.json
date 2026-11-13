@@ -4,6 +4,7 @@
   "name": "Red drum",
   "scientific": "Sciaenops ocellatus",
   "description": "Copper-bronze bottom feeder of surf, bays and marsh flats, with a black eyespot near the tail. Grunts in schools over oyster bars and grass flats, and runs hard when hooked.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 30,

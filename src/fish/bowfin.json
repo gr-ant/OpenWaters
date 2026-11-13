@@ -4,6 +4,7 @@
   "name": "Bowfin",
   "scientific": "Amia calva",
   "description": "Olive, mottled living fossil of swamps and weedy backwaters, with a long rippling dorsal fin and a dark eyespot at the tail base. Gulps air, ambushes fish and crayfish, and fights with savage, toothy power.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 30,

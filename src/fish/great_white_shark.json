@@ -4,6 +4,7 @@
   "name": "Great white shark",
   "scientific": "Carcharodon carcharias",
   "description": "Deep-bodied, heavy apex shark with a conical snout, flat black eye, slate-grey back cut by a sharp line from a stark white belly, and a crescent tail braced by a strong keel. Patrols cool temperate coasts and rushes seals (here counted as \"fish\" prey) and big fish from below. Length is nose to tail tip.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 150,

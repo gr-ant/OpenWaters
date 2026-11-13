@@ -4,6 +4,7 @@
   "name": "Yellow perch",
   "scientific": "Perca flavescens",
   "description": "Schooling, barred panfish of lakes. Roams in loose groups near weed edges by day; curious and easy to tempt.",
+  "handling": { "lip": true, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 10,

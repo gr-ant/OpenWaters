@@ -4,6 +4,7 @@
   "name": "Red lionfish",
   "scientific": "Pterois volitans",
   "description": "Banded, red-and-cream scorpionfish fanned with long venomous spines and lacy pectoral fins. Drifts slowly, herding small fish into corners before engulfing them in one gulp. Length is total length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 8,

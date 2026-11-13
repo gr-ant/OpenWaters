@@ -64,6 +64,17 @@
     Game.say(`Welcome to Open Waters · ${CLIMATE.name} island`, 4);
   };
   start.onclick = startGame;
+  { // Continue: the island you last played, where you left it (Engine.saveGame keeps 'embercrown-last' and that island's save)
+    const cont = document.getElementById('tiCont'); let last = null;
+    try { last = JSON.parse(localStorage.getItem('embercrown-last') || 'null');
+      const d = last && last.seed > 0 ? JSON.parse(localStorage.getItem('engine-save-' + (last.save || CONFIG.saveName) + '-' + last.seed) || 'null') : null;
+      if (!d || !d.st || last.save !== CONFIG.saveName) last = null; } catch (e) { last = null; }
+    if (last && CONFIG.saveProgress) {
+      cont.textContent = `Continue · island ${+last.seed} ›`; cont.title = `${typeof last.climate === 'string' ? last.climate.replace(/[^\w -]/g, '') + ' ' : ''}island no. ${+last.seed}, where you left it`; cont.hidden = false;
+      cont.onclick = () => { const opts = /^[\w&-]*$/.test(last.opts || '') ? last.opts : '', h = '#seed-' + (+last.seed) + (opts ? '&' + opts : '') + '&go';
+        T.classList.add('busy'); try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) { location.hash = h.slice(1); } location.reload(); };
+    }
+  }
   document.getElementById('tiSettings').onclick = () => { Engine.titleSettings = true; Engine.togglePause(true); Engine.pauseShow('settings'); };
   // New island: choose temperate, tropical or arctic, then straight to the loading screen (the page reloads on a random seed in that climate, back to this menu)
   const menu = T.querySelector('.ti-menu'), bio = document.getElementById('tiBiomes');
@@ -96,7 +107,7 @@
     e.stopPropagation();
     if (e.type === 'keydown' && e.code === 'Escape' && !bio.hidden) { e.preventDefault(); biomes(false); }   // out of the island choice, back to the menu
     else if (e.type === 'keydown' && /^Arrow(Down|Up|Left|Right)$/.test(e.code)) {   // the menu's items, or the island choice (its three, then Back)
-      e.preventDefault(); const L = [...T.querySelectorAll(bio.hidden ? '.ti-menu button.ti-item' : '#tiBiomes button, #tiSeed')], i = L.indexOf(document.activeElement);
+      e.preventDefault(); const L = [...T.querySelectorAll(bio.hidden ? '.ti-menu button.ti-item, #tiCont:not([hidden])' : '#tiBiomes button, #tiSeed')], i = L.indexOf(document.activeElement);
       L[(i + (e.code === 'ArrowDown' || e.code === 'ArrowRight' ? 1 : -1) + L.length) % L.length].focus();
     } else if (e.type === 'keydown' && e.code === 'Enter' && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#title button'))) { e.preventDefault(); startGame(); }
   };

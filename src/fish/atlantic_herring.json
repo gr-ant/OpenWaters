@@ -4,6 +4,7 @@
   "name": "Atlantic herring",
   "scientific": "Clupea harengus",
   "description": "Small silver schooling fish of cool seas, in shoals of hundreds that flash as they turn. Food for nearly everything else in the sea.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 18,

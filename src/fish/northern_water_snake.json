@@ -4,6 +4,7 @@
   "name": "Northern water snake",
   "scientific": "Nerodia sipedon",
   "description": "Thick-bodied, banded snake of streams and pond edges. Hunts fish and frogs in the shallows and basks on rocks and branches over the water. Length is along the body.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 30,

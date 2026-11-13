@@ -41,7 +41,7 @@ Object.assign(Engine, {
     return FishDB.list.filter(D => want(kindOf(D)) && inBiome(D.habitat.climates) && match(D.habitat.waters, D.name + ' ' + D.scientific)).concat(birds).sort(byName);
   },
   buildSpawnList() {
-    const ul = document.getElementById('spList'), esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+    const ul = document.getElementById('spList');   // esc: tackle.js
     const boatsMode = this.spawnMode === 'boats', panel = document.getElementById('spawn'), tabs = document.getElementById('spTabs');
     if (panel.dataset.mode !== this.spawnMode) {   // header and search follow the mode
       panel.dataset.mode = this.spawnMode;
@@ -64,7 +64,7 @@ Object.assign(Engine, {
     ul.innerHTML = items.map(D => boats
       ? `<li data-id="${esc(D.id)}" class="tile${D.id === this.spawnSel && this.spawnNav ? ' nav' : ''}" title="${esc(D.name)} · ${D.hull.length_m} m">${boatPicHTML(D)}</li>`
       : `<li data-id="${esc(D.id)}" class="card${D.id === this.spawnSel && this.spawnNav ? ' nav' : ''}"><span class="ri wide">${D.size ? animalPicHTML(D) : birdPicHTML(D)}</span>`
-      + `<span class="tx"><b>${esc(D.name)}</b><small>${D.size ? D.size.length_cm.typical + ' cm' : Math.round(D.look.wing.span * 100) + ' cm wingspan'}</small></span><span class="chev">${uiIcon('ui.chevron')}</span></li>`).join('') || '<li class="none">Nothing matches</li>';
+      + `<span class="tx"><b>${esc(D.name)}</b><small>${D.size ? D.size.length_cm.typical + ' cm' : Math.round(D.look.wing.span * (D.scale[0] + D.scale[1]) / 2 * 100) + ' cm wingspan'}</small></span><span class="chev">${uiIcon('ui.chevron')}</span></li>`).join('') || '<li class="none">Nothing matches</li>';
   },
   // the card the keyboard is on (outlined); Enter places it
   spawnSelect(id) {
@@ -75,6 +75,13 @@ Object.assign(Engine, {
   spawnBird(id) {
     const sp = Birds.species[id]; if (!sp) return null; const P = this.P, d = 10;
     const b = Birds.make(sp, P.x + Math.cos(P.a) * d, P.y + Math.sin(P.a) * d, 'fly'); b.spawned = true;
+    if (!(sp.lands.water > 0)) {   // a land bird (small, and gone into the trees in a moment): starts close, at eye level, crossing your view, and comes down on the nearest perch in front of you that it will sit on with you there
+      const c = Math.cos(P.a), sn = Math.sin(P.a), near = Math.max(sp.shy + 2, 6), kinds = Object.keys(sp.lands).filter(k => sp.lands[k] > 0 && k !== 'boat');
+      b.x = P.x + c * 5 + sn * 2; b.y = P.y + sn * 5 - c * 2; b.z = P.z + CONFIG.eyeHeight + 0.8; b.a = P.a + Math.PI / 2; b.alt = sp.flight.alt[0];
+      const tx = P.x + c * (near + 6), ty = P.y + sn * (near + 6), dist = q => Math.hypot(q.x - tx, q.y - ty);
+      const spots = Birds.Perches.near(tx, ty, 30, kinds, b).filter(q => Math.hypot(q.x - P.x, q.y - P.y) > near && (!Birds.Perches.free || Birds.Perches.free(q, b))).sort((p, q) => dist(p) - dist(q));
+      if (spots.length) { b.st = 'land'; b.target = spots[0]; b.lt = 0; }
+    }
     this.say(sp.name + (sp.climates && !sp.climates.includes(CLIMATE.key) ? ` (it doesn't normally live on ${CLIMATE.name.toLowerCase()} islands)` : ''), 3); Game.emit('spawn', [b]);
     return b;
   },

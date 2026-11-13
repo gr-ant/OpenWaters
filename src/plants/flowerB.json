@@ -1,0 +1,28 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "flowerB",
+  "name": "Wildflowers (bright)",
+  "description": "Drifts of purple, pink and blue flowers beside the pale ones.",
+  "ground": {
+    "weights": {  },
+    "steep": 0,
+    "size": [0.75, 0.5],
+    "sink": 0.02
+  },
+  "stride": 24,
+  "sway": 1.8,
+  "view": 55,
+  "grow": 0,
+  "snow": 1,
+  "dry": 0.85,
+  "mesh": {
+    "builder": "flowers",
+    "seed": 114,
+    "colors": {
+      "temperate": [[0.62, 0.36, 0.92], [0.98, 0.45, 0.72], [0.4, 0.5, 1]],
+      "arctic": [[0.92, 0.5, 0.82], [0.75, 0.45, 0.9]],
+      "tropical": [[1, 0.18, 0.3], [0.95, 0.3, 0.9], [1, 0.42, 0.15]]
+    },
+    "shade": { "by": "ground", "top": 0.4, "up": 0.6, "root": [0.58, 0.47] }
+  }
+}

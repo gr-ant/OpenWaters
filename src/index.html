@@ -42,6 +42,7 @@
       <button class="ti-item ti-bio" type="button" data-climate="arctic"><span class="ti-ic" data-icon="dock.islandArctic" aria-hidden="true"></span><b>Arctic</b><small>ice, tundra and taiga</small></button>
       <button id="tiBioBack" class="ti-item" type="button"><span class="ti-ic ti-back" aria-hidden="true">‹</span><b>Back</b></button>
     </div>
+    <button id="tiCont" class="ti-cont" type="button" hidden></button>
     <p class="ti-foot" id="tiFoot"></p>
   </div>
 </div>
@@ -160,7 +161,8 @@
   <button id="hSettings" title="Pause and settings (Esc)" aria-label="Pause and settings">Esc</button>
   <button id="hHint" title="Controls (?)">?</button>
 </div>
-<div id="catch" hidden><b id="ccName"></b><i id="ccSci"></i><div id="ccSize"></div><div id="ccNote"></div><button id="ccKeep">Keep (E)</button><button id="ccRel">Release (X)</button><small id="ccTurn"><span class="cc-keys">W A S D or drag</span><span class="cc-touch">Drag</span> to turn it over</small></div>
+<div id="catch" hidden></div>
+<div id="fishChips" hidden><button id="ccUnhook" hidden>Unhook</button><button id="ccPick" hidden>Pick up</button><button id="ccGrip" hidden>Lip</button><button id="ccKeep" hidden>Keep</button><button id="ccTake" hidden>Take out</button><button id="ccRel" hidden>Drop</button></div>
 <div id="tui" hidden>
   <nav class="tui-rail" aria-label="Touch shortcuts">
     <button data-k="KeyM"><span class="ic" data-icon="dock.map"></span><b>Map</b></button>
@@ -175,6 +177,7 @@
     <button id="bSet"><span class="ic" data-icon="dock.gear"></span><b>Settings</b></button>
     <button data-k="Digit1"><span class="ic" data-icon="dock.spawn"></span><b>Spawn</b></button>
     <button data-k="Digit2"><span class="ic" data-icon="dock.radar"></span><b>Radar</b></button>
+    <button id="bClear" aria-pressed="false" title="Clear view: hide everything on screen"><span class="ic"><svg viewBox="0 0 96 72" aria-hidden="true"><path d="M10 36 Q48 4 86 36 Q48 68 10 36 Z" fill="none" stroke="#f3e2b8" stroke-width="5" stroke-linejoin="round"/><circle cx="48" cy="36" r="11" fill="#f3e2b8"/><line x1="20" y1="64" x2="76" y2="8" stroke="#3a2416" stroke-width="11" stroke-linecap="round"/><line x1="20" y1="64" x2="76" y2="8" stroke="#f3e2b8" stroke-width="5" stroke-linecap="round"/></svg></span><b>Clear</b></button>
   </nav>
   <button id="bUse" class="act a-main" data-k="KeyF">Use</button>
   <button class="act a-jump" data-k="Space" data-hold="1">Jump</button>
@@ -271,7 +274,6 @@
 <script src="js/hud/menu-keys.js"></script>
 <script src="js/sounds.js"></script>
 <script src="js/birds/birds.js"></script>
-<script src="js/birds/species.js"></script>
 <script src="js/birds/game-api.js"></script>
 <script src="js/game.js"></script>
 <script src="js/fishing/nets-traps.js"></script>
@@ -279,8 +281,9 @@
 <script src="js/fishing/two-rods.js"></script>
 <link rel="stylesheet" href="css/tutorial.css">
 <script src="js/hud/tutorial.js"></script>
-<script type="module" src="js/urchin.js"></script>
+<script type="module" id="urchinSrc" src="js/urchin.js"></script>
 <!-- Walking trails and signposts are disabled for now. -->
+<script src="js/hands.js"></script>
 <script src="js/boot.js"></script>
 <!-- built-in fish species, boats and tackle: one JSON block each, the same format as files you drop onto the game -->
 <script type="application/json" data-builtin="look" src="looks/painted.json"></script>
@@ -290,6 +293,39 @@
 <script type="application/json" data-builtin="feature" src="features/sea_stacks.json"></script>
 <script type="application/json" data-builtin="feature" src="features/glaciers.json"></script>
 <script type="application/json" data-builtin="feature" src="features/cenotes.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/reed.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/lily.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/lilyF.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/weed.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/kelp.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/rock.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/log.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/stump.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/coral.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/anemone.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/berg.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/seafan.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/sponge.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/coralC.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/urchin.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/star.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/eelgrass.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/bullkelp.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/rockweed.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/slab.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/rubble.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/shells.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/grass.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/flowerA.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/flowerB.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/fern.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/heath.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/moss.json"></script>
+<script type="application/json" data-builtin="plant" src="plants/bush.json"></script>
+<script type="application/json" data-builtin="bird" src="birds/herring_gull.json"></script>
+<script type="application/json" data-builtin="bird" src="birds/brown_pelican.json"></script>
+<script type="application/json" data-builtin="bird" src="birds/atlantic_puffin.json"></script>
+<script type="application/json" data-builtin="bird" src="birds/eastern_bluebird.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/ballan_wrasse.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/common_periwinkle.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/cunner.json"></script>
@@ -338,6 +374,7 @@
 <script type="application/json" data-builtin="fish" src="fish/great_white_shark.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/queen_conch.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/river_otter.json"></script>
+<script type="application/json" data-builtin="fish" src="fish/american_beaver.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/scalloped_hammerhead.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/sheepshead.json"></script>
 <script type="application/json" data-builtin="fish" src="fish/spotted_seatrout.json"></script>

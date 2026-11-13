@@ -4,6 +4,7 @@
   "name": "Atlantic sailfish",
   "scientific": "Istiophorus albicans",
   "description": "Slender blue billfish with a towering sail-like dorsal fin that it raises to herd sardines into tight balls. Fast and acrobatic in warm blue water; length is fork length, not counting the bill.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 120,

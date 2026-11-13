@@ -15,20 +15,19 @@ Object.assign(Engine, {
       this.iconFb = fb;
     }
     const v = it.icon3d || (it.icon3d = this.autoIconView(it)), cp = Math.cos(v.pitch), F = [Math.cos(v.yaw) * cp, Math.sin(v.yaw) * cp, Math.sin(v.pitch)], R = [-Math.sin(v.yaw), Math.cos(v.yaw), 0];
-    const U = cross3(R, F).map(x => -x), E = v.target.map((t, i) => t - F[i] * v.dist), dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    const E = v.target.map((t, i) => t - F[i] * v.dist);
     const U2 = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
-    const t = Math.tan(v.fov * Math.PI / 360), near = 0.1, far = 50;
-    const view = new Float32Array([R[0], U2[0], -F[0], 0, R[1], U2[1], -F[1], 0, R[2], U2[2], -F[2], 0, -dot(R, E), -dot(U2, E), dot(F, E), 1]);
-    const proj = new Float32Array([1 / t, 0, 0, 0, 0, 1 / t, 0, 0, 0, 0, (far + near) / (near - far), -1, 0, 0, 2 * far * near / (near - far), 0]);
+    const t = Math.tan(v.fov * Math.PI / 360);
     const L = this.lit;
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.iconFb); gl.viewport(0, 0, N, N);
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); gl.enable(gl.DEPTH_TEST); gl.depthMask(true); gl.disable(gl.BLEND);
     gl.useProgram(L.p);
-    gl.uniformMatrix4fv(L.u.vp, false, mul4(proj, view)); gl.uniform3fv(L.u.cam, E); gl.uniform3fv(L.u.sun, norm3([-F[0] + 0.4, -F[1] + 0.3, 0.9]));
+    gl.uniformMatrix4fv(L.u.vp, false, camVP(R, U2, F, E, t, t, 0.1, 50)); gl.uniform3fv(L.u.cam, E); gl.uniform3fv(L.u.sun, norm3([-F[0] + 0.4, -F[1] + 0.3, 0.9]));
     gl.uniform3fv(L.u.fogc, [0, 0, 0]); gl.uniform1f(L.u.far, 1e5); gl.uniform3fv(L.u.lcol, [0.85, 0.85, 0.85]); gl.uniform3fv(L.u.amb, [0.45, 0.45, 0.5]);
     gl.uniform1f(L.u.night, 0); gl.uniform1f(L.u.emk, 0.5); gl.uniform1i(L.u.nfl, 0);
     gl.uniform1f(L.u.inst, 1); gl.uniform1f(L.u.sway, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, m.ib); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 0, 1, 0, 0.5]), gl.DYNAMIC_DRAW);
+    gl.uniform1f(L.u.uwf, 0); gl.uniform4f(L.u.seasA, 1, 0, 0, 0); gl.uniform4f(L.u.seasB, 0, 0, 0, 0);   // a summer, dry, above-water look: the icon is kept
+    this.upInst(m, [0, 0, 0, 1, 0, 0.5]);   // (not bufferData: that would shrink the buffer the pickups draw from)
     gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, 1); gl.bindVertexArray(null);
     const px = new Uint8Array(N * N * 4); gl.readPixels(0, 0, N, N, gl.RGBA, gl.UNSIGNED_BYTE, px);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, this.canvas.width, this.canvas.height); gl.uniform1f(L.u.emk, 1);

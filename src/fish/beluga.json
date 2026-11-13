@@ -4,6 +4,7 @@
   "name": "Beluga whale",
   "scientific": "Delphinapterus leucas",
   "description": "Pure white arctic whale with a bulbous melon forehead and no dorsal fin, at home among the pack ice. Travels in chattering pods and blows a small puff.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 300,

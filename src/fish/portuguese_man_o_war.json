@@ -4,6 +4,7 @@
   "name": "Portuguese man o' war",
   "scientific": "Physalia physalis",
   "description": "Not one animal but a colony: a blue-violet gas float riding the surface with a pink crest for a sail, and blue tentacles trailing metres below. The sting is fierce.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 10,

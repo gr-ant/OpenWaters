@@ -4,6 +4,7 @@
   "name": "Narwhal",
   "scientific": "Monodon monoceros",
   "description": "Mottled arctic whale whose males carry a single spiral tusk up to 3 m long. Lives in pods along the ice edge and dives deep for halibut and cod.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 350,

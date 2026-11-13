@@ -4,6 +4,7 @@
   "name": "Upside-down jellyfish",
   "scientific": "Cassiopea xamachana",
   "description": "Lies bell-down on the sand of mangrove shallows with its frilly arms held up to the sun: algae living in it make its food. It slowly pulses in place.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 8,

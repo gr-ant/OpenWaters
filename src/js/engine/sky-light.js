@@ -2,9 +2,11 @@
 // Engine: sun, moon, sky colours and light for the time of day, and the clock text.
 Object.assign(Engine, {
   // the graphics look chosen in Settings (CONFIG.look), one of src/looks/*.json; the first one if that's missing
-  gfxLook() { const L = BUILTIN.look; return L.find(l => l.id === CONFIG.look) || L[0]; },
-  // each of the look's effects strengths (0..1) goes to the shader uniform lk_<name>, where that shader uses it
-  lookUniforms(gl, u) { const E = this.gfxLook().effects; for (const k in E) if (u['lk_' + k]) gl.uniform1f(u['lk_' + k], E[k]); },
+  gfxLook() { const c = this._look; if (c && c.id === CONFIG.look) return c; const L = BUILTIN.look; return this._look = L.find(l => l.id === CONFIG.look) || L[0]; },
+  // each of the look's effects strengths (0..1) goes to the shader uniform lk_<name>, where that shader uses it (the names it has, found once per look)
+  lookUniforms(gl, u) { const lk = this.gfxLook(), E = lk.effects;
+    if (u._lkFor !== lk) { u._lkFor = lk; u._lk = []; for (const k in E) if (u['lk_' + k]) u._lk.push(u['lk_' + k], k); }
+    for (let i = 0; i < u._lk.length; i += 2) gl.uniform1f(u._lk[i], E[u._lk[i + 1]]); },
   // sun, moon, sky colours and light for the current time of day (tod: 0..1, 0.5 = noon)
   skyState() {
     const ang = (this.tod - 0.25) * 6.2832, sun = norm3([Math.cos(ang), -0.45 * Math.sin(ang) - 0.25, 0.92 * Math.sin(ang)]);

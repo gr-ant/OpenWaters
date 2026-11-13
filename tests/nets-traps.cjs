@@ -5,7 +5,7 @@ const ctx = { console, Math, JSON, Date, performance, isFinite, Object, Float32A
   localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = v; } },
   document: { getElementById: () => ({ addEventListener() {} }), createElement: () => ({ hidden: false, innerHTML: '', addEventListener(n, f) { this.onclick = f; } }), body: { appendChild(e) { cards.push(e); } } }, cards, sample() {}, hW: () => -2.2, SE: 0, SW: -0.2,
   clamp: (v, a, b) => Math.max(a, Math.min(b, v)), CONFIG: { saveName: 't', saveProgress: true }, SEED: 5, CLIMATE: { key: 'temperate' }, WATER_KEYS: ['sea', 'lake', 'pond', 'river', 'creek'], FISH_CELL: 16,
-  Controls: { key: () => 'F' }, uiIcon: n => `<svg ${n}/>`,
+  Controls: { key: () => 'F' }, uiIcon: n => `<svg ${n}/>`, esc: String, fmtKg: kg => `${kg} kg`,
   FishDB: { list: [{ id: 'blue_crab', name: 'Blue crab', body: { plan: 'crab' }, size: { length_cm: { typical: 15 } } }, { id: 'american_lobster', name: 'American lobster', body: { plan: 'lobster' }, size: { length_cm: { typical: 25 } } }] },
   cellFish: (cx, cy) => [0, 1, 0, 1].map((si, k) => ({ si, id: `x@${cx},${cy}.0#0.${k}`, hx: cx * 16 + 4 + k, hy: cy * 16 + 8, size: { cm: 14 + k, kg: 0.2 } })),
 };
@@ -13,7 +13,7 @@ ctx.globalThis = ctx; vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(R + 'models/mesh-builder.js', 'utf8'), ctx);
 vm.runInContext(`
 var Engine = { time: 0, dtH: 0, props: [], fish: [], fishCells: new Map(), meshData: {}, gone: {}, ang: { out: false, phase: 'stowed' }, boat: null, tackleOpen: false,
-  action() { this.based = true; }, toggleRod() {}, contextKeys() { return [['Q', 'x']]; }, catchLog() { return JSON.parse(localStorage.getItem('c') || '[]'); }, catchKey() { return 'c'; },
+  action() { this.based = true; }, toggleRod() {}, contextKeys() { return [['Q', 'x']]; }, catchLog() { return JSON.parse(localStorage.getItem('c') || '[]'); }, catchKey() { return 'c'; }, logCatches(recs) { localStorage.setItem('c', JSON.stringify(this.catchLog().concat(recs))); },
   isGone(id) { return !!this.gone[id]; }, removeFish(f) { f.dead = true; this.gone[f.id] = 1; }, toggleTackle() {}, tackleRender() {}, journalRender() {} };
 var Game = { MT, player: { x: 0, y: 0, z: 0, a: 0 }, lookingAt: null, swimming: false,
   mesh() { const b = meshBuilder(); b.done = () => new Float32Array(b.v); return b; },

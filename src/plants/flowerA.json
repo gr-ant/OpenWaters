@@ -1,0 +1,33 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "flowerA",
+  "name": "Wildflowers (pale)",
+  "description": "Drifts of white and yellow flowers (tropical: yellow, orange and cream).",
+  "ground": {
+    "weights": {  },
+    "steep": 0,
+    "size": [0.75, 0.5],
+    "sink": 0.02,
+    "drift": {
+      "plain": { "temperate": 0.42, "arctic": 0.1, "tropical": 0.42 },
+      "forest": 0.03,
+      "alpine": 0.12
+    }
+  },
+  "stride": 24,
+  "sway": 1.8,
+  "view": 55,
+  "grow": 0,
+  "snow": 1,
+  "dry": 0.85,
+  "mesh": {
+    "builder": "flowers",
+    "seed": 112,
+    "colors": {
+      "temperate": [[1, 0.98, 0.92], [1, 0.84, 0.15]],
+      "arctic": [[1, 0.98, 0.92], [1, 0.84, 0.15]],
+      "tropical": [[1, 0.85, 0.1], [1, 0.55, 0.12], [1, 0.97, 0.9]]
+    },
+    "shade": { "by": "ground", "top": 0.4, "up": 0.6, "root": [0.58, 0.47] }
+  }
+}

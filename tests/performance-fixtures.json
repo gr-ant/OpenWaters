@@ -1,20 +1,20 @@
 [
   {
     "climate": "temperate",
-    "digest": "02f78e32cb04cb9d023816757f25756bae6c3f1461ff72023ad6a6f4713b9213",
+    "digest": "f4e60111706ed0beef9f29bd79bd31aaa356883f6d508256a2ee3635ce084204",
     "cells": 525,
-    "animals": 2219
+    "animals": 2179
   },
   {
     "climate": "tropical",
-    "digest": "17b6448e5adfd0d565d80be325a69755db3e4b54c25499afa1af94dfbad6379b",
+    "digest": "47e14665eb62db67b34fe205ddd490ade12eddf74c8d4ffbd550b7489b00a521",
     "cells": 525,
-    "animals": 1350
+    "animals": 1643
   },
   {
     "climate": "arctic",
-    "digest": "36f20a90736eb8560db4a14ff86fc4fc55b1ca01aa2a5e131ed677c27fad87a8",
+    "digest": "8c82c6c172cbb6b5456cb01842456bffce32137f3648ca4fa02ed32e7c817d8e",
     "cells": 525,
-    "animals": 1360
+    "animals": 1001
   }
 ]

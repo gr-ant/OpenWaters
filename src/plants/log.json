@@ -1,0 +1,35 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "log",
+  "name": "Fallen tree",
+  "description": "Trees fallen from wooded banks, trunk sloping down into the water.",
+  "cover": ["wood"],
+  "reach": 2.5,
+  "place": [
+    {
+      "order": 130,
+      "not": ["sea"],
+      "depth": [-0.25, 1.1],
+      "chance": {
+        "from": 0.5,
+        "width": 0.035,
+        "times": [
+          { "sstep": [0.35, 0.65], "of": "moist" }
+        ]
+      }
+    }
+  ],
+  "size": { "min": 4.5, "rand": 4 },
+  "lift": -0.15,
+  "downBank": true,
+  "stride": 32,
+  "sway": 0,
+  "view": 320,
+  "mesh": {
+    "builder": "fallenLog",
+    "color": [0.36, 0.31, 0.25],
+    "wood": [0.66, 0.51, 0.31],
+    "roots": [0.3, 0.25, 0.19],
+    "shade": { "by": "facing", "base": 0.74, "range": 0.26, "grain": true }
+  }
+}

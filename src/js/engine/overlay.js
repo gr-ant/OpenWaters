@@ -3,16 +3,18 @@
 Object.assign(Engine, {
   drawOverlay() {
     const c = this.ctx, Wd = innerWidth, Ht = innerHeight, P = this.P;
+    const tick = (r0, r1, lw, col) => { const X = Wd / 2, Y = Ht / 2; c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { c.moveTo(X + dx * r0, Y + dy * r0); c.lineTo(X + dx * r1, Y + dy * r1); } c.stroke(); };   // the crosshair's four ticks, r0..r1 px out
     c.clearRect(0, 0, Wd, Ht);
+    const hc = this.hudClearNow = !!this.hudClear && !this.showMap && !document.body.classList.contains('more');   // clear view: only what is in the world (the line, a net) is drawn
     if (this.uw && !this.showMap) { // underwater: soft dark vignette in the water's colour
       const fc = this.fogColor.map(v => clamp(v * 120, 0, 60) | 0), g = c.createRadialGradient(Wd / 2, Ht / 2, Math.min(Wd, Ht) * 0.22, Wd / 2, Ht / 2, Math.hypot(Wd, Ht) * 0.55);
       g.addColorStop(0, `rgba(${fc},0)`); g.addColorStop(1, `rgba(${fc},.6)`); c.fillStyle = g; c.fillRect(0, 0, Wd, Ht);
     }
     if (this.showMap) this.drawMap(0, 0, Wd, Ht, 4, this.mapScale, this.bigMemo, 0.2, this.mapCX, this.mapCY, this.mapPtrs.size > 0 || this.mapDrag || performance.now() - this.mapHoldT < 200);
-    else { const r = this.hudMapRect(); if (r) {   // the minimap, inside the HUD's rounded frame (#hMap)
+    else { const r = hc ? null : this.hudMapRect(); if (r) {   // the minimap, inside the HUD's rounded frame (#hMap)
       c.save(); c.beginPath(); if (c.roundRect) c.roundRect(r.x, r.y, r.w, r.h, 14); else c.rect(r.x, r.y, r.w, r.h); c.clip(); this.drawMap(r.x, r.y, r.w, r.h, 2, this.miniScale, this.miniMemo, 0.35); c.restore(); } }
     c.font = '13px monospace'; c.textBaseline = 'middle';
-    if (this.touchUI && !this.showMap) { // joystick: faint ring where the thumb usually rests, live stick while held
+    if (this.touchUI && !this.showMap && !hc) { // joystick: faint ring where the thumb usually rests, live stick while held
       const j = this.joy, R = CONFIG.joystickRadius, ox = j ? j.ox : 34 + R, oy = j ? j.oy : Ht - 40 - R;
       c.globalAlpha = j ? 0.9 : 0.4; c.strokeStyle = 'rgba(232,208,146,.85)'; c.lineWidth = 2; c.fillStyle = 'rgba(24,34,25,.35)';
       c.beginPath(); c.arc(ox, oy, R, 0, 6.3); c.fill(); c.stroke();
@@ -21,8 +23,8 @@ Object.assign(Engine, {
       c.fillStyle = 'rgba(246,238,214,.85)'; c.beginPath(); c.arc(ox + kx, oy + ky, 20, 0, 6.3); c.fill(); c.globalAlpha = 1;
     }
     const tg = !this.showMap && this.tgt;
-    if (tg) { // pickup prompt under the crosshair
-      const it = ITEMS[tg.item], t = (this.touchUI ? 'Take ' : 'F: collect ') + it.name;
+    if (tg && !hc) { // pickup prompt under the crosshair
+      const it = ITEMS[tg.item], t = (this.touchUI ? 'Take ' : Controls.key('use') + ': collect ') + it.name;
       c.font = 'bold 14px Georgia, serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; const tw = c.measureText(t).width;
       c.fillStyle = 'rgba(0,0,0,.55)'; c.fillRect(Wd / 2 - tw / 2 - 10, Ht / 2 + 22, tw + 20, 24); c.fillStyle = it.css; c.fillText(t, Wd / 2, Ht / 2 + 34); c.textAlign = 'left';
     }
@@ -30,11 +32,10 @@ Object.assign(Engine, {
     if (this.touchUI && cb.dataset.mode !== mode) { cb.dataset.mode = mode; cb.textContent = tg ? 'Take' : pk ? 'Pick up' : tl || 'Use'; }
     if (this.touchUI) { const hb = this.holdBtn || (this.holdBtn = document.getElementById('bHold')), A = this.ang, hm = this.rodInHand() && A.phase === 'water' ? 'set' : this.holderNear && this.holderNear() && !this.holderByUse() ? 'pick' : '';   // Holder: set the rod down; beside or in a boat, also how you pick it up (Use is for the boat)
       if (hb && hb.dataset.mode !== hm) { hb.dataset.mode = hm; hb.hidden = !hm; hb.textContent = hm === 'pick' ? 'Pick up' : 'Holder'; } }
-    if (!this.showMap && !this.photo) { // crosshair: dot + four ticks, dark outline so it reads on any background (not in screenshots: electron/shots.js)
-      const X = Wd / 2, Y = Ht / 2, tick = (w, col) => { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { c.moveTo(X + dx * 5, Y + dy * 5); c.lineTo(X + dx * 11, Y + dy * 11); } c.stroke(); };
-      tick(3.5, 'rgba(0,0,0,.55)'); tick(1.6, 'rgba(255,255,255,.95)');
+    if (!this.showMap && !this.photo && !hc) { // crosshair: dot + four ticks, dark outline so it reads on any background (not in screenshots: electron/shots.js)
+      tick(5, 11, 3.5, 'rgba(0,0,0,.55)'); tick(5, 11, 1.6, 'rgba(255,255,255,.95)');
     }
-    if (this.finder && !this.showMap) this.drawFinder(c, Wd, Ht);
+    if (this.finder && !this.showMap && !hc) this.drawFinder(c, Wd, Ht);
     this.drawFishingHud(c, Wd, Ht);
     for (const fn of Game._hudHooks) fn(c, Wd, Ht); // games draw their own HUD here
     if (this.dropHint) { c.fillStyle = 'rgba(4,14,22,.7)'; c.fillRect(0, 0, Wd, Ht); c.fillStyle = '#cfeeff'; c.font = 'bold 22px Georgia, serif'; c.textAlign = 'center'; c.fillText('Drop fish or tackle .json files to add them', Wd / 2, Ht / 2); c.textAlign = 'left'; }
@@ -43,8 +44,8 @@ Object.assign(Engine, {
     if (this.showMap) { const my = this.touchUI ? 70 : 30, hint = this.touchUI ? 'drag to move · pinch to zoom' : 'arrows move · W/S zoom · Enter: travel to the crosshair · M close'; c.font = '13px monospace'; const tw = c.measureText(hint).width + 12;
       c.fillStyle = 'rgba(0,0,0,.6)'; c.fillRect(8, my, tw, 22); c.fillStyle = '#ffe9b0'; c.fillText(hint, 14, my + 11);
       // the crosshair in the middle of the map (the arrows move the map under it): the same as the one you walk with
-      const X = Wd / 2, Y = Ht / 2, tick = (lw, col) => { c.strokeStyle = col; c.lineWidth = lw; c.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { c.moveTo(X + dx * 6, Y + dy * 6); c.lineTo(X + dx * 16, Y + dy * 16); } c.stroke(); };
-      tick(4, 'rgba(0,0,0,.6)'); tick(1.8, 'rgba(255,255,255,.95)'); c.beginPath(); c.arc(X, Y, 2, 0, 6.3); c.fillStyle = '#fff'; c.fill();
+      const X = Wd / 2, Y = Ht / 2;
+      tick(6, 16, 4, 'rgba(0,0,0,.6)'); tick(6, 16, 1.8, 'rgba(255,255,255,.95)'); c.beginPath(); c.arc(X, Y, 2, 0, 6.3); c.fillStyle = '#fff'; c.fill();
       const wi = waterInfo(this.mapCX, this.mapCY), lab = `${wi.depth > 0 ? wi.name : (wi.kind === 'sea' ? 'Land' : 'Land by ' + wi.name)} · ${this.mapCX | 0}, ${this.mapCY | 0}`;
       c.font = 'bold 13px Georgia, serif'; c.textAlign = 'center'; const lw2 = c.measureText(lab).width + 14; c.fillStyle = 'rgba(20,26,20,.75)'; c.fillRect(X - lw2 / 2, Y + 20, lw2, 20); c.fillStyle = '#f2e9d0'; c.fillText(lab, X, Y + 30); c.textAlign = 'left'; }
     // travel menu

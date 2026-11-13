@@ -4,6 +4,7 @@
   "name": "Common carp",
   "scientific": "Cyprinus carpio",
   "description": "Big, heavy-scaled grubber of muddy ponds and lakes. Small groups root along the bottom; very wary, very strong.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 30,

@@ -4,6 +4,7 @@
   "name": "Giant Pacific octopus",
   "scientific": "Enteroctopus dofleini",
   "description": "Largest octopus in the world: a clever, red-brown giant of cold rocky Pacific waters that dens in crevices and hunts crabs, clams and even small sharks. Short-lived but huge. Length is mantle tip to arm tip.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 60,

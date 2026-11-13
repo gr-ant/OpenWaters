@@ -4,6 +4,7 @@
   "name": "Shiner perch",
   "scientific": "Cymatogaster aggregata",
   "description": "Small, deep-bodied silver surfperch with dusky bars and a yellow wash. Shoals in eelgrass beds and around pilings, picking plankton and tiny crustaceans; females give birth to live young.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 6,

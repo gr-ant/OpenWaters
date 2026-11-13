@@ -13,11 +13,9 @@ Object.assign(Engine, {
     const cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)];
     const R = [-Math.sin(P.a), Math.cos(P.a), 0];
     const U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
-    const E = this.camE = this.thirdP ? this.camPos(F) : [P.x, P.y, P.z + EYE], dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];   // third person: the camera sits behind you (third-person.js)
-    const tx = Math.tan(FOV / 2), ty = tx * Hh / W, near = 0.1; this.tanX = tx; this.tanY = ty;
-    const view = new Float32Array([R[0], U[0], -F[0], 0, R[1], U[1], -F[1], 0, R[2], U[2], -F[2], 0, -dot(R, E), -dot(U, E), dot(F, E), 1]);
-    const proj = new Float32Array([1 / tx, 0, 0, 0, 0, 1 / ty, 0, 0, 0, 0, (FAR + near) / (near - FAR), -1, 0, 0, 2 * FAR * near / (near - FAR), 0]);
-    const vp = this.vp = mul4(proj, view);
+    const eo = this.eyeOff || ZERO3, E = this.camE = this.thirdP ? this.camPos(F) : [P.x + eo[0], P.y + eo[1], P.z + EYE + eo[2]];   // third person: the camera sits behind you (third-person.js)
+    const tx = Math.tan(FOV / 2), ty = tx * Hh / W; this.tanX = tx; this.tanY = ty;
+    const vp = this.vp = camVP(R, U, F, E, tx, ty, 0.1, FAR, this.vp);
 
     gl.disable(gl.CULL_FACE); gl.disable(gl.BLEND);
     const S = this.sky_ = this.skyState(), SUN = S.key;
@@ -39,6 +37,7 @@ Object.assign(Engine, {
       gl.uniform3fv(sk.u.sun, S.sun); gl.uniform3fv(sk.u.zen, S.zen); gl.uniform3fv(sk.u.hor, S.hor); gl.uniform3fv(sk.u.sunc, S.sunc);
       gl.uniform1f(sk.u.night, S.night); gl.uniform1f(sk.u.sset, S.sset); gl.uniform1f(sk.u.t, this.time);
       gl.uniform1f(sk.u.stars, CONFIG.stars ? 1 : 0); gl.uniform1f(sk.u.clouds, CONFIG.clouds ? 1 : 0);
+      const sdt = clamp(this.time - (this._skyT ?? this.time), 0, 0.5), ck = sdt * (0.5 + 2.5 * ENV.wind), cd = this._cDrift || (this._cDrift = [0, 0]); this._skyT = this.time; cd[0] += 0.012 * ck; cd[1] += 0.005 * ck; gl.uniform2f(sk.u.cdrift, cd[0], cd[1]);
       gl.uniform4f(sk.u.wsky, ENV.cloud, ENV.flash, ENV.wind, ENV.fog); this.lookUniforms(gl, sk.u);
       gl.bindVertexArray(this.fsVao); gl.drawArrays(gl.TRIANGLES, 0, 3);
       gl.depthMask(true); gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -78,7 +77,7 @@ Object.assign(Engine, {
     gl.uniform1f(L.u.sway, CONFIG.windSway * (0.45 + 1.4 * ENV.wind));
     // trees: every visible chunk's instances merged into one draw per kind and detail level (closed meshes, so back faces are culled)
     gl.enable(gl.CULL_FACE); gl.cullFace(CULL_SIDE);
-    const TB = this.treeKinds.map((K, ki) => [this.batch('tree' + ki, K.hi, 24), this.batch('treeL' + ki, K.lo, 24)]);
+    const TB = this._treeB || (this._treeB = this.treeKinds.map((K, ki) => [this.batch('tree' + ki, K.hi, 24), this.batch('treeL' + ki, K.lo, 24)]));   // made once
     // refill the batches only when the set of chunks (or their detail level) changed since last frame
     let sig = 17;
     for (let i = 0; i < visible.length; i += 2) if (visible[i + 1] < TREE_VIEW * CHW) { const ch = visible[i]; sig = Math.imul(sig ^ (ch.cx * 73856093 ^ ch.cy * 19349663 ^ (visible[i + 1] < CONFIG.treeDetailDistance ? 1 : 2)), 16777619); }
@@ -93,9 +92,6 @@ Object.assign(Engine, {
     gl.disable(gl.CULL_FACE);
     // reeds, lily pads, weed beds, boulders: one draw per kind
     const flowering = sstep(0.22, 0.28, ENV.yf) * (1 - sstep(0.5, 0.56, ENV.yf));
-    const pscale = { lily: ENV.growth, lilyF: ENV.growth * flowering, weed: 0.35 + 0.65 * ENV.growth,
-      grass: (0.5 + 0.5 * ENV.growth) * (1 - 0.5 * ENV.snowCover), flowerA: ENV.growth * (1 - ENV.snowCover), flowerB: ENV.growth * (1 - ENV.snowCover), fern: (0.45 + 0.55 * ENV.growth) * (1 - 0.4 * ENV.snowCover) };   // meadows grow in spring, sink under snow
-    const DRY = { reed: 0.85, grass: 0.85, flowerA: 0.85, flowerB: 0.85, fern: 0.7, bush: 0.3, heath: 0.25 };   // straw-brown when dormant
     // land cover: made for chunks near the player (two a frame at most), then every 16 m tile within reach and roughly in view
     const GT = this._gTiles || (this._gTiles = []), TN = CHW / GROUND_TILE; GT.length = 0;
     if (CONFIG.groundCover) { const g0 = performance.now(); let made = 0;
@@ -106,9 +102,11 @@ Object.assign(Engine, {
           if (d < 161 && (d < 24 || (rx * fx + ry * fy) / d > Math.cos(Math.min(3.1, FOV / 2 + 0.15 + 12 / d)))) GT.push(ch, t, d); } }
       if (made) this.bgSpend(performance.now() - g0); }   // generating counts as background work, like chunk building
     const span = this._gSpan || (this._gSpan = []);
-    for (const [name, istride, sway, maxD] of PLANT_DRAW) {
-      const ps = pscale[name] ?? 1; if (ps < 0.03) continue;   // lilies are gone in winter, flowers only bloom in summer
-      gl.uniform1f(L.u.pscale, ps); gl.uniform1f(L.u.dry, (DRY[name] || 0) * ENV.dormant);
+    for (const P of Object.values(PLANTS)) {
+      const name = P.id, istride = P.stride, sway = P.sway, maxD = P.view;   // meadows grow in spring and sink under snow, lilies are gone in winter, flowers only bloom in summer
+      let ps = P.grow != null ? P.grow + (1 - P.grow) * ENV.growth : 1; if (P.flower) ps *= flowering; if (P.snow) ps *= 1 - P.snow * ENV.snowCover;
+      if (ps < 0.03) continue;
+      gl.uniform1f(L.u.pscale, ps); gl.uniform1f(L.u.dry, (P.dry || 0) * ENV.dormant);   // straw-brown when dormant
       const b = this.batch('plant_' + name, this.plantKinds[name], istride);
       if (GROUND_SET.has(name)) { // per tile: all of it near, thinned to 3/4 then 1/2 toward the edge of its range
         let sg = 17; span.length = 0;
@@ -134,22 +132,28 @@ Object.assign(Engine, {
         const dx = f.x - E[0], dy = f.y - E[1], dz = f.z - E[2], z = dx * F[0] + dy * F[1] + dz * F[2], r = f.len * 0.6 + 0.3;
         if (z < -r) return false; if (Math.abs(dx * R[0] + dy * R[1]) > z * tx + r * 1.5) return false; if (Math.abs(dx * U[0] + dy * U[1] + dz * U[2]) > z * ty + r * 1.5) return false;
         return z < 2 || f.len / z * pxK > 0.6; };
-      for (const f of this.fish) if (!f.dead && Math.abs(f.x - E[0]) < (uw ? Math.min(75, FOGD * 1.7 + f.len) : 75) && Math.abs(f.y - E[1]) < (uw ? Math.min(75, FOGD * 1.7 + f.len) : 75) && inView(f)) {
+      for (const f of this.fish) if (!f.dead && !f.stored && Math.abs(f.x - E[0]) < (uw ? Math.min(75, FOGD * 1.7 + f.len) : 75) && Math.abs(f.y - E[1]) < (uw ? Math.min(75, FOGD * 1.7 + f.len) : 75) && inView(f)) {
         const distance = Math.hypot(f.x - E[0], f.y - E[1], f.z - E[2]);
         const low = !f.hooked && f.state !== 'lure' && f.len * pxK / Math.max(0.1, distance) < 18;
+        if (f.roll) { (this._rolled || (this._rolled = [])).push(f); continue; }   // lying on its side on the bank: drawn by itself below
         const key = f.sp * 2 + (low ? 1 : 0);
         (per[key].length ? per[key] : (act.push(key), per[key])).push(f.x, f.y, f.z, f.len, f.a, f.tint, f.land ? -1e4 : f.wl, WATER[f.kd].murk, f.ph + 8 * Math.round(clamp(f.open || 0, 0, 1) * 12), f.pitch || 0);
       }
       const jel = this._jelAct || (this._jelAct = []); jel.length = 0;
+      const rolled = this._rolled || (this._rolled = []);
       for (const key of act) { const si = key >> 1, arr = per[key], m = this.fishGpu(si, !!(key & 1)), D = FishDB.list[si]; if (D._jelly) { jel.push(key); continue; } gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, D.body.flex * (D._wave ?? 1)); gl.uniform1f(L.u.swm, D._swim || 0); gl.uniform3fv(L.u.jawP, D._jaw); this.upInst(m, arr); this.drawMesh(m, arr.length / 10); }
+      for (const f of rolled) { const D = FishDB.list[f.sp]; if (D._jelly) continue; const m = this.fishGpu(f.sp, false);
+        gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, D.body.flex * (D._wave ?? 1)); gl.uniform1f(L.u.swm, D._swim || 0); gl.uniform3fv(L.u.jawP, D._jaw); gl.uniform1f(L.u.roll, f.roll);
+        this.upInst(m, [f.x, f.y, f.z, f.len, f.a, f.tint, -1e4, 0, f.ph + 8 * Math.round(clamp(f.open || 0, 0, 1) * 12), f.pitch || 0]); this.drawMesh(m, 1); }
+      if (rolled.length) { gl.uniform1f(L.u.roll, 0); rolled.length = 0; }
       gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     }
     if (this.boats.length) { // boats: one draw each (they pitch and heel on their own)
-      gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.hull, 1);
+      gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3f(L.u.jawP, 0, 0, 0); gl.uniform1f(L.u.hull, 1);
       for (const b of this.boats) {
         if (Math.abs(b.x - E[0]) > 900 || Math.abs(b.y - E[1]) > 900) continue;
-        const i = BoatDB.list.indexOf(b.def); let g = BoatDB.gpu[i];
-        if (!g || g.stale) { if (g) { gl.deleteVertexArray(g.vao); gl.deleteBuffer(g.ib); gl.deleteBuffer(g.vb); } const ib = gl.createBuffer(), vb = this.vbo(b.def._mesh); g = BoatDB.gpu[i] = { vao: this.litVao(vb, VB, ib, 40), ib, vb, n: b.def._mesh.length / VS }; }
+        let g = b.def._gpu;   // kept on the def: a boat already afloat when its type is reloaded keeps drawing its own model
+        if (!g) g = b.def._gpu = this.instMesh(b.def._mesh, 40);
         gl.uniform1f(L.u.roll, b.roll || 0);
         this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.def._oars || b.def._helm ? b.def._hullN : g.n, 1);
         const W = b.def._helm, hN = b.def._helmN || 0; if (W) { if (b === this.boat) {   // the wheel and throttle you're driving with: posed into their own buffer, like the oars
@@ -168,6 +172,7 @@ Object.assign(Engine, {
     if (globalThis.Birds) Birds.draw(this, gl, L, E);   // birds: in the air, on the water, on perches and boats
     if (this.thirdP) this.drawHuman(gl, L);   // you, seen from behind
     if (this.ang && this.ang.out) { this.drawTackle(gl, L, E); gl.uniform1f(L.u.fsh, 0); }   // the rod in your hands, the lure, the float
+    this.drawArms(gl, L); gl.uniform1f(L.u.fsh, 0);   // and the hands holding it (or the fish, the pot, the net)
     // props (static decorations) and pickups, instanced per mesh; the pickup you'd collect pulses
     const drawInst = (m, arr) => { if (!arr.length) return; this.upInst(m, arr); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, arr.length / 6); };
     { // props are static: their instance buffers are rebuilt only when the set changes or you've moved a good way
@@ -179,7 +184,8 @@ Object.assign(Engine, {
         this.propUsed = [...used]; for (const b of used) this.bDraw(b);
       } else for (const b of this.propUsed || []) this.bRedraw(b);
     }
-    const groups = new Map(), add = (m, ...v) => { let a = groups.get(m); if (!a) groups.set(m, a = []); a.push(...v); };
+    const groups = this._pickG || (this._pickG = new Map()); for (const a of groups.values()) a.length = 0;   // per mesh, kept from frame to frame
+    const add = (m, x, y, z, s, r, g) => { let a = groups.get(m); if (!a) groups.set(m, a = []); a.push(x, y, z, s, r, g); };
     const tgt = this.tgt;
     for (const q of this.pickups) if (!q.taken && Math.abs(q.x - P.x) < 300 && Math.abs(q.y - P.y) < 300) {
       const it = ITEMS[q.item], bob = q.float ? 0.15 + 0.12 * Math.sin(this.time * 2 + q.phase) : 0, rot = q.spin ? q.rot + this.time * 0.8 : q.rot;
@@ -221,6 +227,7 @@ Object.assign(Engine, {
       const Pp = this.precip, sn = ENV.snowing, box = sn ? 30 : 34, wa = ENV.windDir ?? 0.8, wv = ENV.wind * (sn ? 3 : 6);
       gl.useProgram(Pp.p); gl.uniformMatrix4fv(Pp.u.vp, false, vp); gl.uniform3fv(Pp.u.cam, E); gl.uniform1f(Pp.u.t, this.time % 1000);
       gl.uniform1f(Pp.u.fall, sn ? 1.3 : 9); gl.uniform1f(Pp.u.box, box); gl.uniform1f(Pp.u.snow, sn); gl.uniform2f(Pp.u.wind, Math.cos(wa) * wv, Math.sin(wa) * wv);
+      const pdt = clamp(this.time - (this._pT ?? this.time), 0, 0.5), pd = this._pDrift || (this._pDrift = [0, 0]); this._pT = this.time; pd[0] = (pd[0] + Math.cos(wa) * wv * pdt) % 5100; pd[1] = (pd[1] + Math.sin(wa) * wv * pdt) % 5100; gl.uniform2f(Pp.u.drift, pd[0], pd[1]);   // wrapped at 5100 m: a whole number of both boxes (30, 34), so no jump
       const lit = 0.35 + 0.65 * S.day + ENV.flash;
       gl.uniform4f(Pp.u.pc, (sn ? 0.95 : 0.72) * lit, (sn ? 0.96 : 0.76) * lit, (sn ? 1 : 0.82) * lit, sn ? 0.9 : 0.32);
       gl.bindVertexArray(this.precipVao);

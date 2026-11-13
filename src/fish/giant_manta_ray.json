@@ -4,6 +4,7 @@
   "name": "Giant manta ray",
   "scientific": "Mobula birostris",
   "description": "The largest ray: black above with pale shoulder patches, white beneath. Flies slowly through warm blue water on wings several metres across, filtering plankton with its head fins unrolled. Length is measured along the body, nose to rear of the disc, not across the wings.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 150,

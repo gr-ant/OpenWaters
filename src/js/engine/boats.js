@@ -6,16 +6,22 @@ Object.assign(Engine, {
   swellAt(x, y, kd) { const amp = WATER[kd].wave * (0.6 + 0.8 * ENV.wind), t = this.time; return amp * (0.07 * Math.sin(x * 0.23 + t * 1.1) + 0.05 * Math.sin(y * 0.31 - t * 1.37 + x * 0.07)) - 0.02; },
   // depth for a boat's hull at a point (negative = dry land), or -1 if it's frozen over
   boatDepth(x, y) { sample(x, y); const dep = SW - hW(SE); return ENV.iced(SK, dep, x, y) ? -1 : dep; },
+  // is there `need` m of water under a hull of length L centred at (x, y), lying along (ux, uy)? (stern, middle and bow)
+  hullFits(x, y, ux, uy, L, need) { for (const s of [-0.5, 0, 0.5]) if (this.boatDepth(x + ux * s * L, y + uy * s * L) < need) return false; return true; },
+  // a new boat of type D afloat at (x, y) heading a; at most 8 about (the oldest goes, never yours)
+  addBoat(D, x, y, a, auto) {
+    sample(x, y); const b = { def: D, id: 'boat#' + (this.boatN = (this.boatN || 0) + 1), x, y, a, v: 0, kd: SK, wl: SW, z: SW, pitch: 0, roll: 0, yaw: 0 }; if (auto) b.auto = true;
+    this.boats.push(b); while (this.boats.length > 8) { const i = this.boats.findIndex(q => q !== this.boat && q !== b); this.boats.splice(i, 1); }
+    return b;
+  },
   spawnBoat(id) {
     const D = BoatDB.byId[id]; if (!D) return null;
     const P = this.P, ca = Math.cos(P.a), sa = Math.sin(P.a), L = D.hull.length_m, need = D.hull.draft_m + 0.15;
     for (let d = 2 + L * 0.6; d < 60; d += 0.5) {
-      const x = P.x + ca * d, y = P.y + sa * d; let ok = true;
-      for (const u of [-0.5, 0, 0.5]) { const dd = this.boatDepth(x + ca * u * L, y + sa * u * L); if (dd < need) ok = false; }
-      if (!ok) continue;
-      sample(x, y); const b = { def: D, id: 'boat#' + (this.boatN = (this.boatN || 0) + 1), x, y, a: P.a /* bow pointing out over the water */, v: 0, kd: SK, wl: SW, z: SW, pitch: 0, roll: 0, yaw: 0 };
-      this.boats.push(b); while (this.boats.length > 8) { const i = this.boats.findIndex(q => q !== this.boat); this.boats.splice(i, 1); }
-      this.say(`${D.name} — walk or swim up to it and press ${this.touchUI ? 'Use' : 'F'} to get in`, 4); Game.emit('boatSpawn', b); return b;
+      const x = P.x + ca * d, y = P.y + sa * d;
+      if (!this.hullFits(x, y, ca, sa, L, need)) continue;
+      const b = this.addBoat(D, x, y, P.a /* bow pointing out over the water */);
+      this.say(`${D.name} — walk or swim up to it and press ${this.touchUI ? 'Use' : Controls.key('use')} to get in`, 4); Game.emit('boatSpawn', b); return b;
     }
     this.say(`No water ahead deep enough for a ${D.name.toLowerCase()} — face the water`, 3); return null;
   },
@@ -27,10 +33,8 @@ Object.assign(Engine, {
     const P = this.P, L = D.hull.length_m, need = D.hull.draft_m + 0.2, dx = w.wx - P.x, dy = w.wy - P.y, dl = Math.hypot(dx, dy) || 1, ux = dx / dl, uy = dy / dl;
     for (let d = 1.5; d < 90; d += 0.5) {
       const x = P.x + ux * d + ux * (D.hull.beam_m * 0.6 + 0.6), y = P.y + uy * d + uy * (D.hull.beam_m * 0.6 + 0.6); sample(x, y); if (SK !== w.kd) continue;
-      let ok = true; for (const s of [-0.5, 0, 0.5]) if (this.boatDepth(x - uy * s * L, y + ux * s * L) < need) ok = false;   // the whole hull, lying along the shore
-      if (!ok) continue;
-      sample(x, y); const b = { def: D, id: 'boat#' + (this.boatN = (this.boatN || 0) + 1), x, y, a: Math.atan2(uy, ux) + Math.PI / 2, v: 0, kd: SK, wl: SW, z: SW, pitch: 0, roll: 0, yaw: 0, auto: true };
-      this.boats.push(b); while (this.boats.length > 8) { const i = this.boats.findIndex(q => q !== this.boat); this.boats.splice(i, 1); }
+      if (!this.hullFits(x, y, -uy, ux, L, need)) continue;   // the whole hull, lying along the shore
+      const b = this.addBoat(D, x, y, Math.atan2(uy, ux) + Math.PI / 2, true);
       Game.emit('boatSpawn', b); return b;
     }
     return null;
@@ -53,7 +57,7 @@ Object.assign(Engine, {
   boardBoat(b) {
     this.boat = b; this.boatMode = 'drive'; this.boatSit = true; this.tuiState = null; this.P.vz = 0;   // the fish radar stays as you left it (key 2): boarding, as travel does, must not switch it on
     const dh = b.a - this.P.a; this.P.a = b.a; this.P.pitch = -0.1; this.seatBoat(b); this.boatKick(b, -1.2, Math.random() < 0.5 ? 0.6 : -0.6);   // stepping in: it dips and wobbles
-    this.say(`${b.def.name}: ${this.touchUI ? 'joystick' : 'W/S'} ${['outboard', 'inboard'].includes(b.def.propulsion.type) ? 'throttle' : b.def.propulsion.type === 'oars' ? 'row' : b.def.propulsion.type === 'pedal' ? 'pedal' : 'paddle'}, ${this.touchUI ? 'left/right' : 'A/D'} steer · ${this.touchUI ? 'Jump' : 'Space'} to jump out`, 5);
+    this.say(`${b.def.name}: ${this.touchUI ? 'joystick' : Controls.key('forward') + '/' + Controls.key('back')} ${['outboard', 'inboard'].includes(b.def.propulsion.type) ? 'throttle' : b.def.propulsion.type === 'oars' ? 'row' : b.def.propulsion.type === 'pedal' ? 'pedal' : 'paddle'}, ${this.touchUI ? 'left/right' : Controls.key('left') + '/' + Controls.key('right')} steer · ${this.touchUI ? 'Jump' : Controls.key('jump')} to jump out`, 5);
     Game.emit('boardBoat', b);
   },
   leaveBoat(jump) {

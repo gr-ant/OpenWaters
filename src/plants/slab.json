@@ -1,0 +1,27 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "slab",
+  "name": "Rock slab",
+  "description": "Low flat slabs on rocky sea bed.",
+  "cover": ["rocks"],
+  "place": [
+    {
+      "order": 30,
+      "water": ["sea"],
+      "depth": [0.3, 30],
+      "r1Below": 0.5,
+      "chance": { "from": 0.62, "width": 0.09, "times": ["rocky"] }
+    }
+  ],
+  "size": { "min": 1.2, "rand": 1.6 },
+  "sink": 0.06,
+  "stride": 32,
+  "sway": 0,
+  "view": 300,
+  "mesh": {
+    "builder": "slab",
+    "colors": [[0.32, 0.36, 0.28], [0.46, 0.44, 0.4]],
+    "stone": [0.44, 0.42, 0.38],
+    "shade": { "by": "height", "base": 0.7, "range": 0.3, "from": -0.1, "over": 0.3 }
+  }
+}

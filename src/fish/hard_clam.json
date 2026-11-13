@@ -4,6 +4,7 @@
   "name": "Hard clam",
   "scientific": "Mercenaria mercenaria",
   "description": "Thick-shelled clam (quahog) that lives buried in sand and mud of bays, filtering plankton through its siphons. Length is shell length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 4,

@@ -4,6 +4,7 @@
   "name": "Yellow-bellied sea snake",
   "scientific": "Hydrophis platurus",
   "description": "Fully ocean-going snake that drifts among floating debris and slicks, ambushing small fish. Black above, bright yellow below, with a flat paddle tail. Length is along the body.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 40,

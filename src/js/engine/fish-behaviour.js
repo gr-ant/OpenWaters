@@ -149,7 +149,8 @@ Object.assign(Engine, {
       case 'hunt': want = dist < 2.5 + f.len * 3 ? B.burst_bl_s : B.cruise_bl_s * (B.ambush > 0.5 ? 0.6 : 1.6); break;
       case 'breathe': want = B.cruise_bl_s * 1.1; break;
       case 'haul': want = Math.max(B.cruise_bl_s, 0.35 / f.len); break;   // heading for the bank: at least ~0.35 m/s, so a turtle gets there
-      case 'lure': want = Math.min(B.burst_bl_s * (this.ang && this.ang.lure && this.ang.lure.spd > 1.2 ? 1 : 0.5), Math.max(B.cruise_bl_s * 2.5, (dist < 1.2 ? 0.35 : 0.7) / f.len, this.ang && this.ang.lure ? this.ang.lure.spd * 1.3 / f.len : 0)); break;   // a trolled lure gets run down flat out
+      case 'lure': { const L = ((f.rod && f.rod === this.ang2 ? f.rod : this.ang) || {}).lure;   // the lure of the rod it's following
+        want = Math.min(B.burst_bl_s * (L && L.spd > 1.2 ? 1 : 0.5), Math.max(B.cruise_bl_s * 2.5, (dist < 1.2 ? 0.35 : 0.7) / f.len, L ? L.spd * 1.3 / f.len : 0)); break; }   // a trolled lure gets run down flat out
       case 'school': want = f.leader ? Math.max(0.2, f.leader.spd * f.leader.len / f.len) + dist * 0.5 / f.len : B.cruise_bl_s; break;
       default: want = 0.5;
     }

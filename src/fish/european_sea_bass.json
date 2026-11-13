@@ -4,6 +4,7 @@
   "name": "European sea bass",
   "scientific": "Dicentrarchus labrax",
   "description": "Silvery, spiny-finned predator of surf, rocky headlands and tidal estuaries. Hunts sandeels, prawns and crabs in the churn, fighting hard on light tackle.",
+  "handling": { "lip": true, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 25,

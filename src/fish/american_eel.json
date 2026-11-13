@@ -4,6 +4,7 @@
   "name": "American eel",
   "scientific": "Anguilla rostrata",
   "description": "Snake-like fish that swims with waves down its whole body. Hides by day in rocks, logs and undercut banks of creeks, rivers and lakes, and hunts the bottom at night. Born in the sea, so it turns up almost anywhere.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 30,

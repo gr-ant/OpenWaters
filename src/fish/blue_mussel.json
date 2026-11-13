@@ -4,6 +4,7 @@
   "name": "Blue mussel",
   "scientific": "Mytilus edulis",
   "description": "Blue-black mussel that anchors in dense beds on rocks and pilings with tough threads, filtering plankton from the tide. Length is shell length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 2.5,

@@ -1,0 +1,30 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "fern",
+  "name": "Fern",
+  "description": "Arching ferns in the forest's moist hollows.",
+  "ground": {
+    "weights": {
+      "plain": { "temperate": 0, "arctic": 0, "tropical": 0.04 },
+      "forest": { "temperate": 0.22, "arctic": 0.05, "tropical": 0.32 }
+    },
+    "steep": 0.5,
+    "size": [
+      { "temperate": 0.7, "arctic": 0.7, "tropical": 0.9 },
+      { "temperate": 0.6, "arctic": 0.6, "tropical": 0.7 }
+    ],
+    "sink": 0.03
+  },
+  "stride": 24,
+  "sway": 0.8,
+  "view": 85,
+  "grow": 0.45,
+  "snow": 0.4,
+  "dry": 0.7,
+  "mesh": {
+    "builder": "fern",
+    "fronds": 5,
+    "color": { "temperate": [0.23, 0.43, 0.13], "arctic": [0.23, 0.43, 0.13], "tropical": [0.2, 0.5, 0.14] },
+    "shade": { "by": "ground", "top": 0.6, "up": 0.55, "root": [0.58, 0.47] }
+  }
+}

@@ -1,0 +1,245 @@
+{
+  "id": "herring_gull",
+  "name": "Herring gull",
+  "description": "Gulls everywhere there is water: soars and follows boats, dips at the surface for scraps, lands on water, props and boats. Calls \"kyow\", and now and then the laughing long call.",
+  "scale": [
+    0.9,
+    1.1
+  ],
+  "habitat": {
+    "sea": 9,
+    "lake": 4,
+    "river": 4,
+    "pond": 2
+  },
+  "night": "roost",
+  "flight": {
+    "speed": 9.5,
+    "flapHz": 2.8,
+    "stroke": 0.52,
+    "flapTime": [
+      1,
+      3.5
+    ],
+    "glideTime": [
+      2,
+      7
+    ],
+    "turn": 0.85,
+    "alt": [
+      9,
+      31
+    ],
+    "radius": [
+      16,
+      50
+    ],
+    "soar": true,
+    "followBoats": true
+  },
+  "lands": {
+    "water": 0.5,
+    "ground": 0.2,
+    "prop": 0.25,
+    "tree": 0.06,
+    "boat": 0.55
+  },
+  "landEvery": 50,
+  "stay": [
+    20,
+    100
+  ],
+  "shy": 9,
+  "floatZ": 0.035,
+  "space": 0.7,
+  "wary": 6,
+  "flocking": {
+    "every": 60,
+    "size": [
+      3,
+      8
+    ],
+    "time": [
+      20,
+      50
+    ],
+    "formation": {
+      "cluster": 3,
+      "v": 1,
+      "line": 1
+    },
+    "spacing": 2.6,
+    "landTogether": 0.75
+  },
+  "voice": {
+    "pitch": [
+      720,
+      900
+    ],
+    "every": [
+      7,
+      30
+    ],
+    "volume": 0.07,
+    "range": 110,
+    "notes": [
+      1,
+      2
+    ],
+    "dur": [
+      0.26,
+      0.34
+    ],
+    "gap": 0.12,
+    "rise": 1.25,
+    "riseAt": 0.25,
+    "fall": 0.75,
+    "wave": "sawtooth",
+    "rasp": {
+      "rate": [
+        38,
+        48
+      ],
+      "depth": 35
+    },
+    "band": {
+      "freq": 1400,
+      "q": 0.9
+    },
+    "highpass": 380,
+    "series": {
+      "chance": 0.3,
+      "notes": [
+        4,
+        8
+      ],
+      "first": 0.42,
+      "dur": 0.18,
+      "gap": 0.07,
+      "lift": 1.08
+    }
+  },
+  "events": {
+    "landed": true
+  },
+  "forage": {
+    "every": 90,
+    "from": [
+      3,
+      25
+    ],
+    "minDepth": 0.3,
+    "lead": 1.5,
+    "target": 0.35,
+    "speed": [
+      5,
+      9
+    ],
+    "accel": 4,
+    "tuck": false,
+    "twist": 0,
+    "splash": 8,
+    "ripple": 0.5,
+    "scare": 2,
+    "under": 0,
+    "after": null
+  },
+  "look": {
+    "body": [
+      0.16,
+      0.068,
+      0.072
+    ],
+    "head": 0.044,
+    "bill": {
+      "len": 0.074,
+      "base": 0.012,
+      "hook": 0.009
+    },
+    "tail": {
+      "len": 0.14,
+      "root": 0.035,
+      "end": 0.062
+    },
+    "wing": {
+      "span": 0.62,
+      "chord": 1,
+      "tipFrom": 0.48
+    },
+    "legs": {
+      "len": 0.2
+    },
+    "colors": {
+      "mantle": [
+        0.56,
+        0.6,
+        0.66
+      ],
+      "body": [
+        0.93,
+        0.93,
+        0.91
+      ],
+      "head": [
+        0.93,
+        0.93,
+        0.91
+      ],
+      "eye": [
+        0.08,
+        0.07,
+        0.05
+      ],
+      "tail": [
+        0.93,
+        0.93,
+        0.91
+      ],
+      "bill": [
+        0.98,
+        0.8,
+        0.18
+      ],
+      "billSpot": [
+        0.85,
+        0.16,
+        0.1
+      ],
+      "legs": [
+        0.9,
+        0.62,
+        0.58
+      ],
+      "wingTop": [
+        0.56,
+        0.6,
+        0.66
+      ],
+      "wingEdge": [
+        0.76,
+        0.79,
+        0.82
+      ],
+      "wingTip": [
+        0.07,
+        0.07,
+        0.08
+      ],
+      "mirror": [
+        0.93,
+        0.93,
+        0.91
+      ],
+      "wingUnder": [
+        0.93,
+        0.93,
+        0.91
+      ],
+      "wingUnderTip": [
+        0.24,
+        0.24,
+        0.26
+      ]
+    }
+  }
+}

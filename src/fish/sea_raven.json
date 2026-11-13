@@ -4,6 +4,7 @@
   "name": "Sea raven",
   "scientific": "Hemitripterus americanus",
   "description": "Spiny, ragged sculpin that sits motionless among rocks and weed, fleshy tabs breaking up its outline. Ambushes crabs and small fish, and puffs itself up with water when pulled from the sea.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 20,

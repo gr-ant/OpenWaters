@@ -4,6 +4,7 @@
   "name": "Hellbender",
   "scientific": "Cryptobranchus alleganiensis",
   "description": "Huge, flat, wrinkly salamander of fast, clear, rocky streams. Hides under big slabs by day and hunts crayfish at night. Breathes mostly through its skin.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 25,

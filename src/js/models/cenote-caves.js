@@ -50,17 +50,20 @@ function caveMesh(c) {
 }
 Object.assign(Engine, {
   // roofed cenotes near the camera, nearest first (the shaders take four)
-  cavesNear(E, R = 600) { return (CENOTES || cenotes()).filter(c => c.roof && Math.abs(c.cx - E[0]) < R && Math.abs(c.cy - E[1]) < R).sort((a, b) => Math.hypot(a.cx - E[0], a.cy - E[1]) - Math.hypot(b.cx - E[0], b.cy - E[1])).slice(0, 4); },
+  cavesNear(E, R = 600) {   // remembered per radius until the camera moves (asked several times a frame)
+    const m = this.caveMemo || (this.caveMemo = {}), o = m[R]; if (o && o.x === E[0] && o.y === E[1]) return o.near;
+    return (m[R] = { x: E[0], y: E[1], near: (CENOTES || cenotes()).filter(c => c.roof && Math.abs(c.cx - E[0]) < R && Math.abs(c.cy - E[1]) < R).sort((a, b) => Math.hypot(a.cx - E[0], a.cy - E[1]) - Math.hypot(b.cx - E[0], b.cy - E[1])).slice(0, 4) }).near; },
   // CAVE_GLSL's uniforms for a program: centre, opening and roof radius; roof height
   caveUniforms(gl, prog, E) {
-    const near = this.cavesNear(E), a = this.caveUni || (this.caveUni = new Float32Array(16)), z = this.caveZ || (this.caveZ = new Float32Array(4)); a.fill(0); z.fill(0);
-    const g = this.caveGapU || (this.caveGapU = new Float32Array(12)); g.fill(0);
-    near.forEach((c, i) => { a.set([c.cx, c.cy, c.ro, c.R], i * 4); z[i] = landH(c.cx + c.R * 0.6, c.cy) + 0.04; g.set([c.rux, c.ruy, c.rw + 2], i * 3); });
+    const near = this.cavesNear(E), a = this.caveUni || (this.caveUni = new Float32Array(16)), z = this.caveZ || (this.caveZ = new Float32Array(4));
+    const g = this.caveGapU || (this.caveGapU = new Float32Array(12));
+    if (near !== this.caveFor) { this.caveFor = near; a.fill(0); z.fill(0); g.fill(0);   // refill only when the list changes
+      near.forEach((c, i) => { a.set([c.cx, c.cy, c.ro, c.R], i * 4); z[i] = c.roofZ ??= landH(c.cx + c.R * 0.6, c.cy) + 0.04; g.set([c.rux, c.ruy, c.rw + 2], i * 3); }); }
     if (prog.u['cav[0]']) gl.uniform4fv(prog.u['cav[0]'], a); if (prog.u['cavz[0]']) gl.uniform1fv(prog.u['cavz[0]'], z); if (prog.u['cavg[0]']) gl.uniform3fv(prog.u['cavg[0]'], g);
   },
   drawCaves(gl, drawInst, E) {
     const near = this.cavesNear(E, 500); if (!near.length) return; const cull = gl.isEnabled(gl.CULL_FACE); gl.disable(gl.CULL_FACE);
-    for (const c of near) { if (!c.gpu) { const m = caveMesh(c), ib = gl.createBuffer(); c.gpu = { vao: this.litVao(this.vbo(m), VB, ib), ib, n: m.length / VS }; }
+    for (const c of near) { if (!c.gpu) c.gpu = this.instMesh(caveMesh(c));
       drawInst(c.gpu, [c.cx, c.cy, 0, 1, 0, 0.5]); }
     if (cull) gl.enable(gl.CULL_FACE);
   },

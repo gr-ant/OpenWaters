@@ -4,6 +4,7 @@
   "name": "California sea lion",
   "scientific": "Zalophus californianus",
   "description": "Sleek brown sea lion with small ear flaps and big front flippers it walks on. Noisy, social and acrobatic: porpoises out of the water when travelling and hauls out in groups.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 150,

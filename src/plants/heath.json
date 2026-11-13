@@ -1,0 +1,28 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "heath",
+  "name": "Heath",
+  "description": "A low cushion of heather (arctic: crowberry and reddening bearberry; tropical: yellow-flowered).",
+  "ground": {
+    "weights": {
+      "plain": { "temperate": 0, "arctic": 0.1, "tropical": 0 },
+      "forest": { "temperate": 0.01, "arctic": 0.08, "tropical": 0.01 },
+      "rock": 0.03,
+      "alpine": { "temperate": 0.2, "arctic": 0.2, "tropical": 0.05 }
+    },
+    "steep": 0.5,
+    "size": [0.6, 0.6],
+    "sink": 0.04,
+    "sinkBySize": true
+  },
+  "stride": 24,
+  "sway": 0,
+  "view": 75,
+  "dry": 0.25,
+  "mesh": {
+    "builder": "heath",
+    "color": { "temperate": [0.3, 0.33, 0.17], "arctic": [0.26, 0.31, 0.15], "tropical": [0.3, 0.33, 0.17] },
+    "tops": { "temperate": [0.6, 0.32, 0.62], "arctic": [0.42, 0.26, 0.16], "tropical": [0.95, 0.8, 0.2] },
+    "shade": { "by": "ground", "top": 0.3, "up": 0.3, "root": [0.58, 0.47] }
+  }
+}

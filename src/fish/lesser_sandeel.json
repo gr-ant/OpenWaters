@@ -4,6 +4,7 @@
   "name": "Lesser sandeel",
   "scientific": "Ammodytes tobianus",
   "description": "Slender, silvery eel-like fish that shoals in dense clouds over clean sand and dives into it to hide. Staple food of seabirds, bass and almost everything else.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 8,

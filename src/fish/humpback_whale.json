@@ -4,6 +4,7 @@
   "name": "Humpback whale",
   "scientific": "Megaptera novaeangliae",
   "description": "Huge baleen whale with very long white flippers. Cruises slowly offshore, blowing a tall spout every few minutes, and now and then breaches clear of the water.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 1100,

@@ -22,24 +22,28 @@ function envAt(x, y, withCover = true, live = true) {
 // the zones each food is found in: [surface, mid-water, bottom]
 const FOOD_ZONES = { insects: [1, 0.35, 0], nymphs: [0.1, 0.45, 1], worms: [0, 0.15, 1], crayfish: [0, 0, 1], fish: [0.3, 1, 0.45], frogs: [1, 0.1, 0],
   snails: [0, 0.2, 1], shrimp: [0, 0.6, 1], plankton: [0.4, 1, 0.1], plants: [0.2, 0.8, 0.6], eggs: [0, 0.1, 1], leeches: [0, 0.4, 1] };
+// how much of each food each kind of water has, by kind id (insects' sea entry hangs on the wind, so it stays in foodAvail)
+const FOOD_KIND = { nymphs: [0, 0.35, 0.45, 0.9, 1], crayfish: [0, 0.75, 0.8, 1, 0.8], fish: [0.8, 0.7, 0.6, 0.7, 0.5], frogs: [0, 0.5, 1, 0.3, 0.3],
+  shrimp: [1, 0.15, 0.1, 0.35, 0.1], plankton: [0.9, 0.8, 0.9, 0.2, 0.05], leeches: [0, 0.6, 1, 0.3, 0.2] };
+const FOOD_COVER = { rocks: 0.2, weeds: 0.2, reeds: 0.1, lilies: 0.1, wood: 0, open: 0.5 };   // when the spot's cover isn't known
 function foodAvail(food, env, T) {
-  const k = env.kind, c = env.cover || { rocks: 0.2, weeds: 0.2, reeds: 0.1, lilies: 0.1, wood: 0, open: 0.5 }, hour = (Engine.tod ?? 0.4) * 24, yf = ENV.yf;
+  const k = env.kind, c = env.cover || FOOD_COVER, hour = (Engine.tod ?? 0.4) * 24, yf = ENV.yf;
   const night = 1 - sstep(5, 7, hour) * (1 - sstep(20, 22, hour)), warm = sstep(5, 15, T), shore = 1 - sstep(1, 3.5, env.dep);
   const veg = Math.min(1, c.weeds + c.reeds + c.lilies + c.wood * 0.6), rocks = Math.min(1, c.rocks + c.wood * 0.5), rap = env.rap || 0;
   const iced = ENV.iced(k, env.dep, env.x, env.y) ? 1 : 0;
   switch (food) {
     case 'insects': return clamp([0, 0.45 + 0.5 * ENV.wind, 0.9, 0.85, 1][k] * warm * (0.15 + 0.85 * ENV.hatch + 0.25 * veg * sstep(0.15, 0.4, yf) * (1 - sstep(0.6, 0.7, yf))) * (1 - iced), 0, 1);
-    case 'nymphs': return clamp([0, 0.35, 0.45, 0.9, 1][k] * (0.35 + 0.65 * Math.max(rocks, rap)) * (0.4 + 0.6 * warm) * (1 + 0.5 * ENV.hatch), 0, 1);
+    case 'nymphs': return clamp(FOOD_KIND.nymphs[k] * (0.35 + 0.65 * Math.max(rocks, rap)) * (0.4 + 0.6 * warm) * (1 + 0.5 * ENV.hatch), 0, 1);
     case 'worms': return clamp((k === OCEAN ? 0.1 : 1) * shore * (0.2 + 0.8 * ENV.wet) * (0.5 + 0.5 * warm), 0, 1);
-    case 'crayfish': return clamp([0, 0.75, 0.8, 1, 0.8][k] * (0.25 + 0.75 * rocks) * (0.3 + 0.7 * night) * warm, 0, 1);
-    case 'fish': return clamp([0.8, 0.7, 0.6, 0.7, 0.5][k] * (0.35 + 0.65 * veg) * (env.dep < 4 ? 1 : 0.6) * (0.5 + 0.5 * warm) * (1 + 0.4 * sstep(0.3, 1, 1 - ENV.light)), 0, 1);
-    case 'frogs': return clamp([0, 0.5, 1, 0.3, 0.3][k] * Math.min(1, c.lilies + c.reeds) * sstep(14, 20, T) * (0.35 + 0.65 * night), 0, 1);
+    case 'crayfish': return clamp(FOOD_KIND.crayfish[k] * (0.25 + 0.75 * rocks) * (0.3 + 0.7 * night) * warm, 0, 1);
+    case 'fish': return clamp(FOOD_KIND.fish[k] * (0.35 + 0.65 * veg) * (env.dep < 4 ? 1 : 0.6) * (0.5 + 0.5 * warm) * (1 + 0.4 * sstep(0.3, 1, 1 - ENV.light)), 0, 1);
+    case 'frogs': return clamp(FOOD_KIND.frogs[k] * Math.min(1, c.lilies + c.reeds) * sstep(14, 20, T) * (0.35 + 0.65 * night), 0, 1);
     case 'snails': return clamp((k === OCEAN ? 0.5 : 1) * (0.2 + 0.8 * Math.max(c.weeds, c.lilies)) * (0.3 + 0.7 * ENV.growth), 0, 1);
-    case 'shrimp': return [1, 0.15, 0.1, 0.35, 0.1][k] * (0.4 + 0.6 * night);
-    case 'plankton': return clamp([0.9, 0.8, 0.9, 0.2, 0.05][k] * (0.25 + 0.75 * ENV.growth) * (1 - shore * 0.5), 0, 1);
+    case 'shrimp': return FOOD_KIND.shrimp[k] * (0.4 + 0.6 * night);
+    case 'plankton': return clamp(FOOD_KIND.plankton[k] * (0.25 + 0.75 * ENV.growth) * (1 - shore * 0.5), 0, 1);
     case 'plants': return clamp(c.weeds + c.lilies * 0.7, 0, 1) * (0.3 + 0.7 * ENV.growth);
     case 'eggs': return clamp(((k === LAKE || k === POND) ? shore * sstep(0.04, 0.1, yf) * (1 - sstep(0.18, 0.26, yf)) : 0) + (k >= RIVER ? rap * sstep(0.55, 0.6, yf) * (1 - sstep(0.7, 0.76, yf)) : 0), 0, 1);
-    case 'leeches': return clamp([0, 0.6, 1, 0.3, 0.2][k] * (1 - rocks) * warm * (0.5 + 0.5 * night), 0, 1);
+    case 'leeches': return clamp(FOOD_KIND.leeches[k] * (1 - rocks) * warm * (0.5 + 0.5 * night), 0, 1);
   }
   return 0.2;
 }

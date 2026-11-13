@@ -29,7 +29,8 @@ Object.assign(Engine, {
     if (panel === 'spawn') { for (const id of ['spTabs', 'spKind', 'spBiome', 'spSub']) { const el = document.getElementById(id), B = el && !el.hidden ? [...el.querySelectorAll('button')] : []; if (B.length) rows.push(B); }
       rows.head = rows.length; const L = all('#spList [data-id]'), per = document.getElementById('spList').classList.contains('grid') ? 2 : 1; for (let i = 0; i < L.length; i += per) rows.push(L.slice(i, i + per)); }
     else { for (const sel of ['#tkTabs button', '#tkBody .subtabs button']) { const B = all(sel); if (B.length) rows.push(B); }
-      rows.head = rows.length; for (const li of all('#tkBody [data-rig], #tkBody [data-gear], #tkBody [data-trap]')) rows.push([li]); const foot = all('#tkFoot:not([hidden]) button'); if (foot.length) rows.push(foot); }
+      rows.head = rows.length; for (const li of all('#tkBody [data-rig], #tkBody [data-gear], #tkBody [data-trap], #tkBack, #tkBody [data-pick], #tkBody [data-choose], #tkBody [data-end], #tkBody .tkbtns button')) {   // the builder too: its side-by-side buttons share a row
+        const par = li.parentElement, last = rows[rows.length - 1]; if (par && par.matches && par.matches('.rb-end, .rb-adds, .tkbtns') && rows.length > rows.head && last[0].parentElement === par) last.push(li); else rows.push([li]); } const foot = all('#tkFoot:not([hidden]) button'); if (foot.length) rows.push(foot); }
     return rows;
   },
   // outline what the keyboard is on (the panels rebuild their insides often, so this is re-applied after each move). A panel opens with it on the top row.

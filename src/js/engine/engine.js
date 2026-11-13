@@ -9,7 +9,9 @@ const Engine = {
 
   // one press of a game key (its original code), from the keyboard, a bound mouse button or wheel, or a touch button
   keyPress(code, e, card) {
-    if (card) { if ((code === 'KeyE' || code === 'KeyX') && !e.repeat) this.finishCatch(code === 'KeyE');   // the catch card is modal: keep or release first
+    if (card) {   // a fish landed and still on the line: Use unhooks it (one too big to lift is then kept or let go from where it lies)
+      if (code === 'KeyF' && !e.repeat) this.unhookFish();
+      if ((code === 'KeyE' || code === 'KeyX') && !e.repeat) this.finishCatch(code === 'KeyE');
       if (/^(Key[WASD]|Arrow(Up|Down|Left|Right))$/.test(code)) (this.cardKeys || (this.cardKeys = {}))[code] = true; return; }   // WASD turns the fish over (cardStep), without walking you off
     this.keys[code] = true;
     if (code === 'KeyV' && !e.repeat && this.boat) this.toggleBoatMode();                       // take the helm / leave it to move about the boat
@@ -63,19 +65,18 @@ const Engine = {
       this.precip = prog(PRECIP_VS, PRECIP_FS); this.precipN = n; const vb = this.vbo(d); this.precipVao = gl.createVertexArray();
       gl.bindVertexArray(this.precipVao); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 16, 0); gl.bindVertexArray(null);
     }
-    const tm = treeMeshes();
+    const tm = this.treeMesh = treeMeshes();   // (kept: birds read the tree tops from it)
     this.treeKinds = TREE_KINDS.map(k => ({ hi: this.meshBuffers(tm[k]), lo: this.meshBuffers(tm[k + 'L']) }));
     const wm = waterMeshes(); this.plantKinds = {};
     for (const k in wm) this.plantKinds[k] = { vbo: this.vbo(wm[k]), n: wm[k].length / VS };
     gl.vertexAttrib1f(12, 0); // per-instance bird roll is disabled on other meshes
     gl.vertexAttrib1f(6, 0); // terrain has no material attribute: generic surface
     gl.vertexAttrib1f(7, -1e4); gl.vertexAttrib1f(8, 0); gl.vertexAttrib2f(9, -1e4, 0); gl.vertexAttrib1f(10, 0); // not underwater unless a mesh says so
-    this.partVbo = gl.createBuffer(); this.partVao = gl.createVertexArray(); gl.bindVertexArray(this.partVao); gl.bindBuffer(gl.ARRAY_BUFFER, this.partVbo);
-    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 32, 0); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, 12);
-    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 32, 28); gl.bindVertexArray(null);
     this.maxPx = Math.min(256, gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE)[1]);
     this.loadSave();
     this.resize(); addEventListener('resize', () => this.resize());
+    addEventListener('pagehide', () => { try { this.saveGame(); } catch (e) { /* */ } });   // closing or reloading the page, or the phone putting it away
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { this.keys = {}; try { this.saveGame(); } catch (e) { /* */ } } });
     addEventListener('keydown', e => {
       if (e.code === 'Escape') { e.preventDefault(); if (!e.repeat) { if (this.pauseOpen && this.pausePage && this.pausePage !== 'main') this.pauseShow('main'); else this.togglePause(); } return; }   // in a settings page Esc goes back first
       if (this.pauseOpen) return;
@@ -145,6 +146,13 @@ const Engine = {
     }
     { const at = !TITLE && location.hash.match(/at=(-?[\d.]+),(-?[\d.]+)(?:,(-?[\d.]+))?/);   // #seed-123&at=x,y,heading: start exactly there
       if (at) { P.x = +at[1]; P.y = +at[2]; if (at[3]) P.a = +at[3]; } }
+    // Continue: where this island's save left you, at that hour of that day, in that weather (saveGame, save.js)
+    const st = RESUME && this.savedState && isFinite(this.savedState.x) && isFinite(this.savedState.y) ? this.savedState : null;
+    if (st) {
+      P.x = clamp(+st.x, -CONFIG.worldEdge, CONFIG.worldEdge); P.y = clamp(+st.y, -CONFIG.worldEdge, CONFIG.worldEdge); P.a = +st.a || 0; P.pitch = clamp(+st.pitch || 0, -1.4, 1.4);
+      if (typeof st.yf === 'number' && typeof st.tod === 'number') { ENV.setDate(st.yf + 1e-6, clamp(st.tod, 0, 0.9999) * 24); if (WEATHER[st.weather]) ENV.setWeather(st.weather); }
+    }
+    if (RESUME) try { history.replaceState(null, '', location.hash.replace(/&go(?=&|$)/, '')); } catch (e) { /* sandboxed: fine */ }   // drop the flag: a plain reload opens the start menu, as always
     if (TITLE) {   // the start menu's view: standing on the bank of a pond (else a lake), a canoe moored in front of you
       const pond = findWater(POND, 0, 0, 3500) || findWater(LAKE, 0, 0, 3500) || spot;
       if (pond) {
@@ -162,7 +170,18 @@ const Engine = {
     // start afloat, in the boat that suits the water: moored off the shore spot on a fresh spawn, or right here when
     // the address's at= (kept up to date while you play) has you over water, as after a reload from a boat
     sample(P.x, P.y);
-    const f = TITLE ? null : SW - hW(SE) > 0.5 ? { wx: P.x, wy: P.y } : spot && Math.hypot(P.x - spot.x, P.y - spot.y) < 1 ? spot : null;
+    const f = TITLE || st ? null : SW - hW(SE) > 0.5 ? { wx: P.x, wy: P.y } : spot && Math.hypot(P.x - spot.x, P.y - spot.y) < 1 ? spot : null;
+    if (st) {   // the boats you left about, and the one you were in
+      const place = q => { const D = q && BoatDB.byId[q.id]; if (!D || !isFinite(q.x) || !isFinite(q.y) || this.boatDepth(q.x, q.y) < D.hull.draft_m) return null;
+        sample(q.x, q.y); const b = { def: D, id: 'boat#' + (this.boatN = (this.boatN || 0) + 1), x: q.x, y: q.y, a: +q.a || 0, v: 0, kd: SK, wl: SW, z: SW, pitch: 0, roll: 0, yaw: 0 };
+        this.boats.push(b); Game.emit('boatSpawn', b);
+        if (Array.isArray(q.well) && this.fish) b.well = q.well.slice(0, 10).map((w, i) => { const si = FishDB.list.findIndex(F => F.id === w.s); if (si < 0 || !(w.cm > 0) || !(w.kg > 0)) return null;   // the fish that were in its cooler
+          const f = this.makeFish({ si, id: `well#${b.id}#${i}`, hx: q.x, hy: q.y, size: { cm: w.cm, kg: w.kg }, lead: -1, r: 0.5 }); f.hooked = 'card'; f.held = f.stored = true; f.meta = { logged: true }; this.fish.push(f); return f; }).filter(Boolean);
+        return b; };
+      for (const q of Array.isArray(st.boats) ? st.boats.slice(0, 7) : []) place(q);
+      const mine = place(st.boat); if (mine) { this.boardBoat(mine); P.a = +st.a || 0; P.pitch = clamp(+st.pitch || 0, -1.4, 1.4); }
+      sample(P.x, P.y);
+    }
     if (f) { const wi = waterInfo(f.wx, f.wy), b = this.moorBoat(this.boatFor(wi.kind), { wx: f.wx, wy: f.wy, kd: wi.kindId }); if (b) { (this.boated || (this.boated = new Set())).add(wi.id); this.boardBoat(b); } }
     if (/[#&]map(?=&|$)/.test(location.hash)) {   // rolled a new island from the map screen: open it again, and drop the flag so a plain reload doesn't
       const mz = parseFloat((location.hash.match(/[#&]mz=([\d.]+)/) || [])[1]); if (mz > 0) this.mapScale = clamp(mz, 1, 256);   // the zoom you had

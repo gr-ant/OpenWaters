@@ -4,6 +4,7 @@
   "name": "European plaice",
   "scientific": "Pleuronectes platessa",
   "description": "Right-eyed flatfish, brown above with bright orange spots and white below. Lies half-buried on sandy bottoms and plucks worms and small clams.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 20,

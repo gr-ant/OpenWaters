@@ -10,17 +10,17 @@
 //     Game.addPerchProvider('posts', (x, y, R, bird) => [ { kind: 'post', x, y, z, pose: 'stand', key: 'post:1' } ])
 //     Game.perchesNear(x, y, 60, ['tree', 'rock'])   -> spots
 //
-//  SPECIES: Game.registerBird(def) — see DEFAULTS below and the gull and pelican in birds/species.js for every field. Look (colours, proportions), flight (speed, wingbeat,
+//  SPECIES: Game.registerBird(def) — see DEFAULTS below and the gull and pelican in src/birds/*.json for every field. Look (colours, proportions), flight (speed, wingbeat,
 //  glide / flap bouts, turn rate, altitude, circling radius), habitat (flock size by water kind), landing preferences by
 //  perch kind, shyness, time on a perch, night roosting, voice. The mesh is built from the look with prebuilt wing poses.
 //     Game.birds (live list), Game.spawnBird('herring_gull', x, y, { state: 'fly' | 'float' }), Game.birdCalls = false to hush
 //     Game.on('birdLand' | 'birdTakeoff', (bird, spot) => {}), Game.on('birdDive', (bird, x, y) => {})
-//  Files: birds/birds.js (this: the model, voices, perches, species defaults, behaviour, drawing), birds/species.js (the
-//  built-in species), birds/game-api.js (the Game hooks).
+//  Files: birds/birds.js (this: the model, voices, perches, species defaults, behaviour, drawing), src/birds/*.json (the
+//  built-in species, one file each, read at boot), birds/game-api.js (the Game hooks).
 // ======================================================================
 const Birds = globalThis.Birds = (() => {
   const TAU = Math.PI * 2, rnd = Math.random, wrap = a => { a = (a + Math.PI) % TAU; return a < 0 ? a + Math.PI : a - Math.PI; };
-  const rr = r => r[0] + rnd() * (r[1] - r[0]), merge = (a, b) => { const o = { ...a }; for (const k in b || {}) o[k] = b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) ? merge(a[k] || {}, b[k]) : b[k]; return o; };
+  const rr = r => r[0] + rnd() * (r[1] - r[0]);
   const NF = 12, F_GLIDE = NF, F_SOAR = NF + 1, F_DIVE = NF + 2, F_SIT = NF + 3, F_STAND = NF + 4;
 
   // =================== the model: +x forward, +y left, z up, metres; built from a species' look ===================
@@ -103,7 +103,7 @@ const Birds = globalThis.Birds = (() => {
 
   // =================== voices (Web Audio, synthesized; audio starts after your first click or key) ===================
   let ac = null, lastCall = 0;
-  const wake = () => { try { if (!ac) { const A = globalThis.AudioContext || globalThis.webkitAudioContext; if (A) ac = new A(); } if (ac && ac.state !== 'running') ac.resume(); } catch (e) { /* no audio */ } };
+  const wake = () => { ac = Sounds.context || Sounds.wake(); };   // the game's one AudioContext (sound.js): started, resumed and put to sleep there
   addEventListener('pointerdown', wake, true); addEventListener('keydown', wake, true);
   // one call synthesizer, shaped by the species' voice numbers: a few notes (or now and then a longer series), each a swept,
   // raspy tone through a band-pass. voice: { pitch: [Hz, Hz], notes: [n, n], dur: [s, s], gap, rise (× at riseAt), fall (×),
@@ -161,7 +161,7 @@ const Birds = globalThis.Birds = (() => {
   }
   // per tree kind, the highest point in the model: a conifer or palm's tip; a broadleaf's top leaf clump in full leaf, its top twig when bare
   let TOPS = null;
-  const treeTops = () => { if (!TOPS) { const tm = treeMeshes(), top = (v, ok) => { let best = null; for (let i = 0; i < v.length; i += VS) if (ok(v[i + 9]) && (!best || v[i + 2] > best[2])) best = [v[i], v[i + 1], v[i + 2]]; return best; };
+  const treeTops = () => { if (!TOPS) { const tm = Engine.treeMesh || treeMeshes(), top = (v, ok) => { let best = null; for (let i = 0; i < v.length; i += VS) if (ok(v[i + 9]) && (!best || v[i + 2] > best[2])) best = [v[i], v[i + 1], v[i + 2]]; return best; };
       TOPS = TREE_KINDS.map(k => { const v = tm[k], ever = k === 'pine' || k === 'palm', leaf = top(v, () => true), bare = ever ? leaf : top(v, m => m < 16.5);
         if (leaf) leaf[2] -= ever ? 0.02 : 0.01; if (bare && bare !== leaf) bare[2] -= 0.005; return { leaf, bare }; }); }
     const full = (ENV.leaf ?? 1) > 0.9; return TOPS.map(t => full ? t.leaf : t.bare); };
@@ -266,7 +266,7 @@ const Birds = globalThis.Birds = (() => {
   };
   const species = {};
   function register(def) {
-    const sp = merge(DEFAULTS, def); sp.id = def.id; sp.poses = posesFor(sp.flight); sp.meshes = sp.poses.map(p => buildBird(sp.look, p)); sp.gpu = [];
+    const sp = deepMerge(DEFAULTS, def); sp.id = def.id; sp.poses = posesFor(sp.flight); sp.meshes = sp.poses.map(p => buildBird(sp.look, p)); sp.gpu = [];
     sp.flock = { x: 0, y: 0, lev: 0, ax: 0, ay: 0, at: 0 }; sp.want = 0;
     species[sp.id] = sp; return sp;
   }
@@ -286,7 +286,7 @@ const Birds = globalThis.Birds = (() => {
     },
     bodyZ(b, s, p) { return s.pose === 'float' ? s.water.lev + Engine.swellAt(p.x, p.y, s.water.kd) + b.sp.floatZ * b.sc : p.z + b.sp.look.legs.len * b.sc; },
     settle(b, s, quiet) {
-      if (b.group) setTimeout(() => this.disband(b), 4000);   // give the followers a moment to see where the leader came down
+      if (b.group) b.group.end = Engine.time + 4;   // give the followers a moment to see where the leader came down (school() disbands after)
       b.st = s.pose === 'float' ? 'float' : 'stand'; b.spot = s; b.v = b.vz = 0; b.lt = 0; b.roll = 0;
       b.stay = this.night() && b.sp.night === 'roost' ? 1e9 : rr(b.sp.stay) * (s.kind === 'boat' ? 0.5 : 1); b.callT = 4 + rnd() * 25;
       if (!quiet && s.pose === 'float') Game.ripple(b.x, b.y, 0.45);
@@ -309,9 +309,13 @@ const Birds = globalThis.Birds = (() => {
       }
       return null;
     },
-    census(sp) {   // how many of a species this place gets, by the water around you
+    waterSeen() {   // the kinds of water around you (world() alone: what Game.waterAt's kind and depth come from)
       const P = Engine.P, seen = new Set();
-      for (const r of [0, 20, 50, 120, 300]) for (let k = 0; k < (r ? 8 : 1); k++) { const a = k / 8 * TAU, w = Game.waterAt(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); if (w.depth > 0.3) seen.add(w.kind); }
+      for (const r of [0, 20, 50, 120, 300]) for (let k = 0; k < (r ? 8 : 1); k++) { const a = k / 8 * TAU, h = hW(world(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r)); if (WLEV - h > 0.3) seen.add(WATER[WK].key); }
+      return seen;
+    },
+    census(sp, seen = this.waterSeen()) {   // how many of a species this place gets, by the water around you
+      const P = Engine.P;
       if (sp.climates && !sp.climates.includes(CLIMATE.key)) return 0;
       let n = sp.habitat.any || 0; for (const k of seen) n = Math.max(n, sp.habitat[k] || 0);
       if (sp.colony && this.colonyNear(P)) n = Math.max(n, sp.colony);
@@ -327,9 +331,9 @@ const Birds = globalThis.Birds = (() => {
       fl.ax = P.x + (rnd() - 0.5) * 60; fl.ay = P.y + (rnd() - 0.5) * 60; fl.lev = Math.max(fl.lev, surfAt(P.x, P.y) - 5);
     },
     populate() {   // straight away (start, or after travelling): some already down, the rest circling
-      this.list.length = 0;
+      this.list.length = 0; const seen = this.waterSeen();
       for (const sp of Object.values(species)) {
-        sp.want = this.census(sp); this.anchor(sp); Object.assign(sp.flock, { x: sp.flock.ax, y: sp.flock.ay });
+        sp.want = this.census(sp, seen); this.anchor(sp); Object.assign(sp.flock, { x: sp.flock.ax, y: sp.flock.ay });
         for (let i = 0; i < sp.want; i++) {
           const b = this.make(sp, sp.flock.x + (rnd() - 0.5) * 60, sp.flock.y + (rnd() - 0.5) * 60, 'fly');
           if (i % 2 === 0) { const s = this.pickSpot(b); if (s && s.kind !== 'boat') { const p = Perches.at(s); b.x = p.x; b.y = p.y; this.settle(b, s, true); } }
@@ -339,7 +343,7 @@ const Birds = globalThis.Birds = (() => {
     // flocking, the way fish school: a leader flies a wide sweep, followers hold slots around and behind it in its frame
     school(sp, mine) {
       const Fk = sp.flocking, lead = mine.find(b => b.group);
-      if (lead) { if (lead.st !== 'fly' || (lead.group.t -= 2.5) <= 0) this.disband(lead); return; }
+      if (lead) { const g = lead.group; if (g.end ? Engine.time >= g.end : lead.st !== 'fly' || (g.t -= 2.5) <= 0) this.disband(lead); return; }
       if (!Fk || rnd() > 2.5 / Fk.every) return;
       const flying = mine.filter(b => b.st === 'fly' && !b.leader); if (flying.length < 2) return;
       const L = flying[rnd() * flying.length | 0], fol = flying.filter(b => b !== L).sort((p, q) => Math.hypot(p.x - L.x, p.y - L.y) - Math.hypot(q.x - L.x, q.y - L.y)).slice(0, Math.round(rr(Fk.size)) - 1);
@@ -364,9 +368,9 @@ const Birds = globalThis.Birds = (() => {
       if (this.tick <= 0) {   // every couple of seconds: travel, census, flock anchors, arrivals and departures
         this.tick = 2.5;
         if (!this.lastP || Math.hypot(P.x - this.lastP[0], P.y - this.lastP[1]) > 300) this.populate();
-        this.lastP = [P.x, P.y];
+        this.lastP = [P.x, P.y]; const seen = this.waterSeen();
         for (const sp of Object.values(species)) {
-          sp.want = this.census(sp); const fl = sp.flock;
+          sp.want = this.census(sp, seen); const fl = sp.flock;
           if ((fl.at -= 2.5) <= 0) { this.anchor(sp); fl.at = 8 + rnd() * 6; }
           const mine = this.list.filter(b => b.sp === sp && !b.spawned), flying = mine.filter(b => b.st === 'fly');
           this.school(sp, mine);

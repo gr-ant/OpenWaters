@@ -4,6 +4,7 @@
   "name": "Yellowtail snapper",
   "scientific": "Ocyurus chrysurus",
   "description": "Sleek reef snapper with a bright yellow stripe running into a deeply forked yellow tail. Cruises above the reef in schools.",
+  "handling": { "lip": true, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 25,

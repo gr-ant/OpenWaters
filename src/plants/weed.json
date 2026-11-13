@@ -1,0 +1,30 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "weed",
+  "name": "Weed bed",
+  "description": "Wavy underwater weed in any water deeper than 0.8 m; thins out in winter.",
+  "cover": ["weeds"],
+  "place": [
+    {
+      "order": 181,
+      "depth": [0.8, null],
+      "chance": {
+        "width": { "sea": 0.08, "lake": 0.16, "pond": 0.3, "river": 0.12, "creek": 0.08 }
+      }
+    }
+  ],
+  "size": { "depth": [0.35, 0.45], "max": 2.6 },
+  "lift": -0.1,
+  "stride": 32,
+  "sway": 2.4,
+  "view": 170,
+  "grow": 0.35,
+  "mesh": {
+    "builder": "ribbons",
+    "count": 7,
+    "width": 0.022,
+    "color": [0.12, 0.36, 0.12],
+    "seed": 41,
+    "shade": { "by": "height", "base": 0.64, "range": 0.4 }
+  }
+}

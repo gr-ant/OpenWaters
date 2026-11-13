@@ -4,6 +4,7 @@
   "name": "Atlantic mackerel",
   "scientific": "Scomber scombrus",
   "description": "Fast, tiger-striped sea fish that travels in big schools through open water, chasing shrimp and small fish.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 20,

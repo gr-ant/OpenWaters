@@ -1,0 +1,26 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "rockweed",
+  "name": "Rockweed",
+  "description": "Olive-brown rockweed on the tide-line rocks.",
+  "cover": ["weeds"],
+  "place": [
+    {
+      "order": 20,
+      "water": ["sea"],
+      "depth": [-0.5, 1.2],
+      "chance": { "width": 0.3, "times": ["rocky"] }
+    }
+  ],
+  "size": { "min": 0.7, "rand": 0.6 },
+  "lift": -0.03,
+  "stride": 32,
+  "sway": 0.5,
+  "view": 120,
+  "mesh": {
+    "builder": "rockweed",
+    "fronds": 9,
+    "color": [0.36, 0.32, 0.12],
+    "shade": { "by": "height", "base": 0.7, "range": 0.3, "from": -0.1 }
+  }
+}

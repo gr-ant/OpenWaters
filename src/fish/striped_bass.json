@@ -4,6 +4,7 @@
   "name": "Striped bass",
   "scientific": "Morone saxatilis",
   "description": "Silvery coastal bass with seven or eight dark stripes along its sides. Roams surf, rocks and river mouths in schools, chasing herring and crabs.",
+  "handling": { "lip": true, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 35,

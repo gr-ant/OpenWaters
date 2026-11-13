@@ -1,0 +1,34 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "reed",
+  "name": "Reeds",
+  "description": "Clumps of reeds and cattails along the wet margin of lakes, ponds and rivers (not the dry bank).",
+  "cover": ["reeds"],
+  "place": [
+    {
+      "order": 150,
+      "water": ["lake", "pond", "river", "creek"],
+      "depth": [-0.12, 0.55],
+      "chance": {
+        "width": { "lake": 0.3, "pond": 0.55, "river": 0.2, "creek": 0.18 },
+        "times": [
+          { "plus": 0.5, "of": "moist" }
+        ]
+      }
+    }
+  ],
+  "size": { "min": 1.4, "rand": 1.1 },
+  "stride": 24,
+  "sway": 1.6,
+  "view": 260,
+  "dry": 0.85,
+  "mesh": {
+    "builder": "reeds",
+    "blades": 10,
+    "color": [0.3, 0.47, 0.17],
+    "cattails": 3,
+    "stalk": [0.36, 0.44, 0.2],
+    "head": [0.34, 0.2, 0.11],
+    "shade": { "by": "height", "base": 0.64, "range": 0.4 }
+  }
+}

@@ -9,15 +9,14 @@ Object.assign(Engine, {
   tackleTab: 'rigs',
   tackleRender() {
     const body = document.getElementById('tkBody'), tabs = document.getElementById('tkTabs'); if (!body) return;
-    const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
     const tabOn = this.tackleTab === 'build' ? 'rigs' : this.tackleTab, foot = document.getElementById('tkFoot');
     tabs.innerHTML = [['rigs', 'Rigs', 'hook'], ['gear', 'Gear', 'gear'], ['traps', 'Nets', 'net']].map(([t, l, ic]) => `<button data-tab="${t}" class="${t === tabOn ? 'on' : ''}">${uiIcon('ui.' + ic)}${l}</button>`).join('');
     const A = this.ang, T = this.tackleTab; foot.innerHTML = ''; foot.hidden = true;
     if (T === 'rigs') {
       // one card per rig: picture, name, what's on the end, line strength and cast; the tied-on one is highlighted
-      const cat = this.rigCat || 'all', rigs = TackleDB.ofType('rig').filter(r => { if (cat === 'all') return true; const S = rigStats(r); return !S.errors.length && rigWaters(r, S).includes(cat); });
+      const cat = this.rigCat || 'all', fk = FishDB.list.map(stamp).join('.'), rigs = TackleDB.ofType('rig').map(r => [r, rigStats(r)]).filter(([r, S]) => cat === 'all' || (!S.errors.length && rigWaters(r, S, fk).includes(cat)));
       let h = `<div class="subtabs">${catChips(cat, 'data-cat')}</div><ul class="cards">`;
-      for (const r of rigs) { const S = rigStats(r), bad = S.errors.length, on = A && A.rigId === r.id;
+      for (const [r, S] of rigs) { const bad = S.errors.length, on = A && A.rigId === r.id;
         h += `<li data-rig="${esc(r.id)}" class="card${on ? ' on' : ''}${bad ? ' bad' : ''}">${rigIconHTML(S, r)}<span class="tx"><b>${esc(r.name)}</b>`
           + `<small>${bad ? '⚠' : `${S.line.strength_lb} lb · ${S.castMax.toFixed(0)} m`}</small>${on ? '<em class="badge">Equipped</em>' : ''}</span>`
           + `${r._custom ? `<i data-forget="${esc(r.id)}" title="Remove">✕</i>` : ''}<span class="chev">${uiIcon('ui.chevron')}</span></li>`; }
@@ -53,7 +52,7 @@ Object.assign(Engine, {
       h += `</div><div class="rb-end" role="radiogroup" aria-label="The end of the line"><button data-end="bait" aria-checked="${!lureEnd}" role="radio">Hook &amp; bait</button><button data-end="lure" aria-checked="${lureEnd}" role="radio">Lure</button></div>`;
       if (adds.length) h += `<div class="rb-adds">${adds.map(slot => `<button data-pick="${slot}">+ ${RIG_PARTS[slot].label}</button>`).join('')}</div>`;
       h += '<div class="tkform">';
-      if (P.float) { const dv = B.float_depth_m ?? (TackleDB.byId[P.float] || {}).depth_m ?? 1; h += `<label class="rb-depth">Float depth <output id="tkDepthV">${(+dv).toFixed(1)} m</output><input id="tkDepth" type="range" min="0.2" max="8" step="0.1" value="${dv}"></label>`; }   // how far below the float the bait hangs
+      if (P.float) { const dv = B.float_depth_m ?? (TackleDB.byId[P.float] || {}).depth_m ?? 1; h += `<label class="rb-depth">Float depth <output id="tkDepthV">${(+dv).toFixed(1)} m</output><input id="tkDepth" type="range" min="0.2" max="${Math.max(8, Math.ceil(dv))}" step="0.1" value="${dv}"></label>`; }   // how far below the float the bait hangs
       h += `<label class="rb-name">Name<input id="tkName" type="text" maxlength="40" value="${esc(B.nameSet ? B.name : rigAutoName(P))}"></label></div>`;   // named from its parts until you type your own
       if (S.errors.length) h += `<div class="tkstats bad">${S.errors.map(esc).join('<br>')}</div>`;
       else { h += `<div class="chips"><span>🎯 ${S.castMax.toFixed(0)} m</span><span>💪 ${S.strengthKg.toFixed(1)} kg</span><span>🧵 ${S.capM} m</span><span>⚖ ${S.castG.toFixed(0)} g</span></div>`;
@@ -94,27 +93,27 @@ Object.assign(Engine, {
       const r = e.target.closest('[data-rig]'); if (r) { this.equipRig(r.dataset.rig); this.tackleRender(); return; }
       const g = e.target.closest('[data-gear]'); if (g) { const pre = document.getElementById('tkJson'); pre.textContent = TackleDB.json(g.dataset.gear); pre.hidden = false; pre.scrollIntoView({ block: 'nearest' }); return; }
       if (e.target.id === 'tkUse' || e.target.id === 'tkExport') {
-        const B = this.tkBuild, nm = ((B.nameSet && B.name) || rigAutoName(B.parts)).trim(), id = 'my_' + (nm.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'rig');
-        const rig = { schema: TACKLE_SCHEMA, id, type: 'rig', name: nm, description: 'Built in the tackle box', parts: Object.fromEntries(Object.entries(B.parts).filter(([, v]) => v)), drag: B.drag };
+        const B = this.tkBuild, nm = ((B.nameSet && B.name) || rigAutoName(B.parts)).trim(), base = 'my_' + (nm.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'rig');
+        const rig = { schema: TACKLE_SCHEMA, id: base, type: 'rig', name: nm, description: 'Built in the tackle box', parts: Object.fromEntries(Object.entries(B.parts).filter(([, v]) => v)), drag: B.drag };
         if (B.parts.float && B.float_depth_m) rig.float_depth_m = B.float_depth_m;
+        const same = d => JSON.stringify(Object.entries(d.parts).filter(([, v]) => v).sort()) === JSON.stringify(Object.entries(rig.parts).sort()) && (d.float_depth_m ?? null) === (rig.float_depth_m ?? null);
+        for (let n = 2; TackleDB.byId[rig.id] && !same(TackleDB.byId[rig.id]); n++) rig.id = `${base}_${n}`;   // short auto-names repeat: a different rig gets its own id, not the old one's
+        const id = rig.id;
         if (e.target.id === 'tkUse') { const res = TackleDB.register(rig, { save: true }); if (res.def) { const was = this.ang.phase; if (was !== 'stowed' && was !== 'ready') this.say('Saved · reel in to tie it on', 2.5); else this.equipRig(id); this.tackleTab = 'rigs'; this.tackleRender(); } else this.say(res.errors[0], 3); }
         else { // export: copied to the clipboard (a hosted page can't start a download); a download too, where the browser allows it
           const text = JSON.stringify(rig, null, 2);
           (async () => { let copied = false; try { await navigator.clipboard.writeText(text); copied = true; } catch (er) { /* no clipboard here */ }
-            try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' })); a.download = id + '.json'; document.body.appendChild(a); a.click(); a.remove(); } catch (er) { /* blocked */ }
+            try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' })); a.download = id + '.json'; document.body.appendChild(a); a.click(); a.remove(); const u = a.href; setTimeout(() => URL.revokeObjectURL(u), 10000); } catch (er) { /* blocked */ }
             this.say(copied ? `${id}.json copied to the clipboard` : 'Could not copy or download here', 2.5); })(); }
       }
     });
     body.addEventListener('input', e => { if (e.target.id === 'tkDepth') { const o = document.getElementById('tkDepthV'); if (o) o.textContent = (+e.target.value).toFixed(1) + ' m'; } });   // the slider's reading as you drag
     body.addEventListener('change', async e => {
       const t = e.target;
-      if (t.dataset && t.dataset.slot) { this.tkBuild.parts[t.dataset.slot] = t.value || undefined; if (t.dataset.slot === 'lure' && t.value) { this.tkBuild.parts.hook = this.tkBuild.parts.bait = undefined; } if ((t.dataset.slot === 'bait' || t.dataset.slot === 'hook') && t.value) this.tkBuild.parts.lure = undefined; if (t.dataset.slot === 'float') this.tkBuild.float_depth_m = null; this.tackleRender(); }
-      else if (t.id === 'tkDepth') { this.tkBuild.float_depth_m = clamp(+t.value || 1, 0.1, 30); this.tackleRender(); }
+      if (t.id === 'tkDepth') { this.tkBuild.float_depth_m = clamp(+t.value || 1, 0.1, 30); this.tackleRender(); }
       else if (t.id === 'tkName') { this.tkBuild.name = t.value; this.tkBuild.nameSet = !!t.value.trim(); }
       else if (t.id === 'tkFile') { const msgs = []; for (const file of t.files) { try { for (const r of await Game.loadTackle(JSON.parse(await file.text()), { save: true })) msgs.push(r.def ? `✓ ${r.def.name}` : `✗ ${r.errors[0]}`); } catch (er) { msgs.push(`✗ ${file.name}: ${er.message}`); } } this.say(msgs.join('   '), 6); this.tackleRender(); }
     });
-    document.getElementById('ccKeep').onclick = () => this.finishCatch(true);
-    document.getElementById('ccRel').onclick = () => this.finishCatch(false);
     this.ov.addEventListener('mousedown', e => { if (e.button === 0 && document.pointerLockElement === this.ov && this.rodInHand()) this.keys.Mouse0 = true; });
     addEventListener('mouseup', e => { if (e.button === 0) this.keys.Mouse0 = false; });
   },

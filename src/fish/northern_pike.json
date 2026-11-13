@@ -4,6 +4,7 @@
   "name": "Northern pike",
   "scientific": "Esox lucius",
   "description": "Long, toothy ambush predator. Hangs motionless at weed edges, then strikes in a burst. Few, big, solitary.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 35,

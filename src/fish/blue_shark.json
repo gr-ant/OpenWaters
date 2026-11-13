@@ -4,6 +4,7 @@
   "name": "Blue shark",
   "scientific": "Prionace glauca",
   "description": "Slender, deep-blue open-ocean shark with very long pectoral fins and a pointed snout. Cruises offshore, following schools of herring and squid.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 180,

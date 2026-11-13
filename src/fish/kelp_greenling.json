@@ -4,6 +4,7 @@
   "name": "Kelp greenling",
   "scientific": "Hexagrammos decagrammus",
   "description": "Slender, spotted greenling of Pacific kelp forests. Males are blue-spotted grey, females golden-brown with bright orange-brown spots. Darts among the stipes after crabs, shrimp and small fish.",
+  "handling": { "lip": true, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 15,

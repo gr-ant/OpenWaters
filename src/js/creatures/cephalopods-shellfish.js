@@ -20,9 +20,9 @@ const SHELL_SHAPES = { clam: { height: 0.82, width: 0.5 }, oyster: { height: 0.6
 const V3 = {
   add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
   mul: (a, s) => [a[0] * s, a[1] * s, a[2] * s], dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
-  lerp: (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t],
+  lerp: lerp3,
 };
-const smst = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const smst = sstep;
 const TAU = 6.283185;
 
 // Colours: same pattern layers as fish. t = 0 front .. 1 rear (or along a shell), v = -1 underside .. 1 top, u = around.
@@ -30,23 +30,17 @@ function makePainter(B) {
   const C = {}; for (const k in FISH_DEFAULTS.body.colors) C[k] = hexRGB(B.colors[k] || FISH_DEFAULTS.body.colors[k]);
   const pats = (B.pattern || []).map(p => Object.assign({ alpha: 1, region: 'upper_flank' }, p, { rgb: hexRGB(p.color || '#000000') }));
   const NR = 18, NS = 16, sm = smst;
-  const soft = (r, v) => r === 'upper' ? sm(0.08, 0.22, v) : r === 'flank' ? sm(-0.47, -0.33, v) * (1 - sm(0.68, 0.82, v)) : r === 'lower' ? 1 - sm(-0.27, -0.13, v) : r === 'all' ? 1 : sm(-0.47, -0.33, v);
-  const spotCell = (p, pi, ci, cj) => { if (ci < 0 || ci >= NR) return false; cj = ((cj % NS) + NS) % NS; const s = Math.max(1, Math.round(p.size || 1)), side = Math.min(cj, NS - 1 - cj); return hash2(Math.floor(ci / s), Math.floor(side / s) + (cj < NS / 2 ? 0 : 50), 31 + pi) < (p.density ?? 0.3); };
-  const paint = (t, v, u) => {
+  const spotCell = (p, pi, ci, cj) => { if (ci < 0 || ci >= NR) return false; cj = ((cj % NS) + NS) % NS; return patSpot(p, pi, ci, cj); };
+  const paint = (t, v, u) => {   // the fish's pattern layers (fish.js) without its eyed-side and spot-shape tweaks
     t = clamp(t, 0, 1); v = clamp(v, -1, 1); u = ((u % 1) + 1) % 1;
-    const fi = t * NR, fj = u * NS, sideC = Math.min(fj, NS - fj) - 0.5;
-    let c = v >= 0 ? V3.lerp(C.flank, C.back, sm(0.1, 0.8, v)) : V3.lerp(C.flank, C.belly, sm(-0.05, -0.6, v));
+    const fi = t * NR, fj = u * NS;
+    let c = patBase(C, v);
     pats.forEach((p, pi) => {
-      const from = p.from ?? 0, to = p.to ?? 1, w = soft(p.region, v) * (from <= 0 ? 1 : sm(from - 0.015, from + 0.015, t)) * (to >= 1 ? 1 : 1 - sm(to - 0.015, to + 0.015, t));
+      const from = p.from ?? 0, to = p.to ?? 1, w = patRegion(p.region, v) * (from <= 0 ? 1 : sm(from - 0.015, from + 0.015, t)) * (to >= 1 ? 1 : 1 - sm(to - 0.015, to + 0.015, t));
       if (w <= 0) return;
       let k = 0;
       if (p.type === 'spots') { for (let ci = Math.floor(fi) - 1; ci <= Math.floor(fi) + 1; ci++) for (let cj = Math.floor(fj) - 1; cj <= Math.floor(fj) + 1; cj++) if (spotCell(p, pi, ci, cj)) k = Math.max(k, 1 - sm(0.47, 0.67, Math.hypot(fi - ci - 0.5, fj - cj - 0.5))); }
-      else if (p.type === 'bars') { const bw = p.width ?? 0.4, f = (t + (p.wavy || 0) * 0.04 * Math.sin(v * 9 + u * 20)) * (p.count || 6), dd = Math.abs(((f - bw / 2) % 1 + 1.5) % 1 - 0.5); k = bw >= 1 ? 1 : 1 - sm(bw / 2 - 0.06, bw / 2 + 0.06, dd); }
-      else if (p.type === 'stripe') { const sw = p.width ?? 0.15; k = 1 - sm(sw - 0.05, sw + 0.05, Math.abs(v - (p.v ?? 0))); }
-      else if (p.type === 'mottled') { const th0 = 0.3 - (p.amount ?? 0.4) * 0.6; k = sm(th0 - 0.05, th0 + 0.05, nPat(t * (p.scale || 6), sideC / NS * (p.scale || 6) * 0.7 + pi * 3)); }
-      else if (p.type === 'lateral_line') k = 1 - sm(0.06, 0.1, Math.abs(v - (p.v ?? 0)));
-      else if (p.type === 'spot') { const sz = p.size ?? 0.06; k = 1 - sm(sz * 0.75, sz * 1.1, Math.hypot(t - (p.at ?? 0.25), (v - (p.v ?? 0.3)) * 0.5)); }
-      else if (p.type === 'scales') k = 0.5 * (0.5 + 0.5 * Math.sin(Math.PI * fi) * Math.sin(Math.PI * fj));
+      else k = patK(p, pi, t, v, fi, fj, v * 9 + u * 20);
       if (k > 0) c = V3.lerp(c, p.rgb, k * w * p.alpha);
     });
     return c;
@@ -140,7 +134,7 @@ const PLAN_BUILD = {
     const sk = (p, v, u) => paint(0.5 - p[0], v, u);
     surf(M, (t, a) => { const r = mr(t), c = Math.cos(a * TAU); return [xm0 - t * ml, Math.sin(a * TAU) * Rw * r, (c > 0 ? c : c * 0.7) * R * r]; }, 36, 26, (t, a, p) => sk(p, Math.cos(a * TAU), a));
     const fw = clamp(Pp.fin_width, 0.01, 0.15);
-    for (const s of [1, -1]) surf(M, (t, a) => { const tt = 0.04 + 0.96 * t; return [xm0 - tt * ml + a * fw * 0.3 * smst(0.85, 1, t) * 0, s * (mr(tt) * Rw * 0.96 + a * fw * (0.6 + 0.4 * Math.sin(Math.PI * Math.min(1, t * 1.1)))), -R * 0.12]; },
+    for (const s of [1, -1]) surf(M, (t, a) => { const tt = 0.04 + 0.96 * t; return [xm0 - tt * ml, s * (mr(tt) * Rw * 0.96 + a * fw * (0.6 + 0.4 * Math.sin(Math.PI * Math.min(1, t * 1.1)))), -R * 0.12]; },
       30, 3, (t, a) => V3.lerp(C.fins, C.flank, 0.3 * (1 - a)), (t, a) => 30 + 0.98 * a, { wrap: false });
     ellip(M, [xm0 + hl * 0.35, 0, -R * 0.05], null, [hl * 0.85, Rw * 0.6, R * 0.75], 12, 18, (t, a, p) => sk(p, ellV(t, a), a));
     eyePair(M, C, [xm0 + hl * 0.45, Rw * 0.5, R * 0.32], R * (0.2 + 0.2 * Pp.eye), true);
@@ -183,7 +177,7 @@ const PLAN_BUILD = {
   // flippers (seals, sea lions), a round paddle (manatees) or a tail with webbed feet (otters). Belly down, nose at +x.
   pinniped(D, B, Pp, M, C, paint) {
     const R = B.height / 2, Rw = B.width / 2, sn = clamp(Pp.snout, 0, 1), neck = clamp(Pp.neck, 0, 0.6), rear = Pp.rear;
-    const tailL = rear === 'tail' ? clamp(Pp.tail, 0.1, 0.45) : rear === 'paddle' ? 0.17 : 0.13, x0 = 0.5, x1 = -0.5 + tailL, bl = x0 - x1, X = t => x0 - t * bl;
+    const tailL = rear === 'tail' ? clamp(Pp.tail, 0.1, 0.45) : rear === 'flat' ? clamp(Pp.tail || 0.27, 0.15, 0.38) : rear === 'paddle' ? 0.17 : 0.13, x0 = 0.5, x1 = -0.5 + tailL, bl = x0 - x1, X = t => x0 - t * bl;
     const hd = 0.42 + 0.12 * (1 - sn), pts = [0.16, hd, (hd + 0.82) / 2 - 0.45 * neck, 0.82, 1, 0.94, 0.7, 0.42, 0.22];   // snout, head, neck (none = smooth spindle), shoulders, barrel, hips, rump
     const prof = t => { const n = pts.length - 1, f = clamp(t, 0, 1) * n, i = Math.min(n - 1, Math.floor(f)), u = f - i, w = (1 - Math.cos(Math.PI * u)) / 2; return (pts[i] + (pts[i + 1] - pts[i]) * w) * Math.sqrt(smst(0, 0.05, t)) * Math.sqrt(smst(1, 0.96, t)); };
     const sk = (t, v, u) => paint(t, v, u);
@@ -201,6 +195,11 @@ const PLAN_BUILD = {
     // the back end
     const xr = X(0.985);
     if (rear === 'paddle') ellip(M, [xr - tailL * 0.48, 0, 0], null, [tailL * 0.55, Rw * 1.25, 0.012 + R * 0.08], 12, 14, () => V3.lerp(C.fins, C.back, 0.3));
+    else if (rear === 'flat') {   // a beaver's: a long flat oval, much longer than it is wide and narrower than the body, bare and scaly, on a short thick root; and webbed hind feet
+      const tw = Math.min(Rw * 0.7, tailL * 0.3), dark = C.fins, scale = (t, a) => V3.mul(dark, 0.86 + 0.28 * (0.5 + 0.5 * Math.sin(t * 46) * Math.sin(a * TAU * 7)));   // a cross-hatch of scales
+      tube(M, t => [xr + 0.05 - t * (tailL * 0.3 + 0.05), 0, -R * 0.08 * t], t => R * (0.42 * (1 - t) + 0.1) + 0.004, t => Rw * (0.5 * (1 - t)) + tw * 0.6 * t + 0.004, 8, 10, (t, a) => V3.lerp(sk(1, Math.cos(a * TAU), a), dark, smst(0.35, 1, t)));
+      ellip(M, [xr - tailL * 0.56, 0, -R * 0.1], null, [tailL * 0.46, tw, 0.007 + R * 0.035], 14, 16, scale);
+      for (const sd of [1, -1]) ellip(M, [X(0.9) - 0.035, sd * Rw * 0.62, -R * 0.3], [norm3([1, sd * 0.35, 0]), norm3([-sd * 0.35, 1, 0]), [0, 0, 1]], [0.06, 0.036, 0.008], 8, 8, () => dark); }
     else if (rear === 'tail') { tube(M, t => [xr + 0.06 - t * (tailL + 0.06), 0, R * 0.05 * (1 - t)], t => R * (0.4 * (1 - t) ** 1.5 + 0.06) + 0.004, null, 10, 8, (t, a) => sk(1, Math.cos(a * TAU), a));
       for (const sd of [1, -1]) ellip(M, [X(0.9) - 0.03, sd * Rw * 0.55, -R * 0.25], null, [0.05, 0.028, 0.008], 8, 8, () => C.fins); }
     else for (const sd of [1, -1]) ellip(M, [xr - tailL * 0.5, sd * Rw * 0.22, -R * 0.05], [norm3([1, sd * 0.25, 0]), norm3([-sd * 0.25, 1, 0]), [0, 0, 1]], [tailL * 0.55, Rw * 0.42, 0.008 + R * 0.05], 10, 10, () => C.fins);
@@ -211,7 +210,7 @@ const PLAN_BUILD = {
     const sl = clamp(Pp.shell, 0.5, 0.85), R = B.height / 2, Rw = Math.min(0.2, B.width / 2), xs0 = 0.5 - (1 - sl) * 0.6, xc = xs0 - sl / 2;
     D._swim = 6;
     const sc = (t, a) => { const v = Math.cos(a * TAU), g = Pp.scutes > 0 ? 0.8 + 0.2 * smst(0.35, 0.05, Math.min(Math.abs(Math.sin(t * 5 * Math.PI)), Math.abs(Math.sin(a * 8 * Math.PI)))) : 1; return V3.mul(paint(t, v, a), g); };
-    ellip(M, [xc, 0, 0], null, [sl / 2, Rw, R * (0.6 + 0.6 * Pp.dome)], 16, 22, (t, a) => sc(t, a), null, (t, a) => Math.cos(a * TAU) < 0 ? 1 : 1);
+    ellip(M, [xc, 0, 0], null, [sl / 2, Rw, R * (0.6 + 0.6 * Pp.dome)], 16, 22, (t, a) => sc(t, a));
     ellip(M, [xc, 0, -R * 0.12], null, [sl / 2 * 0.94, Rw * 0.92, R * 0.42], 10, 16, () => C.belly);
     // head and neck
     const hr = 0.045 + 0.04 * Pp.head, hx = xs0 + hr * 1.2;

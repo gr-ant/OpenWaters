@@ -2,7 +2,7 @@
 // Engine: item meshes and icons framing, pickups in reach and the use action (F).
 Object.assign(Engine, {
   // ---- meshes, items, pickups ----
-  instMesh(data) { const gl = this.gl, ib = gl.createBuffer(), vbo = this.vbo(data); return { vao: this.litVao(vbo, VB, ib), ib, vbo, n: data.length / VS }; },
+  instMesh(data, istride) { const gl = this.gl, ib = gl.createBuffer(), vbo = this.vbo(data); return { vao: this.litVao(vbo, VB, ib, istride), ib, vbo, n: data.length / VS }; },   // istride: bytes per instance (default 24)
   itemMesh(id) { return this.itemMeshes[id] || (ITEMS[id] && ITEMS[id].mesh ? (this.itemMeshes[id] = this.instMesh(ITEMS[id].mesh)) : null); },
   autoIconView(it) { // frame the item's mesh: target its bounding-box centre, back off to fit
     const v = it.mesh; let lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];

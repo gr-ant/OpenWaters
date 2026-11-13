@@ -40,7 +40,7 @@ const ENV = {
     this.yf = ((yf % 1) + 1) % 1; const h = hour ?? todNow() * 24;
     this.hours = Math.floor(this.yf * this.yearDays) * 24 + h; this.day = this.hours / 24; this.yf = (this.day / this.yearDays) % 1;
     if (hour !== undefined) try { Engine.tod = hour / 24; } catch (e) { /* not started yet */ }
-    this.block = -1; this.settle = true; this.wet = 0.2;
+    this.block = -1; this.settle = true; this.wet = 0.2; this.pHist.length = 0; this.forced = 0;   // (the clock may have gone back: old pressure samples and a forced weather would be from the future)
     this.snowCover = CLIMATE.key === 'tropical' ? 0 : CLIMATE.key === 'arctic' ? (this.airMeanAt(this.yf - 0.03) < 1 ? 1 : 0.15) : this.yf > 0.78 || this.yf < 0.04 ? 0.8 : 0;
   },
   setWeather(kind) { if (!WEATHER[kind]) return; this.kind = this.next = kind; this.settle = true; this.forced = this.hours + 6; },

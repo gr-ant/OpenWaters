@@ -4,6 +4,7 @@
   "name": "Common periwinkle",
   "scientific": "Littorina littorea",
   "description": "Dark, ridged sea snail grazing algae in dense crowds on intertidal rocks and weed, clamping shut against the sun and the tide. Length is shell height.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 1.5,

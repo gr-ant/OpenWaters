@@ -32,7 +32,7 @@ Object.assign(Engine, {
     for (const A of rods) { const L = A.out && A.lure; if (L && L.kd >= 0 && !L.land && Math.hypot(L.x - P.x, L.y - P.y) > 24) centres.push([L.x, L.y, 40]); }
     const far = (x, y) => Math.min(...centres.map(([cx, cy, r]) => Math.hypot(x - cx, y - cy) - r));   // < 0 inside a circle
     if (this.fishRev !== FishDB.revision) { this.fishCells.clear(); this.fishRev = FishDB.revision; }
-    for (const [k, c] of this.fishCells) if (far((c.cx + 0.5) * cs, (c.cy + 0.5) * cs) > 24 && !c.fish.some(f => rods.some(A => f === A.fish))) this.fishCells.delete(k);
+    for (const [k, c] of this.fishCells) if (far((c.cx + 0.5) * cs, (c.cy + 0.5) * cs) > 24 && !c.fish.some(f => f.held || rods.some(A => f === A.fish))) this.fishCells.delete(k);
     const want = [], seen = new Set();
     for (const [x0, y0, r] of centres) { const ccx = Math.floor(x0 / cs), ccy = Math.floor(y0 / cs), rc = Math.ceil(r / cs);
       for (let dy = -rc; dy <= rc; dy++) for (let dx = -rc; dx <= rc; dx++) { const cx = ccx + dx, cy = ccy + dy, k = cx + ',' + cy, d = far((cx + 0.5) * cs, (cy + 0.5) * cs);

@@ -4,6 +4,7 @@
   "name": "West Indian manatee",
   "scientific": "Trichechus manatus",
   "description": "Slow, gentle grey 'sea cow' of warm shallows and river mouths. Grazes seagrass and weeds, drifts up for a breath every few minutes, and pushes along with a big round paddle tail.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 250,

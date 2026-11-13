@@ -34,7 +34,9 @@ Object.assign(Engine, {
       A.cardYaw = (A.cardYaw || 0) + (e.clientX - D.x) * 0.012; A.cardTilt = clamp((A.cardTilt || 0) - (e.clientY - D.y) * 0.01, -1.4, 1.4); D.x = e.clientX; D.y = e.clientY; });
     for (const ev of ['pointerup', 'pointercancel']) ov.addEventListener(ev, e => { if (this.cardDrag && this.cardDrag.id === e.pointerId) this.cardDrag = null; });
     ov.addEventListener('pointerdown', e => {
-      if (this.pauseOpen || (this.ang && this.ang.phase === 'card')) return;
+      if (this.pauseOpen) return;
+      if (this.ang && this.ang.phase === 'card') { if (e.pointerType !== 'mouse') { const x = e.clientX, y = e.clientY, lt = this.lastTap, dbl = !!lt && e.timeStamp - lt.t < CONFIG.doubleTapMs && Math.hypot(x - lt.x, y - lt.y) < 48; this.lastTap = null;
+          this.tapDn = { id: e.pointerId, x, y, t: e.timeStamp, dbl, tgt: dbl && this.tapTarget ? this.tapTarget(x, y) : null }; } return; }
       const x = e.clientX, y = e.clientY;
       if (e.pointerType === 'mouse') {
         if (e.button === 0 && this.showMap && !this.menu) { this.mapDrag = { x, y, moved: 0 }; return; }   // drag the big map
@@ -48,8 +50,14 @@ Object.assign(Engine, {
         if (this.mapPtrs.size === 2) { const [a, b] = [...this.mapPtrs.values()]; this.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, s: this.mapScale, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; }
         return;
       }
+      // A quick double tap acts on what it lands on (hands.js: tapTarget): a fish, a boat, a bucket or cooler, the corners of the
+      // screen. On nothing in particular, with the rod out, it is the left mouse button, held for as long as the second tap is
+      // (click: cast / strike; hold: charge the cast, reel; slide the finger down while holding: reel fast).
+      { const lt = this.lastTap, dbl = !!lt && e.timeStamp - lt.t < CONFIG.doubleTapMs && Math.hypot(x - lt.x, y - lt.y) < 48; this.lastTap = null;
+        const tgt = dbl && this.tapTarget ? this.tapTarget(x, y) : null; this.tapDn = { id: e.pointerId, x, y, t: e.timeStamp, dbl, tgt };
+        if (dbl && !tgt && this.rodInHand()) { this.keys.Mouse0 = true; this.dtapId = e.pointerId; this.dtapT = performance.now(); this.dtapY = y; return; } }   // (this finger reels: it neither walks nor looks)
       if (x < innerWidth * 0.45 && !this.joy) this.joy = { id: e.pointerId, ox: x, oy: y, x, y };
-      else if (!this.tlook) this.tlook = { id: e.pointerId, x, y, t: e.timeStamp, moved: 0 };
+      else if (!this.tlook) this.tlook = { id: e.pointerId, x, y, t: e.timeStamp, moved: 0, sx: x, sy: y, a0: this.P.a, p0: this.P.pitch };
     });
     ov.addEventListener('pointermove', e => {
       if (this.pauseOpen) return;
@@ -73,6 +81,7 @@ Object.assign(Engine, {
         }
         return;
       }
+      if (this.dtapId === e.pointerId) { this.keys.ShiftLeft = e.clientY - this.dtapY > 34; return; }   // reeling on a held double tap: finger slid down = faster
       const j = this.joy, l = this.tlook;
       if (j && e.pointerId === j.id) { j.x = e.clientX; j.y = e.clientY; }
       else if (l && e.pointerId === l.id) { const dx = e.clientX - l.x, dy = e.clientY - l.y; l.x = e.clientX; l.y = e.clientY; l.moved += Math.abs(dx) + Math.abs(dy); look(dx, dy, CONFIG.touchLookSensitivity); }
@@ -89,12 +98,26 @@ Object.assign(Engine, {
         return;
       }
       if (ts && ts.id === e.pointerId) { this.tapStart = null; if (tap && Math.hypot(x - ts.x, y - ts.y) < 16 && !this.menuClick(x, y)) this.openMenu(x, y); return; }
+      const dn = this.tapDn && this.tapDn.id === e.pointerId ? this.tapDn : null; if (dn) this.tapDn = null;
+      const quick = !!dn && tap && Math.hypot(x - dn.x, y - dn.y) < 16 && e.timeStamp - dn.t < CONFIG.doubleTapMs;
+      let clicked = false;
+      if (this.dtapId === e.pointerId) {   // the double tap's finger lifts: the mouse button comes up (held at least a few frames, so the shortest tap still registers as a click)
+        this.dtapId = null; clicked = true; this.keys.ShiftLeft = false; const wait = 70 - (performance.now() - this.dtapT);
+        if (wait > 0) setTimeout(() => { if (this.dtapId == null) this.keys.Mouse0 = false; }, wait); else this.keys.Mouse0 = false;
+      }
       if (this.joy && e.pointerId === this.joy.id) this.joy = null;
       const l = this.tlook;
-      if (l && e.pointerId === l.id) {
-        this.tlook = null;
-        if (tap && l.moved < 16 && e.timeStamp - l.t < CONFIG.tapMaxMs && !this.openMenu(x, y) && !this.rodInHand()) this.action(); // tap the minimap = travel menu (a stray tap while fishing does nothing)
-      }
+      if (l && e.pointerId === l.id) { this.tlook = null; if (tap && l.moved < 16 && e.timeStamp - l.t < CONFIG.tapMaxMs) this.openMenu(x, y);   // a tap on the minimap = the travel menu
+        // a fast swipe: up = jump (off the boat too, as the Jump button does), down = put the rod away. The view goes back to where it was looking.
+        const sdx = x - l.sx, sdy = y - l.sy;
+        if (tap && e.timeStamp - l.t < CONFIG.swipeMs && Math.abs(sdy) > CONFIG.swipePx && Math.abs(sdy) > 2 * Math.abs(sdx) && !this.showMap && !this.menu) {
+          const jump = sdy < 0, stow = !jump && this.rodInHand();
+          if (jump || stow) { this.P.a = l.a0; this.P.pitch = l.p0; }
+          if (jump) { this.keyPress('Space', { repeat: false }, false); setTimeout(() => { this.keys.Space = false; }, 180); }
+          else if (stow) this.toggleRod(false);
+        } }
+      if (quick && dn.dbl && !clicked && !this.menu) { if (dn.tgt) dn.tgt(); else if (!this.rodInHand() && !this.boat && !(this.ang && this.ang.phase === 'card')) this.action(); }   // on nothing in particular, ashore: Use
+      if (quick && !dn.dbl) this.lastTap = { x, y, t: e.timeStamp };   // (a third tap starts afresh)
     };
     addEventListener('pointerup', end); addEventListener('pointercancel', end);
   },

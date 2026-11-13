@@ -4,6 +4,7 @@
   "name": "Atlantic pollock",
   "scientific": "Pollachius virens",
   "description": "Streamlined olive-green cod relative with a pale lateral line, a projecting lower jaw and a tiny chin barbel at most. Fast, schooling hunter of cold coastal waters and rocky reefs, chasing herring and sand eels.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 35,

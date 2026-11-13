@@ -4,6 +4,7 @@
   "name": "Orange-lined triggerfish",
   "scientific": "Balistapus undulatus",
   "description": "Dark olive triggerfish crossed by bold orange lines, with a black blotch at the base of its orange tail and a locking dorsal spine. Crunches urchins, crabs and coral with strong teeth, and is feisty enough to nip divers. Length is total length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 8,

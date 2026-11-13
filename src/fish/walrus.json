@@ -4,6 +4,7 @@
   "name": "Walrus",
   "scientific": "Odobenus rosmarus",
   "description": "Huge, wrinkled, pinkish-brown arctic pinniped with long ivory tusks and a bristly moustache. Hauls out in herds on ice floes and shingle beaches, and dives to the bottom to suck up clams.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 250,

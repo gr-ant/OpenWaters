@@ -26,7 +26,7 @@ Object.assign(Engine, {
       if (dx * dx + dy * dy + dz * dz > Math.min(FAR, uw ? 80 : 250) ** 2) continue;
       if (q.renderTime !== T) {
         sample(q.x, q.y); q.renderWet = q.z < SW && hW(SE) < SW;
-        q.renderLook = partLook(q, 1 - q.life / q.max, T); q.renderTime = T;
+        q.renderLook = partLook(q, 1 - q.life / q.max, T, q.renderLook); q.renderTime = T;
         if (q.grow) q.renderLook[4] *= Math.min(1, 0.05 + 3 * (1 - q.life / q.max));
       }
       if (q.renderWet !== uw ? pass !== 0 : pass !== 1) continue;

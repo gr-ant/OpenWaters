@@ -4,6 +4,7 @@
   "name": "Rainbow trout",
   "scientific": "Oncorhynchus mykiss",
   "description": "Acrobatic trout of fast rivers and cool lakes; feeds hard on drifting insects and leaps when hooked.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 15,

@@ -4,6 +4,7 @@
   "name": "Sheepshead",
   "scientific": "Archosargus probatocephalus",
   "description": "Deep-bodied silver fish with bold black bars and a mouthful of human-looking teeth for crushing barnacles, crabs and oysters. Haunts pilings, jetties and oyster reefs along the coast, nibbling bait delicately.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 20,

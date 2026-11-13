@@ -4,6 +4,7 @@
   "name": "Common octopus",
   "scientific": "Octopus vulgaris",
   "description": "Clever, solitary den-dweller of rocky coasts. Hunts crabs and clams at night and changes colour and texture to vanish against rock. Length is mantle tip to arm tip.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 20,

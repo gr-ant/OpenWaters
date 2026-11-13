@@ -1,0 +1,33 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "stump",
+  "name": "Drowned stump",
+  "description": "Drowned timber standing in lakes and ponds.",
+  "cover": ["wood"],
+  "reach": 2.5,
+  "place": [
+    {
+      "order": 140,
+      "water": ["lake", "pond"],
+      "depth": [0.5, 3.2],
+      "chance": {
+        "from": 0.45,
+        "width": { "lake": 0.005, "pond": 0.016 },
+        "times": [
+          { "plus": 0.4, "of": "moist" }
+        ]
+      }
+    }
+  ],
+  "size": { "min": 1.6, "rand": 1.6 },
+  "lift": -0.05,
+  "stride": 32,
+  "sway": 0,
+  "view": 300,
+  "mesh": {
+    "builder": "stump",
+    "color": [0.32, 0.28, 0.23],
+    "roots": [0.3, 0.26, 0.21],
+    "shade": { "by": "facing", "base": 0.74, "range": 0.26 }
+  }
+}

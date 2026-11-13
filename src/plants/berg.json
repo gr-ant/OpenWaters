@@ -1,0 +1,23 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "berg",
+  "name": "Iceberg",
+  "description": "Icebergs drifting off an arctic coast.",
+  "cover": [],
+  "place": [
+    {
+      "order": 10,
+      "water": ["sea"],
+      "depth": [9, null],
+      "if": ["bergs"],
+      "chance": { "above": 0.99993 }
+    }
+  ],
+  "size": { "min": 5, "rand": 10 },
+  "z": "water",
+  "sink": 0.45,
+  "stride": 32,
+  "sway": 0,
+  "view": 1300,
+  "mesh": { "builder": "iceberg", "colors": [[0.95, 0.97, 1], [0.82, 0.9, 0.96], [0.6, 0.78, 0.9]], "peak": [0.96, 0.98, 1] }
+}

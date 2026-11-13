@@ -4,6 +4,7 @@
   "name": "American toad",
   "scientific": "Anaxyrus americanus",
   "description": "Warty, short-legged toad that lives on land but crowds into shallow ponds in spring to breed, trilling all night. Length is snout to vent.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 5,

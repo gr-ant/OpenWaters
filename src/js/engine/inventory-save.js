@@ -35,10 +35,27 @@ Object.assign(Engine, {
   loadSave() {
     this.pruneSaves();
     if (!CONFIG.saveProgress) return;
-    try { const d = JSON.parse(localStorage.getItem(this.saveKey()) || 'null'); if (d) { this.inv = d.inv || []; this.taken = new Set(d.taken || []); } } catch (e) { /* storage unavailable */ }
+    try { const d = JSON.parse(localStorage.getItem(this.saveKey()) || 'null'); if (d) { this.inv = d.inv || []; this.taken = new Set(d.taken || []); this.savedState = d.st && typeof d.st === 'object' ? d.st : null; } } catch (e) { /* storage unavailable */ }
+  },
+  // where you are and when: position and heading, the hour, the day of the year, the weather, your boat and the boats left
+  // about. null while the start menu is up (its view is not your place), so the last real state is kept instead.
+  stateNow() {
+    if (!this.live || this.titleOpen || this.glLost) return null;
+    const P = this.P, b = this.boat, r = v => Math.round(v * 100) / 100, boat = q => ({ id: q.def.id, x: r(q.x), y: r(q.y), a: r(q.a), well: q.well && q.well.length ? q.well.map(f => ({ s: f.species, cm: f.lengthCm, kg: f.weightKg })) : undefined });
+    return { x: r(P.x), y: r(P.y), a: r(P.a), pitch: r(P.pitch), tod: this.tod ?? CONFIG.startHour / 24, yf: ENV.yf, weather: ENV.kind,
+      boat: b ? boat(b) : null, boats: this.boats.filter(q => q !== b).slice(-7).map(boat) };
   },
   saveGame() {
     if (!CONFIG.saveProgress) return;
-    try { localStorage.setItem(this.saveKey(), JSON.stringify({ inv: this.inv, taken: [...this.taken], t: Date.now() })); } catch (e) { /* storage unavailable */ }
+    const st = this.stateNow(); if (st) this.savedState = st;
+    try { localStorage.setItem(this.saveKey(), JSON.stringify({ inv: this.inv, taken: [...this.taken], st: this.savedState || undefined, t: Date.now() })); } catch (e) { /* storage unavailable */ }
+    if (st) try { localStorage.setItem('embercrown-last', JSON.stringify({ save: CONFIG.saveName, seed: SEED, opts: HASH_OPTS, climate: CLIMATE.name, t: Date.now() })); } catch (e) { /* storage unavailable */ }   // the start menu's Continue
+  },
+  // reload this island: into play where you are (or to the start menu, if that's where you were)
+  resumeReload() {
+    try { this.saveGame(); } catch (e) { /* reload anyway */ }
+    const h = '#seed-' + SEED + (HASH_OPTS ? '&' + HASH_OPTS : '') + (this.titleOpen || !this.live ? '&pick' : '&go');
+    try { history.replaceState(null, '', location.pathname + location.search + h); } catch (e) { location.hash = h.slice(1); }
+    location.reload();
   },
 });

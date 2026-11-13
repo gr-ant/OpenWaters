@@ -4,6 +4,7 @@
   "name": "Red swamp crayfish",
   "scientific": "Procambarus clarkii",
   "description": "Bright red crayfish of warm ponds, ditches and slow rivers. Eats almost anything and digs burrows when the water drops. Length is rostrum to tail fan, claws excluded.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 5,

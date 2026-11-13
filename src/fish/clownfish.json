@@ -4,6 +4,7 @@
   "name": "Clownfish",
   "scientific": "Amphiprion ocellaris",
   "description": "Small orange reef fish with three white, black-edged bands. Lives in pairs and family groups inside a sea anemone on the warm reefs, never straying more than a metre or two from its stinging home.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 4,

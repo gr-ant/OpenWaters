@@ -4,6 +4,7 @@
   "name": "Green sea turtle",
   "scientific": "Chelonia mydas",
   "description": "Big, gentle sea turtle with a smooth olive-brown shell patterned in scutes. Glides over warm seagrass beds and reefs on long front flippers, grazing, and rises every few minutes to breathe. Length is carapace length.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 70,

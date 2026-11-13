@@ -7,16 +7,16 @@ Object.assign(Engine, {
   groundGen(ch) {
     const lv = CONFIG.groundCover, out = {}; ch.groundLv = lv; if (!lv || !ch.gmat) return out;
     const AR = CLIMATE.key === 'arctic', TR = CLIMATE.key === 'tropical', TN = CHW / GROUND_TILE, TT = TN * TN;
-    if (!this._gTab) { // weights by material, [grass, flowerA, flowerB, fern, bush, heath, moss] (flowers: _gFl x drift noise); +70: steep ground
-      const T = this._gTab = new Float32Array(140), set = (mt, a) => { for (let q = 0; q < 7; q++) { T[mt * 7 + q] = a[q]; T[70 + mt * 7 + q] = a[q] * [0.3, 0, 0, 0.5, 0.3, 0.5, 1.3][q]; } };
-      set(SAND, [0.06, 0, 0, 0, TR ? 0.015 : 0, 0, 0]); set(PLAIN, [AR ? 0.42 : TR ? 0.7 : 0.62, 0, 0, TR ? 0.04 : 0, AR ? 0.03 : 0.015, AR ? 0.1 : 0, AR ? 0.15 : 0]);
-      set(FOREST, [0.22, 0, 0, TR ? 0.32 : AR ? 0.05 : 0.22, TR ? 0.07 : 0.05, AR ? 0.08 : 0.01, AR ? 0.15 : 0.06]); set(ROCK, [0.06, 0, 0, 0, 0.01, 0.03, AR ? 0.2 : 0.14]); set(ALPINE, [0.35, 0, 0, 0, 0.02, TR ? 0.05 : 0.2, 0.1]);
-      this._gFl = [0, 0, 0, AR ? 0.1 : 0.42, 0.03, 0, 0.12, 0, 0, 0];
-      this._gS0 = [AR ? 0.45 : TR ? 0.75 : 0.65, 0.75, 0.75, TR ? 0.9 : 0.7, TR ? 1 : AR ? 0.5 : 0.8, 0.6, 0.6]; this._gS1 = [AR ? 0.4 : 0.5, 0.5, 0.5, TR ? 0.7 : 0.6, AR ? 0.4 : 0.75, 0.6, 0.9];   // size: base + range
-      this._gZ = [0.03, 0.02, 0.02, 0.03, 0.08, 0.04, 0.02];   // sunk into the ground (bush, heath: times their size)
+    if (!this._gTab) { // from each kind's "ground" (src/plants/*.json): weights by material, [grass, flowerA, flowerB, fern, bush, heath, moss] (flowers: _gFl x drift noise); +70: steep ground
+      const T = this._gTab = new Float32Array(140), G = GROUND_KINDS.map(k => PLANTS[k].ground), cl = v => v && typeof v === 'object' ? v[CLIMATE.key] : v || 0;   // (a number, or one per climate)
+      const MAT = { sand: SAND, plain: PLAIN, forest: FOREST, rock: ROCK, alpine: ALPINE };
+      G.forEach((g, q) => { for (const m in g.weights) { const w = cl(g.weights[m]); T[MAT[m] * 7 + q] = w; T[70 + MAT[m] * 7 + q] = w * g.steep; } });
+      this._gFl = new Array(10).fill(0); for (const m in G[1].drift) this._gFl[MAT[m]] = cl(G[1].drift[m]);   // flowerA's drift: both flower families
+      this._gS0 = G.map(g => cl(g.size[0])); this._gS1 = G.map(g => cl(g.size[1]));   // size: base + range
+      this._gZ = G.map(g => g.sink); this._gZs = G.map(g => !!g.sinkBySize);   // sunk into the ground (bush, heath: times their size)
       this._gBuf = new Float32Array(CHK * CHK * 18); this._gKt = new Uint16Array(CHK * CHK * 3);
     }
-    const c = getChunk(ch.cx, ch.cy), N = CHK + 1, x0 = ch.cx * CHW, y0 = ch.cy * CHW, gm = ch.gmat, T = this._gTab, FL = this._gFl, S0 = this._gS0, S1 = this._gS1, Z = this._gZ, buf = this._gBuf, kt = this._gKt;
+    const c = getChunk(ch.cx, ch.cy), N = CHK + 1, x0 = ch.cx * CHW, y0 = ch.cy * CHW, gm = ch.gmat, T = this._gTab, FL = this._gFl, S0 = this._gS0, S1 = this._gS1, Z = this._gZ, ZS = this._gZs, buf = this._gBuf, kt = this._gKt;
     const zf = new Float32Array(17 * 17), zc = new Float32Array(17 * 17);   // flower drifts and colour, sampled every 8 m
     for (let q = 0; q < 289; q++) { const x = x0 + (q % 17) * 8, y = y0 + (q / 17 | 0) * 8; zf[q] = sstep(0, 0.3, nM(x / 14 + 31, y / 14 - 7)); zc[q] = nR(x / 40, y / 40); }
     const OX = [0, 0.69, 0.23, 0.57], OY = [0, 0.62, 0.07, 0.79], cnt = new Int32Array(7 * TT), dens = lv >= 2 ? 1 : 0.45, nt = Game._noTrees.length > 0; let n = 0;   // light: fewer candidates
@@ -40,7 +40,7 @@ Object.assign(Engine, {
         const h = px + py <= 1 ? h00 + (h10 - h00) * px + (h01 - h00) * py : h11 + (h01 - h11) * (1 - px) + (h10 - h11) * (1 - py);   // on the terrain's own triangles
         if (h < wl || (nt && Game.noTreesAt(x, y))) continue;   // out of the water, off clearings and buildings
         const sc = S0[kd] + S1[kd] * (r + OX[rep] < 1 ? r + OX[rep] : r + OX[rep] - 1), t = kd * TT + Math.min(TN - 1, (x - x0) / GROUND_TILE | 0) + Math.min(TN - 1, (y - y0) / GROUND_TILE | 0) * TN, e = n * 6;
-        buf[e] = x; buf[e + 1] = y; buf[e + 2] = h - Z[kd] * (kd === 4 || kd === 5 ? sc : 1); buf[e + 3] = sc; buf[e + 4] = rot + rep * 2.3; buf[e + 5] = ((shade + rep * 0.53) % 1) * (mt === FOREST ? 0.6 : 1);
+        buf[e] = x; buf[e + 1] = y; buf[e + 2] = h - Z[kd] * (ZS[kd] ? sc : 1); buf[e + 3] = sc; buf[e + 4] = rot + rep * 2.3; buf[e + 5] = ((shade + rep * 0.53) % 1) * (mt === FOREST ? 0.6 : 1);
         kt[n++] = t; cnt[t]++;
       }
     }
@@ -112,17 +112,9 @@ Object.assign(Engine, {
       }
       u8[k * 24 + 16] = clamp(col[0] * jit, 0, 1) * 255; u8[k * 24 + 17] = clamp(col[1] * jit, 0, 1) * 255; u8[k * 24 + 18] = clamp(col[2] * jit, 0, 1) * 255;
     } }
-    const ibo = this.ibo, count = CHK * CHK * 6;
-    const vbo = gl.createBuffer(), vao = gl.createVertexArray(); gl.bindVertexArray(vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
-    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.BYTE, true, 24, 12);
-    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 3, gl.UNSIGNED_BYTE, true, 24, 16);
-    gl.enableVertexAttribArray(8); gl.vertexAttribPointer(8, 1, gl.UNSIGNED_BYTE, true, 24, 19);
-    gl.enableVertexAttribArray(7); gl.vertexAttribPointer(7, 1, gl.FLOAT, false, 24, 20);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-    gl.bindVertexArray(null);
-    const ch = { cx, cy, vao, count, bufs: [vbo], vaos: [], treeData: [], plantData: {}, water: null, gmat: gm, ground: null };
+    const count = CHK * CHK * 6;
+    const ch = { cx, cy, vao: null, count, bufs: [], vaos: [], treeData: [], plantData: {}, water: null, gmat: gm, ground: null };   // GPU objects made at the end: a job dropped part-way leaks none
+    let wGL = null;   // the water surface's vertices and triangles, uploaded at the end too
     // ---- water surface over every cell with a corner under water, each vertex at its own level ----
     yield;
     const wet = new Uint8Array(N * N); let anyWet = false;
@@ -166,44 +158,23 @@ Object.assign(Engine, {
         if (Math.max(l0, l1, l2, l3) - Math.min(l0, l1, l2, l3) > 1.2) continue;
         idx.push(a, a + 1, a + N, a + 1, a + N + 1, a + N);
       }
-      if (idx.length) {
-      const wvbo = this.vbo(wv), wib = gl.createBuffer(), wvao = gl.createVertexArray();
-      gl.bindVertexArray(wvao); gl.bindBuffer(gl.ARRAY_BUFFER, wvbo);
-      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 40, 0);
-      gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 40, 12);
-      gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 40, 20);
-      gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 40, 36);
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
-      gl.bindVertexArray(null);
-      ch.water = { vao: wvao, count: idx.length }; ch.bufs.push(wvbo, wib); ch.vaos.push(wvao);
-      }
+      if (idx.length) wGL = [wv, idx];
     }
     // ---- water plants and stones on a hashed grid ----
     if (CONFIG.waterPlants && anyWet) {
-      const reeds = [], lilies = [], liliesF = [], weeds = [], kelps = [], rocks = [], logs = [], stumps = [], coralA = [], coralB = [], anemones = [], bergs = [], G = 2.5;
-      const extra = { seafan: [], sponge: [], coralC: [], urchin: [], star: [], eelgrass: [], bullkelp: [], rockweed: [], slab: [], rubble: [], shells: [] }, EXTRA_KIND = { 12: 'seafan', 13: 'sponge', 14: 'coralC', 15: 'urchin', 16: 'star', 17: 'eelgrass', 18: 'bullkelp', 19: 'rockweed', 20: 'slab', 21: 'rubble', 22: 'shells' };
+      const D = {}, G = 2.5;   // instances per plant kind (PLANTS)
       for (let gy = Math.ceil(y0 / G); gy * G < y0 + CHW; gy++) { if (gy % 4 === 0) yield; for (let gx = Math.ceil(x0 / G); gx * G < x0 + CHW; gx++) {
         const t = plantAt(gx, gy); if (!t) continue; // same grid fish use to find cover
-        const { x, y, h, wl, kd, dep, r1 } = PL, rot = r1 * 6.2832, mk = WATER[kd].murk;
-        if (t === 1) reeds.push(x, y, h, 1.4 + r1 * 1.1, rot, r1);
-        else if (t < 4) (t === 3 ? liliesF : lilies).push(x, y, wl + 0.015, 0.8 + 0.7 * hash2(gx, gy, SEED + 305), rot, r1);
-        else if (t === 5) kelps.push(x, y, h - 0.1, Math.min(dep * (0.5 + 0.4 * r1), 9), rot, r1, wl, mk);
-        else if (t === 4) weeds.push(x, y, h - 0.1, Math.min(dep * (0.35 + 0.45 * r1), 2.6), rot, r1, wl, mk);
-        else if (t === 7) { // point the fallen trunk down the bank, into the water
-          const gx_ = groundAt(x + 2, y) - groundAt(x - 2, y), gy_ = groundAt(x, y + 2) - groundAt(x, y - 2);
-          logs.push(x, y, h - 0.15, 4.5 + 4 * r1, Math.atan2(-gy_, -gx_) + (r1 - 0.5) * 0.8, r1, wl, mk);
-        }
-        else if (t === 8) stumps.push(x, y, h - 0.05, 1.6 + 1.6 * r1, rot, r1, wl, mk);
-        else if (t === 9) (r1 < 0.55 ? coralA : coralB).push(x, y, h - 0.1, 0.9 + 1.4 * hash2(gx, gy, SEED + 306), rot, r1, wl, mk);
-        else if (t === 10) anemones.push(x, y, h - 0.03, 0.45 + 0.3 * r1, rot, r1, wl, mk);
-        else if (t === 11) { const sc = 5 + 10 * r1; bergs.push(x, y, wl - sc * 0.45, sc, rot, r1, wl, mk); }
-        else if (t >= 12) { // the newer sea-floor kinds: size by kind, bull kelp and seagrass reach toward the surface
-          const sc = t === 12 ? 0.8 + 0.8 * r1 : t === 13 ? 0.6 + 0.9 * r1 : t === 14 ? 1.0 + 1.3 * r1 : t === 15 ? 0.5 + 0.4 * r1 : t === 16 ? 0.35 + 0.35 * r1
-            : t === 17 ? Math.min(dep * (0.45 + 0.35 * r1), 1.6) : t === 18 ? Math.min(dep * 0.95, 18) : t === 19 ? 0.7 + 0.6 * r1 : t === 20 ? 1.2 + 1.6 * r1 : t === 21 ? 1.0 + 1.2 * r1 : 0.5 + 0.4 * r1;
-          extra[EXTRA_KIND[t]].push(x, y, h - (t === 20 || t === 21 ? 0.06 * sc : 0.03), sc, rot, r1, wl, mk);
-        }
-        else { const sc = (kd === CREEK ? 0.45 + 0.8 * r1 : 0.6 + 1.4 * r1) * (1 + 0.7 * PL.rap); rocks.push(x, y, h - 0.22 * sc, sc, rot, r1, wl, mk); }
+        const { x, y, h, wl, kd, dep, r1 } = PL, P = plantKind(t, r1), S = P.size;
+        let sc = S.depth ? Math.min(dep * (S.depth[0] + S.depth[1] * r1), S.max) : kd === CREEK && S.creek ? S.creek[0] + S.creek[1] * r1 : S.min + S.rand * (S.hash ? hash2(gx, gy, SEED + S.hash) : r1);
+        if (S.rapids) sc *= 1 + S.rapids * PL.rap;
+        let rot = r1 * 6.2832;
+        if (P.downBank) { const gx_ = groundAt(x + 2, y) - groundAt(x - 2, y), gy_ = groundAt(x, y + 2) - groundAt(x, y - 2); rot = Math.atan2(-gy_, -gx_) + (r1 - 0.5) * 0.8; }   // point the fallen trunk down the bank, into the water
+        const L = D[P.id] || (D[P.id] = []);
+        L.push(x, y, (P.z === 'water' ? wl : h) + (P.lift || 0) - (P.sink || 0) * sc, sc, rot, r1);
+        if (P.stride === 32) L.push(wl, WATER[kd].murk);
       } }
+      const rocks = D.rock || (D.rock = []), reeds = D.reed || (D.reed = []);
       if (ISL) for (const sp of ISL.springs) { // mossy stones heaped where a creek wells up
         if (sp.x < x0 - 4 || sp.y < y0 - 4 || sp.x >= x0 + CHW + 4 || sp.y >= y0 + CHW + 4) continue;
         for (let q = 0; q < 6; q++) {
@@ -219,7 +190,6 @@ Object.assign(Engine, {
           sample(x, y); if (SW - hW(SE) < 0.15 && SW - hW(SE) > -0.12) reeds.push(x, y, hW(SE), 1.2 + r1 * 1.1, r1 * 6.2832, r1);
         }
       }
-      const D = { reed: reeds, lily: lilies, lilyF: liliesF, weed: weeds, kelp: kelps, rock: rocks, log: logs, stump: stumps, coralA, coralB, anemone: anemones, berg: bergs, ...extra };
       for (const k in D) if (D[k].length) ch.plantData[k] = new Float32Array(D[k]);   // drawn merged across chunks
     }
     // trees: one hashed candidate per grid cell owned by this chunk
@@ -262,7 +232,28 @@ Object.assign(Engine, {
     ch.treeData = [pine, oak, maple, birch, palm].map(arr => arr.length ? new Float32Array(arr) : null);   // drawn merged across chunks
     for (let k = 0; k < N * N; k++) if (contact[k]) for (let q = 16; q < 19; q++) u8[k * 24 + q] = Math.round(u8[k * 24 + q] * (1 - contact[k]));
     // Upload once after the generation-only contact bake; no additional render pass.
+    const vbo = gl.createBuffer(), vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.BYTE, true, 24, 12);
+    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 3, gl.UNSIGNED_BYTE, true, 24, 16);
+    gl.enableVertexAttribArray(8); gl.vertexAttribPointer(8, 1, gl.UNSIGNED_BYTE, true, 24, 19);
+    gl.enableVertexAttribArray(7); gl.vertexAttribPointer(7, 1, gl.FLOAT, false, 24, 20);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+    gl.bindVertexArray(null);
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo); gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
+    ch.vao = vao; ch.bufs.push(vbo);
+    if (wGL) { const [wv, idx] = wGL;
+      const wvbo = this.vbo(wv), wib = gl.createBuffer(), wvao = gl.createVertexArray();
+      gl.bindVertexArray(wvao); gl.bindBuffer(gl.ARRAY_BUFFER, wvbo);
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 40, 0);
+      gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 40, 12);
+      gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 40, 20);
+      gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 1, gl.FLOAT, false, 40, 36);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, wib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
+      gl.bindVertexArray(null);
+      ch.water = { vao: wvao, count: idx.length }; ch.bufs.push(wvbo, wib); ch.vaos.push(wvao);
+    }
     return ch;
   },
 });

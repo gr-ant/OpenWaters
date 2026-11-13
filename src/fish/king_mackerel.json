@@ -4,6 +4,7 @@
   "name": "King mackerel",
   "scientific": "Scomberomorus cavalla",
   "description": "Fast, slender silvery predator of warm coastal waters with a sharply dipping lateral line and razor teeth. Runs in the open over reefs and wrecks, slashing through baitfish schools.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 50,

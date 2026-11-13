@@ -4,6 +4,7 @@
   "name": "Arctic cod",
   "scientific": "Boreogadus saida",
   "description": "Small, slim cod of the high Arctic that lives among the pack ice, hiding in cracks under the floes in huge schools. Food for seals, belugas and narwhals.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 10,

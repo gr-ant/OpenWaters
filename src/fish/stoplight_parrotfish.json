@@ -4,6 +4,7 @@
   "name": "Stoplight parrotfish",
   "scientific": "Sparisoma viride",
   "description": "Chunky green reef fish with a beak of fused teeth for scraping coral; you can hear it crunching. Males are green with an orange bar and a yellow spot.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 25,

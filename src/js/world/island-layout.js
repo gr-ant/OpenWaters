@@ -64,6 +64,18 @@ const LAYOUT = (() => {
     for (let k = 0, n = 1 + Math.floor(rng() * 2); k < n; k++) { const a = rng() * 6.2832, d = (1.0 + 0.3 * rng()) * R, r = (0.1 + 0.12 * rng()) * R;   // 1-2 stray slivers, along the grain
       add(Math.cos(a) * d, Math.sin(a) * d, r, r * (0.25 + 0.2 * rng()), grain + (rng() - 0.5) * 0.5, 0.3 + 0.2 * rng()); }
   }
+  // outlying islands, out in the open sea beyond the main island's water grid (so they cost nothing at load: plain terrain, no rivers or lakes).
+  // Drawn from their own random stream, after everything else, so the main island of a seed is exactly what it was without them.
+  { const [n0, n1] = CONFIG.outerIslands || [0, 0], og = mulberry32((SEED ^ 0x0f7e2a) >>> 0), n = n0 + Math.floor(og() * (n1 - n0 + 1)), a0 = og() * 6.2832, grid = Math.ceil(CONFIG.islandSize * 0.75 / 12) * 12;
+    for (let k = 0; k < n; k++) {
+      const a = a0 + (k + 0.15 + 0.7 * og()) / n * 6.2832, r = (0.085 + 0.13 * og()) * R, arm = og() < 0.65, ext = (arm ? 1.6 : 1) * r * 1.05 + 600;   // ext: as far as its shore can reach from its middle, warping included
+      const lo = grid + ext + 100, hi = CONFIG.worldEdge - ext - 250, m = lo + Math.max(0, hi - lo) * og(), d = m / Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a)));
+      const cx = Math.cos(a) * d, cy = Math.sin(a) * d, tilt = og() * 3.1416, i0 = blobs.length;
+      add(cx, cy, r, r * (0.55 + 0.35 * og()), tilt, 0.35 + 0.3 * og());
+      if (arm) { const b = tilt + (og() - 0.5) * 1.2 + (og() < 0.5 ? 3.1416 : 0), len = r * (0.5 + 0.4 * og()); add(cx + Math.cos(b) * r * 0.7, cy + Math.sin(b) * r * 0.7, len, r * (0.2 + 0.2 * og()), b + (og() - 0.5) * 0.5, 0.3); }
+      for (let i = i0; i < blobs.length; i++) blobs[i].out = true;
+      if (hi < lo) blobs.length = i0;   // no room for it in this sea
+    } }
   const va = grain + (rng() - 0.5) * 0.9, vx = Math.cos(va), vy = Math.sin(va), b0 = blobs[0], voff = -b0.cx * vy + b0.cy * vx + (rng() - 0.5) * 0.2 * R;
   // the valley crosses the main mass the long way (through its middle, a little off); the peak stands on the
   // valley line towards one end of the mass, so the river rises on it and runs the valley to the far coast
@@ -75,10 +87,10 @@ const LAYOUT = (() => {
 function islandBase(x, y) {
   const R = CONFIG.islandSize / 2, L = LAYOUT;
   const m = 150 * L.rough, wx = x + 320 * nE(x / 1300 + 9.3, y / 1300 - 2.7) + m * nE(x / 330 - 4.1, y / 330 + 6.6), wy = y + 320 * nE(x / 1300 - 5.9, y / 1300 + 7.4) + m * nE(x / 330 + 2.8, y / 330 - 8.2);   // warped space: bays and headlands
-  let land = 0, dome = 0;   // land: inside any blob (fading at its edge); dome: how far inside, scaled by the blob's height
+  let land = 0, dome = 0, main = 0;   // main: land of the main island and its islets (the river's trough is cut only there); land: inside any blob (fading at its edge); dome: how far inside, scaled by the blob's height
   for (const b of L.blobs) {
     const dx = wx - b.cx, dy = wy - b.cy, u = (dx * b.ca + dy * b.sa) / b.rx, v = (dy * b.ca - dx * b.sa) / b.ry, d = Math.hypot(u, v);
-    land = Math.max(land, 1 - sstep(0.84, 1.05, d)); dome = Math.max(dome, clamp(1 - d, 0, 1) * b.hgt);
+    const ld = 1 - sstep(0.84, 1.05, d); if (ld > land) land = ld; if (!b.out && ld > main) main = ld; dome = Math.max(dome, clamp(1 - d, 0, 1) * b.hgt);
   }
   const across = -x * L.vy + y * L.vx - L.voff;   // the valley crosses the main island on the layout's bearing, a little off centre
   const pd = Math.hypot(x - L.px, y - L.py) / L.pr, peak = Math.pow(clamp(1 - pd, 0, 1), 1.4) * (0.75 + 0.25 * (1 - Math.abs(nR(x / 400 + 7.1, y / 400 + 1.3))));   // the island's summit, a little craggy
@@ -88,7 +100,7 @@ function islandBase(x, y) {
   // the river's trough: a floor that only ever drops from the summit's foot to the far coast, banks rising either side,
   // cut into whatever the land was (so its water gathers into one river instead of running off every which way)
   const s = ((x * L.vx + y * L.vy) - L.ps) * L.pdir;
-  if (s > 0 && land > 0.3) { const t = Math.min(1, s / L.plen), floor = 0.37 + 0.3 * Math.pow(1 - t, 1.3) + Math.pow(Math.abs(across), 1.25) * 0.00012 + 0.012 * nE(x / 250, y / 250); if (floor < e) e -= (e - floor) * 0.8 * sstep(0.3, 0.8, land); }   // most of the way down to the floor: the hills still show through
+  if (s > 0 && main > 0.3) { const t = Math.min(1, s / L.plen), floor = 0.37 + 0.3 * Math.pow(1 - t, 1.3) + Math.pow(Math.abs(across), 1.25) * 0.00012 + 0.012 * nE(x / 250, y / 250); if (floor < e) e -= (e - floor) * 0.8 * sstep(0.3, 0.8, land); }   // most of the way down to the floor: the hills still show through
   const hl = hW(clamp(e, 0, 1));
   // the sea floor: past the first stretch of shore the depth follows the climate's real-world profile (seaDepth)
   // against the distance from the coast, measured out along each blob's radius (0.92 of it is about the waterline)

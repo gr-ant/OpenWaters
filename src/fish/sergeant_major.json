@@ -4,6 +4,7 @@
   "name": "Sergeant major",
   "scientific": "Abudefduf saxatilis",
   "description": "Small yellow-and-silver damselfish with five black bars. Hangs over the reef in noisy schools and guards its eggs fiercely.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 8,

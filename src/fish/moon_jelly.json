@@ -4,6 +4,7 @@
   "name": "Moon jelly",
   "scientific": "Aurelia aurita",
   "description": "The commonest jellyfish of coastal seas: a clear saucer with four pink-violet rings, drifting in loose swarms. A short fringe of tentacles barely stings.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 8,

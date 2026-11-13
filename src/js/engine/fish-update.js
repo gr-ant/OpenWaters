@@ -61,6 +61,7 @@ Object.assign(Engine, {
     }
     // Full-rate interaction near the player/lure; background animals run at
     // 30, 15 or 8 Hz. Real-time intervals retain behaviour on slow frames too.
+    this.fishGridFor = this.fish;   // the grid describes this very list (Game.fishNear checks before trusting it)
     const P = this.P, lure = this.ang && this.ang.out && this.ang.lure; this.frameDt = dt;
     for (let i = 0; i < this.fish.length; i++) {
       const f = this.fish[i]; if (f.dead || f.hooked) continue;

@@ -4,6 +4,7 @@
   "name": "Bluestreak cleaner wrasse",
   "scientific": "Labroides dimidiatus",
   "description": "Tiny, slender blue-and-black wrasse that runs a cleaning station on a coral head, picking parasites from the skin and mouths of much larger fish, which line up and pose for it. Length is total length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 4,

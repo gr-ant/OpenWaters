@@ -4,6 +4,7 @@
   "name": "Common snook",
   "scientific": "Centropomus undecimalis",
   "description": "Sleek, silvery ambusher with a bold black lateral line and a sloping head with a jutting lower jaw. Lurks in mangrove shade, inlets and bridge pilings, striking baitfish on the tide.",
+  "handling": { "lip": true, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 30,

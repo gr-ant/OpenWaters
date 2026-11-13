@@ -4,6 +4,7 @@
   "name": "Spiny dogfish",
   "scientific": "Squalus acanthias",
   "description": "Small grey shark with white spots and a spine in front of each dorsal fin. Hunts cool coastal water in large packs.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 60,

@@ -1,0 +1,32 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "grass",
+  "name": "Grass",
+  "description": "Grass tufts in clusters over meadows, forest floor and mountainsides.",
+  "ground": {
+    "weights": {
+      "sand": 0.06,
+      "plain": { "temperate": 0.62, "arctic": 0.42, "tropical": 0.7 },
+      "forest": 0.22,
+      "rock": 0.06,
+      "alpine": 0.35
+    },
+    "steep": 0.3,
+    "size": [
+      { "temperate": 0.65, "arctic": 0.45, "tropical": 0.75 },
+      { "temperate": 0.5, "arctic": 0.4, "tropical": 0.5 }
+    ],
+    "sink": 0.03
+  },
+  "stride": 24,
+  "sway": 2,
+  "view": 60,
+  "grow": 0.5,
+  "snow": 0.5,
+  "dry": 0.85,
+  "mesh": {
+    "builder": "grass",
+    "blades": 30,
+    "shade": { "by": "ground", "top": 0.6, "up": 0.7, "root": [0.58, 0.47] }
+  }
+}

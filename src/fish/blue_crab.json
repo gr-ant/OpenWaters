@@ -4,6 +4,7 @@
   "name": "Blue crab",
   "scientific": "Callinectes sapidus",
   "description": "Aggressive swimming crab of estuaries and bays, with blue claws, sharp side spines and paddle-shaped back legs. Length is carapace width.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 8,

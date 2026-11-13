@@ -223,7 +223,7 @@ const FishDB = {
     d._herp = HERP_PLANS.includes(d.body.plan);   // reptiles and amphibians
     d._shell = !!d.body.plan && !['fish', 'ray', 'pinniped'].includes(d.body.plan) && !d._herp;   // rays and mammals count with fishAbundance, herps with herpAbundance
     d._air = d.behavior.breath_hold_s > 0;   // breathes air: surfaces to blow, may leap, may haul out
-    d._hid = [...d.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261) & 0xffff;   // stable per-species seed
+    d._hid = [...d.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261) >>> 0;   // stable per-species seed (all 32 bits: 16 gave two species the same one)
     d._needCover = (d.habitat.cover_required || 0) >= 0.5 ? Object.keys(d.habitat.cover).filter(k => k !== 'open').sort((a, b) => d.habitat.cover[b] - d.habitat.cover[a])[0] : null;   // e.g. a clownfish's anemone
     d._jelly = d.body.plan === 'jelly';   // drawn see-through in their own pass; may sting
     d._benthic = ['bivalve', 'snail', 'crab', 'lobster', 'octopus'].includes(d.body.plan) || (['ray', 'jelly'].includes(d.body.plan) && d.body.parts.bottom >= 0.5);   // crawlers, sessile animals and stingrays live on the bed
@@ -245,7 +245,7 @@ const FishDB = {
     if (this._kindRev !== this.revision) { this._kindRev = this.revision; this._kind = WATER_KEYS.map(W => this.list.map((D, si) => [D, si]).filter(([D]) => (D.habitat.waters[W] || 0) > 0 && (!D.habitat.climates || D.habitat.climates.includes(CLIMATE.key))).sort((a, b) => (a[0]._shell ? 2 : a[0]._herp ? 1 : 0) - (b[0]._shell ? 2 : b[0]._herp ? 1 : 0))); }   // fish first: a cell fills in this order
     return this._kind[kind] || [];
   },
-  saved() { try { return JSON.parse(localStorage.getItem('embercrown-fish-defs') || '{}'); } catch (e) { return {}; } },
+  saved() { try { const s = JSON.parse(localStorage.getItem('embercrown-fish-defs') || '{}'); return s && typeof s === 'object' && !Array.isArray(s) ? s : {}; } catch (e) { return {}; } },
   forget(id) { const s = this.saved(); delete s[id]; try { localStorage.setItem('embercrown-fish-defs', JSON.stringify(s)); } catch (e) { /* */ } },
 };
 

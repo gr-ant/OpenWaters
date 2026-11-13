@@ -48,9 +48,10 @@ void main(){
     vec3 nn = n;
     if (fsh > .5) { // fish and shellfish: iph packs the swim phase (0..2pi) plus 8 x mouth/shell opening (0..12)
       float jo = floor(iph / 8.), ph = iph - jo * 8., op = jo / 12.;
-      if (mat > 12.5 && mat < 14.5) { // lower jaw and throat: swing down about the hinge, weighted per vertex
-        float an = op * jawP.z * clamp((mat - 13.) / .98, 0., 1.), cs = cos(an), sn = sin(an); vec2 d = pp.xz - jawP.xy;
-        pp.xz = jawP.xy + vec2(d.x * cs + d.y * sn, -d.x * sn + d.y * cs); nn.xz = vec2(nn.x * cs + nn.z * sn, -nn.x * sn + nn.z * cs);
+      if (mat > 12.5 && mat < 14.5) { // lower jaw: drops about the hinge, weighted per vertex. Each point ahead of the hinge swings down by its distance
+        // ahead (and draws back as a turning jaw does) but keeps its depth, so the chin and belly bend cleanly under the hinge; the throat behind stays put
+        float an = op * jawP.z * clamp((mat - 13.) / .98, 0., 1.), cs = cos(an), sn = sin(an), dx = max(pp.x - jawP.x, 0.);
+        if (dx > 0.) { pp.x = jawP.x + dx * cs; pp.z -= dx * sn; nn.xz = vec2(nn.x * cs + nn.z * sn, -nn.x * sn + nn.z * cs); }
       } else if (mat > 14.5 && mat < 16.5) { // shell valves (15 right, 16 left) swing open about the hinge line along x
         float an = op * jawP.z * (mat < 15.5 ? 1. : -1.), cs = cos(an), sn = sin(an); vec2 d = vec2(pp.y, pp.z - jawP.y);
         pp.yz = vec2(d.x * cs - d.y * sn, jawP.y + d.x * sn + d.y * cs); nn.yz = vec2(nn.y * cs - nn.z * sn, nn.y * sn + nn.z * cs);

@@ -4,6 +4,7 @@
   "name": "Box jellyfish",
   "scientific": "Chironex fleckeri",
   "description": "A clear, square bell almost invisible in the water, with bundles of long tentacles at its four corners. It hunts small fish over sandy shallows, and its sting is among the worst in the sea.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 10,

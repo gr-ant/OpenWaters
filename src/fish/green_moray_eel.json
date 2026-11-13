@@ -4,6 +4,7 @@
   "name": "Green moray eel",
   "scientific": "Gymnothorax funebris",
   "description": "Thick-bodied, scaleless moray that looks green because of yellow mucus over a blue-grey skin. Hides in reef crevices by day, gaping to breathe, and slips out at night to hunt fish and octopus. Length is nose to tail tip.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 60,

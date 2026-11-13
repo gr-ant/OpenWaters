@@ -4,6 +4,7 @@
   "name": "North American river otter",
   "scientific": "Lontra canadensis",
   "description": "Sleek, playful brown otter with a thick tapering tail and dense waterproof fur. Dives in rivers, lakes and creeks after fish and crayfish, surfacing to breathe and hauling out on banks to rest. Length is nose to tail tip.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 90,

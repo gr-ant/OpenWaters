@@ -4,6 +4,7 @@
   "name": "Bluegill",
   "scientific": "Lepomis macrochirus",
   "description": "Plate-shaped sunfish of warm, weedy shallows. Loose groups under lily pads, sipping insects off the surface all day.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 8,

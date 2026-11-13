@@ -4,6 +4,7 @@
   "name": "Knobbed whelk",
   "scientific": "Busycon carica",
   "description": "Big sea snail of sandy bays with knobs on its shoulder. Hunts clams, prying them open with the edge of its own shell. Length is shell length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 8,

@@ -4,6 +4,7 @@
   "name": "Whale shark",
   "scientific": "Rhincodon typus",
   "description": "The largest fish alive: a gentle giant with a broad flat mouth and a blue-grey back covered in pale spots and stripes. Cruises warm seas with its mouth open, filtering plankton and small fish. Length is nose to tail tip.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 300,

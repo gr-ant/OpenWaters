@@ -75,18 +75,21 @@ src/
   fish/*.json         one file per species   (schema "embercrown-fish/1")
   boats/*.json        one file per boat      (schema "embercrown-boat/1")
   tackle/*.json       one file per piece of gear or rig (schema "embercrown-tackle/1")
+  plants/*.json       one file per water plant, stone or ground cover (schema "embercrown-plant/1")
+  birds/*.json        one file per bird species
 ```
 
 The scripts share one global scope and run in the order `src/index.html` lists them. Later files use names defined by earlier ones, so keep that order when you move things around.
 
-## Adding a fish, boat or tackle item
+## Adding a fish, boat, tackle item, plant or bird
 
-1. Copy a similar `.json` file in `src/fish/`, `src/boats/` or `src/tackle/` and change it. Give it a new `id`, and use that id as the file name.
+1. Copy a similar `.json` file in `src/fish/`, `src/boats/`, `src/tackle/`, `src/plants/` or `src/birds/` and change it. Give it a new `id`, and use that id as the file name.
 2. Add a matching line to `src/index.html` next to its siblings. For example:
    ```html
    <script type="application/json" data-builtin="fish" src="fish/my_fish.json"></script>
    ```
-   A rig must come after the parts it uses.
+   A rig must come after the parts it uses. Plants keep their order: a placed plant's number on the plant grid is its place in that list, so add new ones at the end of the placed plants (before `grass`).
+   For a plant, `place` says where it grows (its rules and fields are explained at the top of `src/js/world/water-plants-grid.js`) and `mesh.builder` picks a shape from `src/js/models/water-plants.js`; change the builder's numbers and colours in the JSON.
    For a fish, set `habitat.climates` to the island climates it lives in (`"temperate"`, `"arctic"`, `"tropical"`). Water temperature then decides where it lives within that climate. Leave it out and the species can show up in any climate.
 3. Run `python3 build.py`. It warns you about any file in `src/` that `index.html` doesn't list.
 

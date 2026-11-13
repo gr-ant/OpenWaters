@@ -4,6 +4,7 @@
   "name": "Scalloped hammerhead",
   "scientific": "Sphyrna lewini",
   "description": "Slender grey-bronze shark with a wide, flattened head like a mallet and a tall sickle dorsal fin. Gathers by day in big schools over reefs and seamounts, then scatters at night to hunt squid and fish. Length is nose to tail tip.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 80,

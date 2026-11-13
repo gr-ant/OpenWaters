@@ -4,6 +4,7 @@
   "name": "Wahoo",
   "scientific": "Acanthocybium solandri",
   "description": "Needle-jawed, electric-blue torpedo with tiger-like bars, among the fastest fish in the sea. Streaks alone through blue water around reefs and drop-offs and slices through line with razor teeth; length is fork length.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 80,

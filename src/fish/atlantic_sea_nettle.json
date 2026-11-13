@@ -4,6 +4,7 @@
   "name": "Atlantic sea nettle",
   "scientific": "Chrysaora quinquecirrha",
   "description": "A milky bell striped in rust red, with long fiery tentacles and frilled mouth arms. Summer swarms in warm bays sting swimmers.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 8,

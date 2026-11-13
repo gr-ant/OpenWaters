@@ -4,6 +4,7 @@
   "name": "Arctic char",
   "scientific": "Salvelinus alpinus",
   "description": "The northernmost freshwater fish: a trout-like char with a dark back, pale spots and a blazing red-orange belly in autumn. Lives in icy lakes and runs to the sea in summer.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 25,

@@ -1,5 +1,5 @@
   html, body { background:#000; margin:0; overflow:hidden; overscroll-behavior:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
-  canvas { position:fixed; left:0; top:0; width:100vw; height:100vh; display:block; touch-action:none; }
+  canvas { position:fixed; left:0; top:0; width:100vw; height:100vh; height:100dvh; display:block; touch-action:none; }   /* dvh: the part of the page Safari's toolbars leave visible (what innerHeight measures) */
   #overlay { cursor:crosshair; }
   /* ---- touch controls: a shortcut rail on the right edge, a thumb cluster bottom-right; one gold-on-forest look ---- */
   #tui button { touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; padding:0; cursor:pointer; }

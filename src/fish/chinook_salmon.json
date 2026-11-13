@@ -1,5 +1,6 @@
 {
   "schema": "embercrown-fish/1",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "spread": 0.2,
@@ -151,7 +152,7 @@
     "runs": 0.9
   },
   "id": "chinook_salmon",
-  "name": "Chinook salmon",
+  "name": "King salmon (Chinook)",
   "scientific": "Oncorhynchus tshawytscha",
-  "description": "King salmon, the largest Pacific salmon: blue-green back and silver sides with black spots on the back and on both lobes of the tail, and black gums. Feeds on herring at sea, then runs up big rivers to spawn."
+  "description": "The king, or Chinook: the largest Pacific salmon: blue-green back and silver sides with black spots on the back and on both lobes of the tail, and black gums. Feeds on herring at sea, then runs up big rivers to spawn."
 }

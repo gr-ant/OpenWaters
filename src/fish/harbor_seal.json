@@ -4,6 +4,7 @@
   "name": "Harbor seal",
   "scientific": "Phoca vitulina",
   "description": "Round-headed, spotted grey seal of cold coasts. Hauls out on low rocky and sandy shores to rest, slipping into the water at the first sign of you, and pops its head up to watch.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 120,

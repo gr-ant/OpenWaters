@@ -15,6 +15,10 @@ body.title-on #hud, body.title-on #tui, body.title-on #overlay { visibility: hid
 /* the cards */
 .ti-row { position: absolute; left: clamp(16px, 3.4vw, 64px); right: clamp(16px, 3.4vw, 64px); bottom: clamp(44px, 6.5vh, 64px); display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(10px, 2vw, 36px); }
 .ti-row[hidden] { display: none; }
+.ti-cont { position: absolute; right: clamp(16px, 3.4vw, 64px); bottom: clamp(6px, 1.4vh, 14px); padding: 7px 16px; border-radius: 999px; border: 1.5px solid var(--gold); cursor: pointer;
+  background: rgba(32,84,56,.92); color: #f6ecd2; font: 700 clamp(12px, 1vw, 15px) var(--sans); letter-spacing: .4px; box-shadow: 0 3px 10px rgba(0,0,0,.4); }
+.ti-cont:hover, .ti-cont:focus-visible { border-color: var(--gold-hi); outline: none; box-shadow: 0 0 0 3px rgba(240,213,138,.4), 0 3px 10px rgba(0,0,0,.4); }
+.ti-cont[hidden] { display: none; } #title.busy .ti-cont { opacity: .45; pointer-events: none; }
 .ti-item { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; min-height: clamp(110px, 17vh, 150px); padding: 12px 8px 14px; box-sizing: border-box; cursor: pointer;
   color: #f6ecd2; font: 700 clamp(17px, 1.75vw, 30px)/1.1 var(--serif); text-shadow: 0 2px 3px rgba(0,0,0,.6);
   background: linear-gradient(180deg, rgba(28,72,50,.94), rgba(18,54,36,.96)); border: 2px solid #c4a86c; border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.07);

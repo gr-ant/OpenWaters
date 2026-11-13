@@ -4,6 +4,7 @@
   "name": "Salmon shark",
   "scientific": "Lamna ditropis",
   "description": "Stocky, warm-bodied cousin of the white shark, dark grey-blue above and white below with dusky blotches on the belly, a crescent tail and strong keels. Keeps its body far warmer than the cold North Pacific around it and runs down migrating salmon. Length is nose to tail tip.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 120,

@@ -33,14 +33,14 @@
   .sp-act .link:hover { text-decoration: underline; }
   .sp-tip { margin: 8px 0 0; text-align: center; font: italic 16px var(--serif); color: #3e3424; } .sp-tip kbd { color: var(--ink); border-color: #3e3424; background: #fff6; }
   /* the card the keyboard is on */
-  #tkBody li.nav { outline: 2px solid var(--gold-hi); outline-offset: 1px; }
+  #tkBody .nav { outline: 2px solid var(--gold-hi); outline-offset: 1px; }
   #spawn .tabs button.nav, #spawn .subtabs button.nav, #tackle .tabs button.nav, #tkBody .subtabs button.nav, #tkFoot button.nav { outline: 2.5px solid var(--gold-hi); outline-offset: 2px; }   /* the tab, chip or button the keyboard is on */
   body.spawn-open #hMap { display: none; }   /* the spawn panel sits where the minimap is */
   @media (max-width: 720px) { body.tackle-open #hMap, body.journal-open #hMap { display: none; } }   /* so do the tackle box and journal, on a narrow screen */
   #tkBody .subtabs { padding: 0 0 10px; gap: 6px; } #tkBody .subtabs button { padding: 4px 12px; }
   #tkBody li.none { cursor: default; color: var(--muted); justify-content: center; border-style: dashed; }
   /* boats: no search, a grid of picture tiles */
-  #spawn[data-mode="boats"] { width: min(420px, calc(100vw - 20px)); bottom: auto; max-height: calc(100vh - 20px); }
+  #spawn[data-mode="boats"] { width: min(420px, calc(100vw - 20px)); bottom: auto; max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); }
   #spawn[data-mode="boats"] .search { display: none; }
   #spawn[data-mode="boats"] .sp-art { width: 110px; height: 70px; }
   #spList.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }

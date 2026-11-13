@@ -4,6 +4,7 @@
   "name": "Banded coral shrimp",
   "scientific": "Stenopus hispidus",
   "description": "Red-and-white banded shrimp with enormous white antennae that sets up a cleaning station in reef crevices, climbing onto fish to pick off parasites. Length is body length without the antennae.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 3,

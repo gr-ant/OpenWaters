@@ -4,6 +4,7 @@
   "name": "Pacific halibut",
   "scientific": "Hippoglossus stenolepis",
   "description": "Giant right-eyed flatfish of cold water. Lies on the bottom off the cold north-west coast with both eyes on its dark upper side, white underneath, and rises to ambush passing fish.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 50,

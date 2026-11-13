@@ -4,6 +4,7 @@
   "name": "Burbot",
   "scientific": "Lota lota",
   "description": "The only freshwater cod: an eel-like, mottled bottom-dweller with a single chin barbel. Loves cold deep lakes and big rivers and is most active at night, even spawning under winter ice.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 25,

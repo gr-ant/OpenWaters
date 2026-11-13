@@ -4,6 +4,7 @@
   "name": "Bicolor parrotfish",
   "scientific": "Cetoscarus bicolor",
   "description": "Large Indo-Pacific parrotfish; males are green with pink cheeks and a bulbous forehead, while females are cream with a red-orange rear. Scrapes algae and dead coral with a fused beak and leaves sand behind. Length is total length.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 20,

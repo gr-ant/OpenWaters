@@ -4,6 +4,7 @@
   "name": "Cutthroat trout",
   "scientific": "Oncorhynchus clarkii",
   "description": "Golden-olive native trout of cold mountain rivers and lakes, with a blood-red slash under each jaw and black spots peppering the tail end. Rises willingly to insects drifting on the current.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 15,

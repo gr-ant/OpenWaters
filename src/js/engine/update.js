@@ -4,11 +4,20 @@ Object.assign(Engine, {
   resize() {
     this.pauseRedraw = true;
     const dpr = Math.min(devicePixelRatio || 1, this.touchUI ? CONFIG.maxPixelRatioTouch : CONFIG.maxPixelRatio);
-    this.canvas.width = innerWidth * dpr; this.canvas.height = innerHeight * dpr;
+    this.applyRes();
     this.ov.width = innerWidth * dpr; this.ov.height = innerHeight * dpr;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.miniMemo.key = this.bigMemo.key = '';
   },
+
+  // the 3D view's own resolution: the pixel ratio times resScale (adaptive resolution, boot.js). The 2D overlay (HUD, map,
+  // text) keeps the full pixel ratio; CSS stretches the 3D canvas over the same screen.
+  applyRes() {
+    const k = Math.min(devicePixelRatio || 1, this.touchUI ? CONFIG.maxPixelRatioTouch : CONFIG.maxPixelRatio) * (this.resScale || 1);
+    const w = Math.max(1, Math.round(innerWidth * k)), h = Math.max(1, Math.round(innerHeight * k));
+    if (this.canvas.width !== w || this.canvas.height !== h) { this.canvas.width = w; this.canvas.height = h; }
+  },
+  setResScale(s) { this.resScale = clamp(s, CONFIG.minResolutionScale, 1); this.applyRes(); },
 
   streamChunks(budgetMs, maxRing = VIEW) {
     const gl = this.gl, pcx = Math.floor(this.P.x / CHW), pcy = Math.floor(this.P.y / CHW), t0 = performance.now();
@@ -16,12 +25,13 @@ Object.assign(Engine, {
       gl.deleteVertexArray(ch.vao); ch.vaos.forEach(v => gl.deleteVertexArray(v));
       ch.bufs.forEach(b => gl.deleteBuffer(b)); this.chunks.delete(k);
     }
+    const J = this.job; if (J && Math.max(Math.abs(J.cx - pcx), Math.abs(J.cy - pcy)) > VIEW + 2) this.job = null;   // half built where you were before travelling
     while (performance.now() - t0 < budgetMs) {
       if (!this.job) {
         for (const [i, j] of this.offsets) {
           if (i * i + j * j > maxRing * maxRing) break;
           const cx = pcx + i, cy = pcy + j, key = (cx + 1e6) * 2e6 + (cy + 1e6);
-          if (!this.chunks.has(key)) { this.job = { key, gen: this.buildChunkGen(cx, cy) }; break; }
+          if (!this.chunks.has(key)) { this.job = { key, cx, cy, gen: this.buildChunkGen(cx, cy) }; break; }
         }
         if (!this.job) return;
       }
@@ -34,15 +44,16 @@ Object.assign(Engine, {
   // together they never push a frame past ~16 ms at 60 FPS. A nearly empty world gets more so it fills in quickly.
   bgStart() {
     const empty = this.chunks.size < 60, work = this.workMs ?? 8;
-    this.bgLeft = empty ? 14 : clamp(1000 / 60 - 1.5 - work, this.touchUI ? 1 : 1.5, this.touchUI ? 5 : 8); this.bgSpent = 0;
+    this.bgLeft = this.subStep ? 0 : empty ? 14 : clamp(1000 / 60 - 1.5 - work, this.touchUI ? 1 : 1.5, this.touchUI ? 5 : 8); this.bgSpent = 0;   // subStep: a catch-up step of a slow frame leaves background work to the frame's last step
   },
   bgTake(cap, floor = 0) { return Math.max(floor, Math.min(cap, this.bgLeft)); },   // floor: always make a little progress
   bgSpend(ms) { this.bgLeft -= ms; this.bgSpent += ms; },
   update(ts) {
     if (this.pauseOpen) { this.last = ts; return; }
+    if (!this.titleOpen) this.live = true;   // in play (not the start menu's backdrop): from here on your place is saved
     const dt = clamp((ts - (this.last || ts)) / 1000, 0, 0.05); this.last = ts; this.time += dt; this.bgStart();
     this.tod = ((this.tod ?? CONFIG.startHour / 24) + dt / CONFIG.dayLengthSeconds * (this.keys.KeyT ? CONFIG.fastTimeMultiplier : 1)) % 1;
-    this.fps += ((dt > 0 ? 1 / dt : 60) - this.fps) * 0.05; this.msgT -= dt;
+    this.msgT -= dt;
     this.stepMouseLook(dt);
     const P = this.P, K = this.keys;
     if (P.a > 64 || P.a < -64) P.a %= 6.283185307179586;   // keep the heading from growing without bound
@@ -57,7 +68,8 @@ Object.assign(Engine, {
       if (this.thirdP && (K.PageUp || K.PageDown)) this.camZoom(Math.exp((K.PageUp ? -1.2 : 1.2) * dt));
     }
     const [jf, js, jrun] = this.joyInput();
-    const f = this.showMap ? 0 : clamp((K.KeyW ? 1 : 0) - (K.KeyS ? 1 : 0) + jf, -1, 1), s = this.showMap ? 0 : clamp((K.KeyD ? 1 : 0) - (K.KeyA ? 1 : 0) + js, -1, 1);   // the keys belong to the map while it's open
+    let f = this.showMap ? 0 : clamp((K.KeyW ? 1 : 0) - (K.KeyS ? 1 : 0) + jf, -1, 1), s = this.showMap ? 0 : clamp((K.KeyD ? 1 : 0) - (K.KeyA ? 1 : 0) + js, -1, 1);
+    if (!this.boat || this.boatMode === 'deck') { const m = Math.hypot(f, s); if (m > 1) { f /= m; s /= m; } }   // on foot a diagonal is no faster than straight ahead (at the helm f and s are throttle and rudder, left alone)   // the keys belong to the map while it's open
     // water under you: wading slows you down; past chest depth you float and swim (C dives, Space rises, or swim where you look)
     let oSwim = false, oUnder = false, oWade = 0, oWl = 0;
     if (this.boat) oWl = this.boatMode === 'deck' ? this.boatDeckStep(dt, f, s) : this.boatStep(dt, f, s, K.ShiftLeft || K.ShiftRight || jrun);   // driving a boat, or moving about on it

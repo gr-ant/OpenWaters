@@ -4,6 +4,7 @@
   "name": "American lobster",
   "scientific": "Homarus americanus",
   "description": "Long-lived bottom crawler of cold rocky coasts with one crushing and one cutting claw. Hides in dens by day and forages at night. Length is body length, rostrum to tail fan, claws excluded.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 12,

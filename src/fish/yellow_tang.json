@@ -4,6 +4,7 @@
   "name": "Yellow tang",
   "scientific": "Zebrasoma flavescens",
   "description": "Oval, brilliant lemon-yellow surgeonfish that grazes algae off reef rock in loose groups, with a white scalpel spine at the base of the tail. Length is total length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 7,

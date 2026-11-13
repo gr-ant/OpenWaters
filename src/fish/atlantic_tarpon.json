@@ -4,6 +4,7 @@
   "name": "Atlantic tarpon",
   "scientific": "Megalops atlanticus",
   "description": "The silver king: a giant, armour-scaled fish with an upturned mouth and a long trailing filament on the last dorsal ray. Rolls in warm channels, mangroves and passes, gulps air, and leaps wildly when hooked.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 60,

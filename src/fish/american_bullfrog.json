@@ -4,6 +4,7 @@
   "name": "American bullfrog",
   "scientific": "Lithobates catesbeianus",
   "description": "The biggest North American frog. Sits at the pond edge and swallows almost anything that fits: insects, crayfish, fish, even other frogs. Length is snout to vent.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 7,

@@ -4,6 +4,7 @@
   "name": "Cunner",
   "scientific": "Tautogolabrus adspersus",
   "description": "Small, mottled brown-green wrasse that picks at mussels and barnacles around rocks, weed and pilings, nibbling at any bait. Dozes in crevices at night and in cold water.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 10,

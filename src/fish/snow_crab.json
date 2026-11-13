@@ -4,6 +4,7 @@
   "name": "Snow crab",
   "scientific": "Chionoecetes opilio",
   "description": "Long-legged orange-brown crab of icy seabeds, walking slowly over mud and gravel in large numbers. Length is carapace width.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 6,

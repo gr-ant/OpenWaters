@@ -4,6 +4,7 @@
   "name": "Giant squid",
   "scientific": "Architeuthis dux",
   "description": "The deep's great hunter, almost never seen alive. Drifts in the black water over the slope and canyons, eyes the size of dinner plates, and rises toward the surface only on the darkest nights. Length here is mantle plus arms; the two feeding tentacles reach twice as far again.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 150,

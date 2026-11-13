@@ -4,6 +4,7 @@
   "name": "Moorish idol",
   "scientific": "Zanclus cornutus",
   "description": "Striking black, white and yellow reef fish with a swept-back banner of dorsal fin and a long, tweezer-like snout. Picks sponges from crevices and is notoriously hard to keep alive. Length is body length without the banner.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 10,

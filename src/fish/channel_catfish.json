@@ -4,6 +4,7 @@
   "name": "Channel catfish",
   "scientific": "Ictalurus punctatus",
   "description": "Whiskered bottom-feeder of rivers and murky ponds. Hunts by smell and taste at night; doesn't mind muddy water.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 25,

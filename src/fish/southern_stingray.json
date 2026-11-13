@@ -4,6 +4,7 @@
   "name": "Southern stingray",
   "scientific": "Hypanus americanus",
   "description": "Diamond-shaped ray of warm sandy shallows. Lies half-buried in sand by the reefs, eyes on top, and glides off with a ripple of its wings. A venomous spine near the base of the whip tail.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 60,

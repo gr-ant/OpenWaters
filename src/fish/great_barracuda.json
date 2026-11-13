@@ -4,6 +4,7 @@
   "name": "Great barracuda",
   "scientific": "Sphyraena barracuda",
   "description": "Long silver torpedo with a jutting jaw full of fangs and dark blotches along its lower side. Hangs motionless near the reef, then strikes like lightning.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 60,

@@ -43,7 +43,20 @@ const FISH_DEFAULTS = {
     breath_hold_s: 0, surface_s: 5, leap_per_hour: 0, haul_out: 0, blow: 0 },
   diet: { food: { insects: 0.3, worms: 0.3, fish: 0.2, nymphs: 0.2 }, piscivore_from_cm: 0, feeding_zone: { surface: 0.2, mid: 0.4, bottom: 0.4 }, meals_per_day: 3 },
   fight: { strength: 0.5, stamina: 0.5, jumps: 0.2, runs: 0.5, teeth: 0 },   // teeth 0..1: how easily it bites through line (a wire leader stops it)
+  // once it's unhooked. lip: true = can be held by the lower jaw (bass, crappie, trout), false = not (teeth, a small or
+  // underslung mouth, a bill). hold: 'hand' (one hand round it), 'cradle' (two hands under the belly) or 'none' (too big or
+  // too dangerous to lift: it is unhooked in the water, alongside). 'auto' works either out from the body (fishHandling).
+  handling: { lip: 'auto', hold: 'auto' },
 };
+function fishHandling(D) {
+  const h = D.handling || {}, B = D.body, plan = B.plan || 'fish', L = D.size.length_cm.typical, kg = D.size.weight.a * Math.pow(L, D.size.weight.b) / 1000;
+  let lip = false, hold;
+  if (plan !== 'fish') hold = plan === 'jelly' || plan === 'pinniped' || plan === 'crocodilian' ? 'none' : L <= 40 ? 'hand' : L <= 90 ? 'cradle' : 'none';
+  else if (B.swim === 'cetacean' || L > 140 || kg > 25) hold = 'none';
+  else { hold = L < 28 ? 'hand' : 'cradle';
+    lip = ((D.fight && D.fight.teeth) || 0) < 0.4 && B.head.mouth >= 0.5 && B.head.jaw !== 'inferior' && !B.head.bill && B.swim !== 'anguilliform' && !B.lie && L >= 15 && L <= 110; }
+  return { lip: typeof h.lip === 'boolean' ? h.lip : lip, hold: ['hand', 'cradle', 'none'].includes(h.hold) ? h.hold : hold };
+}
 // weight maps and lists are replaced whole (a species listing waters {creek:1} means no other waters)
 const FISH_REPLACE = new Set(['waters', 'cover', 'food', 'feeding_zone', 'depth_zone', 'dorsal', 'pattern', 'profile']);
 const ACTIVITY_PRESETS = { // relative activity for each hour 0..23
@@ -68,6 +81,8 @@ function validateFish(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { def: null, errors: ['not a JSON object'], warnings };
   for (const k of Object.keys(raw)) if (!(k in FISH_DEFAULTS) && !k.startsWith('_')) warnings.push(`unknown field "${k}" (ignored)`);
   const d = fishMerge(FISH_DEFAULTS, raw);
+  if (!['auto', true, false].includes(d.handling.lip)) errors.push('handling.lip: true or false (or leave it out)');
+  if (!['auto', 'hand', 'cradle', 'none'].includes(d.handling.hold)) errors.push('handling.hold: "hand", "cradle" or "none" (or leave it out)');
   const num = (v, path, lo, hi) => { if (typeof v !== 'number' || !isFinite(v)) errors.push(`${path} must be a number`); else if (v < lo || v > hi) warnings.push(`${path} = ${v} is outside the usual ${lo}..${hi}`); };
   if (!raw.id || !/^[a-z0-9_\-]+$/.test(raw.id)) errors.push('id is required: lowercase letters, digits, _ or - (e.g. "brown_trout")');
   if (!raw.name) errors.push('name is required');
@@ -87,7 +102,7 @@ function validateFish(raw) {
     if (plan === 'squid' && !['rhomboid', 'round'].includes(d.body.parts.fin_shape)) errors.push('body.parts.fin_shape: rhomboid or round');
     if (plan === 'ray' && !['manta', 'diamond', 'round'].includes(d.body.parts.shape)) errors.push('body.parts.shape: manta, diamond or round');
     if (plan === 'ray' && !['front', 'under'].includes(d.body.parts.mouth)) errors.push('body.parts.mouth: front (mantas) or under (stingrays, skates)');
-    if (plan === 'pinniped' && !['flippers', 'paddle', 'tail'].includes(d.body.parts.rear)) errors.push('body.parts.rear: flippers (seals, sea lions), paddle (manatees) or tail (otters)');
+    if (plan === 'pinniped' && !['flippers', 'paddle', 'tail', 'flat'].includes(d.body.parts.rear)) errors.push('body.parts.rear: flippers (seals, sea lions), paddle (manatees), tail (otters) or flat (beavers)');
     if (plan === 'frog' && !['sit', 'swim'].includes(d.body.parts.pose)) errors.push('body.parts.pose: sit or swim');
     if (plan === 'jelly' && !JELLY_SHAPES.includes(d.body.parts.shape)) errors.push(`body.parts.shape: ${JELLY_SHAPES.join(', ')}`);
     for (const [k, v] of Object.entries(d.body.parts)) if (typeof PI_.parts[k] === 'boolean' && typeof v !== 'boolean') errors.push(`body.parts.${k} must be true or false`);
@@ -135,6 +150,21 @@ function cetaceanBlade(M, root, dir, L, chordAt, col, bumpy, thin) {
     if (bumpy) { const c = chordAt(u0 + 0.5 / N); M.blob(p0.map((v, i) => v + dir[i] * L * 0.5 / N + fore[i] * c * 0.82), c * 0.2, c * 0.2, c * 0.2, 4, 8, col); } }
   M.smoothTube = smooth;
 }
+// ---- pattern layers, shared by fish and the other body plans (makePainter): v = -1 belly .. 1 back; fi, fj on the 18 x 16 patch grid ----
+const patBase = (C, v) => v >= 0 ? lerp3(C.flank, C.back, sstep(0.1, 0.8, v)) : lerp3(C.flank, C.belly, sstep(-0.05, -0.6, v));   // back, flank and belly
+const patRegion = (r, v) => r === 'upper' ? sstep(0.08, 0.22, v) : r === 'flank' ? sstep(-0.47, -0.33, v) * (1 - sstep(0.68, 0.82, v)) : r === 'lower' ? 1 - sstep(-0.27, -0.13, v) : r === 'all' ? 1 : sstep(-0.47, -0.33, v);
+const patSpot = (p, pi, ci, cj) => { const s = Math.max(1, Math.round(p.size || 1)), side = Math.min(cj, 15 - cj); return hash2(Math.floor(ci / s), Math.floor(side / s) + (cj < 8 ? 0 : 50), 31 + pi) < (p.density ?? 0.3); };   // is patch (ci, cj) a spot?
+// how strongly a layer (other than 'spots') shows at t (0 front .. 1 rear), v; wv: the bars' wobble phase
+function patK(p, pi, t, v, fi, fj, wv) {
+  const sm = sstep;
+  if (p.type === 'bars') { const bw = p.width ?? 0.4, f = (t + (p.wavy || 0) * 0.04 * Math.sin(wv)) * (p.count || 6), dd = Math.abs(((f - bw / 2) % 1 + 1.5) % 1 - 0.5); return bw >= 1 ? 1 : 1 - sm(bw / 2 - 0.06, bw / 2 + 0.06, dd); }
+  if (p.type === 'stripe') { const sw = p.width ?? 0.15; return 1 - sm(sw - 0.05, sw + 0.05, Math.abs(v - (p.v ?? 0))); }
+  if (p.type === 'mottled') { const th0 = 0.3 - (p.amount ?? 0.4) * 0.6, sideC = Math.min(fj, 16 - fj) - 0.5; return sm(th0 - 0.05, th0 + 0.05, nPat(t * (p.scale || 6), sideC / 16 * (p.scale || 6) * 0.7 + pi * 3)); }
+  if (p.type === 'lateral_line') return 1 - sm(0.06, 0.1, Math.abs(v - (p.v ?? 0)));
+  if (p.type === 'spot') { const sz = p.size ?? 0.06; return 1 - sm(sz * 0.75, sz * 1.1, Math.hypot(t - (p.at ?? 0.25), (v - (p.v ?? 0.3)) * 0.5)); }
+  if (p.type === 'scales') return 0.5 * (0.5 + 0.5 * Math.sin(Math.PI * fi) * Math.sin(Math.PI * fj));
+  return 0;
+}
 function fishMesh(D) {
   if (D.body.plan && D.body.plan !== 'fish') return planMesh(D);
   D._wave = 1;
@@ -144,7 +174,7 @@ function fishMesh(D) {
   const upness = fj => lie ? lie * Math.sin(fj / 16 * 6.2832) : Math.cos(fj / 16 * 6.2832);
   for (const k in FISH_DEFAULTS.body.colors) C[k] = hexRGB(B.colors[k] || FISH_DEFAULTS.body.colors[k]);
   const pats = (B.pattern || []).map(p => Object.assign({ alpha: 1, region: 'upper_flank' }, p, { rgb: hexRGB(p.color || '#000000') }));
-  const M = meshBuilder(true), mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const M = meshBuilder(true), mix = lerp3;
   const tl = clamp(B.tail.size, 0.05, 0.35), x0 = 0.5, x1 = -0.5 + tl * 0.85, bl = x0 - x1;
   // body depth along the length: a smooth (Catmull-Rom) curve through the profile points, so the flank has no ripples
   const prof = t => { const p = B.profile, n = p.length, f = clamp(t, 0, 1) * (n - 1), i = Math.min(n - 2, Math.floor(f)), u = f - i, P = k => p[clamp(k, 0, n - 1)];
@@ -155,7 +185,7 @@ function fishMesh(D) {
   const f0 = 0.2 + 0.5 * B.head.snout, snF = t => t >= 1 / NR ? 1 : f0 + (1 - f0) * (1 - (1 - Math.max(0, t) * NR) ** 2);
   const HH = t => B.height / 2 * prof(t) * snF(t), HW = t => B.width / 2 * Math.pow(prof(t), 0.9) * snF(t);
   const V = (i, j) => { const t = i / NR, a = j / NS * 6.2832; return [X(t), Math.sin(a) * HW(t), Math.cos(a) * HH(t)]; };
-  const sm = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  const sm = sstep;
   const inRegion = (r, v) => r === 'upper' ? v > 0.15 : r === 'flank' ? v > -0.4 && v < 0.75 : r === 'lower' ? v < -0.2 : r === 'all' ? true : v > -0.4;
   // mouth: the lower jaw is the front of the head below the mouth line, back to a hinge set by head.mouth.
   // The line sits high for an upturned (superior) jaw, at mid-height for terminal, low for underslung (inferior).
@@ -163,7 +193,7 @@ function fishMesh(D) {
   const jb = Math.round({ superior: 0.45, terminal: 0.52, inferior: 0.62 }[B.head.jaw] * NS / 2), ja = jb / NS * 6.2832;  // mouth line: segment boundary jb from the top
   const below = j => { const m = Math.min(j, NS - 1 - j); return m >= jb; };   // quad j is under the mouth line (either side)
   const th = ih / NR, hx = X(th), hz = Math.cos(ja) * HH(th);
-  D._jaw = [hx, hz, 0.3 + 0.55 * B.head.mouth];
+  D._jaw = [hx, hz, 0.26 + 0.42 * B.head.mouth];   // widest gape, radians: 15 deg for the smallest mouths to about 39 deg for the biggest
   // the jaw is rigid in front of the hinge; behind it the throat skin stretches over R, long enough (vs the depth below
   // the hinge and the widest gape) that it never folds over itself
   const R = Math.max(gape * 0.3, 1.6 * D._jaw[2] * (hz + HH(th))), ihT = clamp(ih + Math.ceil(R / bl * NR), ih, NR - 2);
@@ -177,18 +207,16 @@ function fishMesh(D) {
     const dt = [-bl, sa * (HW(t1) - HW(t0)) / (t1 - t0), ca * (HH(t1) - HH(t0)) / (t1 - t0)], da = [0, ca * HW(t), -sa * HH(t)];
     let n = norm3(cross3(dt, da)); if (n[1] * sa + n[2] * ca < 0) n = n.map(x => -x); return n;
   };
-  const softRegion = (r, v) => r === 'upper' ? sm(0.08, 0.22, v) : r === 'flank' ? sm(-0.47, -0.33, v) * (1 - sm(0.68, 0.82, v)) : r === 'lower' ? 1 - sm(-0.27, -0.13, v) : r === 'all' ? 1 : sm(-0.47, -0.33, v);
   const ringLen = bl / NR, ellP = (a, b) => Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
   const spotCell = (p, pi, ci, cj) => {   // same placement rule as the patch grid always used
     if (ci < 0 || ci >= NR) return false; cj = ((cj % NS) + NS) % NS;
     const tc = (ci + 0.5) / NR, vc = upness(cj + 0.5);
     if (!inRegion(p.region, vc) || tc < (p.from ?? 0.06) || tc > (p.to ?? 1)) return false;
-    const s = Math.max(1, Math.round(p.size || 1)), side = Math.min(cj, NS - 1 - cj);
-    return hash2(Math.floor(ci / s), Math.floor(side / s) + (cj < NS / 2 ? 0 : 50), 31 + pi) < (p.density ?? 0.3);
+    return patSpot(p, pi, ci, cj);
   };
   const colorAt = (fi, fj) => {
-    const t = fi / NR, v = upness(fj), sideC = Math.min(fj, NS - fj) - 0.5;
-    let c = v >= 0 ? mix(C.flank, C.back, sm(0.1, 0.8, v)) : mix(C.flank, C.belly, sm(-0.05, -0.6, v));
+    const t = fi / NR, v = upness(fj);
+    let c = patBase(C, v);
     const r = clamp(ellP(HW(t), HH(t)) / NS / ringLen, 0.5, 2);
     pats.forEach((p, pi) => {
       let k = 0;
@@ -196,15 +224,9 @@ function fishMesh(D) {
         for (let ci = Math.floor(fi) - 1; ci <= Math.floor(fi) + 1; ci++) for (let cj = Math.floor(fj) - 2; cj <= Math.floor(fj) + 2; cj++)
           if (spotCell(p, pi, ci, cj)) k = Math.max(k, 1 - sm(0.47, 0.67, Math.hypot(fi - ci - 0.5, (fj - cj - 0.5) * r)));
       } else {
-        const from = p.from ?? 0.06, to = p.to ?? 1, w = softRegion(p.region, v) * sm(from - 0.015, from + 0.015, t) * (to >= 1 ? 1 : 1 - sm(to - 0.015, to + 0.015, t));
+        const from = p.from ?? 0.06, to = p.to ?? 1, w = patRegion(p.region, v) * sm(from - 0.015, from + 0.015, t) * (to >= 1 ? 1 : 1 - sm(to - 0.015, to + 0.015, t));
         if (w <= 0) return;
-        if (p.type === 'bars') { const bw = p.width ?? 0.4, f = (t + (p.wavy || 0) * 0.04 * Math.sin(v * 9)) * (p.count || 6), dd = Math.abs(((f - bw / 2) % 1 + 1.5) % 1 - 0.5); k = bw >= 1 ? 1 : 1 - sm(bw / 2 - 0.06, bw / 2 + 0.06, dd); }
-        else if (p.type === 'stripe') { const sw = p.width ?? 0.15; k = 1 - sm(sw - 0.05, sw + 0.05, Math.abs(v - (p.v ?? 0))); }
-        else if (p.type === 'mottled') { const th0 = 0.3 - (p.amount ?? 0.4) * 0.6; k = sm(th0 - 0.05, th0 + 0.05, nPat(t * (p.scale || 6), sideC / NS * (p.scale || 6) * 0.7 + pi * 3)); }
-        else if (p.type === 'lateral_line') k = 1 - sm(0.06, 0.1, Math.abs(v - (p.v ?? 0)));
-        else if (p.type === 'spot') { const sz = p.size ?? 0.06; k = 1 - sm(sz * 0.75, sz * 1.1, Math.hypot(t - (p.at ?? 0.25), (v - (p.v ?? 0.3)) * 0.5)); }
-        else if (p.type === 'scales') k = 0.5 * (0.5 + 0.5 * Math.sin(Math.PI * fi) * Math.sin(Math.PI * fj));
-        k *= w;
+        k = patK(p, pi, t, v, fi, fj, v * 9) * w;
       }
       if (k > 0) c = mix(c, p.rgb, k * p.alpha);
     });
@@ -230,18 +252,60 @@ function fishMesh(D) {
     M.mat = below(j) ? MT.JAW : MT.CLOTH;
     M.triN(GP[k0], GP[k1], tip, norm3(GN[k0].map((x, n) => x + tipN[n] * 0.6)), norm3(GN[k1].map((x, n) => x + tipN[n] * 0.6)), tipN, GC[k0], GC[k1], mix(tc, mix(GC[k0], GC[k1], 0.5), 0.5));
   }
-  // inside of the mouth (hidden while closed): roof and throat stay put, the floor moves with the jaw
+  // ---- the mouth ----
+  // Inside (hidden while closed): a vaulted roof that stays put and a troughed floor that swings with the jaw, pale at the
+  // lips and dark down the throat; a throat wall between them at the hinge; a tongue. Outside: lips along the gape, and a
+  // cheek membrane each side that unfolds from the corner as the jaw drops, so the mouth opens round, not like scissors.
   const Cm = hexRGB(B.colors.mouth || '#5a1e1a'), edge = (i, sg) => { const t = i / NR; return [X(t), sg * Math.sin(ja) * HW(t) * 0.97, Math.cos(ja) * HH(t)]; };
-  for (let i = 0; i < ih; i++) {
-    const a0 = edge(i, 1), a1 = edge(i + 1, 1), b0 = edge(i, -1), b1 = edge(i + 1, -1), up = v => [v[0], v[1], v[2] + 0.002], dn = v => [v[0], v[1], v[2] - 0.002];
-    M.mat = MT.CLOTH; M.quad(up(a0), up(a1), up(b1), up(b0), mix(Cm, [0, 0, 0], 0.25), [a0[0], 0, a0[2] + 1]);
-    M.mat = MT.JAW; M.quad(dn(a0), dn(a1), dn(b1), dn(b0), Cm, [a0[0], 0, a0[2] - 1]);
+  {
+    const JW = MT.JAW + 0.98, put = (q, n, c, m) => M.v.push(q[0], q[1], q[2], n[0], n[1], n[2], c[0], c[1], c[2], m);
+    // a flat-shaded triangle whose face looks along `to`; a material per corner (fixed skin, or the rigid jaw)
+    const face = (P3, C3, m3, to) => { const u = [P3[1][0] - P3[0][0], P3[1][1] - P3[0][1], P3[1][2] - P3[0][2]], w = [P3[2][0] - P3[0][0], P3[2][1] - P3[0][1], P3[2][2] - P3[0][2]];
+      let n = cross3(u, w); const l = Math.hypot(n[0], n[1], n[2]); n = l > 1e-12 ? n.map(x => x / l) : to;
+      if (n[0] * to[0] + n[1] * to[1] + n[2] * to[2] < 0) n = n.map(x => -x); for (let k = 0; k < 3; k++) put(P3[k], n, C3[k], m3[k]); };
+    const quadF = (q0, q1, q2, q3, c0, c1, c2, c3, m0, m1, m2, m3, to) => { face([q0, q1, q2], [c0, c1, c2], [m0, m1, m2], to); face([q0, q2, q3], [c0, c2, c3], [m0, m2, m3], to); };
+    const NU = 6, pale = mix(Cm, [1, 0.84, 0.8], 0.28), deep = mix(Cm, [0, 0, 0], 0.78), gullet = mix(Cm, [0, 0, 0], 0.9);
+    const zL = i => Math.cos(ja) * HH(i / NR), yE = i => Math.sin(ja) * HW(i / NR) * 0.95;
+    const roofP = (i, k) => { const u = -1 + 2 * k / NU, t = i / NR; return [X(t), u * yE(i), zL(i) + (1 - u * u) * (HH(t) - zL(i)) * 0.6 + 0.0015]; };
+    const floorP = (i, k) => { const u = -1 + 2 * k / NU, t = i / NR; return [X(t), u * yE(i), zL(i) - (1 - u * u) * (HH(t) + zL(i)) * 0.55 - 0.0015]; };
+    const inC = (i, k) => { const u = -1 + 2 * k / NU; return mix(pale, deep, clamp(sm(0, 1, i / ih) * 0.8 + 0.25 * (1 - u * u), 0, 1)); };
+    const tipIn = [tip[0] - 0.006, 0, tip[2]];
+    for (let k = 0; k < NU; k++) {   // the front, closing on the snout tip
+      face([roofP(0, k), roofP(0, k + 1), tipIn], [inC(0, k), inC(0, k + 1), pale], [MT.CLOTH, MT.CLOTH, MT.CLOTH], [0, 0, -1]);
+      face([floorP(0, k), floorP(0, k + 1), tipIn], [inC(0, k), inC(0, k + 1), pale], [JW, JW, JW], [0, 0, 1]);
+    }
+    for (let i = 0; i < ih; i++) for (let k = 0; k < NU; k++) {
+      quadF(roofP(i, k), roofP(i, k + 1), roofP(i + 1, k + 1), roofP(i + 1, k), inC(i, k), inC(i, k + 1), inC(i + 1, k + 1), inC(i + 1, k), MT.CLOTH, MT.CLOTH, MT.CLOTH, MT.CLOTH, [0, 0, -1]);
+      quadF(floorP(i, k), floorP(i, k + 1), floorP(i + 1, k + 1), floorP(i + 1, k), inC(i, k), inC(i, k + 1), inC(i + 1, k + 1), inC(i + 1, k), JW, JW, JW, JW, [0, 0, 1]);
+    }
+    for (let k = 0; k < NU; k++) quadF(roofP(ih, k), roofP(ih, k + 1), floorP(ih, k + 1), floorP(ih, k), deep, deep, gullet, gullet, MT.CLOTH, MT.CLOTH, JW, JW, [1, 0, 0]);   // the throat
+    // tongue: a low pad on the floor of any mouth big enough to see into
+    if (B.head.mouth >= 0.4 && ih >= 2) { const i = ih * 0.55, t = i / NR, dz = (HH(t) + Math.cos(ja) * HH(t)) * 0.55;
+      M.mat = JW; M.blob([X(t), 0, Math.cos(ja) * HH(t) - dz * 0.92], gape * 0.3, Math.sin(ja) * HW(t) * 0.4, dz * 0.22, 4, 8, mix(Cm, [1, 0.72, 0.7], 0.35)); M.mat = MT.CLOTH; }
+    // lips: a bead along each edge of the gape, round the snout and back to the corners, thinning as it goes;
+    // fleshy on small underslung mouths (carp, suckers). The upper one is skin, the lower one rides the jaw.
+    const fleshy = B.head.jaw === 'inferior' && B.head.mouth < 0.5, lr = clamp(HH(th) * (0.04 + 0.035 * B.head.mouth) * (fleshy ? 1.8 : 1), 0.0022, 0.01);
+    const lipAt = (i, sg, up) => { const q = Vc(i, sg > 0 ? jb : NS - jb); return [q[0] + 0.001, q[1] * 0.99, q[2] + up * lr * 0.7]; };
+    const lipC = (i, up) => { const sk = up > 0 ? mix(C.flank, C.back, 0.35) : mix(C.flank, C.belly, 0.5); return fleshy ? mix(sk, [0.86, 0.62, 0.56], 0.4) : mix(sk, [0.1, 0.08, 0.07], 0.34); };
+    const lipR = i => lr * (1 - 0.6 * i / ih);
+    for (const up of [1, -1]) { M.mat = up > 0 ? MT.CLOTH : JW; const tipL = [tip[0] - lr * 0.3, 0, tip[2] + up * lr * 0.7];
+      for (const sg of [1, -1]) { M.tube(tipL, lipAt(0, sg, up), lr * 0.7, lr, 3, lipC(0, up), true);
+        for (let i = 0; i < ih; i++) M.tube(lipAt(i, sg, up), lipAt(i + 1, sg, up), lipR(i), lipR(i + 1), 3, lipC(i, up), i === ih - 1); } }
+    M.mat = MT.CLOTH;
+    // cheek membranes: from the corner of the mouth forward (further along the upper lip than the lower), folded flat while shut
+    { const iu = Math.max(0, Math.round(ih * 0.3)), il = Math.min(ih, Math.max(iu, Math.round(ih * 0.62))), cmC = mix(mix(C.flank, C.belly, 0.5), Cm, 0.45), cmD = mix(cmC, [0, 0, 0], 0.3);
+      for (const sg of [1, -1]) { const to = [0, sg, 0], U = i => edge(i, sg), L = i => { const q = edge(i, sg); return [q[0], q[1], q[2] - 0.0005]; };
+        for (let i = il; i < ih; i++) quadF(U(i), U(i + 1), L(i + 1), L(i), cmC, cmD, cmD, cmC, MT.CLOTH, MT.CLOTH, JW, JW, to);
+        for (let i = iu; i < il; i++) face([U(i), U(i + 1), L(il)], [cmC, cmC, cmC], [MT.CLOTH, MT.CLOTH, JW], to); } }
+    // teeth, for the fish that bite through line: a row inside each lip (hidden while the mouth is shut)
+    const bite = (D.fight && D.fight.teeth) || 0;
+    if (bite >= 0.5 && ih >= 2) { const nT = clamp(Math.round(gape / 0.012), 4, 9), tl = HH(th) * (0.1 + 0.12 * bite), ivory = [0.93, 0.91, 0.84];
+      for (const sg of [1, -1]) for (let q = 0; q < nT; q++) { const f0 = q / nT * ih * 0.85, f1 = (q + 0.8) / nT * ih * 0.85;
+        const at = f => { const i = Math.min(ih - 1, Math.floor(f)), u = f - i, a0 = edge(i, sg), a1 = edge(i + 1, sg); return [a0[0] + (a1[0] - a0[0]) * u, (a0[1] + (a1[1] - a0[1]) * u) * 0.78, a0[2] + (a1[2] - a0[2]) * u]; };
+        const p0 = at(f0), p1 = at(f1), pm = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, (p0[2] + p1[2]) / 2], k = 1 - 0.5 * q / nT;
+        face([p0, p1, [pm[0], pm[1] * 0.96, pm[2] - tl * k]], [ivory, ivory, ivory], [MT.CLOTH, MT.CLOTH, MT.CLOTH], [0, sg, 0]);
+        face([p0, p1, [pm[0], pm[1] * 0.96, pm[2] + tl * k * 0.8]], [ivory, ivory, ivory], [JW, JW, JW], [0, sg, 0]); } }
   }
-  // inner wall down the middle: flat while closed, stretched open with the jaw so you can't see through the mouth
-  M.mat = 98;
-  for (let i = 0; i < ih; i++) { const a = edge(i, 0), b = edge(i + 1, 0); M.quad([a[0], 0, a[2] + 0.002], [b[0], 0, b[2] + 0.002], [b[0], 0, b[2] - 0.004], [a[0], 0, a[2] - 0.004], mix(Cm, [0, 0, 0], 0.55), [a[0], 1, a[2]]); }
-  M.mat = MT.CLOTH;
-  { const e1 = edge(ih, 1), e2 = edge(ih, -1); M.tri(e1, e2, [hx, 0, hz - HH(th) * 0.6], mix(Cm, [0, 0, 0], 0.7), [hx - 1, 0, hz]); M.tri(e1, e2, [hx, 0, hz + HH(th) * 0.3], mix(Cm, [0, 0, 0], 0.7), [hx - 1, 0, hz]); }
   const hl = clamp(B.head.length, 0.1, 0.4) / bl;
   // eyes
   const te = hl * 0.42, er = 0.012 + 0.006 * (B.height / 0.2);
@@ -282,7 +346,7 @@ function fishMesh(D) {
   else { (B.fins.dorsal || []).forEach((f, i) => finOn(f, true, i)); if (B.fins.anal) finOn(B.fins.anal, false, 0); }
   if (B.fins.adipose) { const ta = 0.86; M.blob([X(ta), 0, HH(ta) * 0.95 + 0.012], 0.025, 0.006, 0.014, 5, 10, fin); }
   for (const s of [1, -1]) {
-    const tpc = hl * 1.05, pc = B.fins.pectoral, pv = clamp(0.5, 0, 1) * B.fins.pelvic;
+    const tpc = hl * 1.05, pc = B.fins.pectoral, pv = 0.5 * B.fins.pelvic;
     if (B.swim === 'cetacean') cetaceanFlipper(M, [X(tpc), s * HW(tpc) * 0.8, -HH(tpc) * 0.45], s, pc, mix(fin, C.back, 0.75), B.tail.shape === 'flukes' && pc > 0.2);
     else M.tri([X(tpc), s * HW(tpc) * 0.95, -HH(tpc) * 0.3], [X(tpc) - pc * 0.9, s * (HW(tpc) + pc * 0.55), -HH(tpc) * 0.55], [X(tpc) - pc * 0.4, s * HW(tpc) * 0.95, -HH(tpc) * 0.55], fin, [X(tpc), 0, 0]);
     M.tri([X(0.5), s * HW(0.5) * 0.6, -HH(0.5) * 0.85], [X(0.5) - pv * 1.1, s * (HW(0.5) * 0.6 + pv * 0.4), -HH(0.5) - pv * 0.5], [X(0.5) - pv * 0.5, s * HW(0.5) * 0.4, -HH(0.5) * 0.95], fin, [X(0.5), 0, 0]);

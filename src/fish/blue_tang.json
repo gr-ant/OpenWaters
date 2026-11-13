@@ -4,6 +4,7 @@
   "name": "Blue tang",
   "scientific": "Acanthurus coeruleus",
   "description": "Bright blue, plate-shaped surgeonfish of tropical reefs. Grazes algae off the coral in roving schools.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 12,

@@ -4,6 +4,7 @@
   "name": "Eastern newt",
   "scientific": "Notophthalmus viridescens",
   "description": "Small olive newt with a yellow belly and a row of black-ringed red spots. Lives in weedy ponds and eats insect larvae, worms and frog eggs.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 6,

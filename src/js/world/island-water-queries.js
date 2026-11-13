@@ -20,7 +20,7 @@ function waterInfo(x, y) {
   const f = depth > 0 ? flowAt(x, y, kind) : [0, 0, 0];
   const temp = waterTemp(kind, lev, 0.3, x, y);
   return { kind: WATER[kind].key, kindId: kind, name, level: lev, ground: h, depth, wet: depth > 0, murk: WATER[kind].murk, rapids: depth > 0 ? rapids : 0, spring, temp, iced: ENV.iced(kind, depth, x, y),
-    oxygen: depth > 0 ? oxygen(kind, temp, Math.min(depth, 0.5), rapids) : 0, flow: { x: f[0], y: f[1], speed: f[2] }, id: obj ? obj.id : kind === OCEAN ? 'sea' : name };
+    oxygen: depth > 0 ? oxygen(kind, temp, Math.min(depth, 0.5), rapids) : 0, flow: { x: f[0], y: f[1], speed: f[2] }, id: obj ? obj.id : kind === OCEAN ? 'sea' : sg >= 0 ? `${name}#${ISL.chains[ISL.segC[sg]].sys}` : name };   // (creek names repeat: the drainage system tells two apart)
 }
 // A dry spot on the bank of the nearest water of a kind (-1 = any), spiralling out from (x0, y0).
 // Returns { x, y, a (heading that faces the water), wx, wy (the water point) } or null.

@@ -1,0 +1,27 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "rock",
+  "name": "Boulder",
+  "description": "Boulders near the shore of every water; they crowd the rapids.",
+  "cover": ["rocks"],
+  "place": [
+    {
+      "order": 190,
+      "depth": [-0.8, 2],
+      "chance": {
+        "top": { "sea": 0.012, "lake": 0.02, "river": 0.05, "creek": 0.09 },
+        "minusRapids": 0.2
+      }
+    }
+  ],
+  "size": { "min": 0.6, "rand": 1.4, "creek": [0.45, 0.8], "rapids": 0.7 },
+  "sink": 0.22,
+  "stride": 32,
+  "sway": 0,
+  "view": 340,
+  "mesh": {
+    "builder": "boulder",
+    "colors": [[0.4, 0.44, 0.34], [0.49, 0.48, 0.44]],
+    "shade": { "by": "height", "base": 0.68, "range": 0.32, "from": -0.1, "over": 0.5 }
+  }
+}

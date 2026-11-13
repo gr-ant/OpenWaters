@@ -4,6 +4,7 @@
   "name": "Flathead catfish",
   "scientific": "Pylodictis olivaris",
   "description": "Big, mottled yellow-brown catfish with a flat head and a jutting lower jaw. A sluggish night ambusher lying in logjams and deep river holes, it eats live fish and crayfish.",
+  "handling": { "lip": true, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 40,

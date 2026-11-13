@@ -1,0 +1,31 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "star",
+  "name": "Starfish",
+  "description": "Starfish on the sea bed, more on rock.",
+  "cover": [],
+  "place": [
+    {
+      "order": 60,
+      "water": ["sea"],
+      "depth": [0.5, 30],
+      "chance": {
+        "from": 0.86,
+        "width": 0.02,
+        "times": [
+          { "plus": 0.4, "of": "rocky" }
+        ]
+      }
+    }
+  ],
+  "size": { "min": 0.35, "rand": 0.35 },
+  "lift": -0.03,
+  "stride": 32,
+  "sway": 0,
+  "view": 90,
+  "mesh": {
+    "builder": "starfish",
+    "stars": [[0, 0, 0.26, [0.9, 0.42, 0.18], 0.3], [0.42, 0.3, 0.14, [0.5, 0.3, 0.6], 1.4]],
+    "shade": { "by": "height", "base": 0.7, "range": 0.3, "from": -0.1 }
+  }
+}

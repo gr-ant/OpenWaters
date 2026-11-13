@@ -7,7 +7,7 @@ Object.assign(Engine, {
     A.Fmax = clamp(W ** 0.85 * (0.45 + 1.1 * Fi.strength), 0.03, 400); A.Tfight = 4 + 32 * Fi.stamina * (1 + 0.55 * Math.log10(1 + W)); A.th = Math.atan2(f.y - A.tip[1], f.x - A.tip[0]);
     A.runT = 0.6 + 1.5 * Math.random() * Fi.runs; A.runDir = A.th + (Math.random() - 0.5) * 0.8; A.chargeT = 0; A.slackT = 0; A.jump = null; A.sv = 0; A.dragBuzz = 0; A.tension = 0; A.hookedAt = this.time;
     A.lastTip = A.tip.slice(); A.away = 0;
-    A.fz = f.z; this.buzz([70, 40, 140]); this.say(`Fish on! ${this.touchUI ? 'Hold Reel' : 'Hold R'} when it stops pulling, ease off when it runs`, 3); Game.emit('hooked', f);
+    A.fz = f.z; this.buzz([70, 40, 140]); this.say(`Fish on! ${this.touchUI ? 'Hold Reel' : 'Hold ' + Controls.key('cast')} when it stops pulling, ease off when it runs`, 3); Game.emit('hooked', f);
   },
   fightStep(dt, btn, press, fast) {
     const A = this.ang, S = A.S, f = A.fish, T = A.tip;
@@ -92,50 +92,114 @@ Object.assign(Engine, {
   },
   loseFish(msg, why) {
     const A = this.ang, f = A.fish;
-    if (f && !f.dead) { f.hooked = false; f.state = 'flee'; f.stress = 1; f.thx = A.tip[0]; f.thy = A.tip[1]; f.tNext = 0; f.lureCool = this.time + 120; f.land = false; f.pitch = 0;
+    if (f && !f.dead) { f.hooked = false; f.state = 'flee'; f.stress = 1; f.thx = A.tip[0]; f.thy = A.tip[1]; f.tNext = 0; f.lureCool = this.time + 120; f.land = false; f.pitch = 0; f.roll = 0;
       if (f.z > f.wl - 0.05) f.z = f.wl - Math.max(0.1, f.len * 0.3); }
+    if (A.land) { A.land = null; const el = document.getElementById('catch'); if (el) el.hidden = true; }   // it was already landed (the rod put away with the fish still on the bank)
     A.fish = null; A.jump = null; A.tension = 0; this.buzz(why === 'snap' ? [120] : [30, 60, 30]);
     if (why === 'snap' || why === 'eaten' || !A.lure || why === 'drop') { A.phase = A.out ? 'ready' : 'stowed'; A.lure = null; A.float = null; A.lineOut = 0; if (why === 'snap' && A.out) msg += ' · tied on a new one'; }
     else { A.phase = 'water'; A.lineOut = Math.hypot(A.lure.x - A.tip[0], A.lure.y - A.tip[1], A.lure.z - A.tip[2]) + 0.2; if (A.S.bait) A.baitLeft = 0; if (A.float) A.float.vx = A.float.vy = 0; }
     this.say(msg, 3); Game.emit('lost', f, why);
   },
+  // Landed: no menu. The fish comes in on the line, swung up onto the bank or the deck in front of you (one too big to
+  // lift stays in the water alongside); Use unhooks it, and then it is in your hands (hands.js: Engine.carry) to walk
+  // about with, lip or hold as its definition allows, drop, or keep. A.land: { st: 'swing' | 'down' | 'unhook' | 'free' }
   landFish() {
     const A = this.ang, f = A.fish, P = this.P;
-    A.phase = 'card'; f.hooked = 'card'; f.land = true; this.keys = {}; this.joy = this.tlook = null; this.resetMouseLook(); A.landed = { x: f.x, y: f.y, kd: f.kd };
+    A.phase = 'card'; f.hooked = 'card'; f.held = true; this.keys = {}; this.joy = this.tlook = null; this.resetMouseLook(); A.landed = { x: f.x, y: f.y, kd: f.kd };
     A.lure = null; A.float = null; A.lineOut = 0; A.tension = 0; this.buzz([50, 50, 50]);
-    if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock();
     const best = this.catchLog().filter(c => c.species === f.species).reduce((m, c) => Math.max(m, c.kg), 0);
-    A.card = { pb: f.weightKg > best, first: best === 0 }; A.cardYaw = A.cardTilt = 0; this.cardKeys = {};
-    const el = document.getElementById('catch');
-    if (el) { el.hidden = false; document.getElementById('ccName').textContent = f.name; document.getElementById('ccSci').textContent = f.def.scientific || '';
-      const kg = f.weightKg, wt = kg < 1 ? `${(kg * 1000).toFixed(0)} g` : `${kg.toFixed(2)} kg`, lb = kg / LB;
-      document.getElementById('ccSize').textContent = `${f.lengthCm.toFixed(1)} cm · ${wt} (${lb < 1 ? (lb * 16).toFixed(1) + ' oz' : lb.toFixed(1) + ' lb'})`;
-      document.getElementById('ccNote').textContent = (A.card.first ? 'First of its kind! ' : A.card.pb ? 'Personal best! ' : '') + `On the ${A.rig.name.toLowerCase()} · ${((this.time - A.hookedAt)).toFixed(0)} s fight`; }
+    A.card = { pb: f.weightKg > best, first: best === 0 };
+    const hd = fishHandling(f.def), big = hd.hold === 'none';
+    // where it comes down: dry ground (or the deck) within reach, in front if there is any, else to a side, else at your feet in the shallows
+    let spot = null, boatSpot = null;
+    if (big) spot = [f.x, f.y, f.z];
+    else if (this.boat) {   // on the deck at your feet, inside the gunwales; kept in the boat's own frame so it rides with her
+      const b = this.boat, D = b.def, S = D._shape, L = D.hull.length_m, cb = Math.cos(b.a), sb = Math.sin(b.a), wx = P.x + Math.cos(P.a) * 0.5 - b.x, wy = P.y + Math.sin(P.a) * 0.5 - b.y;
+      const lx = clamp(cb * wx + sb * wy, -L * 0.42, L * 0.42), hb = S.hb(lx / L + 0.5) * 0.6, ly = clamp(-sb * wx + cb * wy, -hb, hb);
+      boatSpot = { b, lx, ly }; spot = [b.x + cb * lx - sb * ly, b.y + sb * lx + cb * ly, b.z + this.boatDeckZ(D, lx, ly)]; }
+    else { const d = clamp(0.5 + f.len * 0.25, 0.55, 0.85);
+      for (const o of [0, 0.7, -0.7, 1.4, -1.4, 2.2, -2.2, Math.PI]) { const x = P.x + Math.cos(P.a + o) * d, y = P.y + Math.sin(P.a + o) * d; sample(x, y); const g = hW(SE);
+        if (SW <= g + 0.03 && Math.abs(g - P.z) < 0.7) { spot = [x, y, g]; break; } }
+      if (!spot) { const x = P.x + Math.cos(P.a) * 0.6, y = P.y + Math.sin(P.a) * 0.6; sample(x, y); spot = [x, y, Math.max(hW(SE), SW - 0.04)]; } }
+    A.land = { st: 'swing', t: 0, from: [f.x, f.y, f.z], spot, boatSpot, big, hooked: true, pitch0: P.pitch, side: Math.random() < 0.5 ? 1 : -1, hop: 0 };
+    f.land = !big;
+    const kg = f.weightKg, wt = kg < 1 ? `${(kg * 1000).toFixed(0)} g` : `${kg.toFixed(2)} kg`;
+    this.say(`${f.name} · ${f.lengthCm.toFixed(1)} cm · ${wt}${A.card.first ? ' · first of its kind!' : A.card.pb ? ' · personal best!' : ''}`, 4);
     Game.emit('landed', f);
   },
-  cardStep(dt) { // hold the fish up in the middle of the view while you decide; A/D (or ←/→) spin it, W/S (↑/↓) tilt it
-    const A = this.ang, f = A.fish, P = this.P; if (!f) { A.phase = 'ready'; return; }
-    const K = this.cardKeys || {}, tx = this.tanX || Math.tan(FOV / 2), ty = this.tanY || tx * 0.56;
-    const d = Math.max(0.3, f.len / (0.9 * tx), f.len / (1.3 * ty)), cp = Math.cos(P.pitch);   // far enough that it fits, whichever way it's turned
-    A.cardYaw = (A.cardYaw || 0) + ((K.KeyD || K.ArrowRight ? 1 : 0) - (K.KeyA || K.ArrowLeft ? 1 : 0)) * dt * 2.4;
-    A.cardTilt = clamp((A.cardTilt || 0) + ((K.KeyW || K.ArrowUp ? 1 : 0) - (K.KeyS || K.ArrowDown ? 1 : 0)) * dt * 1.8, -1.4, 1.4);
-    const E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];   // third person: in front of the camera, the same card
-    f.x = E[0] + Math.cos(P.a) * cp * d; f.y = E[1] + Math.sin(P.a) * cp * d; f.z = E[2] + Math.sin(P.pitch) * d;   // dead centre, on the line of sight
-    f.a = P.a + Math.PI / 2 + A.cardYaw; f.pitch = A.cardTilt;
-    f.ph = (f.ph + dt * (2 + 3 * Math.max(0, Math.sin(this.time * 1.7)))) % 6.2832; f.open = 0.25 + 0.2 * Math.sin(this.time * 3);
+  unhookFish() { const H = this.ang && this.ang.land; if (!H || H.st !== 'down') return; H.st = 'unhook'; H.t = 0; },
+  // bend down to something on the ground: the eye goes forward and down to about half a metre from it (u: 0 standing .. 1 down).
+  // Held only while it keeps being called; let go, you straighten up again (hands.js).
+  crouchTo(t, u) { const P = this.P, dx = t[0] - P.x, dy = t[1] - P.y, d = Math.hypot(dx, dy) || 1, k = Math.max(0, d - 0.4) / d;
+    this.eyeOff = [clamp(dx * k, -1.3, 1.3) * u, clamp(dy * k, -1.3, 1.3) * u, clamp(t[2] + 0.5 - (P.z + EYE), -1.3, 0) * u]; this.eyeHold = this.time + 0.12; },
+  // where the hook is: the tip of the snout, wherever the fish is pointing
+  fishMouth(f) { const cp = Math.cos(f.pitch || 0), k = f.len * 0.49; return [f.x + Math.cos(f.a) * cp * k, f.y + Math.sin(f.a) * cp * k, f.z + Math.sin(f.pitch || 0) * k]; },
+  // how much of a fish lying on its side is under its midline, and which way up it lies
+  fishLie(f, side = 1) { const B = f.def.body, flat = !!B.lie; return { half: f.len * (flat ? B.height * 0.12 : B.width * 0.5) * 0.9, roll: flat ? 0 : side * Math.PI / 2 }; },
+  // flopping where it lies: a burst of tail-beats and a hop, then still, gills going. o: { hop } kept between frames; k: how lively (0..1)
+  fishFlop(f, o, dt, k = 1) { const beat = Math.max(0, Math.sin(this.time * 2.1 + f.len * 9)) ** 6 * k;
+    o.hop = Math.max(0, (o.hop || 0) + (beat * 0.07 - (o.hop || 0)) * Math.min(1, dt * 14)); f.pitch = 0.12 * beat * Math.sin(this.time * 31);
+    f.ph = (f.ph + dt * (1.5 + 26 * beat)) % 6.2832; f.open = 0.35 + 0.3 * Math.abs(Math.sin(this.time * 3.2)); return o.hop; },
+  cardStep(dt) {
+    const A = this.ang, f = A.fish, P = this.P, H = A.land; if (!f || !H) { A.phase = A.out ? 'ready' : 'stowed'; A.land = null; return; }
+    const B = f.def.body, ez = u => u * u * (3 - 2 * u), lie = this.fishLie(f, H.side), half = lie.half;
+    if (H.boatSpot) { const q = H.boatSpot, b = q.b, cb = Math.cos(b.a), sb = Math.sin(b.a); H.spot = [b.x + cb * q.lx - sb * q.ly, b.y + sb * q.lx + cb * q.ly, b.z + this.boatDeckZ(b.def, q.lx, q.ly) + Math.sin(b.pitch || 0) * q.lx]; }   // the deck moves
+    const E = this.thirdP && this.camE ? this.camE : [P.x, P.y, P.z + EYE];
+    H.t += dt; let look = null;   // the point the view turns to
+    if (H.st === 'swing') {   // up out of the water on the line and down in front of you
+      const u = Math.min(1, H.t / (H.big ? 0.5 : 1.05)), e = ez(u), S0 = H.from, S1 = H.spot;
+      if (H.big) { f.z = S0[2]; f.ph = (f.ph + dt * 5) % 6.2832; }
+      else { f.x = S0[0] + (S1[0] - S0[0]) * e; f.y = S0[1] + (S1[1] - S0[1]) * e; f.z = S0[2] + (S1[2] + half - S0[2]) * e + Math.sin(Math.PI * u) * (H.boatSpot ? 0.85 : 0.65);
+        const lift = ez(clamp(u / 0.3, 0, 1)), over = ez(clamp((u - 0.3) / 0.7, 0, 1));   // head up on the line first, then one turn tail-over-head as it comes in
+        f.pitch = u >= 1 ? 0 : 1.15 * lift + 6.2832 * over - 1.15 * over; f.roll = lie.roll * ez(clamp((u - 0.7) / 0.3, 0, 1)); f.a = P.a + Math.PI / 2 * e; f.ph = (f.ph + dt * 18) % 6.2832; }
+      f.open = 0.5; look = [f.x, f.y, f.z];
+      if (u >= 1) { H.st = 'down'; H.t = 0; if (!H.big) this.buzz(30); }
+    } else {   // 'down' | 'unhook' | 'free'
+      if (H.st === 'unhook' && !H.big) {   // down to it where it lies: the rod is laid aside, one hand pins the fish, the other works the hook out (drawArms)
+        const hop = this.fishFlop(f, H, dt, 0.12); f.x = H.spot[0]; f.y = H.spot[1]; f.z = H.spot[2] + half + hop * 0.3; f.roll = lie.roll; f.open = 0.6;
+        this.crouchTo([f.x, f.y, H.spot[2]], ez(Math.min(1, H.t / 0.7))); H.hooked = H.t < 1.95; look = [f.x, f.y, f.z];
+      } else if (H.big) {   // alongside, held at the surface on a short line
+        f.z += (f.wl - Math.max(0.06, f.len * B.height * 0.3) - f.z) * Math.min(1, dt * 3); f.ph = (f.ph + dt * (2 + 2 * Math.max(0, Math.sin(this.time * 1.3)))) % 6.2832; f.open = 0.3 + 0.15 * Math.sin(this.time * 2.5);
+        look = [f.x, f.y, f.z];
+      } else { const hop = this.fishFlop(f, H, dt); f.x = H.spot[0]; f.y = H.spot[1]; f.z = H.spot[2] + half + hop; f.roll = lie.roll; look = [f.x, f.y, f.z]; }
+      if (H.st === 'unhook' && H.t > (H.big ? 0.6 : 2.25)) {
+        H.hooked = false; this.buzz(20);
+        if (H.big) { H.st = 'free'; this.finishCatch(false); return; }   // too big to lift or to keep: the hook out, and away it goes
+        else {   // off the hook and in your hands: fishing is over for this one, and you can walk off with it
+          const meta = { rig: A.rig.name, kd: f.kd, landed: A.landed, t: Date.now() };
+          A.fish = null; A.phase = 'ready'; A.land = null; A.card = null; this.carryFish(f, meta); return; }
+      }
+    }
+    if (look && !this.thirdP) {   // the view follows it down to where it lies
+      const eo = this.eyeOff || ZERO3, dx = look[0] - P.x, dy = look[1] - P.y, wa = Math.atan2(dy, dx), wp = clamp(Math.atan2(look[2] - (P.z + EYE + eo[2]), Math.max(0.3, Math.hypot(dx - eo[0], dy - eo[1]))), -1.25, 0.3), k = Math.min(1, dt * 3.5);
+      P.a += Math.atan2(Math.sin(wa - P.a), Math.cos(wa - P.a)) * k; P.pitch += (wp - P.pitch) * k;
+    }
   },
   catchKey() { return 'embercrown-catches'; },
-  catchLog() { try { return JSON.parse(localStorage.getItem(this.catchKey()) || '[]'); } catch (e) { return []; } },
-  finishCatch(keep) {
-    const A = this.ang, f = A.fish; if (!f || A.phase !== 'card') return;
-    const rec = { species: f.species, name: f.name, cm: +f.lengthCm.toFixed(1), kg: +f.weightKg.toFixed(3), t: Date.now(), rig: A.rig.name, kept: keep, water: WATER_KEYS[f.kd], climate: CLIMATE.key, seed: SEED };
-    const log = this.catchLog(); log.push(rec); try { localStorage.setItem(this.catchKey(), JSON.stringify(log.slice(-500))); } catch (e) { /* */ }
-    document.getElementById('catch').hidden = true; f.land = false; f.hooked = false;
-    if (keep) { this.removeFish(f); this.fish = this.fish.filter(q => q !== f); for (const c of this.fishCells.values()) { const i = c.fish.indexOf(f); if (i >= 0) { c.fish.splice(i, 1); break; } } this.say(`${f.name} in the creel`, 2); }
-    else { // back in the water where it came in, and off it goes
-      const Lp = A.landed; sample(Lp.x, Lp.y); f.x = Lp.x; f.y = Lp.y; f.wl = SW; f.ground = hW(SE); f.z = Math.max(f.ground + 0.05, SW - Math.max(0.15, f.len * 0.4)); f.state = 'flee'; f.stress = 1; f.thx = this.P.x; f.thy = this.P.y; f.tNext = 0; f.lureCool = this.time + 300;
-      this.splash(f.x, f.y, f.wl, 8); this.say(`Released · ${f.name.toLowerCase()} swims off`, 2); }
-    A.fish = null; A.phase = 'ready'; A.card = null; Game.emit('catch', rec, f);
-    if (this.tackleOpen) this.tackleRender(); if (this.journalOpen) this.journalRender();
+  catchLog() { try { const L = JSON.parse(localStorage.getItem(this.catchKey()) || '[]'); return Array.isArray(L) ? L : []; } catch (e) { return []; } },
+  logCatches(recs) { const log = this.catchLog(); log.push(...recs); try { localStorage.setItem(this.catchKey(), JSON.stringify(log.slice(-500))); } catch (e) { /* */ } },   // the newest 500 are kept
+  // the journal entry for a fish whose fate is settled (kept, or gone back); meta: { rig, kd } from when it was landed
+  logCatch(f, meta, keep) {
+    const rec = { species: f.species, name: f.name, cm: +f.lengthCm.toFixed(1), kg: +f.weightKg.toFixed(3), t: (meta && meta.t) || Date.now(), rig: (meta && meta.rig) || '', kept: keep, water: WATER_KEYS[(meta && meta.kd) ?? f.kd], climate: CLIMATE.key, seed: SEED };
+    this.logCatches([rec]);
+    Game.emit('catch', rec, f); if (this.tackleOpen) this.tackleRender(); if (this.journalOpen) this.journalRender(); return rec;
+  },
+  // out of the world for good (the creel)
+  creelFish(f) { f.held = f.stored = false; this.removeFish(f); this.fish = this.fish.filter(q => q !== f); for (const c of this.fishCells.values()) { const i = c.fish.indexOf(f); if (i >= 0) { c.fish.splice(i, 1); break; } } },
+  // back into the water at (x, y), and off it goes
+  releaseFish(f, x, y) {
+    sample(x, y); f.x = x; f.y = y; f.kd = SK; f.wl = SW; f.ground = hW(SE); f.z = Math.max(f.ground + 0.05, SW - Math.max(0.15, f.len * 0.4)); f.roll = 0; f.pitch = 0; f.land = false; f.hooked = false; f.held = f.stored = false;
+    f.state = 'flee'; f.stress = 1; f.thx = this.P.x; f.thy = this.P.y; f.tNext = 0; f.lureCool = this.time + 300; this.splash(f.x, f.y, f.wl, 8);
+    // back among the water's own fish: in the list of the cell it went in at, and no longer marked as taken
+    if (this.fishGone && this.fishGone[f.id]) { delete this.fishGone[f.id]; try { localStorage.setItem(this.goneKey(), JSON.stringify(this.fishGone)); } catch (e) { /* */ } }
+    for (const c of this.fishCells.values()) { const i = c.fish.indexOf(f); if (i >= 0) c.fish.splice(i, 1); }
+    { const c = this.fishCells.get(Math.floor(x / FISH_CELL) + ',' + Math.floor(y / FISH_CELL)) || this.fishCells.values().next().value; if (c) c.fish.push(f); if (!this.fish.includes(f)) this.fish.push(f); }
+  },
+  finishCatch(keep) {   // only for the ones too big to lift: decided alongside, once the hook is out
+    const A = this.ang, f = A.fish, H = A.land; if (!f || A.phase !== 'card' || !H || H.st !== 'free') return;
+    this.logCatch(f, { rig: A.rig.name, kd: f.kd }, keep); if (!this.thirdP) this.P.pitch = H.pitch0; A.land = null;
+    if (keep) { this.creelFish(f); this.say(`${f.name} in the creel`, 2); }
+    else { this.releaseFish(f, A.landed.x, A.landed.y); this.say(`Unhooked · ${f.name.toLowerCase()} swims off`, 2.5); }
+    A.fish = null; A.phase = 'ready'; A.card = null;
   },
 });

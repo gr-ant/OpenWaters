@@ -4,6 +4,7 @@
   "name": "Axolotl",
   "scientific": "Ambystoma mexicanum",
   "description": "A salamander that never grows up: it keeps its feathery gills and finned tail for life and stays in the water. Native only to the lakes and canals of Mexico City.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 12,

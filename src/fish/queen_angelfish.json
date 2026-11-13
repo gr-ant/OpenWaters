@@ -4,6 +4,7 @@
   "name": "Queen angelfish",
   "scientific": "Holacanthus ciliaris",
   "description": "Disc-shaped blue-and-gold angelfish with a dark, electric-blue-ringed crown on its forehead. Grazes sponges and tunicates among reef heads, usually in pairs. Length is total length.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 12,

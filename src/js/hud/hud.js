@@ -54,6 +54,7 @@ Object.assign(Engine, {
     const H = this.hud; if (!H || this.pauseOpen) return;
     this.snapPump();
     if (!(this.boatT > this.time)) { this.boatT = this.time + 0.7; this.autoBoat(); }   // a boat for each water you come to
+    if (!(this.stateT > this.time)) { this.stateT = this.time + 10; if (this.live) this.saveGame(); }   // where and when you are, for Continue
     if (!(this.urlT > this.time)) { this.urlT = this.time + 5; this.urlSave(); }   // where you are, in the address bar (copy it to come back here)
     const memo = H.memo, set = (k, v, prop = 'textContent') => { if (memo[k] !== v) { memo[k] = v; if (prop === 'html') H[k].innerHTML = v; else H[k][prop] = v; } };
     const cls = (el, name, on) => { if (el.classList.contains(name) !== on) el.classList.toggle(name, on); };
@@ -75,7 +76,7 @@ Object.assign(Engine, {
     const S = ENV.season, s = ENV.yf * 4 % 1, part = s < 0.34 ? 'Early' : s < 0.67 ? 'Mid' : 'Late';
     set('hLocName', this.hudPlace); set('hLocSub', `${part} ${S} · Day ${Math.floor(ENV.day % ENV.yearDays) + 1}`);     // time and weather
     const night = this.tod < 0.26 || this.tod > 0.77, sky = ENV.snowing > 0.3 || ENV.rain > 0.15 ? 'rain' : ENV.cloud > 0.75 || ENV.fog > 0.6 ? 'cloud' : night ? 'moon' : 'sun';
-    set('hTime', this.clock()); set('hSky', uiIcon('ui.' + sky), 'html'); set('hTemp', `${ENV.airT.toFixed(0)}°C`); set('hWindV', `${(ENV.wind * 12).toFixed(0)} m/s`);
+    set('hTime', this.clock()); if (memo.sky !== sky) { memo.sky = sky; H.hSky.innerHTML = uiIcon('ui.' + sky); } set('hTemp', `${ENV.airT.toFixed(0)}°C`); set('hWindV', `${(ENV.wind * 12).toFixed(0)} m/s`);
     const wa = ENV.windDir ?? 0.8, deg = Math.round(Math.atan2(Math.cos(wa), -Math.sin(wa)) * 180 / Math.PI);   // the way it blows, on the map (north up)
     if (memo.wd !== deg) { memo.wd = deg; H.hWindArrow.style.transform = `rotate(${deg}deg)`; }
     // minimap frame: name and a scale bar about a quarter of its width
@@ -97,13 +98,13 @@ Object.assign(Engine, {
     H.hStatus.hidden = !st;
     if (st) {
       const ai = /Cast|Let go|Stop/.test(st.act || '') ? 'cast' : st.act ? 'reel' : '';   // the action's little icon
-      set('hStTitle', st.title); set('hStSub', st.sub || ''); set('hStKey', st.key || ''); set('hStAct', st.act ? `<i class="ai">${uiIcon('ui.' + ai)}</i>${st.act}` : '', 'html');
+      set('hStTitle', st.title); set('hStSub', st.sub || ''); set('hStKey', st.key || ''); if (memo.act !== st.act) { memo.act = st.act; H.hStAct.innerHTML = st.act ? `<i class="ai">${uiIcon('ui.' + ai)}</i>${st.act}` : ''; }
       cls(H.hStatus, 'alert', !!st.alert); cls(H.hStatus, 'nokey', !st.key); cls(H.hStatus, 'bite', st.bite === 'strike'); cls(H.hStatus, 'nibble', st.bite === 'nibble');
       if (st.bite) { if (memo.icon !== 'bite') { memo.icon = 'bite'; H.hStIcon.innerHTML = uiIcon('ui.bite'); } }   // a bite: the float going under, in place of the gear
       else { const A = this.ang, sg = A.S.float || A.S.lure || A.S.bait, ik = gearKey(sg);   // the float, or the lure / bait
-        if (memo.icon !== ik || !H.hStIcon.firstChild || H.hStIcon.firstChild.dataset.snap) { memo.icon = ik; H.hStIcon.innerHTML = snapHTML(ik, () => gearMesh(sg)); } }
+        if (memo.icon !== ik) { memo.icon = ik; H.hStIcon.innerHTML = snapHTML(ik, () => gearMesh(sg)); } }   // snapPump fills a placeholder in place
       const bar = H.hStBar, b = st.bar; bar.hidden = !b;
-      if (b) { const i = bar.firstChild; i.style.width = `${(clamp(b.f, 0, 1) * 100).toFixed(1)}%`; i.style.background = b.col; if (memo.mk !== b.mark) { memo.mk = b.mark; bar.style.setProperty('--mark', b.mark == null ? '-10%' : `${(b.mark * 100).toFixed(1)}%`); } }
+      if (b) { const i = bar.firstChild; i.style.width = `${(clamp(b.f, 0, 1) * 100).toFixed(1)}%`; i.style.background = b.col; if (memo.mk !== b.mark) { memo.mk = b.mark; const mk = b.mark == null ? null : clamp(b.mark, 0, 1); bar.style.setProperty('--mark', mk == null ? '-10%' : `calc(${(mk * 100).toFixed(1)}% - ${(mk * 2).toFixed(1)}px)`); } }   // the drag mark stays on the bar: at its very end when the drag is set at or past the line's strength
     }
     this.reelKeysHud();
     if (!(this.hudKeysT > this.time)) { this.hudKeysT = this.time + 0.2;   // 5 times a second is plenty

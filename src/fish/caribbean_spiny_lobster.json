@@ -4,6 +4,7 @@
   "name": "Caribbean spiny lobster",
   "scientific": "Panulirus argus",
   "description": "Clawless, spiny-horned lobster of warm reefs and seagrass. Shelters in ledges by day and marches out at night to crack snails and clams. Length is body length, carapace to tail tip, antennae excluded.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 15,

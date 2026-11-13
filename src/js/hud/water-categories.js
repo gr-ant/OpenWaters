@@ -13,9 +13,9 @@ function boatWaters(D) {
 }
 // ... and rigs go where some catchable fish lives that likes what's on the hook and can get it in its mouth
 const rigWaterMemo = new Map();
-function rigWaters(r, S) {
+function rigWaters(r, S, fk = FishDB.list.map(stamp).join('.')) {   // fk: the fish list's key, passed in when checking many rigs
   const own = listedWaters(r); if (own) return own;
-  const key = rigKey(r, S) + ':' + FishDB.list.map(stamp).join('.'); if (rigWaterMemo.has(key)) return rigWaterMemo.get(key);
+  const key = rigKey(r, S) + ':' + fk; if (rigWaterMemo.has(key)) return rigWaterMemo.get(key);
   const out = WATER_CATS.map(c => c[0]).filter(W => FishDB.list.some(D => {
     const h = D.habitat.waters[W] || 0; if (h < 0.4 || !fishCatchable(D)) return false;   // really lives there
     const Lc = D.size.length_cm.typical, kg = D.size.weight.a * Lc ** D.size.weight.b / 1000, ratio = S.strengthKg / Math.max(0.01, kg);

@@ -76,7 +76,7 @@
   const record = (gear, kd, list) => {   // list: [{ species, name, lengthCm, weightKg, kept }], into the journal
     if (!list.length) return;
     const recs = list.map(f => ({ species: f.species, name: f.name, cm: +f.lengthCm.toFixed(1), kg: +f.weightKg.toFixed(3), t: Date.now(), rig: gear, kept: !!f.kept, water: WATER_KEYS[kd], climate: CLIMATE.key, seed: SEED }));
-    const log = Engine.catchLog(); log.push(...recs); try { localStorage.setItem(Engine.catchKey(), JSON.stringify(log.slice(-500))); } catch (e) { /* */ }
+    Engine.logCatches(recs);
     for (const r of recs) Game.emit('catch', r, null);
     if (Engine.journalOpen) Engine.journalRender();
   };
@@ -86,8 +86,8 @@
   let cardEl = null;
   const cardDraw = () => { const Cd = T.card; if (!cardEl) { cardEl = document.createElement('div'); cardEl.id = 'haul'; cardEl.className = 'panel'; document.body.appendChild(cardEl);
       cardEl.addEventListener('click', e => { const t = e.target, row = t.closest && t.closest('[data-i]'); if (!T.card) return; if (t.id === 'haulKeep') return decide(false); if (t.id === 'haulFree') return decide(true); if (row) { const it = T.card.items[+row.dataset.i]; it.kept = !it.kept; cardDraw(); } }); }
-    cardEl.hidden = !Cd; if (!Cd) return; const esc = v => String(v).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])), kg = w => w < 1 ? `${(w * 1000).toFixed(0)} g` : `${w.toFixed(2)} kg`, n = Cd.items.filter(i => i.kept).length;
-    cardEl.innerHTML = `<b>${esc(Cd.gear)}</b><i>${esc(tally(Cd.items))}</i><ul>${Cd.items.map((it, i) => `<li data-i="${i}" class="${it.kept ? 'on' : ''}"><span>${esc(it.name)}</span><small>${it.lengthCm.toFixed(1)} cm · ${kg(it.weightKg)}</small><em>${it.kept ? 'Keep' : 'Let go'}</em></li>`).join('')}</ul>`
+    cardEl.hidden = !Cd; if (!Cd) return; const n =Cd.items.filter(i => i.kept).length;
+    cardEl.innerHTML = `<b>${esc(Cd.gear)}</b><i>${esc(tally(Cd.items))}</i><ul>${Cd.items.map((it, i) => `<li data-i="${i}" class="${it.kept ? 'on' : ''}"><span>${esc(it.name)}</span><small>${it.lengthCm.toFixed(1)} cm · ${fmtKg(it.weightKg)}</small><em>${it.kept ? 'Keep' : 'Let go'}</em></li>`).join('')}</ul>`
       + `<div class="haul-btns"><button id="haulKeep">${n === Cd.items.length ? 'Keep all' : n ? `Keep ${n}, let ${Cd.items.length - n} go` : 'Let them go'}${Engine.touchUI ? '' : ` (${Controls.key('keep')})`}</button><button id="haulFree">Let them all go${Engine.touchUI ? '' : ` (${Controls.key('release')})`}</button></div><small>Tap one to change it</small>`; };
   const offer = (gear, kd, items) => { if (!items.length) return false; for (const it of items) it.kept = true; T.card = { gear, kd, items };
     if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock(); cardDraw(); return true; };

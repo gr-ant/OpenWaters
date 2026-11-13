@@ -1,0 +1,34 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "seafan",
+  "name": "Sea fan",
+  "description": "Flat purple fans on the reef, swaying in the swell.",
+  "cover": ["coral"],
+  "place": [
+    {
+      "order": 110,
+      "water": ["sea"],
+      "depth": [2, 15],
+      "if": ["reefsEverywhere"],
+      "above": { "reef": -0.1 },
+      "chance": {
+        "from": 0.96,
+        "width": 0.025,
+        "times": [
+          { "sstep": [-0.1, 0.2], "of": "reef" }
+        ]
+      }
+    }
+  ],
+  "size": { "min": 0.8, "rand": 0.8 },
+  "lift": -0.03,
+  "stride": 32,
+  "sway": 1,
+  "view": 120,
+  "mesh": {
+    "builder": "seafan",
+    "color": [0.55, 0.3, 0.75],
+    "stalk": [0.35, 0.2, 0.3],
+    "shade": { "by": "height", "base": 0.7, "range": 0.3, "from": -0.1 }
+  }
+}

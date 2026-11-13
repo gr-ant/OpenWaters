@@ -4,6 +4,7 @@
   "name": "Largemouth bass",
   "scientific": "Micropterus salmoides",
   "description": "Warm-water ambush predator of weedy ponds and lake margins. Big mouth, eats almost anything that moves.",
+  "handling": { "lip": true, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 18,

@@ -6,6 +6,10 @@
 //  tackle/README.md). Built-in gear lives in <script type="application/json" data-builtin="tackle"> blocks at the end of this
 //  file; more can be dropped onto the game window (kept in this browser) or loaded with Game.loadTackle(urlOrObject).
 // ======================================================================
+// shared little helpers: text made safe for HTML, a weight in g or kg, a definition as JSON without its runtime ("_") keys
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+const fmtKg = kg => kg < 1 ? `${(kg * 1000).toFixed(0)} g` : `${kg.toFixed(2)} kg`;
+const defJSON = d => { const o = {}; for (const k in d) if (!k.startsWith('_')) o[k] = d[k]; return JSON.stringify(o, null, 2); };
 const TACKLE_SCHEMA = 'embercrown-tackle/1';
 const TACKLE_TYPES = ['rod', 'reel', 'line', 'leader', 'hook', 'sinker', 'float', 'bait', 'lure', 'rig'];
 const RIG_SLOTS = ['rod', 'reel', 'line', 'leader', 'hook', 'sinker', 'float', 'bait', 'lure'];
@@ -64,7 +68,7 @@ function validateTackle(raw) {
   if (raw.schema && raw.schema !== TACKLE_SCHEMA) warnings.push(`schema "${raw.schema}" — this engine reads "${TACKLE_SCHEMA}"`);
   for (const [p, [lo, hi]] of Object.entries(TACKLE_NUMS[T] || {})) {
     const v = getPath(d, p); if (v === null && p === 'float_depth_m') continue;
-    if (typeof v !== 'number' || !isFinite(v)) errors.push(`${p} must be a number`); else if (v < lo || v > hi) warnings.push(`${p} = ${v} is outside the usual ${lo}..${hi}`);
+    if (typeof v !== 'number' || !isFinite(v)) errors.push(`${p} must be a number`); else if (lo > 0 && v <= 0) errors.push(`${p} must be more than 0`); else if (v < lo || v > hi) warnings.push(`${p} = ${v} is outside the usual ${lo}..${hi}`);
   }
   for (const [p, list] of Object.entries(TACKLE_ENUMS)) { const [t, ...rest] = p.split('.'); if (t !== T) continue; const v = getPath(d, rest.join('.')); if (!list.includes(v)) errors.push(`${rest.join('.')}: one of ${list.join(', ')}`); }
   for (const [k, v] of Object.entries(d.colors || {})) if (v && !isHex(v)) errors.push(`colors.${k} must be a hex colour like "#c0c0c0"`);
@@ -98,13 +102,14 @@ const TackleDB = {
     if (r.warnings.length && !quiet) console.info(`Tackle "${d.id}" notes:`, r.warnings);
     return r;
   },
-  saved() { try { return JSON.parse(localStorage.getItem('embercrown-tackle-defs') || '{}'); } catch (e) { return {}; } },
+  saved() { try { const s = JSON.parse(localStorage.getItem('embercrown-tackle-defs') || '{}'); return s && typeof s === 'object' && !Array.isArray(s) ? s : {}; } catch (e) { return {}; } },
   store(s) { try { localStorage.setItem('embercrown-tackle-defs', JSON.stringify(s)); } catch (e) { /* storage unavailable */ } },
   forget(id) { const s = this.saved(); delete s[id]; this.store(s); },
   ofType(t) { return this.list.filter(d => d.type === t); },
-  json(id) { const d = this.byId[id]; if (!d) return null; const o = {}; for (const k in d) if (!k.startsWith('_')) o[k] = d[k]; return JSON.stringify(o, null, 2); },
+  json(id) { const d = this.byId[id]; return d ? defJSON(d) : null; },
 };
 const LB = 0.4536;   // kg in a pound
+const REEL_FITS = { spinning: ['spinning'], casting: ['baitcaster', 'conventional'], conventional: ['conventional', 'baitcaster'] };   // reel kinds that sit on each rod's seat
 // what a rig adds up to: how far it casts, its weakest link, drag, how it fishes. { errors, warnings, p: the parts, ... }
 function rigStats(rig) {
   const errors = [], warnings = [], p = {};
@@ -115,7 +120,7 @@ function rigStats(rig) {
   else if (!lure && !(hook && bait)) errors.push('add a lure, or a hook with bait');
   else if (lure && (hook || bait)) errors.push('pick a lure, or a hook with bait (not both)');
   if (errors.length) return { errors, warnings, p };
-  const fits = { spinning: ['spinning'], casting: ['baitcaster', 'conventional'], conventional: ['conventional', 'baitcaster'] }[rod.reel];
+  const fits = REEL_FITS[rod.reel] || [];
   if (!fits.includes(reel.kind)) warnings.push(`a ${reel.kind} reel on a ${rod.reel} rod sits wrong: shorter casts`);
   const lmax = rod.line_lb.max * (line.material === 'braid' ? 2 : 1);
   if (line.strength_lb < rod.line_lb.min) warnings.push(`${line.strength_lb} lb line is light for this rod (${rod.line_lb.min}–${rod.line_lb.max} lb): the rod can break it`);
@@ -124,7 +129,7 @@ function rigStats(rig) {
   const castG = lure ? lure.weight_g : hook.weight_g + bait.weight_g + (sinker ? sinker.weight_g : 0) + (fl ? fl.buoyancy_g * 0.25 : 0);
   if (castG < rod.lure_g.min * 0.7) warnings.push(`only ${castG.toFixed(1)} g to throw: light for this rod (${rod.lure_g.min}–${rod.lure_g.max} g), it won't cast far`);
   if (castG > rod.lure_g.max * 1.3) warnings.push(`${castG.toFixed(0)} g is heavy for this rod (${rod.lure_g.min}–${rod.lure_g.max} g)`);
-  if (fl && bait.floats && !sinker) warnings.push('a floating bait under a float just lies on the surface: add a split shot');
+  if (fl && bait && bait.floats && !sinker) warnings.push('a floating bait under a float just lies on the surface: add a split shot');
   if (fl && sinker && sinker.weight_g > fl.buoyancy_g) warnings.push(`the ${sinker.name.toLowerCase()} is heavier than the float holds (${fl.buoyancy_g} g): it sinks the float`);
   if (lure && lure.style === 'skirt') warnings.push('troll it: drive the boat at 2.5–6.5 m/s with the lure out');
   const mid = Math.sqrt(rod.lure_g.min * rod.lure_g.max), wfit = clamp(1 - 0.38 * Math.abs(Math.log(castG / mid)), 0.25, 1);
@@ -192,7 +197,7 @@ function rigFit(slot, d, P) {
   if (!rod || slot === 'rod') return '';
   const lmax = l => rod.line_lb.max * (l.material === 'braid' ? 2 : 1), casts = w => w <= rod.lure_g.max * 1.5;   // (a bit over the rating still casts, if not sweetly: rigStats warns)
   switch (slot) {
-    case 'reel': { const fits = { spinning: ['spinning'], casting: ['baitcaster', 'conventional'], conventional: ['conventional', 'baitcaster'] }[rod.reel] || [];
+    case 'reel': { const fits = REEL_FITS[rod.reel] || [];
       if (!fits.includes(d.kind)) return `needs a ${rod.reel === 'spinning' ? 'spinning' : 'baitcaster or conventional'} reel for this rod`;
       if (d.capacity.line_lb < rod.line_lb.min * 0.5) return 'too small for this rod'; if (d.capacity.line_lb > rod.line_lb.max * 2.5) return 'too big for this rod'; return ''; }
     case 'line': if (d.strength_lb < rod.line_lb.min) return `too light for this rod (${rod.line_lb.min}–${rod.line_lb.max} lb)`; if (d.strength_lb > lmax(d)) return `too heavy for this rod (${rod.line_lb.min}–${rod.line_lb.max} lb)`;

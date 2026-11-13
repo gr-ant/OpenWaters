@@ -4,6 +4,7 @@
   "name": "Common snapping turtle",
   "scientific": "Chelydra serpentina",
   "description": "Big-headed, rough-shelled ambusher of muddy ponds and slow rivers. Lies buried in the bottom and strikes with a fast, powerful bite. Length is carapace length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 15,

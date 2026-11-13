@@ -11,7 +11,7 @@ const CONTROL_ACTIONS = [   // [id, canonical code, group, label]
   ['forward', 'KeyW', 'Moving', 'Walk / swim forward · throttle up'], ['back', 'KeyS', 'Moving', 'Walk / swim back · throttle down'],
   ['left', 'KeyA', 'Moving', 'Step left · steer left'], ['right', 'KeyD', 'Moving', 'Step right · steer right'],
   ['run', 'ShiftLeft', 'Moving', 'Run · reel faster · boat power'], ['jump', 'Space', 'Moving', 'Jump · swim up'],
-  ['dive', 'KeyC', 'Moving', 'Dive · sit / stand on deck'], ['use', 'KeyF', 'Moving', 'Use · board / leave a boat'],
+  ['dive', 'KeyC', 'Moving', 'Dive · sit / stand on deck'], ['use', 'KeyF', 'Moving', 'Use · board / leave a boat · unhook a fish'],
   ['torch', 'KeyL', 'Moving', 'Dive light (deep water)'], ['view', 'KeyK', 'Moving', 'First / third-person view'],
   ['rod', 'KeyQ', 'Fishing', 'Rod out / away'], ['cast', 'KeyR', 'Fishing', 'Cast · reel · strike (left mouse too)'],
   ['bail', 'KeyG', 'Fishing', 'Open / close the bail'], ['holder', 'KeyH', 'Fishing', 'Rod holder: set the rod down / pick it up'], ['dragDown', 'BracketLeft', 'Fishing', 'Drag down'], ['dragUp', 'BracketRight', 'Fishing', 'Drag up'],

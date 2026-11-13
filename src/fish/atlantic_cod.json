@@ -4,6 +4,7 @@
   "name": "Atlantic cod",
   "scientific": "Gadus morhua",
   "description": "Heavy-bodied, speckled olive cod with a chin barbel and three dorsal fins. Hunts along the bottom of cold seas in loose groups.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 35,

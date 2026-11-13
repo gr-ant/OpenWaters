@@ -4,6 +4,7 @@
   "name": "Brook trout",
   "scientific": "Salvelinus fontinalis",
   "description": "Small, jewel-coloured char of cold, clear headwater creeks. Needs the coldest, cleanest water.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 12,

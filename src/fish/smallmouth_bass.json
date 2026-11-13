@@ -4,6 +4,7 @@
   "name": "Smallmouth bass",
   "scientific": "Micropterus dolomieu",
   "description": "Bronze, barred bass of rocky rivers and clear lakes. Loves crayfish and current seams; fights above its weight.",
+  "handling": { "lip": true, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 15,

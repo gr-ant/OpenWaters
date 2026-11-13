@@ -4,6 +4,7 @@
   "name": "Pacific oyster",
   "scientific": "Magallana gigas",
   "description": "Rough, frilled oyster cemented to rock and to its neighbours in thick reefs, filtering plankton from the tide. Length is shell length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 6,

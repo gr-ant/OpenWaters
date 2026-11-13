@@ -4,6 +4,7 @@
   "name": "Blue marlin",
   "scientific": "Makaira nigricans",
   "description": "Huge cobalt-blue billfish of warm open ocean. Cruises the deep blue water off tropical islands, slashing through bait schools with its spear. Rare, solitary, and the fight of a lifetime.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 150,

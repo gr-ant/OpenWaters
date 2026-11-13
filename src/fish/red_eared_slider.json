@@ -4,6 +4,7 @@
   "name": "Red-eared slider",
   "scientific": "Trachemys scripta elegans",
   "description": "Smooth-shelled pond turtle that basks in rows on logs and slides into the water at the first alarm. Omnivore. Length is carapace length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 10,

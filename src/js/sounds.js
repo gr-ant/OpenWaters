@@ -16,16 +16,35 @@ const Sounds = globalThis.Sounds = (() => {
   let ac = null, noise = null;
   let song = null, music = null, musicOn = false;
   // music: the Urchin song rendered once and looped; the note tails that run past its end are wrapped onto the start, so the seam is silent.
-  // shortcut: renders on the main thread (~1 s on a phone, once); move it to a Worker if that hitch shows up in play
+  // The render (about a second on a phone) runs in a Worker built from the Urchin module's own text (<script id="urchinSrc">),
+  // so the first tap doesn't hitch; where a module Worker can't start (an old browser, a host that blocks blob: workers)
+  // it falls back to rendering here, as before.
+  let songJob = null;
+  const renderSong = () => songJob || (songJob = new Promise(resolve => {
+    const text = Urchin.song('open-waters'), opts = { sampleRate: 22050, volume: 0.5 }; let settled = false;
+    const local = () => { if (settled) return; settled = true;
+      try { const sc = Urchin.compile(text), au = Urchin.render(text, opts), L = Math.round(sc.duration * au.sampleRate), d = au.samples.slice(0, L);
+        for (let i = L; i < au.samples.length; i++) d[i % L] += au.samples[i]; resolve({ d, rate: au.sampleRate }); } catch (e) { resolve(null); } };
+    try {
+      const tail = '\nself.onmessage = e => { const { text, opts } = e.data, sc = compile(text), au = render(text, opts), L = Math.round(sc.duration * au.sampleRate), d = au.samples.slice(0, L);\n'
+        + '  for (let i = L; i < au.samples.length; i++) d[i % L] += au.samples[i]; self.postMessage({ d, rate: au.sampleRate }, [d.buffer]); };\n';
+      const url = URL.createObjectURL(new Blob([document.getElementById('urchinSrc').textContent, tail], { type: 'text/javascript' }));
+      const w = new Worker(url, { type: 'module' }), done = () => { try { w.terminate(); URL.revokeObjectURL(url); } catch (e) { /* */ } };
+      w.onmessage = e => { done(); if (settled) return; if (e.data && e.data.d instanceof Float32Array) { settled = true; resolve(e.data); } else local(); };
+      w.onerror = e => { if (e && e.preventDefault) e.preventDefault(); done(); local(); };
+      w.postMessage({ text, opts });
+    } catch (e) { local(); }
+  }));
   const musicGo = () => {
     if (!musicOn || music || !ac || ac.state !== 'running' || !globalThis.Urchin) return;
-    if (!song) { const text = Urchin.song('open-waters'), sc = Urchin.compile(text), a = Urchin.render(text, { sampleRate: 22050, volume: 0.5 });
-      const L = Math.round(sc.duration * a.sampleRate), d = a.samples.slice(0, L); for (let i = L; i < a.samples.length; i++) d[i % L] += a.samples[i];
-      song = ac.createBuffer(1, L, a.sampleRate); song.copyToChannel(d, 0); }
+    if (!song) { renderSong().then(r => { if (!r || song || !ac) return; song = ac.createBuffer(1, r.d.length, r.rate); song.copyToChannel(r.d, 0); musicGo(); }); return; }
     const g = ac.createGain(); g.gain.value = 0.6; music = ac.createBufferSource(); music.buffer = song; music.loop = true; music.connect(g); g.connect(ac.destination); music.start();
   };
-  const wake = () => { try { if (!ac) { const A = globalThis.AudioContext || globalThis.webkitAudioContext; if (A) ac = new A(); } if (ac && ac.state !== 'running') ac.resume().then(musicGo, () => {}); else musicGo(); } catch (e) { /* no audio */ } };
+  // the one AudioContext for the whole game (effects, music, bird voices: Sounds.wake() / Sounds.context); started by the
+  // first click or key, put to sleep while the page is hidden so nothing plays on in a background tab
+  const wake = () => { try { if (!ac) { const A = globalThis.AudioContext || globalThis.webkitAudioContext; if (A) ac = new A(); } if (ac && ac.state !== 'running') { if (!document.hidden) ac.resume().then(musicGo, () => {}); } else musicGo(); } catch (e) { /* no audio */ } return ac; };
   addEventListener('pointerdown', wake, true); addEventListener('keydown', wake, true);
+  document.addEventListener('visibilitychange', () => { if (!ac) return; try { if (document.hidden) ac.suspend().catch(() => {}); else ac.resume().then(musicGo, () => {}); } catch (e) { /* */ } });
   const noiseBuf = c => { if (noise && noise.sampleRate === c.sampleRate) return noise; const n = c.sampleRate * 2, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return noise = b; };
   const defs = {};
@@ -47,7 +66,7 @@ const Sounds = globalThis.Sounds = (() => {
     return end;
   }
   const S = {
-    defs, voice,
+    defs, voice, wake,
     get context() { return ac; },
     get musicOn() { return musicOn; },
     setMusic(on) { musicOn = !!on; if (on) musicGo(); else if (music) { music.stop(); music.disconnect(); music = null; } },

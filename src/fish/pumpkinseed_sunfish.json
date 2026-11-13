@@ -4,6 +4,7 @@
   "name": "Pumpkinseed sunfish",
   "scientific": "Lepomis gibbosus",
   "description": "Small, round, jewel-bright sunfish with orange belly, wavy blue-green cheek lines and a red-tipped black ear flap. Guards sandy nests in weedy shallows and picks snails, insects and larvae.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 7,

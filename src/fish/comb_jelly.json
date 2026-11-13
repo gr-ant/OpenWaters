@@ -4,6 +4,7 @@
   "name": "Comb jelly",
   "scientific": "Mnemiopsis leidyi",
   "description": "A sea walnut: a clear lobed oval no jellyfish at all, rowing itself along with eight rows of beating combs that scatter rainbows by day and glow at night. Harmless.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 3,

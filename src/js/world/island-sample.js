@@ -77,9 +77,11 @@ function world(x, y) {
         h = Math.min(h, floor + (h - floor) * b); if (CEN_D < CEN_R) { lev = c.lev; kind = LAKE; obj = c; } }
       const r = cenoteRamp(x, y); if (r) { const w = rampW(r, hb); if (w > 0) h += (Math.min(hb, r.z) - h) * w; if (!obj && h < r.c.lev) { lev = r.c.lev; kind = LAKE; obj = r.c; } } }
     if (!obj && kind === OCEAN) { // ponds in hollows
-      const G = 170, ci = Math.floor(x / G), cj = Math.floor(y / G);
-      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-        const L = pondCell(ci + di, cj + dj); if (!L) continue;
+      const G = 170, ci = Math.floor(x / G), cj = Math.floor(y / G), m0 = lakeMemo.size, cells = [];
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) cells.push(pondCell(ci + di, cj + dj));
+      if (lakeMemo.size !== m0) nearChannels(x, y);   // a pond worked out just now used the shared channel list for its own spot: refill it for this one
+      for (const L of cells) {
+        if (!L) continue;
         const dx = x - L.cx, dy = y - L.cy; if (Math.abs(dx) > L.R * 1.3 + 50 || Math.abs(dy) > L.R * 1.3 + 50) continue;
         const dist = Math.hypot(dx, dy), Rr = L.R * (1 + 0.28 * nSh(x / (L.R * 0.8) + L.ph, y / (L.R * 0.8) - L.ph));
         let lipK = 1; for (let q = 0; q < n; q++) lipK *= sstep(CH_W[q] + 0.5, CH_W[q] + 3, CH_D[q]);   // a pond's lip never dams a creek

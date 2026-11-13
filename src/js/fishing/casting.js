@@ -77,7 +77,7 @@ Object.assign(Engine, {
     const P = this.P, cp = Math.cos(P.pitch), sp = Math.sin(P.pitch), ca = Math.cos(P.a), sa = Math.sin(P.a);
     const F = [ca * cp, sa * cp, sp], R = [-sa, ca, 0], U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
     // low on the right, well below the bottom of the view and close in, so you never see the end of the grip
-    const W = this.canvas ? this.canvas.width : 16, H = this.canvas ? this.canvas.height : 9, tx = Math.tan(FOV / 2), ty = tx * H / W, d = 0.42, sx = 0.85, sy = -1.35;
+    const W = this.canvas ? this.canvas.width : 16, H = this.canvas ? this.canvas.height : 9, tx = Math.tan(FOV / 2), ty = tx * H / W, d = 0.42, sx = 0.5, sy = -1.35;
     return { butt: [0, 1, 2].map(k => eye[k] + F[k] * d + R[k] * sx * tx * d + U[k] * sy * ty * d), F, U, ty };
   },
   rodAim(eye) {
@@ -109,14 +109,13 @@ Object.assign(Engine, {
     if (!D || Math.hypot(D.x - T[0], D.y - T[1], D.z - T[2]) > 2) {
       D = A.dangle = { x: T[0], y: T[1], z: T[2] - hang, vx: 0, vy: 0, vz: 0, tip: T.slice() };
     }
-    const steps = Math.max(1, Math.ceil(dt * 120)), h = dt / steps;
+    const steps = Math.max(1, Math.ceil(dt * 120)), h = dt / steps, damping = Math.exp(-(8 + heavy * 2) * h), av = T.map((v, k) => (v - D.tip[k]) / Math.max(dt, 1e-6));   // the tip's speed this frame
     for (let i = 0; i < steps; i++) {
       const t = (i + 1) / steps, anchor = T.map((v, k) => D.tip[k] + (v - D.tip[k]) * t);
-      const damping = Math.exp(-(8 + heavy * 2) * h);
       D.vx *= damping; D.vy *= damping; D.vz = D.vz * damping - 9.8 * h;
       D.x += D.vx * h; D.y += D.vy * h; D.z += D.vz * h;
       const dx = D.x - anchor[0], dy = D.y - anchor[1], dz = D.z - anchor[2], len = Math.hypot(dx, dy, dz) || 1;
-      const n = [dx / len, dy / len, dz / len], av = T.map((v, k) => (v - D.tip[k]) / Math.max(dt, 1e-6));
+      const n = [dx / len, dy / len, dz / len];
       D.x = anchor[0] + n[0] * hang; D.y = anchor[1] + n[1] * hang; D.z = anchor[2] + n[2] * hang;
       const radial = (D.vx - av[0]) * n[0] + (D.vy - av[1]) * n[1] + (D.vz - av[2]) * n[2];
       D.vx -= radial * n[0]; D.vy -= radial * n[1]; D.vz -= radial * n[2];
@@ -325,6 +324,6 @@ Object.assign(Engine, {
     this.say('Bail open: dropping it straight down', 1.5); Game.emit('cast', { distance: 0, rig: A.rig, drop: true });
   },
   lureHome() { const A = this.ang; A.phase = 'ready'; A.lure = null; A.float = null; A.lineOut = 0; A.bail = false;
-    for (const f of this.fish) if (f.state === 'lure') { f.state = 'rest'; f.tNext = 0.5; f.lureCool = this.time + 10; } },
+    for (const f of this.fish) if (f.state === 'lure' && (!f.rod || f.rod === A)) { f.state = 'rest'; f.tNext = 0.5; f.lureCool = this.time + 10; } },
   lureZone(L) { const dep = L.wl - L.ground; return L.wl - L.z < Math.min(0.35, dep * 0.3) ? 'surface' : L.z - L.ground < Math.min(0.35, dep * 0.3) ? 'bottom' : 'mid'; },
 });

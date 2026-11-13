@@ -70,7 +70,7 @@ Object.assign(Engine, {
       if (this.boatWalkable(D) && !this.boatSpotOK(D, this.boatLX, this.boatLY)) {   // the helm seat is boxed in (a console, a wheelhouse): step to the nearest clear spot
         let best = null; for (let k = 0; k < 60 && !best; k++) for (const sg of [-1, 1]) { const x = this.boatLX + sg * k * 0.1; for (const y of [0, 0.3, -0.3, this.boatLY]) if (!best && this.boatSpotOK(D, x, y)) best = [x, y]; }
         if (best) [this.boatLX, this.boatLY] = best; }
-      this.updateTui(); this.say(this.boatWalkable(D) ? (this.touchUI ? `Off the helm · joystick to move about` : `Off the helm · WASD to move about · C to ${this.boatSit ? 'stand' : 'sit'} · V to drive`) : `Fishing from the ${D.name.toLowerCase()} · ${this.touchUI ? 'Helm' : 'V'} to paddle`, 4); }
+      this.updateTui(); this.say(this.boatWalkable(D) ? (this.touchUI ? `Off the helm · joystick to move about` : `Off the helm · ${Controls.key('forward')}${Controls.key('left')}${Controls.key('back')}${Controls.key('right')} to move about · ${Controls.key('dive')} to ${this.boatSit ? 'stand' : 'sit'} · ${Controls.key('helm')} to drive`) : `Fishing from the ${D.name.toLowerCase()} · ${this.touchUI ? 'Helm' : Controls.key('helm')} to paddle`, 4); }
   },
   toggleBoatSit() { const D = this.boat.def; this.boatKick(this.boat, -0.6, 0); if (!this.boatSit) this.boatSit = true; else if (this.boatCanStand(D)) this.boatSit = false; else { this.say(`Too tippy to stand in a ${D.name.toLowerCase()}`, 2); return; } this.say(this.boatSit ? 'Sitting' : 'Standing', 1); this.updateTui(); },
   boatDeckStep(dt, f, s) {

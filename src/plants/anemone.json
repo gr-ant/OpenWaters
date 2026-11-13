@@ -1,0 +1,28 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "anemone",
+  "name": "Sea anemone",
+  "description": "Anemones on the reef: home to clownfish.",
+  "cover": ["anemone", "coral"],
+  "place": [
+    {
+      "order": 100,
+      "water": ["sea"],
+      "depth": [0.6, 9],
+      "if": ["reefsEverywhere"],
+      "above": { "reef": 0 },
+      "chance": { "from": 0.9, "width": 0.06 }
+    }
+  ],
+  "size": { "min": 0.45, "rand": 0.3 },
+  "lift": -0.03,
+  "stride": 32,
+  "sway": 1.4,
+  "view": 110,
+  "mesh": {
+    "builder": "anemone",
+    "column": [0.62, 0.22, 0.32],
+    "tentacles": 20,
+    "tips": [[0.92, 0.72, 0.55], [0.75, 0.88, 0.5]]
+  }
+}

@@ -152,8 +152,7 @@ Object.assign(Engine, {
     }
     c.restore();
     memo.view = { x0, y0, w, h, cell, ox: cx, oy: cy, scale };
-    { const ox = cx, oy = cy;
-    const toPx = (X, Y) => [x0 + (w / 2 + (X - ox) / scale) * cell, y0 + (h / 2 + (Y - oy) / scale) * cell];
+    {
     const inside = (px, py) => px >= x0 && px < x0 + w * cell && py >= y0 && py < y0 + h * cell;
     c.save(); c.beginPath(); c.rect(x0, y0, w * cell, h * cell); c.clip(); // keep roads/icons inside the map
     for (const fn of Game._mapHooks) fn(c, toPx, inside, scale); // games draw their own map icons

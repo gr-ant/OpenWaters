@@ -96,10 +96,17 @@ const Game = {
   get fishSpecies() { return FishDB.list; },
   fishDef: id => FishDB.byId[id],
   /** A species back as JSON text (defaults filled in) — handy as a starting point for a new one. */
-  exportFish(id) { const d = FishDB.byId[id]; if (!d) return null; const o = {}; for (const k in d) if (!k.startsWith('_')) o[k] = d[k]; return JSON.stringify(o, null, 2); },
+  exportFish(id) { const d = FishDB.byId[id]; return d ? defJSON(d) : null; },
   /** Live fish near the player: { id, species, name, lengthCm, weightKg, x, y, z, state, zone, hunger, stress, act, temp, ... } */
   get fish() { return Engine.fish.filter(f => !f.dead); },
-  fishNear(x, y, r = 10) { return this.fish.map(f => [f, Math.hypot(f.x - x, f.y - y)]).filter(p => p[1] <= r).sort((a, b) => a[1] - b[1]).map(p => p[0]); },
+  fishNear(x, y, r = 10) {   // live fish within r metres, nearest first (not the dead, nor one on your line)
+    const E = Engine, G = E.fishGrid, r2 = r * r, hit = [], take = f => { if (f.dead || f.hooked) return; const d = (f.x - x) ** 2 + (f.y - y) ** 2; if (d <= r2) hit.push([d, f]); };
+    if (G && E.fishGridFor === E.fish && r <= 96) {   // this frame's 8 m grid (updateFish): only the cells the circle touches, and one more for what has swum since
+      for (let i = Math.floor((x - r) / 8) - 1, i1 = Math.floor((x + r) / 8) + 1; i <= i1; i++) for (let j = Math.floor((y - r) / 8) - 1, j1 = Math.floor((y + r) / 8) + 1; j <= j1; j++) {
+        const cell = G.get((i + 32768) * 65536 + j + 32768); if (cell) for (const f of cell) take(f); }
+    } else for (const f of E.fish) take(f);
+    return hit.sort((a, b) => a[0] - b[0]).map(p => p[1]);
+  },
   /** Chance (0..1) this fish takes an offering presented right now. food: a diet word ('insects', 'worms', 'fish', ...);
    *  opts: { zone: 'surface'|'mid'|'bottom', size_cm, presentation: 0..1 }. Uses diet, activity, hunger, fear, curiosity, gape. */
   strikeChance(f, food, o = {}) {

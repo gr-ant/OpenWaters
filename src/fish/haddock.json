@@ -4,6 +4,7 @@
   "name": "Haddock",
   "scientific": "Melanogrammus aeglefinus",
   "description": "Silvery cold-water cod relative with a purple-grey back, a black shoulder blotch (the devil's thumbprint) and a dark lateral line. Grubs over gravel and sand in schools, taking worms, brittle stars and small fish.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 30,

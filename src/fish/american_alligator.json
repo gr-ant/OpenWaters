@@ -4,6 +4,7 @@
   "name": "American alligator",
   "scientific": "Alligator mississippiensis",
   "description": "Broad-snouted giant of southern swamps, rivers and lakes. Floats with just its eyes and nostrils showing and ambushes anything that comes to the water's edge.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 120,

@@ -22,10 +22,8 @@ Object.assign(Engine, {
       const L = D.hull.length_m, need = D.hull.draft_m + 0.2;
       for (let r = 0, k = 0; r < 150; k++, r = Math.sqrt(k) * 4) {   // a spiral out to 150 m, denser near the spot
         const ang = k * 2.4, bx = x + Math.cos(ang) * r, by = y + Math.sin(ang) * r; sample(bx, by); if (SK !== w.kindId) continue;
-        let ok = true; for (const s of [-0.5, 0, 0.5]) if (this.boatDepth(bx + ca * s * L, by + sa * s * L) < need) ok = false;
-        if (!ok) continue;
-        sample(bx, by); const b = { def: D, id: 'boat#' + (this.boatN = (this.boatN || 0) + 1), x: bx, y: by, a, v: 0, kd: SK, wl: SW, z: SW, pitch: 0, roll: 0, yaw: 0, auto: true };
-        this.boats.push(b); while (this.boats.length > 8) { const i = this.boats.findIndex(q => q !== this.boat && q !== b); this.boats.splice(i, 1); }
+        if (!this.hullFits(bx, by, ca, sa, L, need)) continue;
+        const b = this.addBoat(D, bx, by, a, true);
         (this.boated || (this.boated = new Set())).add(w.id); this.boardBoat(b); Game.emit('boatSpawn', b);
         if (D !== first) this.say(`Too shallow here for a ${first.name.toLowerCase()}: a ${D.name.toLowerCase()} instead`, 3);
         return b;

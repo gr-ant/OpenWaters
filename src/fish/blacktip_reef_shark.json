@@ -4,6 +4,7 @@
   "name": "Blacktip reef shark",
   "scientific": "Carcharhinus melanopterus",
   "description": "Sleek tan shark with sharply black-tipped fins, patrolling tropical reef flats in shallow, clear water; its dorsal fin often cuts the surface.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 100,

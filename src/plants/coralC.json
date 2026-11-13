@@ -1,0 +1,33 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "coralC",
+  "name": "Plate coral",
+  "description": "Broad tables of plate coral over a brain-coral dome, among the reef.",
+  "cover": ["coral"],
+  "place": [
+    {
+      "order": 120,
+      "water": ["sea"],
+      "depth": [0.6, 15],
+      "if": ["reefsEverywhere"],
+      "r1Below": 0.3,
+      "chance": {
+        "width": 0.24,
+        "times": [
+          { "sstep": [-0.1, 0.2], "of": "reef" }
+        ]
+      }
+    }
+  ],
+  "size": { "min": 1, "rand": 1.3 },
+  "lift": -0.03,
+  "stride": 32,
+  "sway": 0,
+  "view": 150,
+  "mesh": {
+    "builder": "plateCoral",
+    "dome": [[0.78, 0.6, 0.36], [0.62, 0.48, 0.3]],
+    "plates": [[0.42, -0.1, 0.34, 0.34, [0.42, 0.62, 0.52]], [-0.32, 0.3, 0.26, 0.26, [0.72, 0.55, 0.3]], [0.05, 0.42, 0.42, 0.22, [0.35, 0.55, 0.62]]],
+    "shade": { "by": "height", "base": 0.7, "range": 0.3, "from": -0.1 }
+  }
+}

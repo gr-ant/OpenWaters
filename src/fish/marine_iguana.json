@@ -4,6 +4,7 @@
   "name": "Marine iguana",
   "scientific": "Amblyrhynchus cristatus",
   "description": "The only ocean-going lizard: a black, spiny-backed grazer from the Gal\u00e1pagos that dives to crop algae off cold rocks, then basks to warm up. Length is snout to tail tip.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 40,

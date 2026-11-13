@@ -1,5 +1,6 @@
 {
   "schema": "embercrown-fish/1",
+  "handling": { "lip": true, "hold": "cradle" },
   "size": {
     "length_cm": {
       "spread": 0.2,

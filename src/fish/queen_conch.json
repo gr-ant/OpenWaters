@@ -4,6 +4,7 @@
   "name": "Queen conch",
   "scientific": "Aliger gigas",
   "description": "Heavy tropical sea snail with a flared pink-lipped shell crowned in blunt spines. Plods over seagrass and sand, grazing algae and detritus with eyes on stalks. Length is shell length.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 12,

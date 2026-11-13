@@ -1,0 +1,25 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "moss",
+  "name": "Moss",
+  "description": "Flat lumpy moss cushions (grey-green lichen in the arctic).",
+  "ground": {
+    "weights": {
+      "plain": { "temperate": 0, "arctic": 0.15, "tropical": 0 },
+      "forest": { "temperate": 0.06, "arctic": 0.15, "tropical": 0.06 },
+      "rock": { "temperate": 0.14, "arctic": 0.2, "tropical": 0.14 },
+      "alpine": 0.1
+    },
+    "steep": 1.3,
+    "size": [0.6, 0.9],
+    "sink": 0.02
+  },
+  "stride": 24,
+  "sway": 0,
+  "view": 55,
+  "mesh": {
+    "builder": "moss",
+    "color": { "temperate": [0.27, 0.42, 0.12], "arctic": [0.46, 0.48, 0.32], "tropical": [0.2, 0.45, 0.12] },
+    "shade": { "by": "ground", "top": 0.12, "up": 0.3, "root": [0.58, 0.47] }
+  }
+}

@@ -4,6 +4,7 @@
   "name": "Brown shrimp",
   "scientific": "Farfantepenaeus aztecus",
   "description": "Bottom-dwelling shrimp of muddy bays and the shelf. Buries by day, forages at night, and flicks its tail to shoot backwards when startled. Length is rostrum to tail fan, antennae excluded.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 6,

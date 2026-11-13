@@ -11,7 +11,10 @@ const island = [...read('src/index.html').matchAll(/js\/(world\/island[\w-]*)\.j
 const files = ['config', 'world/worldgen', ...island, 'engine/shared', 'shaders/lit', 'world/seasons-weather', 'world/water-temp', 'world/water-plants-grid', 'world/habitat', 'world/fish-populations', 'models/mesh-builder', 'models/trees', 'creatures/fish', 'creatures/cephalopods-shellfish', 'creatures/jellies', 'creatures/reptiles-amphibians'];
 // map features are built-in JSON, read at boot in the game (boot.js); older revisions without them get an empty list
 const features = [...read('src/index.html').matchAll(/data-builtin="feature" src="([^"]+)"/g)].map(m => read(`src/${m[1]}`));
-const source = `var BUILTIN = { fish: [], boat: [], tackle: [], feature: [${features.join(',')}] };\n` + files.map(f => read(`src/js/${f}.js`)).join('\n');
+// plants likewise (src/plants/*.json, registered at boot); older revisions had them in code
+const plants = [...read('src/index.html').matchAll(/data-builtin="plant" src="([^"]+)"/g)].map(m => read(`src/${m[1]}`));
+const source = `var BUILTIN = { fish: [], boat: [], tackle: [], feature: [${features.join(',')}], plant: [${plants.join(',')}] };\n` + files.map(f => read(`src/js/${f}.js`)).join('\n')
+  + `\nif (typeof registerPlants === 'function') registerPlants(BUILTIN.plant);`;
 const fixtures = [];
 for (const climate of ['temperate', 'tropical', 'arctic']) {
   const api = new Function('location', 'history', 'matchMedia', 'localStorage', 'Engine', source + `

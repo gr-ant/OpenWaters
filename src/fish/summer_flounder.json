@@ -4,6 +4,7 @@
   "name": "Summer flounder",
   "scientific": "Paralichthys dentatus",
   "description": "Left-eyed flatfish of sandy coastal bottoms. Lies buried with only its eyes showing, its spotted brown upper side matching the sand, and lunges up at passing fish.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 30,

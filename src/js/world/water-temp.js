@@ -29,9 +29,9 @@ function waterTemp(kind, level, below, x, y, live = true) {
     T += [0.3, 1, 1.6, 0.6, 0.5][kind] * (1 - 0.6 * ENV.cloud) * Math.sin(((Engine.tod ?? CONFIG.startHour / 24) * 24 - 9) / 24 * 6.2832);
   } else T += [0.3, 1, 1.6, 0.6, 0.5][kind] * 0.5;
   if (kind === CREEK || kind === RIVER) { const s = springPull(x, y) * (kind === CREEK ? 1 : 0.4); T += (9 - T) * s; }
-  if (kind === OCEAN && CLIMATE.seaCurrent) { const w = seaWarm(x, y); T += 5.5 * w - 2.5; }   // a mild current to the south-east (~20 °C in summer), cold water to the north-west
+  const w = kind === OCEAN ? seaWarm(x, y) : 0;   // the warm current's mixed layer is deep and stays warm far down
+  if (kind === OCEAN && CLIMATE.seaCurrent) T += 5.5 * w - 2.5;   // a mild current to the south-east (~20 °C in summer), cold water to the north-west
   if (kind === LAKE || kind === OCEAN) {   // layers: warm (or, under ice, cold) water on top, ~4-7 °C below
-    const w = kind === OCEAN ? seaWarm(x, y) : 0;   // the warm current's mixed layer is deep and stays warm far down
     const deep = kind === OCEAN ? (CLIMATE.key === 'arctic' ? Math.max(-1.5, Math.min(T, 1.5)) : Math.min(T, 6 + (CLIMATE.reefsEverywhere ? 14 : 6) * w)) : T > 4 ? Math.min(T, 4 + 2.5 * sstep(0, 0.3, yf)) : 4;
     const top = kind === OCEAN ? 8 + (CLIMATE.reefsEverywhere ? 30 : 8) * w : T > 12 ? 3 : 1.5, bot = kind === OCEAN ? 30 + 80 * w : T > 12 ? 9 : 5;
     T += (deep - T) * sstep(top, bot, below);

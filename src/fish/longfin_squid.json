@@ -4,6 +4,7 @@
   "name": "Longfin squid",
   "scientific": "Doryteuthis pealeii",
   "description": "Fast schooling squid of the continental shelf. Hunts small fish and shrimp at night, changing colour in a blink. Length here is mantle plus arms, not the long feeding tentacles.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 12,

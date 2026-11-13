@@ -4,6 +4,7 @@
   "name": "Dungeness crab",
   "scientific": "Metacarcinus magister",
   "description": "Broad, purple-brown crab of cool Pacific sand and eelgrass beds, with white-tipped claws and a fan-shaped shell. Buries itself in the sand by day and forages for clams, shrimp and small fish. Length is carapace width.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 12,

@@ -1,0 +1,41 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "kelp",
+  "name": "Kelp",
+  "description": "Tall brown kelp: forests off temperate and arctic coasts, and the weed of deeper sea water.",
+  "cover": ["weeds"],
+  "place": [
+    {
+      "order": 170,
+      "water": ["sea"],
+      "depth": [2, 14],
+      "unless": ["reefsEverywhere"],
+      "chance": {
+        "from": 0.7,
+        "width": 0.22,
+        "times": [
+          { "sstep": [0, 0.3], "of": "kelpbed" }
+        ]
+      }
+    },
+    {
+      "order": 180,
+      "water": ["sea"],
+      "depth": [2.5, null],
+      "chance": { "width": 0.08 }
+    }
+  ],
+  "size": { "depth": [0.5, 0.4], "max": 9 },
+  "lift": -0.1,
+  "stride": 32,
+  "sway": 1.2,
+  "view": 220,
+  "mesh": {
+    "builder": "ribbons",
+    "count": 5,
+    "width": 0.045,
+    "color": [0.34, 0.31, 0.1],
+    "seed": 43,
+    "shade": { "by": "height", "base": 0.64, "range": 0.4 }
+  }
+}

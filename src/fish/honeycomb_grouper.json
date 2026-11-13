@@ -4,6 +4,7 @@
   "name": "Honeycomb grouper",
   "scientific": "Epinephelus merra",
   "description": "Small, stout grouper whose pale body is netted with a dark honeycomb of hexagonal spots. Lurks in reef crevices and rubble, ambushing small fish and crustaceans. Length is total length.",
+  "handling": { "lip": true, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 12,

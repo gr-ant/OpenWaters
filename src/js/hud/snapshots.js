@@ -100,6 +100,12 @@ Object.assign(Engine, {
   },
   // queue a picture of everything there is (skipping ones already made); run at start and whenever something is imported
   snapAll() {
+    // pictures of definitions that have since been replaced or removed (their key carries the old stamp): free the PNGs
+    if (this.snaps) { const rigs = new Map(TackleDB.ofType('rig').map(r => [r.id, r])), gear = new Map(TackleDB.list.map(g => [g.id, g])), boats = new Map(BoatDB.list.map(D => [D.id, D])), fish = new Map(FishDB.list.map(D => [D.id, D]));
+      for (const [key, url] of this.snaps) { const m = /^(rig|gear|boat|fish):(.+?):(\d+)(?=:|$)/.exec(key); if (!m) continue;
+        const d = (m[1] === 'rig' ? rigs : m[1] === 'gear' ? gear : m[1] === 'boat' ? boats : fish).get(m[2]); let live = !!d && stamp(d) === +m[3];
+        if (live && m[1] === 'rig') { const S = rigStats(d); live = !S.errors.length && key.startsWith(rigKey(d, S)); }
+        if (!live) { if (url) URL.revokeObjectURL(url); this.snaps.delete(key); if (this.snapQ) this.snapQ.delete(key); } } }
     const want = (key, build) => { if (!(this.snaps && this.snaps.has(key))) (this.snapQ || (this.snapQ = new Map())).set(key, { build }); };
     for (const r of TackleDB.ofType('rig')) { const S = rigStats(r); if (!S.errors.length) want(rigKey(r, S), () => rigMesh(S)); }
     for (const g of TackleDB.list) if (g.type !== 'rig' && ['lure', 'bait', 'float', 'sinker', 'hook', 'rod', 'reel'].includes(g.type)) want(gearKey(g), () => gearMesh(g));

@@ -4,6 +4,7 @@
   "name": "Mahi-mahi",
   "scientific": "Coryphaena hippurus",
   "description": "Brilliant gold, green and blue fast-growing fish of warm blue water, with a blunt forehead on big bulls and one long dorsal fin. Chases flying fish and hangs under floating weed and debris; length is fork length.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 50,

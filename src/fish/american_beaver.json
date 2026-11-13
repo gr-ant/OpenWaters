@@ -1,0 +1,137 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "american_beaver",
+  "name": "American beaver",
+  "scientific": "Castor canadensis",
+  "description": "Stout brown rodent with a broad, flat, scaly tail and orange front teeth. Lives where trees have come down into quiet fresh water, feeding on bark and water plants, and never strays far from the timber. Length is nose to tail tip.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 80,
+      "typical": 100,
+      "max": 125,
+      "spread": 0.1
+    },
+    "weight": {
+      "a": 0.02,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "plan": "pinniped",
+    "height": 0.24,
+    "width": 0.27,
+    "flex": 0.7,
+    "swim": "auto",
+    "parts": {
+      "snout": 0.25,
+      "neck": 0.02,
+      "fore": 0.25,
+      "rear": "flat",
+      "tail": 0.28,
+      "whiskers": 0.8,
+      "ears": 0.35,
+      "eye": 0.5
+    },
+    "colors": {
+      "back": "#7d5838",
+      "flank": "#966c45",
+      "belly": "#b38d64",
+      "fins": "#3d3630",
+      "eye": "#0a0a0a",
+      "mouth": "#c8742a"
+    },
+    "pattern": []
+  },
+  "habitat": {
+    "climates": [
+      "temperate"
+    ],
+    "waters": {
+      "pond": 1,
+      "creek": 0.9,
+      "lake": 0.8,
+      "river": 0.7
+    },
+    "depth_m": {
+      "min": 0.3,
+      "preferred": 1.5,
+      "max": 6
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 12,
+      "max": 26
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 0.8
+    },
+    "turbidity_max": 0.6,
+    "oxygen_min_mgL": 0,
+    "cover": {
+      "wood": 1,
+      "reeds": 0.3,
+      "weeds": 0.2,
+      "lilies": 0.2,
+      "rocks": 0.1,
+      "open": 0.05
+    },
+    "cover_required": 1
+  },
+  "population": {
+    "density": 0.3,
+    "school": {
+      "min": 1,
+      "max": 3
+    },
+    "home_range_m": 22
+  },
+  "activity": {
+    "pattern": "crepuscular"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 2,
+    "turn_rate": 2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.6,
+      "mid": 0.25,
+      "bottom": 0.15
+    },
+    "wariness": 0.7,
+    "spook_m": 12,
+    "recover_s": 60,
+    "curiosity": 0.3,
+    "rise_per_hour": 0,
+    "breath_hold_s": 120,
+    "surface_s": 10,
+    "leap_per_hour": 0,
+    "haul_out": 0.5,
+    "blow": 0
+  },
+  "diet": {
+    "food": {
+      "plants": 1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.6,
+      "mid": 0.2,
+      "bottom": 0.2
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.6,
+    "stamina": 0.6,
+    "jumps": 0,
+    "runs": 0.4
+  }
+}

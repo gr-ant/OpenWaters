@@ -1,0 +1,42 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "coral",
+  "name": "Coral",
+  "description": "Staghorn and brain coral, the body of the tropical reefs.",
+  "cover": ["coral"],
+  "place": [
+    {
+      "order": 121,
+      "water": ["sea"],
+      "depth": [0.6, 15],
+      "if": ["reefsEverywhere"],
+      "chance": {
+        "width": 0.24,
+        "times": [
+          { "sstep": [-0.1, 0.2], "of": "reef" }
+        ]
+      }
+    }
+  ],
+  "size": { "min": 0.9, "rand": 1.4, "hash": 306 },
+  "lift": -0.1,
+  "stride": 32,
+  "sway": 0,
+  "view": 150,
+  "meshes": [
+    {
+      "id": "coralA",
+      "split": 0.55,
+      "builder": "staghorn",
+      "colors": [[1, 0.42, 0.68], [0.68, 0.38, 1], [1, 0.62, 0.42]]
+    },
+    {
+      "id": "coralB",
+      "builder": "brainTable",
+      "brain": [[1, 0.88, 0.38], [0.8, 0.7, 0.3]],
+      "stalk": [0.5, 0.62, 0.42],
+      "table": [0.4, 0.85, 0.6],
+      "small": [1, 0.5, 0.2]
+    }
+  ]
+}

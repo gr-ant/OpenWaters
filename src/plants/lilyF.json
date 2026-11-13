@@ -1,0 +1,37 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "lilyF",
+  "name": "Flowering water lily",
+  "description": "Lily pads with a pink-white flower, in bloom only in early summer.",
+  "cover": ["lilies"],
+  "place": [
+    {
+      "order": 160,
+      "water": ["lake", "pond"],
+      "depth": [0.35, 2.3],
+      "r1Below": 0.15,
+      "chance": {
+        "width": { "lake": 0.05, "pond": 0.32 }
+      }
+    }
+  ],
+  "size": { "min": 0.8, "rand": 0.7, "hash": 305 },
+  "z": "water",
+  "lift": 0.015,
+  "stride": 24,
+  "sway": 0,
+  "view": 280,
+  "grow": 0,
+  "flower": true,
+  "mesh": {
+    "builder": "lilypads",
+    "pads": [
+      [0, 0, 0.5, 0, [0.17, 0.4, 0.13]],
+      [0.66, 0.38, 0.3, 2.2, [0.2, 0.45, 0.15]],
+      [-0.5, 0.55, 0.24, 4.1, [0.15, 0.37, 0.13]],
+      [0.2, -0.7, 0.2, 1.1, [0.22, 0.42, 0.16]]
+    ],
+    "flower": { "at": [0.66, 0.38], "petals": [[1, 0.8, 0.88], [1, 0.86, 0.92]], "centre": [1.3, 1.05, 0.3] },
+    "shade": { "by": "leafUp", "base": 0.88, "range": 0.12 }
+  }
+}

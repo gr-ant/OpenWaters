@@ -4,6 +4,7 @@
   "name": "Bottlenose dolphin",
   "scientific": "Tursiops truncatus",
   "description": "Grey, short-beaked dolphin in pods of a few to a dozen. Curious and playful: rolls up to breathe every minute or so with a puff from its blowhole, and often leaps clear of the water.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 200,

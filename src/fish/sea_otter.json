@@ -4,6 +4,7 @@
   "name": "Sea otter",
   "scientific": "Enhydra lutris",
   "description": "Thick-furred otter of cold coasts and kelp beds. Dives for crabs, urchins and clams, then floats at the surface for a long time eating them. Length is nose to tail tip.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 100,

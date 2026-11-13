@@ -234,7 +234,7 @@ function buildIsland(diagnostics = false) {
   const wet = new Float32Array(NN);
   for (let c = 0; c < NN; c++) if (lakeId[c] >= 0 || chan[c]) wet[c] = 1;
   for (const c of springWet) wet[c] = 1;
-  for (let pass = 0; pass < 4; pass++) for (let c = 0; c < NN; c++) { const ci = c % N; let m = wet[c]; for (const d of [-1, 1, -N, N]) { const q = c + d; if (q >= 0 && q < NN && Math.abs(q % N - ci) <= 1) m = Math.max(m, wet[q] * 0.65); } wet[c] = m; }
+  for (let pass = 0; pass < 4; pass++) { const was = wet.slice(); for (let c = 0; c < NN; c++) { const ci = c % N; let m = was[c]; for (const d of [-1, 1, -N, N]) { const q = c + d; if (q >= 0 && q < NN && Math.abs(q % N - ci) <= 1) m = Math.max(m, was[q] * 0.65); } wet[c] = m; } }   // read last pass's values: spreads the same way on every side
   ISL = { N, C, ox, oy, H, floor, lakeId, lakeNear, lakes, wet, SEG, segK: Uint8Array.from(segK), segC: Int32Array.from(segC), segR: Float32Array.from(segR), springs, chains, chainName, buckets, B, sources, summit,
     stats: { ms: Math.round(performance.now() - t0), lakes: lakes.filter(l => !l.pond).length, ponds: lakes.filter(l => l.pond).length, chains: chains.length,
       rivers: new Set(chains.filter((c, i) => chainName[i].startsWith('River')).map(c => c.sys)).size, creeks: chainName.filter(n => n.endsWith('Creek')).length, segments: NS, rapidsM: Math.round(segR.reduce((a, r, s) => a + (r > 0.4 ? Math.hypot(SEG[s * 10 + 2] - SEG[s * 10], SEG[s * 10 + 3] - SEG[s * 10 + 1]) : 0), 0)) } };

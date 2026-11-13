@@ -4,6 +4,7 @@
   "name": "Brown trout",
   "scientific": "Salmo trutta",
   "description": "Wary, cold-water fish of riffles and undercut banks. Big ones turn nocturnal and eat other fish.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 15,

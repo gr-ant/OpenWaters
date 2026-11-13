@@ -1,0 +1,32 @@
+{
+  "schema": "embercrown-plant/1",
+  "id": "bush",
+  "name": "Bush",
+  "description": "Leafy shrubs on meadows and in the forest.",
+  "ground": {
+    "weights": {
+      "sand": { "temperate": 0, "arctic": 0, "tropical": 0.015 },
+      "plain": { "temperate": 0.015, "arctic": 0.03, "tropical": 0.015 },
+      "forest": { "temperate": 0.05, "arctic": 0.05, "tropical": 0.07 },
+      "rock": 0.01,
+      "alpine": 0.02
+    },
+    "steep": 0.3,
+    "size": [
+      { "temperate": 0.8, "arctic": 0.5, "tropical": 1 },
+      { "temperate": 0.75, "arctic": 0.4, "tropical": 0.75 }
+    ],
+    "sink": 0.08,
+    "sinkBySize": true
+  },
+  "stride": 24,
+  "sway": 0.3,
+  "view": 150,
+  "dry": 0.3,
+  "mesh": {
+    "builder": "bush",
+    "color": { "temperate": [0.29, 0.47, 0.17], "arctic": [0.36, 0.4, 0.21], "tropical": [0.18, 0.46, 0.15] },
+    "lumps": [[0, 0, 0.42, 0.36], [0.3, 0.12, 0.28, 0.3], [-0.25, 0.24, 0.26, 0.29], [-0.06, -0.3, 0.22, 0.27]],
+    "shade": { "by": "ground", "top": 0.7, "up": 0.5, "root": [0.75, 0.35] }
+  }
+}

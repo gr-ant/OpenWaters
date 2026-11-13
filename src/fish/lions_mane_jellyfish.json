@@ -4,6 +4,7 @@
   "name": "Lion's mane jellyfish",
   "scientific": "Cyanea capillata",
   "description": "The biggest jellyfish there is: a scalloped red-gold bell trailing a curtain of hundreds of fine tentacles many times its own width. Give it room.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 30,

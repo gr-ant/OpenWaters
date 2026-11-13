@@ -4,6 +4,7 @@
   "name": "Lake sturgeon",
   "scientific": "Acipenser fulvescens",
   "description": "Ancient, armoured giant of big lakes and rivers, with rows of bony scutes, a shovel snout and a sucker mouth that vacuums up the bottom. Can live well over a century. Rare and slow-growing.",
+  "handling": { "lip": false, "hold": "cradle" },
   "size": {
     "length_cm": {
       "min": 60,

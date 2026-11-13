@@ -4,6 +4,7 @@
   "name": "Giant clam",
   "scientific": "Tridacna gigas",
   "description": "The largest living bivalve, wedged into the reef with its heavy fluted shell gaping to show a mantle of shimmering blue-green algae-bearing tissue. Lives by sunlight and filtering plankton for decades. Length is shell length.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 30,

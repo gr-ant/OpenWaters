@@ -4,6 +4,7 @@
   "name": "Common cuttlefish",
   "scientific": "Sepia officinalis",
   "description": "Broad-bodied hunter of sandy and seagrass shallows with a rippling skirt fin. Flashes zebra stripes and strikes shrimp with two hidden tentacles. Length is mantle, head and arms (the mantle alone reaches about 45 cm).",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 12,

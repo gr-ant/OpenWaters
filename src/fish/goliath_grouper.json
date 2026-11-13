@@ -4,6 +4,7 @@
   "name": "Goliath grouper",
   "scientific": "Epinephelus itajara",
   "description": "Enormous, mottled olive-brown grouper that sits in wrecks, ledges and caves of warm shallow seas and engulfs prey whole with a boom. Curious, territorial and slow to flee; it bolts for cover when hooked.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 80,

@@ -4,6 +4,7 @@
   "name": "Bay scallop",
   "scientific": "Argopecten irradians",
   "description": "Ribbed scallop of eelgrass beds with a row of tiny blue eyes. Unlike most bivalves it swims, clapping its shell to jet away from danger. Length is shell height, hinge to lip.",
+  "handling": { "lip": false, "hold": "hand" },
   "size": {
     "length_cm": {
       "min": 3.5,

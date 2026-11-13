@@ -4,6 +4,7 @@
   "name": "Sperm whale",
   "scientific": "Physeter macrocephalus",
   "description": "Vast, wrinkle-skinned toothed whale with a huge square head and a blow angled forward and left. Dives over a kilometre into the deep for giant squid, which the game counts as fish food, then lies at the surface to breathe. Length is nose to tail flukes.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 800,

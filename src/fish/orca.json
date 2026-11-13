@@ -4,6 +4,7 @@
   "name": "Orca",
   "scientific": "Orcinus orca",
   "description": "The killer whale: black and white, with a tall dorsal fin and white eye patch. Hunts in family pods, taking fish and seals. Blows a bushy spout every minute or so.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 500,

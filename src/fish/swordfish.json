@@ -4,6 +4,7 @@
   "name": "Swordfish",
   "scientific": "Xiphias gladius",
   "description": "Massive, scaleless billfish with a flat sword-like bill used to slash prey. Spends days in the cold depths and rises to hunt near the surface at night. Length is nose tip to tail fork, bill included.",
+  "handling": { "lip": false, "hold": "none" },
   "size": {
     "length_cm": {
       "min": 120,
