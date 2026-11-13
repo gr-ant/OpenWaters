@@ -25,8 +25,10 @@ Object.assign(Engine, {
     const P = this.P, b = this.boat, A = this.ang, rod = !!(A && A.out), H = HUMAN;
     const lx = b ? this.boatLX || 0 : P.x, ly = b ? this.boatLY || 0 : P.y, mx = lx - (this.hLX ?? lx), my = ly - (this.hLY ?? ly), moved = Math.hypot(mx, my); this.hLX = lx; this.hLY = ly;
     const dist = moved < 3 ? moved : 0, spd = dt > 0 ? dist / dt : 0;   // a jump (travel, boarding) isn't a stride
-    // he faces the way he's going (sideways and backwards too: he turns, he doesn't shuffle), turning smoothly; with the rod out, the way you're looking
-    const going = dist > 0 && spd > 0.3 && !rod, to = going ? Math.atan2(my, mx) + (b ? b.a : 0) : rod || this.hFace === undefined ? P.a : this.hFace, was = this.hFace ?? P.a;
+    // he faces the way he's going (sideways and backwards too: he turns, he doesn't shuffle), turning smoothly, rod in hand or not; while casting,
+    // with a bite or a fish on, or reeling, he faces the way you're looking (at the line), and turns back to it when he stops with the rod out
+    const busy = rod && (['charge', 'flight', 'bite', 'fight'].includes(A.phase) || A.reeling || (A.reelS || 0) > 0.05);
+    const going = dist > 0 && spd > 0.3 && !busy, to = going ? Math.atan2(my, mx) + (b ? b.a : 0) : rod || this.hFace === undefined ? P.a : this.hFace, was = this.hFace ?? P.a;
     this.hFace = was + Math.atan2(Math.sin(to - was), Math.cos(to - was)) * Math.min(1, dt * 10);
     let o, base = P.z, rot = this.hFace;
     if (b) { const D = b.def, helm = this.boatMode !== 'deck', sit = helm || this.boatSit, eye = helm ? D.crew.eye_height_m : sit ? (D.hull.cockpit ? D.crew.eye_height_m : 0.95) : 1.62;
@@ -60,6 +62,17 @@ Object.assign(Engine, {
       const g = this.hGait, v = spd / M, rate = g < 1 ? (0.9 + 0.32 * Math.min(v, 2.6)) * (1 - g) + 1.6 * g : 1.6 + 0.15 * (g - 1), L = spd > 0.05 ? v / rate : 0;   // strides a second for this pace, so the ground one stride covers
       this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist / M * 6.2832 / this.hStride) % 6.2832;   // the stride moves on by exactly the ground covered: planted feet don't slide
       o = { mode: 'stand', swing: this.hAmp, gait: g, stride: this.hStride, ph: this.hPh, rod, crouch: this.hCrouch }; }
+    // a fish in your hands (hands.js): held out in front as first person holds it, by the lip, in one hand behind its head, or across both palms
+    const cy = this.carry, held = !!cy && o.mode !== 'swim' && !(b && this.boatMode !== 'deck');
+    if (held) { const hz = o.mode === 'sit' ? o.hipZ + 0.35 : 1.05;
+      if (cy.grip === 'cradle') { const sep = clamp(cy.f.len * 0.28, 0.1, 0.22); o.reachR = [0.36, sep, hz]; o.reachL = [0.36, -sep, hz]; }
+      else o.reachR = cy.grip === 'lip' ? [0.3, 0.14, hz + 0.18] : [0.34, 0.1, hz + 0.05]; }
+    // how each hand is shaped (the first-person hand, drawHuman): closed on the rod, a wheel, an oar or a fish, relaxed otherwise
+    const relaxed = { grip: 'bar', curl: 0.35 }, closed = { grip: 'bar', curl: 1 }, hands = { L: relaxed, R: relaxed };
+    if (rod && !A.holder) { hands.R = closed; if (o.hands2) hands.L = closed; }
+    if (o.reachR) hands.R = closed; if (o.reachL) hands.L = closed;
+    if (held) { if (cy.grip === 'cradle') hands.L = hands.R = { grip: 'fish', curl: 0.18, palmUp: true };
+      else hands.R = cy.grip === 'lip' ? { grip: 'lip', curl: 1 } : { grip: 'bar', curl: 0.8 }; }
     if (rod && A.phase === 'charge') { const u = A.stroke == null ? 0 : clamp(A.stroke / 0.26, 0, 1); o.castW = (0.3 + 0.7 * A.charge) * (1 - u); o.castF = u; }   // the cast: wound back as you hold, then the throw
     else if (rod && A.phase === 'flight') o.castF = Math.exp(-(A.t - A.castAt) * 3.2);   // and the follow-through easing off
     if (!rod && this.traps && this.traps.act) Object.assign(o, this.traps.act);   // throwing or hauling a net or a pot (fishing/nets-traps.js)
@@ -73,14 +86,33 @@ Object.assign(Engine, {
     this.hSm = { mode: o.mode, parts: pose.parts.map(q => q.slice()), hand: pose.hand.slice() };
     if (o.mode === 'swim') base = P.z + EYE - (o.tread ? 0.12 : 0.3) - pose.head[2];   // head where the first-person eye is (treading water), or lying low in the water swimming
     const c = Math.cos(rot), s = Math.sin(rot), w = q => [P.x + c * q[0] - s * q[1], P.y + s * q[0] + c * q[1], base + q[2]];
-    this.hPose = { pose, rot, base, w, hand: w(pose.hand) };
+    this.hPose = { pose, rot, base, w, hand: w(pose.hand), hands };
+    if (held) { const f = cy.f, h = this.hPose.hand, yaw = rot + Math.PI / 2, hz = o.mode === 'sit' ? o.hipZ + 0.35 : 1.05;   // where the fish goes: on the palms, hanging from the lip, or along from the hand
+      this.hPose.fish = cy.grip === 'cradle' ? { ctr: w([0.36, 0, hz + 0.015 + f.len * f.def.body.height * 0.42]), yaw, pitch: 0 }
+        : cy.grip === 'lip' ? { ctr: [h[0], h[1], h[2] - f.len * 0.49], yaw, pitch: Math.PI / 2 - 0.1 }
+        : { ctr: [h[0] - Math.cos(yaw) * f.len * 0.2, h[1] - Math.sin(yaw) * f.len * 0.2, h[2]], yaw, pitch: 0 }; }
+  },
+  // the first-person hand (fishing/drawing.js armMesh) on the end of a third-person forearm: its +x (along the forearm) down the part's -z, the
+  // thumb forward and the back of the hand out to the side as an arm hangs; palmUp turns it a quarter for a fish carried across both palms.
+  // In the angler's skin colour, or the gloves' when the outfit has them.
+  humanHand(side, h) {
+    const look = BUILTIN.angler[0] || {}, W = (look.outfits || {})[CLIMATE.key] || {}, worn = (BUILTIN.clothes[0] || {}).clothes || [];
+    const gloves = W.colors && W.colors.gloves && (W.wear || []).some(id => worn.some(g => g.id === id && Object.values(g.parts || {}).some(l => l.some(q => q && q.color === 'gloves'))));
+    const col = gloves ? W.colors.gloves : look.skin || CONFIG.skinColor, curl = Math.round(h.curl * 20) / 20;
+    return this.tackleGpu(`human-hand:${side}:${h.grip}:${curl}:${h.palmUp ? 1 : 0}:${col}`, () => {
+      const m = armMesh(side, curl, h.grip, 'hand', null, col), th = h.palmUp ? side * Math.PI / 2 : 0, c = Math.cos(th), s = Math.sin(th), drop = HUMAN.fore + 0.04;
+      for (let i = 0; i < m.length; i += VS) for (const o of [0, 3]) { const x = m[i + o], y = m[i + o + 1], z = m[i + o + 2], X = -side * y, Y = side * z;
+        m[i + o] = X * c - Y * s; m[i + o + 1] = X * s + Y * c; m[i + o + 2] = -x - (o ? 0 : drop); }
+      return m; });
   },
   drawHuman(gl, L) {
     const hp = this.hPose; if (!hp) return;
     const M = this._hParts || (this._hParts = humanParts(BUILTIN.angler[0], CLIMATE.key, (BUILTIN.clothes[0] || {}).clothes)), P = this.P; sample(P.x, P.y); const wl = SW, mk = WATER[SK].murk;
     gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.roll, 0);
-    for (const q of hp.pose.parts) { const g = this.tackleGpu('human:' + q[0], () => M[q[0]]), p = hp.w([q[1], q[2], q[3]]);
-      gl.uniform1f(L.u.roll, q[5]); this.upInst(g, [p[0], p[1], p[2], 1, hp.rot + q[6], 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); }   // roll (a limb out to the side), pitch, then the part's own turn on top of your heading
+    let fore = 0;
+    for (const q of hp.pose.parts) { const arm = q[0] === 'fore' && M.foreArm, name = arm ? 'foreArm' : q[0], g = this.tackleGpu('human:' + name, () => M[name]), p = hp.w([q[1], q[2], q[3]]);
+      const draw = m => { gl.uniform1f(L.u.roll, q[5]); this.upInst(m, [p[0], p[1], p[2], 1, hp.rot + q[6], 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, 1); };
+      draw(g); if (arm) { const side = fore++ ? 1 : -1; draw(this.humanHand(side, (hp.hands || {})[side > 0 ? 'R' : 'L'] || { grip: 'bar', curl: 0.35 })); } }   // (the left arm comes first in the pose)   // roll (a limb out to the side), pitch, then the part's own turn on top of your heading
     gl.uniform1f(L.u.fsh, 0); gl.uniform1f(L.u.roll, 0);
   },
 });

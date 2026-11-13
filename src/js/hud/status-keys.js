@@ -28,16 +28,18 @@ Object.assign(Engine, {
       case 'flight': return { title: 'Casting…', sub: `${m(A.lineOut)} m`, key: R, act: 'Stop' };
       case 'water': {
         const dep = L.kd >= 0 && !L.land ? L.wl - L.z : 0, z = L.kd >= 0 && !L.land ? this.lureZone(L) : '';
+        const bot = dep > 0 ? Game.waterAt(L.x, L.y).depth : 0, of = bot > 15 ? ` of ${m(bot)}` : '';   // deep water: how far there is still to sink
         if (S.bait) return A.baitLeft <= 0 ? { title: 'Bait\'s gone', sub: '', key: R, act: 'Reel in' }
-          : { title: 'Waiting for a nibble…', sub: `Bait ${dep.toFixed(1)} m deep`, key: R, act: 'Reel in' };
-        return { title: L.spd > 0.05 ? 'Retrieving' : S.lure.buoyant ? 'Rising' : 'Sinking', sub: `Lure ${dep.toFixed(1)} m deep`, key: R, act: 'Reel' };
+          : { title: 'Waiting for a nibble…', sub: `Bait ${dep.toFixed(1)}${of} m deep`, key: R, act: 'Reel in' };
+        return { title: L.spd > 0.05 ? 'Retrieving' : S.lure.buoyant ? 'Rising' : 'Sinking', sub: `Lure ${dep.toFixed(1)}${of} m deep`, key: R, act: 'Reel' };
       }
       case 'bite': return A.took ? { title: S.hookKind === 'circle' ? 'Fish on!' : 'Strike!', sub: '', key: R, act: S.hookKind === 'circle' ? 'Reel' : 'Strike', bite: 'strike' }
         : { title: 'A nibble…', sub: '', key: '', act: '', bite: 'nibble' };
       case 'fight': {
         const fr = A.tension / S.strengthKg, col = fr < 0.6 ? '#6fcf8f' : fr < 0.85 ? '#e8c04a' : '#e4573f';
         const title = A.chargeT > 0 ? 'Reel fast!' : A.jump ? 'Jump!' : A.tension >= A.dragKg * 0.98 ? 'Running…' : 'Fish on!';
-        return { title, sub: `${m(A.lineOut)} m`, key: R, act: 'Reel', bar: { f: fr, col, mark: A.dragKg / S.strengthKg }, alert: fr > 0.85 };
+        const f = A.fish, fd = f && f.z !== undefined ? Game.waterAt(f.x, f.y).level - f.z : 0;
+        return { title, sub: `${m(A.lineOut)} m${fd > 8 ? ` · ${m(fd)} m down` : ''}`, key: R, act: 'Reel', bar: { f: fr, col, mark: A.dragKg / S.strengthKg }, alert: fr > 0.85 };
       }
     }
     return null;

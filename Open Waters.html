@@ -154,6 +154,22 @@
   /* what a net or a pot brought up: keep or let go, one by one or all at once */
   #haul { position:fixed; z-index:4; left:50%; bottom:28px; transform:translateX(-50%); width:min(340px, calc(100vw - 24px)); max-height:60vh; overflow-y:auto; padding:12px 14px; box-sizing:border-box; text-align:center; }
   #haul[hidden] { display:none; }
+  /* what's in the bucket / cooler / livewell: every fish floating, pick one and take it out (hands.js) */
+  #wellPick { position:fixed; z-index:4; left:50%; top:50%; transform:translate(-50%, -50%); width:min(640px, calc(100vw - 24px)); max-height:min(78vh, 640px); display:flex; flex-direction:column; padding:14px 14px 12px; box-sizing:border-box; text-align:center; }
+  #wellPick[hidden] { display:none; }
+  #wellPick > b { display:block; font:700 24px Georgia, serif; color:var(--cream); text-transform:capitalize; } #wellPick > i { display:block; font-size:12px; color:#c8bfa0; margin:2px 0 10px; }
+  #wellPick .wp-grid { flex:1; min-height:0; overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; padding:4px; scrollbar-width:thin; }
+  #wellPick .wp-grid button { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 6px 8px; border-radius:14px; border:1.5px solid #d4e4e044; background:radial-gradient(ellipse at 50% 40%, #ffffff10, transparent 70%); color:var(--cream); cursor:pointer; font:inherit; }
+  #wellPick .wp-grid button:hover { border-color:#d4e4e099; } #wellPick .wp-grid button.on { border-color:var(--gold-hi); background:radial-gradient(ellipse at 50% 40%, #e8d09233, #ffffff08 75%); box-shadow:0 0 0 1px #e8d09255; }
+  #wellPick .wp-pic { display:block; width:100%; height:74px; animation:wp-bob 3.2s ease-in-out infinite; animation-delay:calc(var(--d, 0s) * -1); filter:drop-shadow(0 6px 5px #0007); }   /* floating */
+  #wellPick .wp-pic img { width:100%; height:100%; object-fit:contain; }
+  #wellPick .wp-grid button.on .wp-pic { animation-duration:1.8s; }
+  @keyframes wp-bob { 0%, 100% { transform:translateY(-3px) rotate(-1.5deg); } 50% { transform:translateY(4px) rotate(1.5deg); } }
+  @media (prefers-reduced-motion: reduce) { #wellPick .wp-pic { animation:none; } }
+  #wellPick .wp-name { font:600 15px var(--serif); } #wellPick small { font-size:12px; color:#d8cfb4; }
+  #wellPick .wp-btns { display:flex; gap:8px; justify-content:center; margin-top:10px; }
+  #wellPick .wp-btns button { min-width:110px; padding:9px 16px; border-radius:16px; border:1.5px solid var(--gold); background:#0003; color:#fff; font:600 15px system-ui, sans-serif; cursor:pointer; }
+  #wellPick #wpGrab { background:linear-gradient(180deg, #4f6a37, #34492a); color:#f4ecd4; }
   #haul > b { display:block; font:700 22px Georgia, serif; color:var(--cream); } #haul > i { display:block; font-size:12px; color:#c8bfa0; margin-bottom:8px; } #haul > small { display:block; margin-top:6px; font-size:11px; color:#c8bfa0; }
   #haul ul { list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:5px; }
   #haul li { display:flex; align-items:baseline; gap:8px; padding:6px 10px; border-radius:10px; border:1px solid #d4e4e055; background:#ffffff06; cursor:pointer; text-align:left; opacity:.7; }
@@ -849,7 +865,7 @@ const CONFIG = {
   stars: true, clouds: true,
   // graphics
   maxPixelRatio: 2, maxPixelRatioTouch: 1.5,
-  showArms: true, skinColor: '#d9a27c', sleeveColor: '#4b5d52',   // your arms in first person: on the rod and reel, round a pot or net, under a fish
+  showArms: true, skinColor: '#dba985', sleeveColor: '#4b5d52',   // your arms in first person: on the rod and reel, round a pot or net, under a fish
   adaptiveResolution: true,           // lower the 3D view's resolution when frames run long, raise it again when there's room (the HUD stays sharp)
   minResolutionScale: 0.55,           // ... never below this share of the pixel ratio above
   windSway: 1,                        // tree sway strength, 0 = still
@@ -2314,9 +2330,9 @@ function meshBuilder(smooth = false) { // smooth: round, smooth-shaded blobs (fi
     } else for (let k = 0; k < n; k++) quad(P(p0, r0, k, 0), P(p0, r0, k + 1, 0), P(p1, r1, k + 1, 1), P(p1, r1, k, 1), col, ctr);
     if (cap) for (let k = 0; k < n; k++) tri(P(p1, r1, k, 1), P(p1, r1, k + 1, 1), p1, col, p0);
   };
-  // low-poly ellipsoid (rings x segs), radii rx ry rz, optional per-vertex bump(i,j) and color fn
+  // low-poly ellipsoid (rings x segs), radii rx ry rz, optional per-vertex bump(i,j) and color fn (one bump at each pole, so the ends close to a point)
   const blob = (c, rx, ry, rz, rings, segs, col, bump, rot = 0) => {
-    const V = (i, j) => { const th = i / rings * Math.PI, ph = j / segs * 6.2832 + rot, b = bump ? bump(i, j % segs) : 1; return [c[0] + Math.sin(th) * Math.cos(ph) * rx * b, c[1] + Math.sin(th) * Math.sin(ph) * ry * b, c[2] + Math.cos(th) * rz * b]; };
+    const V = (i, j) => { const th = i / rings * Math.PI, ph = j / segs * 6.2832 + rot, b = bump ? bump(i, i === 0 || i === rings ? 0 : j % segs) : 1; return [c[0] + Math.sin(th) * Math.cos(ph) * rx * b, c[1] + Math.sin(th) * Math.sin(ph) * ry * b, c[2] + Math.cos(th) * rz * b]; };
     const N = (i, j) => { const q = V(i, j); return norm3([(q[0] - c[0]) / (rx * rx), (q[1] - c[1]) / (ry * ry), (q[2] - c[2]) / (rz * rz)]); };
     for (let i = 0; i < rings; i++) for (let j = 0; j < segs; j++) {
       const cc = typeof col === 'function' ? col(i, j) : col;
@@ -2355,7 +2371,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
   const skin = rgb(K.skin) || [0.86, 0.66, 0.52], hair = rgb(Hr.color) || [0.34, 0.22, 0.15], top = H.neck + H.head;
   const worn = (Array.isArray(W.wear) ? W.wear : []).map(id => clothes.find(g => g && g.id === id)).filter(Boolean);
   // an oval ring from height z0 (half-width a0 across the shoulders, half-depth c0 front to back) down to z1 (a1, c1): chests and coats aren't round
-  const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 20, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 20 * 6.2832) / (e ? a1 : a0), Math.sin(k / 20 * 6.2832) / (e ? c1 : c0)));
+  const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 32, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 32 * 6.2832) / (e ? a1 : a0), Math.sin(k / 32 * 6.2832) / (e ? c1 : c0)));
   const sh = [G.shoulder + 0.02, 0.105], grow = ([a, c], g) => [a + g, c + g], mix = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
   const sec = z => z > -0.24 ? mix(sh, G.chest, clamp((z + 0.11) / -0.13, 0, 1)) : mix(G.chest, G.waist, clamp((z + 0.24) / (0.24 - H.torso), 0, 1));   // the torso's cross-section z below the shoulders
   const nums = (v, n) => Array.isArray(v) && v.length >= n && v.every(Number.isFinite);
@@ -2368,9 +2384,18 @@ function humanParts(look, climate = 'temperate', clothes = []) {
     else if (nums(q.wrap, 3)) oval(B, q.wrap[0], q.wrap[1], grow(sec(q.wrap[0]), q.wrap[2]), grow(sec(q.wrap[1]), q.wrap[3] ?? q.wrap[2]), col, !!q.cap);
   };
   // meshBuilder(true) and smoothTube: smooth-shaded blobs and tubes, at twice the detail the shapes ask for, so the figure is soft, not faceted
-  const part = (name, body) => { const B = meshBuilder(true), tb = B.tube, bl = B.blob; B.smoothTube = true; B.mat = MT.GEN;
-    B.tube = (p0, p1, r0, r1, n, col, cap, jit) => tb(p0, p1, r0, r1, jit ? n : n * 2, col, cap, jit);   // (an oval's jit counts its own sides)
-    B.blob = (c, rx, ry, rz, rings, segs, ...a) => bl(c, rx, ry, rz, rings * 2, segs * 2, ...a); body(B); for (const g of worn) for (const q of (g.parts && g.parts[name]) || []) if (q) shape(B, q); return new Float32Array(B.v); };
+  const part = (name, body, keep = () => true) => { const B = meshBuilder(true), tb = B.tube, bl = B.blob; B.smoothTube = true; B.mat = MT.GEN;
+    B.tube = (p0, p1, r0, r1, n, col, cap, jit) => tb(p0, p1, r0, r1, jit ? n : n * 3, col, cap, jit);   // (an oval's jit counts its own sides)
+    B.blob = (c, rx, ry, rz, rings, segs, ...a) => bl(c, rx, ry, rz, rings * 2, segs * 3, ...a); body(B); for (const g of worn) for (const q of (g.parts && g.parts[name]) || []) if (q && keep(q)) shape(B, q);
+    return clothShade(name, new Float32Array(B.v)); };
+  // soft shading baked into the clothes' colours (skin, hair and plain boots are left alone): lighter toward the top of each part, darker on
+  // faces turned down (under a hem, a cuff, the brim) and in the armpits, and a faint unevenness, so a garment reads as cloth, not one flat colour
+  const clothShade = (name, m) => { if (name === 'head') return m; let lo = 1e9, hi = -1e9; for (let i = 2; i < m.length; i += VS) { lo = Math.min(lo, m[i]); hi = Math.max(hi, m[i]); }
+    for (let i = 0; i < m.length; i += VS) { if (m[i + 9] !== MT.CLOTH) continue; const x = m[i], y = m[i + 1], z = m[i + 2], nz = m[i + 5];
+      let f = (0.9 + 0.1 * (z - lo) / (hi - lo || 1)) * (1 - 0.14 * Math.max(0, -nz)) * (1 + 0.03 * Math.sin(x * 41 + z * 23) * Math.sin(y * 37 - z * 17));
+      if (name === 'torso') f *= 1 - 0.12 * clamp((Math.abs(y) - G.chest[0] * 0.8) / 0.05, 0, 1) * clamp(1 - Math.abs(z + 0.15) / 0.1, 0, 1);   // the armpits
+      for (let k = 6; k < 9; k++) m[i + k] *= f; }
+    return m; };
   return {
     head: part('head', B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.058, 0.055, 8, skin, false); B.blob([0.01, 0, top], 0.122, 0.108, H.head, 4, 8, skin);   // a short neck, a good-sized head
       for (const y of [-0.106, 0.106]) B.blob([0, y, top - 0.01], 0.022, 0.017, 0.034, 3, 4, skin);   // ears
@@ -2380,7 +2405,15 @@ function humanParts(look, climate = 'temperate', clothes = []) {
     torso: part('torso', B => { oval(B, 0.01, -0.04, [0.07, 0.07], [0.145, 0.095], skin); oval(B, -0.04, -0.11, [0.145, 0.095], sh, skin); oval(B, -0.11, -0.24, sh, G.chest, skin); oval(B, -0.24, -H.torso, G.chest, G.waist, skin, true); }),   // shoulders sloping well down from the neck, chest, waist
     hips: part('hips', B => B.blob([0, 0, 0], G.hips[1] - 0.008, G.hips[0] - 0.007, 0.112, 4, 8, skin)),
     upper: part('upper', B => { B.blob([0, 0, -0.02], 0.074, 0.074, 0.092, 4, 8, skin); B.tube([0, 0, -0.04], [0, 0, -H.upper], 0.07, 0.056, 8, skin, true); }),   // a tall soft cap for the shoulder (no flat top), the upper arm below it
-    fore: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.044, 8, skin, false); B.blob([0, 0, -H.fore - 0.04], 0.044, 0.038, 0.06, 4, 6, skin); }),   // elbow, forearm, hand
+    fore: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.028, 8, skin, false); B.blob([0, 0, -H.fore - 0.035], 0.019, 0.034, 0.044, 3, 8, skin);
+      for (let i = 0; i < 4; i++) {
+        const y = (i - 1.5) * 0.016, len = [0.05, 0.056, 0.052, 0.041][i], r = i === 3 ? 0.008 : 0.009;
+        const a = [0, y, -H.fore - 0.06], b = [0.008, y, a[2] - len * 0.6], c = [0.02, y, a[2] - len];
+        B.tube(a, b, r, r * 0.9, 6, skin, true); B.blob(b, r, r, r, 2, 6, skin); B.tube(b, c, r * 0.9, r * 0.7, 6, skin, true);
+      }
+      B.tube([0.008, -0.027, -H.fore - 0.015], [0.025, -0.04, -H.fore - 0.045], 0.012, 0.009, 6, skin, true); }),   // elbow, forearm, hand
+    // the forearm alone (sleeve and all, no hand, no glove): drawn with the first-person hand on its end, curled for what it holds (third-person.js)
+    foreArm: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.028, 8, skin, false); }, q => q.color !== 'gloves'),
     thigh: part('thigh', B => { B.blob([0, 0, 0], 0.094, 0.094, 0.094, 4, 8, skin); B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.094, 0.072, 8, skin, true); }),   // a ball at the hip, so the leg stays whole when it swings out
     shin: part('shin', B => { B.blob([0, 0, -0.005], 0.076, 0.074, 0.08, 4, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.shin], 0.072, 0.054, 8, skin, false); }),   // knee, shin
     foot: part('foot', B => { B.blob([0, 0, 0], 0.056, 0.054, 0.05, 3, 6, skin); B.blob([0.055, 0, -H.foot + 0.055], 0.115, 0.058, 0.04, 4, 8, skin); }),   // ankle, foot (the sole is H.foot below the ankle)
@@ -2785,7 +2818,7 @@ const PLANT_BUILDERS = {
     for (const [ox, oy, r, c, rot] of m.clams) B.blob([ox, oy, 0.015], r, r * 0.85, 0.035, 2, 9, (i, j) => mul(c, 0.9 + 0.12 * (j % 2)), null, rot);
     B.blob([0.05, -0.32, 0.01], 0.09, 0.09, 0.012, 2, 10, m.dollar);
   },
-  // ---- land cover (triangles: grass 30, flowers 36, fern 40, bush 80, heath 32, moss 16), coloured for the climate ----
+  // ---- land cover (triangles: grass 30, flowers 36, fern 40, bush 80, heath 48, moss 16), coloured for the climate ----
   // grass tuft: single-triangle blades, shorter toward the rim
   grass(B, m, C) {
     B.mat = MT.LEAF; const GC = C.ground, n = m.blades;
@@ -2817,10 +2850,16 @@ const PLANT_BUILDERS = {
     const bcol = s => (i, j) => mul(BC, 0.75 + 0.45 * hash2(i + s, j, 116)), lump = s => (i, j) => 0.7 + 0.5 * hash2(i + s, j, 115);
     m.lumps.forEach(([x, y, z, r], k) => B.blob([x, y, z], r, r * 0.95, r * 0.85, 3, 5, bcol(k * 3), lump(k * 4), k));
   },
-  // heath: a low cushion with flowering (or berried) tops
+  // heath: a low leafy cushion with small tufts of flowers (or berries) dotted over its top
   heath(B, m, C) {
-    B.mat = MT.LEAF; const HC = C.pick(m.color), HF = C.pick(m.tops);
-    B.blob([0, 0, 0.04], 0.5, 0.44, 0.28, 3, 8, (i, j) => i < 2 && (j + i) % 2 ? HF : mul(HC, 0.85 + 0.3 * hash2(i, j, 117)), (i, j) => 0.8 + 0.35 * hash2(i, j, 118));
+    B.mat = MT.LEAF; const HC = C.pick(m.color), HF = C.pick(m.tops), rx = 0.5, ry = 0.44, rz = 0.24;
+    B.blob([0, 0, 0.02], rx, ry, rz, 4, 8, (i, j) => mul(HC, 0.8 + 0.35 * hash2(i, j, 117)), (i, j) => 0.9 + 0.2 * hash2(i, j, 118));
+    B.mat = MT.CLOTH;
+    for (let k = 0; k < 16; k++) {   // small blooms scattered over the top, each one triangle at its own turn and size, just proud of the leaves
+      const a = k * 2.399 + hash2(k, 1, 121), s = 0.08 + 0.6 * Math.sqrt((k + 0.5) / 16), x = Math.cos(a) * s * rx, y = Math.sin(a) * s * ry, w = hash2(k, 4, 121) * 6.2832;
+      const z = 0.02 + rz * Math.sqrt(1 - s * s) * 1.08 + 0.008, r = 0.022 + 0.022 * hash2(k, 2, 121), c = mul(HF, 0.8 + 0.35 * hash2(k, 3, 121));
+      B.tri(...[0, 1, 2].map(q => [x + Math.cos(w + q * 2.0944) * r, y + Math.sin(w + q * 2.0944) * r, z]), c, [x, y, z - 1]);
+    }
   },
   // moss: a flat lumpy cushion, half sunk into the ground
   moss(B, m, C) {
@@ -4480,12 +4519,13 @@ function hullShape(H) {
 // meshBuilder(true): rounded parts are smooth-shaded. Surfaces are MT.PLASTER (plain paint): the generic material draws rock strata on upright faces and wood draws plank grain, and on a
 // hull both read as stray lines.
 function boatMesh(D) {
-  const H = D.hull, S = hullShape(H), M = meshBuilder(true), C = {}; for (const k in BOAT_DEFAULTS.colors) C[k] = hexRGB(D.colors[k] || D.colors.hull || BOAT_DEFAULTS.colors[k]);
+  const H = D.hull, S = hullShape(H), M = meshBuilder(true), shell = meshBuilder(true), walls = meshBuilder(true), C = {}; for (const k in BOAT_DEFAULTS.colors) C[k] = hexRGB(D.colors[k] || D.colors.hull || BOAT_DEFAULTS.colors[k]);
   const NT = 36, NS = 12, th = H.thickness_m, fz = H.floor_m, wl = 0.01, below = C.bottom ? C.bottom : C.hull;
   const decked = t => (H.decks && (t > 1 - (H.decks.bow || 0) || t < (H.decks.stern || 0))) || (H.cockpit && (t < H.cockpit[0] || t > H.cockpit[1]));
   const P = (t, s, sd) => { const [y, z] = S.sec(t, s); return [S.x(t), sd * y, z]; };
   // outer skin (antifouling below the waterline)
-  M.mat = MT.PLASTER;
+  M.mat = shell.mat = walls.mat = MT.PLASTER;
+  const planes = Array.from({ length: NT }, () => []);
   // each panel is cut along the waterline, so the antifouling meets the topsides in a clean line, not a staircase of whole panels
   const sWl = t => { let lo = 0, hi = 1; for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < wl) lo = m; else hi = m; } return (lo + hi) / 2; };
   // the skin is smooth-shaded: each corner takes the hull's own slope there, so the panels blend into one fair curve
@@ -4494,21 +4534,42 @@ function boatMesh(D) {
     n = norm3(n); return n[1] * p[1] + n[2] * (p[2] - 0.3) < 0 ? [-n[0], -n[1], -n[2]] : n; };   // pointing out, away from the middle of the boat
   const skin = (qa, qb, qc, qd, sd, col) => { const v = [qa, qb, qc, qd].map(q => P(q[0], q[1], sd)), n = [qa, qb, qc, qd].map(q => nrm(q[0], q[1], sd));
     for (const [i, j, k] of [[0, 1, 2], [0, 2, 3]]) { const f = cross3([v[j][0] - v[i][0], v[j][1] - v[i][1], v[j][2] - v[i][2]], [v[k][0] - v[i][0], v[k][1] - v[i][1], v[k][2] - v[i][2]]), out = f[0] * n[i][0] + f[1] * n[i][1] + f[2] * n[i][2] >= 0;   // wound to face outward
-      if (Math.hypot(...f) > 1e-12) out ? M.triN(v[i], v[j], v[k], n[i], n[j], n[k], col, col, col) : M.triN(v[i], v[k], v[j], n[i], n[k], n[j], col, col, col); } };
+      if (sd === 1 && Math.hypot(...f) > 1e-12) { const fn = norm3(f).map(x => out ? x : -x); planes[Math.min(NT - 1, Math.round(qa[0] * NT))].push({ n: fn, p: v[i] }); }
+      if (Math.hypot(...f) > 1e-12) out ? shell.triN(v[i], v[j], v[k], n[i], n[j], n[k], col, col, col) : shell.triN(v[i], v[k], v[j], n[i], n[k], n[j], col, col, col); } };
   for (let i = 0; i < NT; i++) { const t0 = i / NT, t1 = (i + 1) / NT, w0 = sWl(t0), w1 = sWl(t1);
     for (let j = 0; j < NS; j++) for (const sd of [1, -1]) {
       const s0 = j / NS, s1 = (j + 1) / NS, m0 = clamp(w0, s0, s1), m1 = clamp(w1, s0, s1);
       if (m0 > s0 || m1 > s0) skin([t0, s0], [t1, s0], [t1, m1], [t0, m0], sd, below);
       if (m0 < s1 || m1 < s1) skin([t0, m0], [t1, m1], [t1, s1], [t0, s1], sd, C.hull);
     } }
-  // inside: walls down to the floor, the floor, and the rim along the gunwale
-  const inner = (t, sd, z) => { let y = 0; for (let k = 0; k <= 20; k++) { const [yy, zz] = S.sec(t, k / 20); if (zz >= z) { y = yy; break; } y = yy; } return [S.x(t), sd * Math.max(0, y - th), z]; };
+  D._skinN = shell.v.length / VS;
+  // Inset against the actual triangulated skin, including waterline cuts. A y-only
+  // thickness underestimates clearance on flared sides; curved-section samples can
+  // even lie outside the mesh's chords. Offset each adjacent face plane by th along
+  // its normal, then intersect at the requested x/z. Shared stations satisfy both
+  // neighbouring strips, keeping entire wall triangles inside as well as vertices.
+  const inner = (t, sd, z) => {
+    const x = S.x(t), u = t * NT, station = Math.abs(u - Math.round(u)) < 1e-8 ? Math.round(u) : u;
+    let y = S.hb(t) - th;
+    for (let i = Math.max(0, Math.ceil(station - 1)); i <= Math.min(NT - 1, Math.floor(station)); i++) {
+      for (const { n, p } of planes[i]) if (n[1] > 1e-7)
+        y = Math.min(y, p[1] + (-th - n[0] * (x - p[0]) - n[2] * (z - p[2])) / n[1]);
+    }
+    return [x, sd * Math.max(0, y), z];
+  };
+  // a strip of the liner, smooth-shaded like the skin (each corner takes the hull's inward slope there) and wound to face into the boat
+  const sAt = (t, z) => { let lo = 0, hi = 1; for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < z) lo = m; else hi = m; } return (lo + hi) / 2; };
+  const wallQuad = (q, sd) => { const v = q.map(([t, z]) => inner(t, sd, z)), n = q.map(([t, z]) => nrm(t, sAt(t, z), sd).map(x => -x));
+    for (const [i, j, k] of [[0, 1, 2], [0, 2, 3]]) { const f = cross3([v[j][0] - v[i][0], v[j][1] - v[i][1], v[j][2] - v[i][2]], [v[k][0] - v[i][0], v[k][1] - v[i][1], v[k][2] - v[i][2]]); if (Math.hypot(...f) < 1e-12) continue;
+      f[0] * n[i][0] + f[1] * n[i][1] + f[2] * n[i][2] >= 0 ? walls.triN(v[i], v[j], v[k], n[i], n[j], n[k], C.interior, C.interior, C.interior) : walls.triN(v[i], v[k], v[j], n[i], n[k], n[j], C.interior, C.interior, C.interior); } };
+  const WALL = 6;   // the inside walls in strips down to the floor, so they follow the hull's curve and never cut through the skin
   for (let i = 0; i < NT; i++) {
     const t0 = i / NT, t1 = (i + 1) / NT, tm = (t0 + t1) / 2;
     for (const sd of [1, -1]) {
       const g0 = S.gun(t0), g1 = S.gun(t1), o0 = P(t0, 1, sd), o1 = P(t1, 1, sd), in0 = inner(t0, sd, g0 - 0.005), in1 = inner(t1, sd, g1 - 0.005);
       M.mat = MT.PLASTER; M.quad(o0, o1, in1, in0, C.trim, [o0[0], 0, -1]);   // gunwale rim
-      if (!decked(tm)) { const f0 = inner(t0, sd, fz), f1 = inner(t1, sd, fz); M.mat = MT.PLASTER; M.quad(in0, in1, f1, f0, C.interior, [o0[0], sd * 2, (g0 + fz) / 2]); }
+      if (!decked(tm)) { M.mat = MT.PLASTER; for (let k = 0; k < WALL; k++) { const za = k / WALL, zb = (k + 1) / WALL, h0 = z => g0 - 0.005 + (fz - g0 + 0.005) * z, h1 = z => g1 - 0.005 + (fz - g1 + 0.005) * z;
+        wallQuad([[t0, h0(za)], [t1, h1(za)], [t1, h1(zb)], [t0, h0(zb)]], sd); } }
     }
     if (!decked(tm)) { const a = inner(t0, 1, fz), b = inner(t1, 1, fz), c = inner(t1, -1, fz), e = inner(t0, -1, fz); M.mat = MT.PLASTER; M.quad(a, b, c, e, V3.mul(C.interior, 0.9), [a[0], 0, -1]); }
     else { // a deck, crowned a little in the middle, from gunwale to gunwale
@@ -4517,13 +4578,15 @@ function boatMesh(D) {
       M.mat = MT.PLASTER; for (const sd of [1, -1]) M.quad(D0(sd), D1(sd), m1, m0, C.deck, [m0[0], 0, -1]);
     }
   }
+  D._wallN = walls.v.length / VS;
+  for (const v of walls.v) shell.v.push(v);
   // closing walls where an open cockpit meets a deck (bulkheads), and the transom
-  const bulk = t => { const g = S.gun(t), n = 10; for (const sd of [1, -1]) for (let k = 0; k < n; k++) { const z0 = fz + (g - fz) * k / n, z1 = fz + (g - fz) * (k + 1) / n; M.quad(inner(t, sd, z0), inner(t, sd, z1), [S.x(t), 0, z1], [S.x(t), 0, z0], C.interior, [S.x(t) + 1, 0, 0]); } };
+  const bulk = (t, builder = M, direction = -1) => { const g = S.gun(t), n = 10; for (const sd of [1, -1]) for (let k = 0; k < n; k++) { const z0 = fz + (g - fz) * k / n, z1 = fz + (g - fz) * (k + 1) / n; builder.quad(inner(t, sd, z0), inner(t, sd, z1), [S.x(t), 0, z1], [S.x(t), 0, z0], C.interior, [S.x(t) - direction, 0, 0]); } };
   M.mat = MT.PLASTER;
   for (let i = 1; i < NT; i++) { const t = i / NT, a = decked(t - 0.5 / NT), b = decked(t + 0.5 / NT); if (a !== b) bulk(t); }
-  if (H.stern === 'transom') { M.mat = MT.PLASTER; for (let j = 0; j < NS; j++) for (const sd of [1, -1]) { const a = P(0, j / NS, sd), b = P(0, (j + 1) / NS, sd); M.tri([S.x(0), 0, S.gun(0) * 0.3 - S.keel(0) * 0.7], a, b, (a[2] + b[2]) / 2 < wl ? below : C.hull, [S.x(0) + 1, 0, 0]); }
-    M.tri([S.x(0), 0, S.gun(0)], P(0, 1, 1), P(0, 1, -1), C.hull, [S.x(0) + 1, 0, 0]); if (!decked(0.02)) bulk(0.001); }
-  if (H.bow === 'blunt') { const t = 1, n = NS; for (let j = 0; j < n; j++) for (const sd of [1, -1]) M.tri([S.x(t), 0, S.gun(t) * 0.5 - S.keel(t) * 0.5], P(t, j / n, sd), P(t, (j + 1) / n, sd), C.hull, [S.x(t) - 1, 0, 0]); if (!decked(0.98)) bulk(0.999); }
+  if (H.stern === 'transom') { M.mat = MT.PLASTER; for (let j = 0; j < NS; j++) for (const sd of [1, -1]) { const a = P(0, j / NS, sd), b = P(0, (j + 1) / NS, sd); shell.tri([S.x(0), 0, S.gun(0) * 0.3 - S.keel(0) * 0.7], a, b, (a[2] + b[2]) / 2 < wl ? below : C.hull, [S.x(0) + 1, 0, 0]); }
+    shell.tri([S.x(0), 0, S.gun(0) * 0.3 - S.keel(0) * 0.7], P(0, 1, 1), P(0, 1, -1), C.hull, [S.x(0) + 1, 0, 0]); if (!decked(0.02)) bulk(th / S.L, shell, 1); }
+  if (H.bow === 'blunt') { const t = 1, n = NS; for (let j = 0; j < n; j++) for (const sd of [1, -1]) shell.tri([S.x(t), 0, S.gun(t) * 0.5 - S.keel(t) * 0.5], P(t, j / n, sd), P(t, (j + 1) / n, sd), C.hull, [S.x(t) - 1, 0, 0]); shell.tri([S.x(t), 0, S.gun(t) * 0.5 - S.keel(t) * 0.5], P(t, 1, 1), P(t, 1, -1), C.hull, [S.x(t) - 1, 0, 0]); if (!decked(0.98)) bulk(1 - th / S.L, shell, -1); }
   if (H.cockpit) { const [c0, c1] = H.cockpit, n = 18; M.mat = MT.PLASTER;   // a coaming lip round the cockpit
     for (let k = 0; k < n; k++) { const a0 = k / n * TAU, a1 = (k + 1) / n * TAU, cx = S.x((c0 + c1) / 2), rx = (c1 - c0) / 2 * S.L, ry = S.hb((c0 + c1) / 2) * 0.82, z = S.gun((c0 + c1) / 2) + 0.05;
       M.tube([cx + Math.cos(a0) * rx, Math.sin(a0) * ry, z], [cx + Math.cos(a1) * rx, Math.sin(a1) * ry, z], 0.018, 0.018, 4, C.trim); } }
@@ -4566,6 +4629,8 @@ function boatMesh(D) {
         M.quad(L(p, q, u0, za), L(p, q, u1, za), L(p, q, u1, zb), L(p, q, u0, zb), C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
     M.quad([x0 - 0.05, -w - 0.05, z1], [x1 + 0.05, -w - 0.05, z1], [x1 + 0.05, w + 0.05, z1], [x0 - 0.05, w + 0.05, z1], C.trim, [x0, 0, 0]); }
   if (typeof boatDetail === 'function') boatDetail(D, S, M, C, { inner, P, fz, decked, motors: motorAt });   // trim and fittings (boat-detail.js)
+  D._shellStart = M.v.length / VS; D._shellN = shell.v.length / VS;
+  for (const v of shell.v) M.v.push(v);
   D._hullN = M.v.length / VS;   // the hull's own vertices; the wheel and throttle lever, then the oars / paddle (at rest) follow, for the menu picture
   D._helmN = 0; if (D._helm) { for (const v of D._helm.wheel) M.v.push(v); for (const v of D._helm.lever) M.v.push(v); D._helmN = (D._helm.wheel.length + D._helm.lever.length) / VS; }
   const O = D._oars = boatOars(D, S, C); if (O) { const m = new Float32Array(O.mesh.length); for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(D, O, 0, 0, sd, false, O.m); oarXform(O.mesh, O.m, m); for (const v of m) M.v.push(v); } }
@@ -5011,7 +5076,7 @@ const Engine = {
 Object.assign(Engine, {
   mouseLookBlocked() {
     // the catch card counts too: it releases the cursor itself, which must not read as an Escape press
-    return this.pauseOpen || (this.ang && this.ang.phase === 'card') || this.showMap || this.menu || this.invOpen || this.spawnOpen || this.tackleOpen || this.journalOpen || (this.hud && !this.hud.hHelp.hidden);
+    return this.pauseOpen || (this.ang && this.ang.phase === 'card') || this.showMap || this.menu || this.invOpen || this.spawnOpen || this.tackleOpen || this.journalOpen || this.wellPick || (this.hud && !this.hud.hHelp.hidden);
   },
   resetMouseLook() {
     this.lookDX = this.lookDY = 0;
@@ -7248,14 +7313,20 @@ Object.assign(Engine, {
       if (rolled.length) { gl.uniform1f(L.u.roll, 0); rolled.length = 0; }
       gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     }
-    if (this.boats.length) { // boats: one draw each (they pitch and heel on their own)
+    if (this.boats.length) { // boats: fittings and a one-sided hull shell (each boat pitches and heels)
       gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3f(L.u.jawP, 0, 0, 0); gl.uniform1f(L.u.hull, 1);
       for (const b of this.boats) {
         if (Math.abs(b.x - E[0]) > 900 || Math.abs(b.y - E[1]) > 900) continue;
         let g = b.def._gpu;   // kept on the def: a boat already afloat when its type is reloaded keeps drawing its own model
         if (!g) g = b.def._gpu = this.instMesh(b.def._mesh, 40);
         gl.uniform1f(L.u.roll, b.roll || 0);
-        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.def._oars || b.def._helm ? b.def._hullN : g.n, 1);
+        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.def._shellStart, 1);
+        // The view is mirrored, so use the same cull side as terrain. Both the skin
+        // and liner face their visible side: no hidden near-coplanar back faces
+        // compete for depth, even on a 16-bit buffer. Fittings remain two-sided.
+        gl.enable(gl.CULL_FACE); gl.cullFace(CULL_SIDE);
+        gl.drawArraysInstanced(gl.TRIANGLES, b.def._shellStart, b.def._shellN, 1);
+        gl.disable(gl.CULL_FACE);
         const W = b.def._helm, hN = b.def._helmN || 0; if (W) { if (b === this.boat) {   // the wheel and throttle you're driving with: posed into their own buffer, like the oars
             if (!g.helm) { g.helm = { vb: gl.createBuffer(), data: new Float32Array(W.wheel.length + W.lever.length) }; g.helm.vao = this.litVao(g.helm.vb, VB, g.ib, 40); }
             helmPose(b.def, b.helmS || 0, b.thrS || 0, g.helm.data); gl.bindBuffer(gl.ARRAY_BUFFER, g.helm.vb); gl.bufferData(gl.ARRAY_BUFFER, g.helm.data, gl.STREAM_DRAW); gl.bindVertexArray(g.helm.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, hN, 1); gl.bindVertexArray(g.vao); }
@@ -7377,8 +7448,10 @@ Object.assign(Engine, {
     const P = this.P, b = this.boat, A = this.ang, rod = !!(A && A.out), H = HUMAN;
     const lx = b ? this.boatLX || 0 : P.x, ly = b ? this.boatLY || 0 : P.y, mx = lx - (this.hLX ?? lx), my = ly - (this.hLY ?? ly), moved = Math.hypot(mx, my); this.hLX = lx; this.hLY = ly;
     const dist = moved < 3 ? moved : 0, spd = dt > 0 ? dist / dt : 0;   // a jump (travel, boarding) isn't a stride
-    // he faces the way he's going (sideways and backwards too: he turns, he doesn't shuffle), turning smoothly; with the rod out, the way you're looking
-    const going = dist > 0 && spd > 0.3 && !rod, to = going ? Math.atan2(my, mx) + (b ? b.a : 0) : rod || this.hFace === undefined ? P.a : this.hFace, was = this.hFace ?? P.a;
+    // he faces the way he's going (sideways and backwards too: he turns, he doesn't shuffle), turning smoothly, rod in hand or not; while casting,
+    // with a bite or a fish on, or reeling, he faces the way you're looking (at the line), and turns back to it when he stops with the rod out
+    const busy = rod && (['charge', 'flight', 'bite', 'fight'].includes(A.phase) || A.reeling || (A.reelS || 0) > 0.05);
+    const going = dist > 0 && spd > 0.3 && !busy, to = going ? Math.atan2(my, mx) + (b ? b.a : 0) : rod || this.hFace === undefined ? P.a : this.hFace, was = this.hFace ?? P.a;
     this.hFace = was + Math.atan2(Math.sin(to - was), Math.cos(to - was)) * Math.min(1, dt * 10);
     let o, base = P.z, rot = this.hFace;
     if (b) { const D = b.def, helm = this.boatMode !== 'deck', sit = helm || this.boatSit, eye = helm ? D.crew.eye_height_m : sit ? (D.hull.cockpit ? D.crew.eye_height_m : 0.95) : 1.62;
@@ -7412,6 +7485,17 @@ Object.assign(Engine, {
       const g = this.hGait, v = spd / M, rate = g < 1 ? (0.9 + 0.32 * Math.min(v, 2.6)) * (1 - g) + 1.6 * g : 1.6 + 0.15 * (g - 1), L = spd > 0.05 ? v / rate : 0;   // strides a second for this pace, so the ground one stride covers
       this.hStride = (this.hStride || 0) + (L - (this.hStride || 0)) * Math.min(1, dt * 10); if (this.hStride > 0.02) this.hPh = ((this.hPh || 0) + dist / M * 6.2832 / this.hStride) % 6.2832;   // the stride moves on by exactly the ground covered: planted feet don't slide
       o = { mode: 'stand', swing: this.hAmp, gait: g, stride: this.hStride, ph: this.hPh, rod, crouch: this.hCrouch }; }
+    // a fish in your hands (hands.js): held out in front as first person holds it, by the lip, in one hand behind its head, or across both palms
+    const cy = this.carry, held = !!cy && o.mode !== 'swim' && !(b && this.boatMode !== 'deck');
+    if (held) { const hz = o.mode === 'sit' ? o.hipZ + 0.35 : 1.05;
+      if (cy.grip === 'cradle') { const sep = clamp(cy.f.len * 0.28, 0.1, 0.22); o.reachR = [0.36, sep, hz]; o.reachL = [0.36, -sep, hz]; }
+      else o.reachR = cy.grip === 'lip' ? [0.3, 0.14, hz + 0.18] : [0.34, 0.1, hz + 0.05]; }
+    // how each hand is shaped (the first-person hand, drawHuman): closed on the rod, a wheel, an oar or a fish, relaxed otherwise
+    const relaxed = { grip: 'bar', curl: 0.35 }, closed = { grip: 'bar', curl: 1 }, hands = { L: relaxed, R: relaxed };
+    if (rod && !A.holder) { hands.R = closed; if (o.hands2) hands.L = closed; }
+    if (o.reachR) hands.R = closed; if (o.reachL) hands.L = closed;
+    if (held) { if (cy.grip === 'cradle') hands.L = hands.R = { grip: 'fish', curl: 0.18, palmUp: true };
+      else hands.R = cy.grip === 'lip' ? { grip: 'lip', curl: 1 } : { grip: 'bar', curl: 0.8 }; }
     if (rod && A.phase === 'charge') { const u = A.stroke == null ? 0 : clamp(A.stroke / 0.26, 0, 1); o.castW = (0.3 + 0.7 * A.charge) * (1 - u); o.castF = u; }   // the cast: wound back as you hold, then the throw
     else if (rod && A.phase === 'flight') o.castF = Math.exp(-(A.t - A.castAt) * 3.2);   // and the follow-through easing off
     if (!rod && this.traps && this.traps.act) Object.assign(o, this.traps.act);   // throwing or hauling a net or a pot (fishing/nets-traps.js)
@@ -7425,14 +7509,33 @@ Object.assign(Engine, {
     this.hSm = { mode: o.mode, parts: pose.parts.map(q => q.slice()), hand: pose.hand.slice() };
     if (o.mode === 'swim') base = P.z + EYE - (o.tread ? 0.12 : 0.3) - pose.head[2];   // head where the first-person eye is (treading water), or lying low in the water swimming
     const c = Math.cos(rot), s = Math.sin(rot), w = q => [P.x + c * q[0] - s * q[1], P.y + s * q[0] + c * q[1], base + q[2]];
-    this.hPose = { pose, rot, base, w, hand: w(pose.hand) };
+    this.hPose = { pose, rot, base, w, hand: w(pose.hand), hands };
+    if (held) { const f = cy.f, h = this.hPose.hand, yaw = rot + Math.PI / 2, hz = o.mode === 'sit' ? o.hipZ + 0.35 : 1.05;   // where the fish goes: on the palms, hanging from the lip, or along from the hand
+      this.hPose.fish = cy.grip === 'cradle' ? { ctr: w([0.36, 0, hz + 0.015 + f.len * f.def.body.height * 0.42]), yaw, pitch: 0 }
+        : cy.grip === 'lip' ? { ctr: [h[0], h[1], h[2] - f.len * 0.49], yaw, pitch: Math.PI / 2 - 0.1 }
+        : { ctr: [h[0] - Math.cos(yaw) * f.len * 0.2, h[1] - Math.sin(yaw) * f.len * 0.2, h[2]], yaw, pitch: 0 }; }
+  },
+  // the first-person hand (fishing/drawing.js armMesh) on the end of a third-person forearm: its +x (along the forearm) down the part's -z, the
+  // thumb forward and the back of the hand out to the side as an arm hangs; palmUp turns it a quarter for a fish carried across both palms.
+  // In the angler's skin colour, or the gloves' when the outfit has them.
+  humanHand(side, h) {
+    const look = BUILTIN.angler[0] || {}, W = (look.outfits || {})[CLIMATE.key] || {}, worn = (BUILTIN.clothes[0] || {}).clothes || [];
+    const gloves = W.colors && W.colors.gloves && (W.wear || []).some(id => worn.some(g => g.id === id && Object.values(g.parts || {}).some(l => l.some(q => q && q.color === 'gloves'))));
+    const col = gloves ? W.colors.gloves : look.skin || CONFIG.skinColor, curl = Math.round(h.curl * 20) / 20;
+    return this.tackleGpu(`human-hand:${side}:${h.grip}:${curl}:${h.palmUp ? 1 : 0}:${col}`, () => {
+      const m = armMesh(side, curl, h.grip, 'hand', null, col), th = h.palmUp ? side * Math.PI / 2 : 0, c = Math.cos(th), s = Math.sin(th), drop = HUMAN.fore + 0.04;
+      for (let i = 0; i < m.length; i += VS) for (const o of [0, 3]) { const x = m[i + o], y = m[i + o + 1], z = m[i + o + 2], X = -side * y, Y = side * z;
+        m[i + o] = X * c - Y * s; m[i + o + 1] = X * s + Y * c; m[i + o + 2] = -x - (o ? 0 : drop); }
+      return m; });
   },
   drawHuman(gl, L) {
     const hp = this.hPose; if (!hp) return;
     const M = this._hParts || (this._hParts = humanParts(BUILTIN.angler[0], CLIMATE.key, (BUILTIN.clothes[0] || {}).clothes)), P = this.P; sample(P.x, P.y); const wl = SW, mk = WATER[SK].murk;
     gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3fv(L.u.jawP, [0, 0, 0]); gl.uniform1f(L.u.roll, 0);
-    for (const q of hp.pose.parts) { const g = this.tackleGpu('human:' + q[0], () => M[q[0]]), p = hp.w([q[1], q[2], q[3]]);
-      gl.uniform1f(L.u.roll, q[5]); this.upInst(g, [p[0], p[1], p[2], 1, hp.rot + q[6], 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, g.n, 1); }   // roll (a limb out to the side), pitch, then the part's own turn on top of your heading
+    let fore = 0;
+    for (const q of hp.pose.parts) { const arm = q[0] === 'fore' && M.foreArm, name = arm ? 'foreArm' : q[0], g = this.tackleGpu('human:' + name, () => M[name]), p = hp.w([q[1], q[2], q[3]]);
+      const draw = m => { gl.uniform1f(L.u.roll, q[5]); this.upInst(m, [p[0], p[1], p[2], 1, hp.rot + q[6], 0.5, wl, mk, 0, q[4]]); gl.bindVertexArray(m.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, m.n, 1); };
+      draw(g); if (arm) { const side = fore++ ? 1 : -1; draw(this.humanHand(side, (hp.hands || {})[side > 0 ? 'R' : 'L'] || { grip: 'bar', curl: 0.35 })); } }   // (the left arm comes first in the pose)   // roll (a limb out to the side), pitch, then the part's own turn on top of your heading
     gl.uniform1f(L.u.fsh, 0); gl.uniform1f(L.u.roll, 0);
   },
 });
@@ -8797,12 +8900,12 @@ Object.assign(Engine, {
     } else {   // 'down' | 'unhook' | 'free'
       if (H.st === 'unhook' && !H.big) {   // down to it where it lies: the rod is laid aside, one hand pins the fish, the other works the hook out (drawArms)
         const hop = this.fishFlop(f, H, dt, 0.12); f.x = H.spot[0]; f.y = H.spot[1]; f.z = H.spot[2] + half + hop * 0.3; f.roll = lie.roll; f.open = 0.6;
-        this.crouchTo([f.x, f.y, H.spot[2]], ez(Math.min(1, H.t / 0.7))); H.hooked = H.t < 1.95; look = [f.x, f.y, f.z];
+        this.crouchTo([f.x, f.y, H.spot[2]], ez(Math.min(1, H.t / 0.48))); H.hooked = H.t < 1.35; look = [f.x, f.y, f.z];
       } else if (H.big) {   // alongside, held at the surface on a short line
         f.z += (f.wl - Math.max(0.06, f.len * B.height * 0.3) - f.z) * Math.min(1, dt * 3); f.ph = (f.ph + dt * (2 + 2 * Math.max(0, Math.sin(this.time * 1.3)))) % 6.2832; f.open = 0.3 + 0.15 * Math.sin(this.time * 2.5);
         look = [f.x, f.y, f.z];
       } else { const hop = this.fishFlop(f, H, dt); f.x = H.spot[0]; f.y = H.spot[1]; f.z = H.spot[2] + half + hop; f.roll = lie.roll; look = [f.x, f.y, f.z]; }
-      if (H.st === 'unhook' && H.t > (H.big ? 0.6 : 2.25)) {
+      if (H.st === 'unhook' && H.t > (H.big ? 0.6 : 1.62)) {
         H.hooked = false; this.buzz(20);
         if (H.big) { H.st = 'free'; this.finishCatch(false); return; }   // too big to lift or to keep: the hook out, and away it goes
         else {   // off the hook and in your hands: fishing is over for this one, and you can walk off with it
@@ -8849,26 +8952,203 @@ Object.assign(Engine, {
 // FISHING: drawing the rod and end tackle in 3D, the line on the overlay, and the fishing HUD hooks.
 // One forearm and hand, +x from the elbow to the knuckles, the origin in the palm where the grip is; the back of the hand
 // is up (+z), the fingers curl under, the thumb is on the inside (side: 1 right arm, -1 left).
+const mm5 = v => Math.round(v / 0.005) * 0.005;   // fit the one-hand grip to 5 mm so similar fish share one cached hand mesh (each new one costs ~50 ms to build)
 const HAND_SCALE = 0.84, HAND_GRIP = [0.03 * HAND_SCALE, 0, -0.026 * HAND_SCALE];   // where a gripped bar lies in the hand: across the palm, inside the curled fingers
 const ARM_UP = 0.33, ARM_FORE = 0.33;   // shoulder to elbow, elbow to the middle of the palm (m)
-function armMesh(side) {
+function armMesh(side, curl = 1, grip = 'bar', part = 'all', bodyFit = null, skinHex = null) {   // skinHex: another colour for the hand (the angler's gloves, third person)
   // smooth-shaded throughout (rounded normals, plain skin with no grain): a sleeve, a wrist, a flat palm, four fingers
   // curled round whatever is held and a thumb closing over from the inside
   const B = meshBuilder(true); B.smoothTube = true;
-  const skin = hexRGB(CONFIG.skinColor), sl = hexRGB(CONFIG.sleeveColor), cuff = sl.map(v => v * 0.78), under = skin.map(v => v * 0.95), nail = skin.map((v, k) => Math.min(1, v * 1.06 + 0.03));
-  const limb = (pts, rs, col) => { for (let i = 0; i < pts.length - 1; i++) B.tube(pts[i], pts[i + 1], rs[i], rs[i + 1], 10, col, false); for (let i = 0; i < pts.length; i++) B.blob(pts[i], rs[i], rs[i], rs[i], 5, 10, col); };   // capsules: rounded at every joint and at the tip
-  B.mat = MT.CLOTH; B.tube([-0.7, 0, 0], [-0.13, 0, 0], 0.046, 0.036, 14, sl, false); B.tube([-0.132, 0, 0], [-0.1, 0, 0], 0.038, 0.027, 14, cuff, true);   // a slim sleeve, long enough to leave the view; its cuff closes in on the wrist, so there is no open end to see into
+  const skin = hexRGB(skinHex || CONFIG.skinColor), sl = hexRGB(CONFIG.sleeveColor), cuff = sl.map(v => v * 0.78), nail = skin.map((v, k) => Math.min(1, v * 1.06 + 0.03));
+  // One continuous skin surface per digit. Shared tangent frames across bends avoid
+  // the dark caps and overlapping joint balls that made the old fingers look segmented.
+  const limb = (pts, rs, col) => {
+    const centers = [], radii = [], count = (pts.length - 1) * 4;
+    for (let n = 0; n <= count; n++) {
+      const f = n / 4, i = Math.min(pts.length - 2, Math.floor(f)), t = f - i, P = j => pts[clamp(j, 0, pts.length - 1)];
+      centers.push([0, 1, 2].map(k => {
+        const a = P(i - 1)[k], b = P(i)[k], c = P(i + 1)[k], d = P(i + 2)[k];
+        return b + 0.5 * t * (c - a + t * (2 * a - 5 * b + 4 * c - d + t * (3 * (b - c) + d - a)));
+      }));
+      radii.push(rs[i] + (rs[i + 1] - rs[i]) * t);
+    }
+    const tip = centers.at(-1), tangent = norm3(tip.map((v, k) => v - centers.at(-2)[k])), radius = radii.at(-1);
+    for (const [along, r] of [[0.65, 0.72], [0.95, 0.3], [1, 0.001]]) {
+      centers.push(tip.map((v, k) => v + tangent[k] * radius * along)); radii.push(radius * r);
+    }
+    const rings = centers.map((c, i) => {
+      const a = centers[Math.max(0, i - 1)], b = centers[Math.min(centers.length - 1, i + 1)], X = norm3(b.map((v, k) => v - a[k]));
+      const Z = norm3(cross3(X, [0, 1, 0])), Y = cross3(Z, X), slope = (radii[Math.max(0, i - 1)] - radii[Math.min(radii.length - 1, i + 1)]) / (Math.hypot(...b.map((v, k) => v - a[k])) || 1);
+      return Array.from({ length: 10 }, (_, j) => {
+        const angle = j * Math.PI / 5, radial = Y.map((v, k) => v * Math.cos(angle) + Z[k] * Math.sin(angle));
+        return { p: c.map((v, k) => v + radial[k] * radii[i]), n: norm3(radial.map((v, k) => v + X[k] * slope)) };
+      });
+    });
+    for (let i = 0; i < rings.length - 1; i++) for (let j = 0; j < 10; j++) {
+      const a = rings[i][j], b = rings[i][(j + 1) % 10], c = rings[i + 1][(j + 1) % 10], d = rings[i + 1][j];
+      B.triN(a.p, b.p, c.p, a.n, b.n, c.n, col, col, col); B.triN(a.p, c.p, d.p, a.n, c.n, d.n, col, col, col);
+    }
+  };
+  B.mat = MT.CLOTH; B.tube([-0.7, 0, 0], [-0.13, 0, 0], 0.046, 0.036, 14, sl, false); B.tube([-0.132, 0, 0], [-0.082, 0, 0], 0.038, 0.031, 14, cuff, true);   // a slim sleeve, long enough to leave the view; its cuff closes in on the wrist, so there is no open end to see into
   B.mat = MT.GEN; const v0 = B.v.length;
   B.tube([-0.27, 0, 0], [-0.068, 0, 0.002], 0.033, 0.028, 14, skin, false);                                  // the forearm, running on up inside the sleeve
-  B.blob([-0.06, 0, 0.003], 0.034, 0.034, 0.023, 6, 12, skin);                                               // the heel of the hand: where the round wrist flattens into the palm
-  B.blob([-0.012, 0, 0.004], 0.052, 0.041, 0.018, 7, 14, skin);                                            // palm and back of the hand
-  B.blob([-0.028, -side * 0.024, -0.003], 0.027, 0.018, 0.014, 5, 10, skin);                               // the ball of the thumb
-  for (let i = 0; i < 4; i++) { const y = (i - 1.5) * 0.0195 * side, k = i === 0 || i === 3 ? (i === 3 ? 0.84 : 0.95) : 1, r = 0.0096 * (i === 3 ? 0.88 : 1);   // index .. little finger, the little one shorter and finer
-    limb([[0.03, y, 0.006], [0.03 + 0.036 * k, y, -0.012], [0.03 + 0.03 * k, y, -0.012 - 0.03 * k], [0.03 + 0.008 * k, y, -0.012 - 0.036 * k]], [r * 1.08, r, r * 0.93, r * 0.86], i % 2 ? skin : under); }
-  limb([[-0.03, -side * 0.034, 0.0], [0.004, -side * 0.05, -0.014], [0.03, -side * 0.04, -0.03]], [0.0125, 0.0112, 0.0098], skin);   // thumb
-  B.blob([0.034, -side * 0.038, -0.027], 0.006, 0.006, 0.004, 3, 6, nail);
+  const handStart = B.v.length;
+  // A single flattened wrist-to-palm loft, rather than stacked ellipsoids.
+  const sections = [[-0.095, 0.024, 0.018], [-0.065, 0.028, 0.015], [-0.035, 0.034, 0.013],
+    [0, 0.036, 0.012], [0.026, 0.033, 0.011], [0.044, 0.027, 0.008]];
+  const palm = sections.map(([x, ry, rz], i) => {
+    const a = sections[Math.max(0, i - 1)], b = sections[Math.min(sections.length - 1, i + 1)], dy = (b[1] - a[1]) / (b[0] - a[0]), dz = (b[2] - a[2]) / (b[0] - a[0]);
+    return Array.from({ length: 16 }, (_, j) => {
+      const t = j * Math.PI / 8, c = Math.cos(t), q = Math.sin(t);
+      return { p: [x, c * ry, q * rz], n: norm3([-dy / ry * c * c - dz / rz * q * q, c / ry, q / rz]) };
+    });
+  });
+  for (let i = 0; i < palm.length - 1; i++) for (let j = 0; j < 16; j++) {
+    const a = palm[i][j], b = palm[i][(j + 1) % 16], c = palm[i + 1][(j + 1) % 16], d = palm[i + 1][j];
+    B.triN(a.p, b.p, c.p, a.n, b.n, c.n, skin, skin, skin); B.triN(a.p, c.p, d.p, a.n, c.n, d.n, skin, skin, skin);
+  }
+  for (let j = 0; j < 16; j++) { const a = palm.at(-1)[j], b = palm.at(-1)[(j + 1) % 16]; B.tri([0.044, 0, 0], a.p, b.p, skin, [0, 0, 0]); }
+  // Three phalanges rotate in sequence, preserving finger length as the hand closes.
+  // Closely packed finger roots overlap the palm; small variations in length give a relaxed outline.
+  const bend = clamp(curl, 0, 1);
+  for (let i = 0; i < 4; i++) {
+    const k = [0.94, 1, 0.95, 0.76][i], y = (i - 1.5) * 0.0165 * side, r = i === 3 ? 0.0083 : 0.0093;
+    const pts = [[0.029 - (i === 3 ? 0.007 : 0), y, 0.003]];
+    for (let j = 0; j < 3; j++) {
+      const angle = [0.12 + bend * 0.48, 0.22 + bend * 1.4, 0.3 + bend * 2.35][j], len = [0.037, 0.028, 0.020][j] * k, q = pts[j];
+      pts.push([q[0] + Math.cos(angle) * len, q[1], q[2] - Math.sin(angle) * len]);
+    }
+    if (grip === 'lip') {
+      // All four fingers fold back below the thumb, not into loops above the lip.
+      const retreat = i * 0.008, hooked = [[0.029, y, 0.003], [0.049 - retreat, y, -0.014],
+        [0.047 - retreat, y, -0.037], [0.023 - retreat, y, -0.043]];
+      for (let j = 1; j < 4; j++) pts[j] = handMix(pts[j], hooked[j], bend);
+    }
+    if (grip === 'body' && bodyFit) {
+      const [height, width] = bodyFit.radii[i], cx = bodyFit.center[0], cz = bodyFit.center[2];
+      // Close along the cross-section, stopping short of a full wrap on a thick fish.
+      // Finger reach stays bounded instead of stretching the hand to match fish length.
+      const arc = clamp(0.074 * k / Math.max(0.012, (height + width) * 0.5 + r), 0.7, 2.9);
+      for (let j = 1; j < 4; j++) {
+        const angle = arc * j / 3, target = [cx + (height + r) * Math.sin(angle), y, cz + (width + r) * Math.cos(angle)];
+        pts[j] = handMix(pts[j], target, bend);
+      }
+    }
+    limb(pts, [r * 1.06, r, r * 0.96, r * 0.88], skin);
+    const tip = pts[3]; B.blob([tip[0] - 0.003, tip[1], tip[2] + 0.004], 0.006, r * 0.65, 0.002, 2, 6, nail);
+  }
+  const thumb = [[-0.03, -side * 0.034, 0], [-0.002, -side * (0.058 - bend * 0.012), -0.008],
+    [0.028, -side * (0.060 - bend * 0.024), -0.008 - bend * 0.022]];
+  if (grip === 'lip') {
+    thumb[0] = handMix(thumb[0], [0, -side * 0.028, 0], bend);
+    thumb[1] = handMix(thumb[1], [0.042, -side * 0.034, -0.014], bend);
+    thumb[2] = handMix(thumb[2], [0.075, -side * 0.025, -0.026], bend);
+  }
+  if (grip === 'body' && bodyFit) {
+    // Thumb opposes the fingers on the camera-facing flank, rather than sticking up.
+    thumb[1] = handMix(thumb[1], [0.006, -side * 0.037, -0.002], bend);
+    thumb[2] = handMix(thumb[2], [bodyFit.center[0], -side * 0.022, -0.0035], bend);
+  }
+  limb(thumb, [0.012, 0.0105, 0.009], skin);
   for (let i = v0; i < B.v.length; i += VS) { B.v[i] *= HAND_SCALE; B.v[i + 1] *= HAND_SCALE; B.v[i + 2] *= HAND_SCALE; }   // the hand, modelled a little large, brought down to size about the palm
-  return new Float32Array(B.v);
+  const data = part === 'hand' ? B.v.slice(handStart) : part === 'fore' ? B.v.slice(0, handStart) : B.v;
+  // Split at the wrist only for fish grips: the palm can lie flat while the forearm slopes down.
+  if (part === 'fore') for (let i = 0; i < data.length; i += VS) data[i] += 0.06 * HAND_SCALE;
+  return new Float32Array(data);
+}
+// Shared easing for contact phases; clamping also handles interrupted actions.
+function handEase(t) { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); }
+function handMix(a, b, t) { return a.map((v, k) => v + (b[k] - v) * t); }
+// Fish-space contact targets. Match the body's Catmull-Rom profile and the lit shader's jaw shear.
+function fishHandFrame(f) {
+  const ca = Math.cos(f.a), sa = Math.sin(f.a), cp = Math.cos(f.pitch || 0), sp = Math.sin(f.pitch || 0), cr = Math.cos(f.roll || 0), sr = Math.sin(f.roll || 0);
+  return [[ca * cp, sa * cp, sp], [-sa * cr - ca * sp * sr, ca * cr - sa * sp * sr, cp * sr], [sa * sr - ca * sp * cr, -ca * sr - sa * sp * cr, cp * cr]];
+}
+function fishHandProfile(body, x) {
+  const p = body.profile || [1, 1, 1], t = clamp((0.5 - x) / (1 - clamp(body.tail?.size ?? 0.2, 0.05, 0.35) * 0.85), 0, 1);
+  const f = t * (p.length - 1), i = Math.min(p.length - 2, Math.floor(f)), u = f - i, P = k => p[clamp(k, 0, p.length - 1)];
+  const a = P(i - 1), b = P(i), c = P(i + 1), d = P(i + 2);
+  return Math.max(0.03, b + 0.5 * u * (c - a + u * (2 * a - 5 * b + 4 * c - d + u * (3 * (b - c) + d - a))));
+}
+function fishHandPose(f, grip, side, right) {
+  const B = f.def.body, axes = fishHandFrame(f), [A, Bside, Up] = axes;
+  const world = q => [f.x, f.y, f.z].map((v, k) => v + axes.reduce((n, axis, i) => n + axis[k] * q[i] * f.len, 0));
+  let basis, contact, anchor, curl;
+  if (grip === 'lip') {
+    const head = B.head || {}, hinge = f.def._jaw || [0.3, 0, 0.26 + 0.42 * (head.mouth || 0.5)], angle = (f.open || 0) * hinge[2];
+    const x = 0.49, dx = Math.max(0, x - hinge[0]);
+    const tipZ = (head.jaw === 'superior' ? 0.35 : head.jaw === 'inferior' ? -0.4 : 0) * B.height * (B.profile?.[0] || 0.5) * (0.2 + 0.5 * (head.snout ?? 0.5));
+    contact = world([hinge[0] + dx * Math.cos(angle), 0, tipZ - dx * Math.sin(angle)]);
+    // Back of hand faces the player (fish's near flank), wrist below-right.
+    // Insert the thumb behind the lip; the curled digits sit lower and farther away,
+    // allowing the jaw to occlude their tips instead of outlining a fist above it.
+    contact = contact.map((v, k) => v + Up[k] * 0.006 - A[k] * 0.012);
+    const X = norm3(A.map((v, k) => v * 0.95 + Up[k] * 0.31)), Z = Bside;
+    basis = [X, norm3(cross3(Z, X)), Z];
+    anchor = [0.075, -side * 0.025, -0.026].map(v => v * HAND_SCALE); curl = 1;
+  } else if (grip === 'hand') {
+    // One hand closes behind the head. Back toward the near flank/player, palm inward;
+    // the elbow stays below-right. This must not reuse the open cradle pose.
+    const x = Math.min(0.2, 0.34 - 0.025 / f.len), profile = fishHandProfile(B, x);
+    const width = f.len * (B.width || 0.11) * Math.pow(profile, 0.9) * 0.5;
+    contact = world([x, width / f.len, 0]);
+    basis = [Up, A, Bside]; anchor = [0.03, 0, -0.0115].map(v => v * HAND_SCALE); curl = 1;
+    const radii = [0, 1, 2, 3].map(i => {
+      const along = x + (i - 1.5) * 0.0165 * side * HAND_SCALE / f.len, p = fishHandProfile(B, along);
+      return [mm5(f.len * B.height * p * 0.5 / HAND_SCALE), mm5(f.len * (B.width || 0.11) * Math.pow(p, 0.9) * 0.5 / HAND_SCALE)];
+    });
+    const bodyFit = { center: [0.03, 0, mm5(-width / HAND_SCALE - 0.0115)], radii };
+    bodyFit.key = JSON.stringify([bodyFit.center, radii]);
+    const origin = contact.map((v, k) => v - basis.reduce((n, axis, i) => n + axis[k] * anchor[i], 0));
+    return { origin, basis, contact, anchor, curl, grip: 'body', lip: 0, bodyFit };
+  } else {
+    const sign = A.reduce((n, v, k) => n + v * right[k], 0) >= 0 ? 1 : -1;
+    const x = side * 0.18 * sign;
+    const belly = B.height * fishHandProfile(B, x) * (B.lie ? 0.13 : 0.5);
+    contact = world([x, 0, -belly]);
+    // Back down, fingers across the belly: palm and proximal pads share the load.
+    const X = Bside.map(v => -v), Z = Up.map(v => -v), Y = cross3(Z, X);
+    basis = [X, Y, Z]; anchor = [0.018, 0, -0.0115].map(v => v * HAND_SCALE); curl = 0.18;
+  }
+  const origin = contact.map((v, k) => v - basis.reduce((n, axis, i) => n + axis[k] * anchor[i], 0));
+  return { origin, basis, contact, anchor, curl, grip: 'fish', lip: grip === 'lip' ? 1 : 0 };
+}
+function handAngles(basis) {
+  const [X, Y] = basis, yaw = Math.atan2(X[1], X[0]), pitch = Math.atan2(X[2], Math.hypot(X[0], X[1]));
+  const y0 = [-Math.sin(yaw), Math.cos(yaw), 0], z0 = [-Math.sin(pitch) * Math.cos(yaw), -Math.sin(pitch) * Math.sin(yaw), Math.cos(pitch)];
+  return [yaw, pitch, Math.atan2(Y.reduce((n, v, k) => n + v * z0[k], 0), Y.reduce((n, v, k) => n + v * y0[k], 0))];
+}
+// Conservative palm clearance around the carried body, in the fish's pitched/rolled frame.
+// The mouth is beyond this envelope so a lip grip can still reach the jaw.
+function handOutsideFish(f, point) {
+  const ca = Math.cos(f.a), sa = Math.sin(f.a), cp = Math.cos(f.pitch || 0), sp = Math.sin(f.pitch || 0), cr = Math.cos(f.roll || 0), sr = Math.sin(f.roll || 0);
+  const X = [ca * cp, sa * cp, sp], Y = [-sa * cr - ca * sp * sr, ca * cr - sa * sp * sr, cp * sr], Z = [sa * sr - ca * sp * cr, -ca * sr - sa * sp * cr, cp * cr];
+  const origin = [f.x, f.y, f.z], axes = [X, Y, Z], radii = [f.len * 0.43, f.len * (f.def.body.width || 0.11) * 0.5 + 0.025, f.len * f.def.body.height * 0.5 + 0.025];
+  const local = axes.map(axis => axis.reduce((n, v, k) => n + v * (point[k] - origin[k]), 0));
+  const d = Math.hypot(...local.map((x, k) => x / radii[k]));
+  if (d >= 1) return point;
+  if (d < 1e-5) { local[2] = -radii[2]; return origin.map((v, k) => v + Z[k] * local[2]); }
+  return origin.map((v, k) => v + axes.reduce((n, axis, i) => n + axis[k] * local[i] / d, 0));
+}
+function posedArm(engine, side, curl, grip = 'bar', part = 'all', lipWeight = 0, bodyFit = null) {
+  const key = 'arm:' + side + ':' + grip + ':' + part + ':' + CONFIG.skinColor + CONFIG.sleeveColor + (bodyFit ? ':' + bodyFit.key : '');
+  const g = engine.tackleGpu(key, () => armMesh(side, 1, grip, part, bodyFit));
+  if (!g.handFrames) { g.handFrames = [0, 0.25, 0.5, 0.75, 1].map(c => armMesh(side, c, grip, part, bodyFit)); g.handData = g.handFrames[4].slice();
+    if (grip === 'fish') g.lipFrames = [0, 0.25, 0.5, 0.75, 1].map(c => armMesh(side, c, 'lip', part)); }
+  if (Math.abs((g.curl ?? -1) - curl) > 0.001 || Math.abs((g.lipWeight ?? -1) - lipWeight) > 0.001) {
+    const phase = clamp(curl, 0, 1) * 4, frame = Math.min(3, Math.floor(phase)), u = phase - frame, a = g.handFrames[frame], b = g.handFrames[frame + 1];
+    for (let i = 0; i < g.handData.length; i += VS) {
+      for (let k = 0; k < 6; k++) {
+        const base = a[i + k] + (b[i + k] - a[i + k]) * u;
+        const lip = g.lipFrames ? g.lipFrames[frame][i + k] + (g.lipFrames[frame + 1][i + k] - g.lipFrames[frame][i + k]) * u : base;
+        g.handData[i + k] = base + (lip - base) * lipWeight;
+      }
+      const n = Math.hypot(...g.handData.subarray(i + 3, i + 6)) || 1;
+      for (let k = 3; k < 6; k++) g.handData[i + k] /= n;
+    }
+    engine.gl.bindBuffer(engine.gl.ARRAY_BUFFER, g.vb); engine.gl.bufferSubData(engine.gl.ARRAY_BUFFER, 0, g.handData); g.curl = curl; g.lipWeight = lipWeight;
+  }
+  return g;
 }
 Object.assign(Engine, {
   // ---- your arms, in first person ----
@@ -8876,32 +9156,65 @@ Object.assign(Engine, {
   // view: left hand on the rod above the reel, right on the reel's handle (it goes round with it), or reaching to the
   // fish's mouth to unhook it; under or on a fish in your hands; either side of a pot; on the gathered cast net.
   drawArms(gl, Lp) {
-    if (!CONFIG.showArms || this.thirdP || this.showMap || this.titleOpen || this.swim) return;
+    if (!CONFIG.showArms || this.thirdP || this.showMap || this.titleOpen || this.swim) { this._handPoses = null; return; }
     const P = this.P, A = this.ang, T = this.traps, eo = this.eyeOff || ZERO3, eye = [P.x + eo[0], P.y + eo[1], P.z + EYE + eo[2]];
     const cp = Math.cos(P.pitch), F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)], R = [-Math.sin(P.a), Math.cos(P.a), 0], U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
     const at = (d, r, u) => [0, 1, 2].map(k => eye[k] + F[k] * d + R[k] * r + U[k] * u);
-    const jobs = [];   // [1 right / -1 left, where the hand is, roll about the forearm]
+    const jobs = [];   // [side, palm position, roll, optional bar axis, optional underside axis, curl 0..1]
     const land = A && A.out && A.phase === 'card' && A.land && A.fish ? A.land : null, f = land && A.fish;
     const bent = land && land.st === 'unhook' && !land.big, grab = this.grab, cy = this.carry;
     const rod = !!(A && A.out && A.S && A.hand && !A.holder && !(this.boat && this.boatMode !== 'deck')) && !bent && !grab;
     // both hands down onto a fish on the ground: from where they hang, the hand at its tail end pins it, the other goes to its head (to the hook, or to lift it)
     const onFish = (q, u1, u2, work) => { const sm = u => { u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }, mixp = (a, b, u) => a.map((v, k) => v + (b[k] - v) * u), half = this.fishLie(q).half, m = this.fishMouth(q);
       const ca = Math.cos(q.a), sa = Math.sin(q.a), hs = ca * R[0] + sa * R[1] >= 0 ? 1 : -1, pin = [q.x - ca * q.len * 0.14, q.y - sa * q.len * 0.14, q.z + half + 0.012], head = work === null ? [q.x + ca * q.len * 0.2, q.y + sa * q.len * 0.2, q.z + half + 0.012] : [m[0], m[1], m[2] + 0.02 + work];
-      jobs.push([-hs, mixp(at(0.3, -hs * 0.24, -0.34), pin, sm(u1)), 0.15], [hs, mixp(at(0.3, hs * 0.24, -0.34), head, sm(u2)), work === null ? 0.15 : 0.4]); };
+      jobs.push([-hs, mixp(at(0.3, -hs * 0.24, -0.34), pin, sm(u1)), 0.15], [hs, mixp(at(0.3, hs * 0.24, -0.34), head, sm(u2)), work === null ? 0.15 : 0.4]);
+      jobs[jobs.length - 2][5] = handEase((u1 - 0.75) / 0.25); jobs[jobs.length - 1][5] = handEase((u2 - 0.75) / 0.25); };
     let pot = null, deck = false;
-    if (bent) onFish(f, (land.t - 0.65) / 0.35, (land.t - 0.8) / 0.35, land.t > 1.2 && land.t < 1.95 ? 0.012 * Math.sin(this.time * 24) : 0);   // down first (0.7 s), then the hands
-    else if (grab && grab.l) onFish(grab.l.f, (grab.t - 0.42) / 0.28, (grab.t - 0.5) / 0.28, null);
-    else if (rod) {
+    if (bent) onFish(f, (land.t - 0.36) / 0.3, (land.t - 0.48) / 0.3, land.t > 0.85 && land.t < 1.35 ? 0.008 * Math.sin((land.t - 0.85) * 24) * Math.sin(Math.PI * (land.t - 0.85) / 0.5) : 0.035 * handEase((land.t - 1.35) / 0.2));   // support, pinch and turn, then withdraw the hook
+    else if (grab && grab.l) onFish(grab.l.f, (grab.t - 0.12) / 0.34, (grab.t - 0.2) / 0.34, null);
+    else if (A && A.holder && A.holder.reachT !== undefined) {
+      const t = A.holder.reachT, target = this.holderHand(A.holder);
+      jobs.push([-1, handMix(at(0.26, -0.24, -0.35), target, handEase((t - 0.04) / 0.24)), 0.3, null, null, handEase((t - 0.22) / 0.1)]);
+    } else if (rod) {
       deck = !!this.boat; const r0 = this.rodPoint(A, [0, 0, 0]), r1 = this.rodPoint(A, [1, 0, 0]), rodDir = [r1[0] - r0[0], r1[1] - r0[1], r1[2] - r0[2]], cyw = Math.cos(A.yaw || 0), syw = Math.sin(A.yaw || 0);
       { const r2 = this.rodPoint(A, [0, 0, 1]); jobs.push([-1, this.rodPoint(A, [-0.13, 0, 0]), 0.3, rodDir, [r2[0] - r0[0], r2[1] - r0[1], r2[2] - r0[2]]]); }   // the rod lies in your left hand: under the handle below the reel, palm up, fingers closed up round it
       { const k = REEL_PARTS[A.S.reel.kind] ? A.S.reel.kind : 'spinning', Pp = REEL_PARTS[k], arm = k === 'conventional' ? 0.065 : k === 'baitcaster' ? 0.035 : 0.05;
         const pv = this.rodPoint(A, Pp.handle), pc = (A.pitch || 0) + (A.reelW ? A.reelW.crank : 0), xr = -arm * Math.sin(pc), zr = arm * Math.cos(pc), cy = cyw, sy = syw, oy = 0.024;
         jobs.push([1, [pv[0] + cy * xr - sy * oy, pv[1] + sy * xr + cy * oy, pv[2] + zr], 0.3, [-sy, cy, 0]]); }   // your right hand closed on the handle's knob, going round with it
-    } else if (cy) { const land = cy, f = cy.f;
-      if (land.grip === 'lip') { const m = this.fishMouth(f); jobs.push([1, [m[0] + R[0] * 0.02 - F[0] * 0.01, m[1] + R[1] * 0.02 - F[1] * 0.01, m[2] + 0.02], 0.2]); }
-      else { const pc = Math.cos(f.pitch || 0), ax = [Math.cos(f.a) * pc, Math.sin(f.a) * pc, Math.sin(f.pitch || 0)], drop = f.len * f.def.body.height * (f.def.body.lie ? 0.13 : 0.46) + 0.028;   // under the belly (a flatfish lies flat: under its thin side): the fingers curl up to it, not into it
-        const under = k => [f.x + ax[0] * f.len * k, f.y + ax[1] * f.len * k, f.z + ax[2] * f.len * k - drop], sr = ax[0] * R[0] + ax[1] * R[1] >= 0 ? 1 : -1;
-        if (land.grip === 'hand') jobs.push([1, under(0.03 * sr), Math.PI]); else jobs.push([1, under(0.2 * sr), Math.PI], [-1, under(-0.2 * sr), Math.PI]); } }
+    } else if (cy && cy.reachTime && cy.t < cy.reachTime) {
+      onFish(cy.f, cy.t / 0.22, (cy.t - 0.04) / 0.22, null);
+    } else if (cy) {
+      const f = cy.f;
+      const support = (sg, grip) => {
+        const pose = fishHandPose(f, grip === 'lip' && sg === -1 ? 'cradle' : grip, sg, R);
+        return [sg, pose.origin, handAngles(pose.basis)[2] / sg, null, null, pose.curl, pose];
+      };
+      const changing = !!cy.previousGrip, u = handEase(cy.t / cy.liftTime);
+      for (const sg of [1, -1]) {
+        if (sg === -1 && cy.grip !== 'cradle' && !changing) continue;
+        const job = support(sg, cy.grip);
+        if (changing && sg === 1) {
+          const old = support(sg, cy.previousGrip);
+          job[1] = handMix(old[1], job[1], u);
+          // Go around the near side of the fish while the other hand supports its belly.
+          const arc = Math.sin(Math.PI * u) * (f.len * f.def.body.height * 0.6 + 0.07);
+          job[1] = job[1].map((v, k) => v - F[k] * arc);
+          const X = norm3(handMix(old[6].basis[0], job[6].basis[0], u)), Z = norm3(handMix(old[6].basis[2], job[6].basis[2], u));
+          const Y = norm3(cross3(Z, X)); job[6].basis = [X, Y, cross3(X, Y)]; job[6].lip = old[6].lip + (job[6].lip - old[6].lip) * u;
+          job[2] = old[2] + (job[2] - old[2]) * u;
+          job[5] = (old[5] + (job[5] - old[5]) * u) * (1 - 0.7 * Math.sin(Math.PI * u));
+        }
+        if (!changing && !cy.reachTime && cy.t < 0.2) {
+          // Show the reaching palms at the lower edge before the rising fish reaches them.
+          const delta = job[1].map((v, k) => v - eye[k]), depth = delta.reduce((n, v, k) => n + v * F[k], 0);
+          const height = delta.reduce((n, v, k) => n + v * U[k], 0), floor = -Math.max(0.3, depth) * (this.tanY || 0.35) * 0.7;
+          const rise = Math.max(0, floor - height) * (1 - handEase((cy.t - 0.1) / 0.1));
+          job[1] = job[1].map((v, k) => v + U[k] * rise);
+        }
+        if (cy.action) job[5] *= 1 - handEase((cy.action.t - 0.22) / 0.1);
+        jobs.push(job);
+      }
+    }
     else if (T && T.hand && !(A && A.out) && !(T.fly && T.fly.length)) {
       if (T.hand === 'cast_net') jobs.push([1, [P.x + Math.cos(P.a) * 0.6 + R[0] * 0.22, P.y + Math.sin(P.a) * 0.6 + R[1] * 0.22, P.z + 1.37], 0.2]);   // the hub of the gathered net (traps.js: hands())
       else { const data = this.meshData && this.meshData['trap_' + T.hand];   // a pot: held out in front by its two long sides, its top below your eyeline
@@ -8910,6 +9223,28 @@ Object.assign(Engine, {
             const rot = P.a + (turn ? Math.PI / 2 : 0), cx = (Bx.lo[0] + Bx.hi[0]) / 2, cyy = (Bx.lo[1] + Bx.hi[1]) / 2, cr = Math.cos(rot), sr = Math.sin(rot);
             pot = { key: 'held:' + T.hand, data, x: C[0] - (cr * cx - sr * cyy), y: C[1] - (sr * cx + cr * cyy), z: C[2] - Bx.lo[2], rot };
             for (const sg of [1, -1]) jobs.push([sg, at(d - hx * 0.35, sg * (hy + 0.012), top - (Bx.hi[2] - Bx.lo[2]) * 0.5), 0]); } }   // by the middle of each side
+    }
+    // Retain the last pose through transfers and withdraw unused hands below view.
+    const poses = this._handPoses || (this._handPoses = {}), now = this.time || 0;
+    for (const sg of [-1, 1]) {
+      let job = jobs.find(j => j[0] === sg), prev = poses[sg];
+      if (!job && prev && now - prev.seen < 0.22) { job = [sg, at(0.22, sg * 0.28, -0.65), prev.roll, null, null, 0, prev.pose]; jobs.push(job); }
+      else if (!job) { delete poses[sg]; continue; }
+      else if (prev) prev.seen = now;
+      const dt = prev ? clamp(now - prev.time, 0, 0.05) : 1 / 60, k = 1 - Math.exp(-dt * 24);
+      const curl = job[5] ?? (cy && cy.action ? 1 - handEase((cy.action.t - 0.2) / 0.12) : 1);
+      if (!prev) prev = { p: at(0.38, sg * 0.18, -0.18), roll: job[2], curl: 0, seen: now };
+      // Bar grips remain exact; free hands ease into contact and take an outside arc during a swap.
+      if (!job[3]) {
+        // A held fish and its contact hands must move together; filtering them separately creates a gap.
+        if (!job[6]) job[1] = handMix(prev.p, job[1], k);
+        if (cy && !job[6]) job[1] = handOutsideFish(cy.f, job[1]);
+        const depth = job[1].reduce((v, x, i) => v + (x - eye[i]) * F[i], 0);
+        if (depth < 0.18) job[1] = job[1].map((x, i) => x + F[i] * (0.18 - depth));
+        job[2] = prev.roll + Math.atan2(Math.sin(job[2] - prev.roll), Math.cos(job[2] - prev.roll)) * k;
+      }
+      job[5] = prev.curl + (curl - prev.curl) * k;
+      poses[sg] = { p: job[1].slice(), roll: job[2], curl: job[5], time: now, seen: prev.seen, pose: job[6] };
     }
     if (!jobs.length) return;
     gl.uniform1f(Lp.u.fsh, 1); gl.uniform1f(Lp.u.wig, 0); gl.uniform1f(Lp.u.swm, 0); gl.uniform3fv(Lp.u.jawP, [0, 0, 0]); gl.uniform1f(Lp.u.roll, 0);
@@ -8920,10 +9255,16 @@ Object.assign(Engine, {
     // (ARM_UP, ARM_FORE), so a hand asked to go further than that stops at full stretch and the forearm comes in from where an
     // elbow would hang. Only the forearm and hand are drawn: one slim sleeve running back out of view.
     const aim = (g, from, to, roll) => { const dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2]; gl.uniform1f(Lp.u.roll, roll); return [Math.atan2(dy, dx), Math.atan2(dz, Math.hypot(dx, dy))]; };
-    for (const [sg, G0, roll, bar, under] of jobs) { const S = at(-0.05, sg * 0.21, -0.21), v = [G0[0] - S[0], G0[1] - S[1], G0[2] - S[2]], d0 = Math.hypot(v[0], v[1], v[2]) || 1e-3, d = Math.min(d0, (ARM_UP + ARM_FORE) * 0.985);
+    for (const [sg, G0, roll, bar, under, curl, pose] of jobs) { const S = at(-0.05, sg * 0.21, -0.21), v = [G0[0] - S[0], G0[1] - S[1], G0[2] - S[2]], d0 = Math.hypot(v[0], v[1], v[2]) || 1e-3, d = Math.min(d0, (ARM_UP + ARM_FORE) * 0.985);
       const n = v.map(x => x / d0), G = S.map((x, k) => x + n[k] * d), h = (ARM_UP * ARM_UP - ARM_FORE * ARM_FORE + d * d) / (2 * d), r = Math.sqrt(Math.max(0, ARM_UP * ARM_UP - h * h));
       let q = [0, 1, 2].map(k => -U[k] * 0.8 + R[k] * sg * 0.55 - F[k] * 0.25); const qn = q[0] * n[0] + q[1] * n[1] + q[2] * n[2]; q = q.map((x, k) => x - n[k] * qn); const ql = Math.hypot(q[0], q[1], q[2]) || 1;
-      const Eb = S.map((x, k) => x + n[k] * h + q[k] / ql * r), key = sg + ':' + CONFIG.skinColor + CONFIG.sleeveColor, g = this.tackleGpu('arm:' + key, () => armMesh(sg));
+      const Eb = S.map((x, k) => x + n[k] * h + q[k] / ql * r), g = posedArm(this, sg, curl, pose ? pose.grip : 'bar', pose ? 'hand' : 'all', pose ? pose.lip : 0, pose ? pose.bodyFit : null);
+      if (pose) {
+        const a = handAngles(pose.basis), wrist = G0.map((v, k) => v - pose.basis[0][k] * 0.06 * HAND_SCALE);
+        const fore = this.tackleGpu('fore:' + sg + ':' + CONFIG.skinColor + CONFIG.sleeveColor, () => armMesh(sg, 0, 'bar', 'fore'));
+        const fa = aim(null, Eb, wrist, a[2]); one(fore, ...wrist, ...fa);
+        gl.uniform1f(Lp.u.roll, a[2]); one(g, ...G0, a[0], a[1]); continue;
+      }
       if (bar) {   // gripping a bar (the rod's handle, the reel's knob) that runs along `bar` through G0: the hand is turned about the forearm
         // until the bar lies across the palm, back of the hand up, and set so the bar sits inside the curled fingers
         const e = [G0[0] - Eb[0], G0[1] - Eb[1], G0[2] - Eb[2]], el = Math.hypot(e[0], e[1], e[2]) || 1, X = e.map(x => x / el), xb = X[0] * bar[0] + X[1] * bar[1] + X[2] * bar[2];   // the forearm keeps its own line, from the elbow
@@ -10175,16 +10516,18 @@ Object.assign(Engine, {
       case 'flight': return { title: 'Casting…', sub: `${m(A.lineOut)} m`, key: R, act: 'Stop' };
       case 'water': {
         const dep = L.kd >= 0 && !L.land ? L.wl - L.z : 0, z = L.kd >= 0 && !L.land ? this.lureZone(L) : '';
+        const bot = dep > 0 ? Game.waterAt(L.x, L.y).depth : 0, of = bot > 15 ? ` of ${m(bot)}` : '';   // deep water: how far there is still to sink
         if (S.bait) return A.baitLeft <= 0 ? { title: 'Bait\'s gone', sub: '', key: R, act: 'Reel in' }
-          : { title: 'Waiting for a nibble…', sub: `Bait ${dep.toFixed(1)} m deep`, key: R, act: 'Reel in' };
-        return { title: L.spd > 0.05 ? 'Retrieving' : S.lure.buoyant ? 'Rising' : 'Sinking', sub: `Lure ${dep.toFixed(1)} m deep`, key: R, act: 'Reel' };
+          : { title: 'Waiting for a nibble…', sub: `Bait ${dep.toFixed(1)}${of} m deep`, key: R, act: 'Reel in' };
+        return { title: L.spd > 0.05 ? 'Retrieving' : S.lure.buoyant ? 'Rising' : 'Sinking', sub: `Lure ${dep.toFixed(1)}${of} m deep`, key: R, act: 'Reel' };
       }
       case 'bite': return A.took ? { title: S.hookKind === 'circle' ? 'Fish on!' : 'Strike!', sub: '', key: R, act: S.hookKind === 'circle' ? 'Reel' : 'Strike', bite: 'strike' }
         : { title: 'A nibble…', sub: '', key: '', act: '', bite: 'nibble' };
       case 'fight': {
         const fr = A.tension / S.strengthKg, col = fr < 0.6 ? '#6fcf8f' : fr < 0.85 ? '#e8c04a' : '#e4573f';
         const title = A.chargeT > 0 ? 'Reel fast!' : A.jump ? 'Jump!' : A.tension >= A.dragKg * 0.98 ? 'Running…' : 'Fish on!';
-        return { title, sub: `${m(A.lineOut)} m`, key: R, act: 'Reel', bar: { f: fr, col, mark: A.dragKg / S.strengthKg }, alert: fr > 0.85 };
+        const f = A.fish, fd = f && f.z !== undefined ? Game.waterAt(f.x, f.y).level - f.z : 0;
+        return { title, sub: `${m(A.lineOut)} m${fd > 8 ? ` · ${m(fd)} m down` : ''}`, key: R, act: 'Reel', bar: { f: fr, col, mark: A.dragKg / S.strengthKg }, alert: fr > 0.85 };
       }
     }
     return null;
@@ -10396,18 +10739,20 @@ Game.registerSound = (name, def) => Sounds.register(name, def);
 const Birds = globalThis.Birds = (() => {
   const TAU = Math.PI * 2, rnd = Math.random, wrap = a => { a = (a + Math.PI) % TAU; return a < 0 ? a + Math.PI : a - Math.PI; };
   const rr = r => r[0] + rnd() * (r[1] - r[0]);
-  const NF = 12, F_GLIDE = NF, F_SOAR = NF + 1, F_DIVE = NF + 2, F_SIT = NF + 3, F_STAND = NF + 4;
+  const NF = 12, F_GLIDE = NF, F_SOAR = NF + 1, F_DIVE = NF + 2, F_SIT = NF + 3, F_STAND = NF + 4, F_FEED = NF + 5, F_ONE = NF + 6;   // (feed, one leg: only species whose look has them)
 
   // =================== the model: +x forward, +y left, z up, metres; built from a species' look ===================
   const SU0 = [0, 0.1, 0.2, 0.3, 0.4, 0.48, 0.55, 0.62], XL0 = [0.07, 0.075, 0.075, 0.07, 0.04, 0.01, -0.03, -0.08];
   const XT0 = [-0.1, -0.11, -0.11, -0.1, -0.11, -0.11, -0.1, -0.088], TH0 = [0.018, 0.016, 0.013, 0.011, 0.008, 0.006, 0.004, 0.0015];
   const XLR = [0.07, 0.075, 0.075, 0.072, 0.066, 0.056, 0.04, 0.004], XTR = [-0.1, -0.115, -0.12, -0.12, -0.115, -0.105, -0.085, -0.042];   // broad, blunt-tipped wings (a preset; or give look.wing.planform { lead, trail })
-  function buildBird(K, o) {   // K: look, o: pose { t1, t2, sweep, shrink } or { fold, legs }
+  function buildBird(K, o) {   // K: look, o: pose { t1, t2, sweep, shrink } or { fold, legs, feed?, one? }
     const B = meshBuilder(true), C = K.colors, [bx, by, bz] = K.body, hr = K.head, bl = K.bill, sh = bx / 0.16;
     B.mat = MT.CLOTH;
-    B.blob([0, 0, 0], bx, by, bz, 7, 12, i => i < 2 ? C.mantle : C.body);
-    // neck and head: where they sit in flight and at rest (look.fly / look.rest; long-necked birds can tuck the head back to fly)
-    const HP = (o.fold ? K.rest : K.fly) || { neck: [[0.11 * sh, 0.025 * sh, 0]], head: [0.185 * sh, 0.05 * sh], bill: -0.117 };
+    B.blob([0, 0, 0], bx, by, bz, 7, 12, i => i < (K.mantle ?? 2) ? C.mantle : C.body);
+    const nBody = B.v.length;
+    // neck and head: where they sit in flight and at rest (look.fly / look.rest; long-necked birds can tuck the head back to fly;
+    // look.feed: head down in the water while wading; look.swim: on the water, for birds whose rest pose is upright)
+    const HP = (o.fold ? (o.feed && K.feed) || (!o.legs && K.swim) || K.rest : K.fly) || { neck: [[0.11 * sh, 0.025 * sh, 0]], head: [0.185 * sh, 0.05 * sh], bill: -0.117 };
     const NK = [];   // a long neck is a chain of overlapping blobs, densified so it reads as one smooth S
     HP.neck.forEach((q, i) => { const p = HP.neck[i - 1]; if (p && p[2] && q[2]) { const n = Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / (Math.min(p[2], q[2]) * 0.45));
       for (let j = 1; j < n; j++) { const t = j / n; NK.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t]); } } NK.push(q); });
@@ -10416,32 +10761,50 @@ const Birds = globalThis.Birds = (() => {
     for (const [nx, nz, nr] of NK) B.blob([nx, 0, nz], nr ? nr * 1.1 : 0.07 * sh, nr || by * 0.76, nr || bz * 0.8, 6, 10, C.neck || C.head);
     const [hx, hz] = HP.head; B.blob([hx, 0, hz], hr * 1.15, hr, hr * 1.05, 6, 10, C.head);
     B.mat = MT.GEN;
+    if (C.patch) for (const s of [1, -1]) B.blob([hx + hr * 0.2, s * hr * 0.62, hz + hr * 0.38], hr * 0.5, hr * 0.42, hr * 0.3, 4, 8, C.patch);   // a pale patch over the eye (gentoo)
     const er = Math.max(0.007, hr * 0.15); for (const s of [1, -1]) B.blob([hx + hr * 0.45, s * hr * 0.82, hz + hr * 0.27], er, er * 0.57, er, 3, 6, C.eye);
     const bp = HP.bill, dx = Math.cos(bp), dz = Math.sin(bp), dn = [dz, 0, -dx];   // bill direction, and "down" across it
     const at = (p, a, d = 0) => [p[0] + dx * a + dn[0] * d, 0, p[2] + dz * a + dn[2] * d];
     const b0 = [hx + hr * 0.95 * dx, 0, hz - hr * 0.07 + hr * 0.95 * dz], b1 = at(b0, bl.len * 0.85);
-    B.tube(b0, b1, bl.base, bl.base * (bl.taper ?? 0.55), 6, C.bill);
-    B.tube(b1, at(b1, bl.len * 0.17, bl.hook), bl.base * (bl.taper ?? 0.55), bl.base * 0.25, 5, C.billTip || C.bill, true);
+    if (bl.bend) {   // a bill that kinks down partway along (a flamingo's): the outer part turned down by bend (rad)
+      const k = bl.kink ?? 0.45, c = Math.cos(bl.bend), sn = Math.sin(bl.bend), ex = dx * c + dn[0] * sn, ez = dz * c + dn[2] * sn, m = at(b0, bl.len * k), L2 = bl.len * (0.83 - k);
+      const e = [m[0] + ex * L2, 0, m[2] + ez * L2], tip = [e[0] + ex * bl.len * 0.17 + ez * bl.hook, 0, e[2] + ez * bl.len * 0.17 - ex * bl.hook];
+      B.tube(b0, m, bl.base, bl.base * 0.85, 6, C.bill); B.tube(m, e, bl.base * 0.85, bl.base * (bl.taper ?? 0.55), 6, C.billTip || C.bill);
+      B.tube(e, tip, bl.base * (bl.taper ?? 0.55), bl.base * 0.25, 5, C.billTip || C.bill, true);
+    } else {
+      B.tube(b0, b1, bl.base, bl.base * (bl.taper ?? 0.55), 6, C.bill);
+      B.tube(b1, at(b1, bl.len * 0.17, bl.hook), bl.base * (bl.taper ?? 0.55), bl.base * 0.25, 5, C.billTip || C.bill, true);
+    }
     if (C.billSpot) B.blob(at(b1, -bl.len * 0.12, bl.base * 0.6), 0.007, 0.006, 0.005, 3, 6, C.billSpot);
     if (bl.pouch) B.tube(at(b0, -bl.base * 0.5, bl.base * 0.7), at(b0, bl.len * 0.8, bl.base * 0.55), bl.base * bl.pouch, bl.base * 0.45, 8, C.pouch || C.bill, true);   // the throat pouch
+    const nTail = B.v.length;
     B.mat = MT.CLOTH;   // tail: a thin fan, two faces a few mm apart so it reads from above and below
     const T = K.tail, x0 = -bx * 0.82, x1 = x0 - T.len, tz = o.fold ? 0.03 : 0.012, fk = T.fork || 0;
     const tl = [[x0, T.root], [x0, -T.root], [x1 + fk, -T.end], [x1, -T.end * 0.6], [x1, T.end * 0.6], [x1 + fk, T.end]];
     for (const [dz, c] of [[0.004, -1], [-0.004, 1]]) { const P = tl.map(([x, y]) => [x, y, tz + dz]), ctr = [x0, 0, tz + c];
       B.quad(P[0], P[1], P[2], P[5], C.tail, ctr); B.quad(P[2], P[3], P[4], P[5], C.tail, ctr); }
-    if (o.fold) {   // wings folded along the back, primaries crossed over the tail
+    if (o.fold && K.wing.flipper) for (const s of [1, -1]) B.blob([bx * 0.2, s * by * 0.98, -bz * 0.05], K.wing.span * 0.5, by * 0.13, bz * 0.38, 5, 10, i => i < 3 ? C.wingTop : C.wingUnder);   // flippers flat against the sides
+    else if (o.fold) {   // wings folded along the back, primaries crossed over the tail
       for (const s of [1, -1]) {
         B.blob([-0.03 * sh, s * by * 0.85, bz * 0.42], bx * 0.94, by * 0.38, bz * 0.67, 5, 10, C.wingTop);
         B.mat = MT.GEN; B.tube([-0.12 * sh, s * by * 0.66, bz * 0.62], [x0 - T.len * 0.3, s * 0.018, 0.05], 0.024 * sh, 0.005, 6, C.wingTip, true);
         if (C.mirror) B.blob([x0 - T.len * 0.25, s * 0.022, 0.053], 0.012, 0.006, 0.006, 3, 6, C.mirror); B.mat = MT.CLOTH;
       }
     } else wings(B, K, o);
+    if (o.legs && K.upright) {   // standing upright (penguins): body, tail and wings tipped nose-up by look.upright (rad); the head stays where look.rest puts it
+      const c = Math.cos(K.upright), s = Math.sin(K.upright), V = B.v, turn = (a, b) => { for (let i = a; i < b; i += VS) for (const q of [i, i + 3]) { const x = V[q], z = V[q + 2]; V[q] = x * c - z * s; V[q + 2] = x * s + z * c; } };
+      turn(0, nBody); turn(nTail, V.length);
+    }
     B.mat = MT.GEN;
-    const LG = K.legs;
+    const LG = K.legs, ft = LG.feet ?? 1, ly = by * 0.5;
     if (o.legs) for (const s of [1, -1]) {
-      const ft = LG.feet ?? 1, ly = by * 0.5;
+      if (o.one && s < 0) {   // resting on one leg: the other drawn up under the body, the foot folded back
+        const k = [-0.02, s * ly * 0.7, -bz * 0.7 - LG.len * 0.22]; B.tube([0, s * ly, -bz * 0.7], k, 0.009 * ft, 0.008 * ft, 5, C.legs); B.tube(k, [-0.02 - LG.len * 0.2, s * ly * 0.6, -bz * 0.7 - 0.01], 0.008 * ft, 0.006 * ft, 5, C.legs, true); continue; }
       B.tube([0, s * ly, -bz * 0.7], [0, s * (ly + 0.005), -LG.len + 0.005], 0.009 * ft, 0.007 * ft, 5, C.legs);
       for (const d of [-1, 0, 1]) B.tube([0, s * (ly + 0.005), -LG.len + 0.004], [0.05 * ft, s * (ly + 0.005) + d * 0.022 * ft, -LG.len + 0.002], 0.005 * ft, 0.003 * ft, 4, C.legs, true);
+    } else if (!o.fold && LG.trail) for (const s of [1, -1]) {   // long legs stretched out behind in flight (flamingos, herons)
+      const a = [-bx * 0.4, s * ly * 0.6, -bz * 0.6], e = [-bx * 0.4 - LG.len, s * ly * 0.35, -bz * 0.6 + 0.01];
+      B.tube(a, e, 0.009 * ft, 0.007 * ft, 5, C.legs); B.tube(e, [e[0] - 0.06 * ft, e[1], e[2]], 0.007 * ft, 0.003 * ft, 4, C.legs, true);
     } else if (!o.fold) for (const s of [1, -1]) B.blob([x0 + 0.01, s * 0.018, -0.032], 0.025, 0.01, 0.01, 3, 6, C.legs);   // feet tucked under the tail
     return new Float32Array(B.v);
   }
@@ -10467,12 +10830,14 @@ const Birds = globalThis.Birds = (() => {
       }
     }
   }
-  function posesFor(F) {   // wing poses: NF flap frames (the hand folds in on the upstroke), glide, soar, dive, sitting, standing
-    const A = F.stroke ?? 0.52, P = [];
+  function posesFor(sp) {   // wing poses: NF flap frames (the hand folds in on the upstroke), glide, soar, dive, sitting, standing (+ feeding, one-legged)
+    const F = sp.flight, A = F.stroke ?? 0.52, P = [];
     for (let j = 0; j < NF; j++) { const f = j / NF * TAU, up = Math.max(0, Math.cos(f)), t1 = 0.12 + A * Math.sin(f);
       P.push({ t1, t2: t1 + A * 0.62 * Math.sin(f - 1), sweep: 0.07 * up, shrink: 0.18 * up }); }
     P.push({ t1: 0.1, t2: -0.06, sweep: 0.02, shrink: 0 }, { t1: 0.22, t2: -0.2, sweep: 0.05, shrink: 0.06 }, { t1: 0.35, t2: -0.35, sweep: 0.12, shrink: 0.25 },
       { fold: true }, { fold: true, legs: true });
+    if (sp.look.feed) P[F_FEED] = { fold: true, legs: true, feed: true };
+    if (sp.look.legs.oneLeg) P[F_ONE] = { fold: true, legs: true, one: true };
     return P;
   }
 
@@ -10572,6 +10937,10 @@ const Birds = globalThis.Birds = (() => {
           const s = { kind: 'tree', x: px, y: py, z: d[i + 2] + t[2] * sc, pose: 'stand', high: true, key: `t:${d[i].toFixed(1)}:${d[i + 1].toFixed(1)}`, tree: { bx: d[i], by: d[i + 1], sc, rot: ro, h: t[2] } };
           s.at = T => { const p = treeSway(s, T); return { x: p[0], y: p[1], z: s.z }; }; out.push(s); } }
       return out; },
+    wade(x, y, R, bird) { const W = (bird ? bird.sp : DEFAULTS).wade, out = [], a0 = rnd() * TAU;   // standing in shallow water on long legs: where a few rays out cross the shallows
+      for (let k = 0; k < 8; k++) { const q = shallows(x, y, a0 + k / 8 * TAU, R, W);
+        if (q) out.push({ kind: 'wade', x: q.x, y: q.y, z: q.w.ground, pose: 'stand', walk: true, wade: true, key: `d:${q.x | 0}:${q.y | 0}` }); }
+      return out; },
     cliff(x, y, R) { const out = [];   // the grassy rims of sea stacks, a few steps in from the drop
       for (const k of seaStacks()) { if (Math.hypot(k.x - x, k.y - y) > R + k.r) continue;
         for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + k.ph, px = k.x + Math.cos(a) * k.rin, py = k.y + Math.sin(a) * k.rin, z = Game.groundAt(px, py);
@@ -10586,6 +10955,53 @@ const Birds = globalThis.Birds = (() => {
       return out; },
   };
   for (const k in BUILTIN) providers.set(k, BUILTIN[k]);
+  const wadeable = (w, W) => !w.iced && W.kinds.includes(w.kind) && w.depth >= W.depth[0] && w.depth <= W.depth[1];
+  function shallows(x, y, a, R, W) {   // along a ray: the first place the water is wading-deep (often only a strip a few metres wide along a beach), or null
+    const c = Math.cos(a), s = Math.sin(a), t = (W.depth[0] + W.depth[1]) / 2, at = d => Game.waterAt(x + c * d, y + s * d);
+    let d0 = 0, w0 = at(0);
+    for (let d = 6; d <= R; d += 6) { const w = at(d);
+      if ((w0.depth < t) !== (w.depth < t)) { let lo = d0, hi = d, up = w0.depth < t;   // crossed it: narrow it down
+        for (let i = 0; i < 6; i++) { const m = (lo + hi) / 2; if ((at(m).depth < t) === up) lo = m; else hi = m; }
+        const m = (lo + hi) / 2, q = at(m); if (wadeable(q, W)) return { x: x + c * m, y: y + s * m, w: q }; }
+      d0 = d; w0 = w; }
+    return null;
+  }
+
+  // =================== the islet: one small island standing on its own, for a colony that keeps to it (colonySite: 'islet') ===================
+  // Deterministic from the seed: round each lesser blob of the island layout (islets, slivers, knobs, outlying islands) the base
+  // terrain is sampled every 80 m; a patch of land that doesn't reach the edge of its box is an island of its own. Smallest first.
+  let ISLETS, SITE;
+  function islets() {
+    if (ISLETS) return ISLETS; ISLETS = [];
+    const S = 80, R = CONFIG.islandSize / 2;
+    for (const b of LAYOUT.blobs) { const rb = Math.max(b.rx, b.ry); if (rb > 0.3 * R) continue;
+      const half = rb + 560, n = Math.ceil(2 * half / S), x0 = b.cx - half, y0 = b.cy - half, land = new Uint8Array(n * n);   // (560: the coast's warp)
+      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) land[j * n + i] = islandBase(x0 + (i + 0.5) * S, y0 + (j + 0.5) * S) > WLW + 0.5 ? 1 : 0;
+      for (let k = 0; k < n * n; k++) if (land[k] === 1) { const st = [k]; land[k] = 2; let c = 0, sx = 0, sy = 0, edge = false;
+        while (st.length) { const q = st.pop(), i = q % n, j = (q / n) | 0; c++; sx += i; sy += j; if (!i || !j || i === n - 1 || j === n - 1) edge = true;
+          for (const r of [i > 0 && q - 1, i < n - 1 && q + 1, j > 0 && q - n, j < n - 1 && q + n]) if (r !== false && land[r] === 1) { land[r] = 2; st.push(r); } }
+        const x = x0 + (sx / c + 0.5) * S, y = y0 + (sy / c + 0.5) * S;
+        if (!edge && c >= 3 && !ISLETS.some(o => Math.hypot(o.x - x, o.y - y) < S)) ISLETS.push({ x, y, c, r: S * Math.sqrt(c / Math.PI) }); } }   // (boxes overlap: once each)
+    return ISLETS.sort((a, b) => a.c - b.c);
+  }
+  // where the colony stands: on the smallest islet with a beach, walking out from its middle on a seeded bearing to the first low shore,
+  // with places to stand ashore (within 22 m) and to swim off it (out to 80 m); null if the seed has no islet with such a shore
+  function isletSite() {
+    if (SITE !== undefined) return SITE; SITE = null;
+    const rng = mulberry32((SEED ^ 0x9e9a1) >>> 0), a0 = rng() * TAU;
+    for (const I of islets()) for (let k = 0; k < 16 && !SITE; k++) { const a = a0 + k / 16 * TAU, c = Math.cos(a), s = Math.sin(a); let land = false;
+      for (let d = 0; d < I.r * 2 + 300; d += 3) { const w = Game.waterAt(I.x + c * d, I.y + s * d); if (w.depth < -0.1) { land = true; continue; } if (!land) continue;
+        const x = I.x + c * (d - 10), y = I.y + s * (d - 10), g = Game.waterAt(x, y), L = [], Sea = [];
+        if (g.depth > -0.1 || g.ground > w.level + 4) break;   // a cliff, not a beach: try another bearing
+        for (let q = 0; q < 160 && L.length < 40; q++) { const r = Math.sqrt(rng()) * 22, b = rng() * TAU, px = x + Math.cos(b) * r, py = y + Math.sin(b) * r, h = Game.waterAt(px, py);
+          const sl = Math.abs(Game.groundAt(px + 0.6, py) - Game.groundAt(px - 0.6, py)) + Math.abs(Game.groundAt(px, py + 0.6) - Game.groundAt(px, py - 0.6));
+          if (h.depth < -0.1 && h.ground < w.level + 6 && sl < 0.7) L.push([px, py]); }
+        for (let q = 0; q < 120 && Sea.length < 30; q++) { const b = a + (rng() - 0.5) * 2.2, r = 20 + rng() * 60, px = x + Math.cos(b) * r, py = y + Math.sin(b) * r;
+          if (Game.waterAt(px, py).depth > 0.8) Sea.push([px, py]); }
+        if (L.length >= 6 && Sea.length >= 4) SITE = { x, y, a, r: I.r, islet: I, land: L, sea: Sea };
+        break; } }
+    return SITE;
+  }
   const Perches = {
     providers,
     add(name, fn) { providers.set(name, fn); },
@@ -10613,7 +11029,14 @@ const Birds = globalThis.Birds = (() => {
     habitat: {},                    // flock size near each kind of water: { sea, lake, river, creek, pond, any }
     night: 'roost',                 // 'roost': settle at dusk and stay till dawn · 'active'
     climates: null,                 // null = any island; or e.g. ['temperate', 'tropical']
-    colony: 0,                      // > 0: nests on sea stacks; within 500 m of one the flock is this big and stays round them
+    colony: 0,                      // > 0: a colony; within 500 m of it the flock is this big and stays round it
+    colonySite: 'stacks',           // where the colony is: 'stacks' (sea stacks) · 'islet' (one small island of its own, chosen from the seed)
+    down: 0.5,                      // the share already down (on a perch) when you arrive somewhere
+    wade: { depth: [0.08, 0.45], kinds: ['sea'] },   // lands.wade: standing in water this deep (m), of these kinds, on its legs
+    // flightless: null, or walking and swimming instead of flying (penguins): walk / swim m/s · ashore / afloat: [s, s] before
+    //   heading for the sea / back to the colony · leap: mean s between porpoising leaps, leapTime s, leapHeight m · dive: mean s
+    //   between dives, under: [s, s], depth m. Needs a colony to keep to (colonySite 'islet'); elsewhere it stays put
+    flightless: null,
     flight: { speed: 9, flapHz: 3, stroke: 0.52, flapTime: [1, 3], glideTime: [2, 6], turn: 0.85, alt: [8, 25], radius: [15, 45], soar: true, followBoats: false,
       clear: 5 },                   // least height over water while circling (low for wave-skimmers)
     // fishing on the wing: one strike behaviour, shaped entirely by these numbers (null = never)
@@ -10634,6 +11057,10 @@ const Birds = globalThis.Birds = (() => {
     look: {
       body: [0.16, 0.068, 0.072], head: 0.044, bill: { len: 0.074, base: 0.012, hook: 0.009 },
       tail: { len: 0.14, root: 0.035, end: 0.062, fork: 0 }, wing: { span: 0.62, chord: 1, tipFrom: 0.48 }, legs: { len: 0.2 },
+      // also: mantle (body rings from the top in the mantle colour, 2) · upright (rad: stands tipped nose-up, penguins) · bill.bend / bill.kink (a bill
+      // turned down by bend rad at kink of its length) · wing.flipper (flat flippers) · legs.trail (stretched out behind in flight) · legs.oneLeg (chance
+      // it rests on one leg) · fly / rest / feed / swim: { neck: [[x, z, r]...], head: [x, z], bill: rad } in flight, standing, feeding head-down, swimming
+      // · colors.neck, billTip, billSpot, pouch, mirror, wingEdge, wingUnderTip, patch (over the eye)
       colors: { mantle: [0.6, 0.55, 0.5], body: [0.8, 0.78, 0.74], head: [0.8, 0.78, 0.74], eye: [0.08, 0.07, 0.05], bill: [0.3, 0.3, 0.3], tail: [0.6, 0.55, 0.5],
         wingTop: [0.6, 0.55, 0.5], wingTip: [0.3, 0.28, 0.26], wingUnder: [0.8, 0.78, 0.74], legs: [0.4, 0.35, 0.3] },
     },
@@ -10641,7 +11068,7 @@ const Birds = globalThis.Birds = (() => {
   };
   const species = {};
   function register(def) {
-    const sp = deepMerge(DEFAULTS, def); sp.id = def.id; sp.poses = posesFor(sp.flight); sp.meshes = sp.poses.map(p => buildBird(sp.look, p)); sp.gpu = [];
+    const sp = deepMerge(DEFAULTS, def); sp.id = def.id; sp.poses = posesFor(sp); sp.meshes = sp.poses.map(p => buildBird(sp.look, p)); sp.gpu = [];
     sp.flock = { x: 0, y: 0, lev: 0, ax: 0, ay: 0, at: 0 }; sp.want = 0;
     species[sp.id] = sp; return sp;
   }
@@ -10656,15 +11083,18 @@ const Birds = globalThis.Birds = (() => {
         roll: 0, pitch: 0, dir: rnd() < 0.5 ? 1 : -1, R0: rr(F.radius), alt: rr(F.alt), ox: (rnd() - 0.5) * 30, oy: (rnd() - 0.5) * 30, sc: rr(sp.scale),
         tint: 0.42 + rnd() * 0.16, wob: rnd() * 100, callT: 3 + rnd() * 20, voice: sp.voice ? rr(sp.voice.pitch || [1000, 1100]) : 0, gzT: 0, gzv: 0, stay: 0, frame: 0, spot: null };
       b.gzv = surfAt(x, y); b.z = Math.max(sp.flock.lev, b.gzv) + b.alt;
-      if (st !== 'fly') { const s = Perches.near(x, y, 4, [st === 'float' ? 'water' : 'ground'])[0]; if (s) this.settle(b, s, true); }
+      if (sp.flightless) { const S = st === 'colony' && this.home(sp), L = S && (rnd() < 0.7 ? S.land : S.sea), q = L && L[rnd() * L.length | 0];   // at the colony: most ashore, a few out swimming
+        if (q) { b.x = q[0] + (rnd() - 0.5) * 2; b.y = q[1] + (rnd() - 0.5) * 2; } b.st = 'new'; this.waddle(b, 0); }
+      else if (st !== 'fly') { const s = Perches.near(x, y, 4, [st === 'float' ? 'water' : 'ground'])[0]; if (s) this.settle(b, s, true); }
       this.list.push(b); return b;
     },
     bodyZ(b, s, p) { return s.pose === 'float' ? s.water.lev + Engine.swellAt(p.x, p.y, s.water.kd) + b.sp.floatZ * b.sc : p.z + b.sp.look.legs.len * b.sc; },
     settle(b, s, quiet) {
       if (b.group) b.group.end = Engine.time + 4;   // give the followers a moment to see where the leader came down (school() disbands after)
-      b.st = s.pose === 'float' ? 'float' : 'stand'; b.spot = s; b.v = b.vz = 0; b.lt = 0; b.roll = 0;
+      b.st = s.pose === 'float' ? 'float' : 'stand'; b.spot = s; b.px = b.py = null; b.v = b.vz = 0; b.lt = 0; b.roll = 0;
       b.stay = this.night() && b.sp.night === 'roost' ? 1e9 : rr(b.sp.stay) * (s.kind === 'boat' ? 0.5 : 1); b.callT = 4 + rnd() * 25;
-      if (!quiet && s.pose === 'float') Game.ripple(b.x, b.y, 0.45);
+      if (b.sp.look.legs.oneLeg) { b.one = rnd() < b.sp.look.legs.oneLeg; b.feeding = false; }
+      if (!quiet && (s.pose === 'float' || s.wade)) Game.ripple(b.x, b.y, 0.45);
       if (!quiet) Game.emit('birdLand', b, s);
     },
     takeoff(b) {
@@ -10693,25 +11123,31 @@ const Birds = globalThis.Birds = (() => {
       const P = Engine.P;
       if (sp.climates && !sp.climates.includes(CLIMATE.key)) return 0;
       let n = sp.habitat.any || 0; for (const k of seen) n = Math.max(n, sp.habitat[k] || 0);
-      if (sp.colony && this.colonyNear(P)) n = Math.max(n, sp.colony);
+      if (sp.lands.wade > 0 && !sp.flock.flats) n = 0;   // waders: only where there are shallows to stand in
+      if (sp.colony && this.colonyNear(P, sp)) n = Math.max(n, sp.colony);
       return Math.round(n * [0, 0.5, 1, 1.6][clamp(CONFIG.wildlife | 0, 0, 3)]);
     },
-    colonyNear(P) { let best = null, bd = 500; for (const k of seaStacks()) { const d = Math.hypot(k.x - P.x, k.y - P.y); if (d < bd) { bd = d; best = k; } } return best; },
+    home: sp => sp.colonySite === 'islet' ? isletSite() : null,
+    colonyNear(P, sp) {
+      if (sp && sp.colonySite === 'islet') { const S = isletSite(); return S && Math.hypot(S.x - P.x, S.y - P.y) < 500 + S.r ? S : null; }
+      let best = null, bd = 500; for (const k of seaStacks()) { const d = Math.hypot(k.x - P.x, k.y - P.y); if (d < bd) { bd = d; best = k; } } return best; },
     anchor(sp) {   // where a flock hangs about: over water near you (round the stacks, for colony birds); in your wake when you're under way (if it follows boats)
-      const P = Engine.P, fl = sp.flock, bt = Engine.boat, home = sp.colony && this.colonyNear(P);
+      const P = Engine.P, fl = sp.flock, bt = Engine.boat, home = sp.colony && this.colonyNear(P, sp);
       if (home) { const a = rnd() * TAU, r = home.r + 10 + rnd() * 60; fl.ax = home.x + Math.cos(a) * r; fl.ay = home.y + Math.sin(a) * r; fl.lev = WLW; return; }
       if (sp.flight.followBoats && bt && Math.abs(bt.speed || 0) > 1.5 && rnd() < 0.5) { const d = 36 + rnd() * 40; fl.ax = bt.x - Math.cos(bt.a) * d; fl.ay = bt.y - Math.sin(bt.a) * d; return; }
+      if (sp.lands.wade > 0) { fl.flats = false; const a0 = rnd() * TAU;   // waders: over shallows they can stand in, found along a few rays out from you
+        for (let k = 0; k < 8; k++) { const q = shallows(P.x, P.y, a0 + k / 8 * TAU, 220, sp.wade); if (q) { fl.ax = q.x; fl.ay = q.y; fl.lev = q.w.level; fl.flats = true; return; } } }
       for (let k = 0; k < 12; k++) { const r = 50 + rnd() * 110, a = rnd() * TAU, x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r, w = Game.waterAt(x, y);
         if (w.depth > 0.5) { fl.ax = x; fl.ay = y; fl.lev = w.level; return; } }
       fl.ax = P.x + (rnd() - 0.5) * 60; fl.ay = P.y + (rnd() - 0.5) * 60; fl.lev = Math.max(fl.lev, surfAt(P.x, P.y) - 5);
     },
-    populate() {   // straight away (start, or after travelling): some already down, the rest circling
+    populate() {   // straight away (start, or after travelling): some already down (a share `down`; 0.5: every other one), the rest circling
       this.list.length = 0; const seen = this.waterSeen();
       for (const sp of Object.values(species)) {
-        sp.want = this.census(sp, seen); this.anchor(sp); Object.assign(sp.flock, { x: sp.flock.ax, y: sp.flock.ay });
+        this.anchor(sp); sp.want = this.census(sp, seen); Object.assign(sp.flock, { x: sp.flock.ax, y: sp.flock.ay });
         for (let i = 0; i < sp.want; i++) {
-          const b = this.make(sp, sp.flock.x + (rnd() - 0.5) * 60, sp.flock.y + (rnd() - 0.5) * 60, 'fly');
-          if (i % 2 === 0) { const s = this.pickSpot(b); if (s && s.kind !== 'boat') { const p = Perches.at(s); b.x = p.x; b.y = p.y; this.settle(b, s, true); } }
+          const b = this.make(sp, sp.flock.x + (rnd() - 0.5) * 60, sp.flock.y + (rnd() - 0.5) * 60, sp.flightless ? 'colony' : 'fly');
+          if (!sp.flightless && Math.ceil((i + 1) * sp.down) > Math.ceil(i * sp.down)) { const s = this.pickSpot(b); if (s && s.kind !== 'boat') { const p = Perches.at(s); b.x = p.x; b.y = p.y; this.settle(b, s, true); } }
         }
       }
     },
@@ -10749,7 +11185,7 @@ const Birds = globalThis.Birds = (() => {
           if ((fl.at -= 2.5) <= 0) { this.anchor(sp); fl.at = 8 + rnd() * 6; }
           const mine = this.list.filter(b => b.sp === sp && !b.spawned), flying = mine.filter(b => b.st === 'fly');
           this.school(sp, mine);
-          if (mine.length < sp.want) { const a = rnd() * TAU, r = 170 + rnd() * 60, b = this.make(sp, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, 'fly'); b.a = a + Math.PI; }
+          if (mine.length < sp.want) { const a = rnd() * TAU, r = 170 + rnd() * 60, b = this.make(sp, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, sp.flightless ? 'colony' : 'fly'); b.a = a + Math.PI; }
           else if (mine.length > sp.want + 1 && flying.length) flying[rnd() * flying.length | 0].st = 'leave';
         }
       }
@@ -10761,11 +11197,12 @@ const Birds = globalThis.Birds = (() => {
         if (Math.hypot(b.x - P.x, b.y - P.y) > (b.st === 'leave' ? 420 : 650)) { this.disband(b); this.list.splice(i, 1); continue; }
         if ((b.callT -= dt) <= 0) { const V = b.sp.voice; b.callT = rr(V?.every || [8, 30]) * (b.st === 'fly' ? 1 : 2); if (!night || rnd() < 0.2) call(b); }
         if ((b.gzT -= dt) <= 0) { b.gzT = 0.4; b.gzv = surfAt(b.x, b.y); }
-        if (b.st === 'float' || b.st === 'stand') this.perched(b, dt, night);
+        if (b.sp.flightless) this.waddle(b, dt);
+        else if (b.st === 'float' || b.st === 'stand') this.perched(b, dt, night);
         else this.fly(b, dt, night, wd, ws, T);
         if (b.flap) { b.ph += dt * b.hz * TAU * (b.st === 'takeoff' ? 1.35 : b.st === 'land' ? 1 + 0.9 * (b.flare || 0) : 1); if (b.ph >= TAU) { b.ph -= TAU; if (!b.want) b.flap = false; } }   // finish the stroke before gliding
         else if (b.want) b.flap = true;
-        b.frame = b.st === 'float' || b.st === 'under' ? F_SIT : b.st === 'stand' ? F_STAND : b.st === 'dive' && b.sp.forage?.tuck ? F_DIVE : b.flap ? Math.floor(b.ph / TAU * NF) % NF
+        b.frame = b.st === 'float' || b.st === 'under' ? F_SIT : b.st === 'stand' ? (b.feeding && b.sp.meshes[F_FEED] ? F_FEED : b.one && b.sp.meshes[F_ONE] ? F_ONE : F_STAND) : b.st === 'dive' && b.sp.forage?.tuck ? F_DIVE : b.flap ? Math.floor(b.ph / TAU * NF) % NF
           : b.vz < -2.2 ? F_DIVE : b.sp.flight.soar && (ws > 0.55 || b.roll * b.roll > 0.12) ? F_SOAR : F_GLIDE;
       }
     },
@@ -10900,9 +11337,51 @@ const Birds = globalThis.Birds = (() => {
       b.x = p.x; b.y = p.y; b.z = this.bodyZ(b, s, p);
       if (p.yaw !== undefined) {   // a moving perch sets the heading and the tilt; now and then it looks about
         b.a = p.yaw + 0.35 * Math.sin(Engine.time * 0.4 + b.wob) * (Math.sin(Engine.time * 0.11 + b.wob) > 0.6 ? 1 : 0.15); b.roll = p.roll || 0; b.pitch = (p.pitch || 0) + 0.08;
-      } else { const wa = (ENV.windDir ?? 0.8) + Math.PI; b.a += wrap(wa + 0.6 * Math.sin(b.wob + Engine.time * 0.03) - b.a) * Math.min(1, dt * 0.2); b.pitch = 0.1; b.roll = 0; }
-      if (s.walk && b.lt > 4 && rnd() < dt / 12) { const a = b.a + (rnd() - 0.5) * 2, st = 0.4 + rnd() * 0.8, nx = s.x + Math.cos(a) * st, ny = s.y + Math.sin(a) * st;   // a few steps along the beach
-        if (Game.waterAt(nx, ny).depth < -0.05 && !this.list.some(o => o !== b && o.spot && Math.hypot(o.x - nx, o.y - ny) < b.sp.space * 1.2)) { s.x = nx; s.y = ny; s.z = Game.groundAt(nx, ny); b.a = a; } }
+      } else { const wa = (ENV.windDir ?? 0.8) + Math.PI; b.a += wrap(wa + 0.6 * Math.sin(b.wob + Engine.time * 0.03) - b.a) * Math.min(1, dt * 0.2); b.pitch = b.feeding ? -0.12 : 0.1; b.roll = 0; }
+      if (s.wade) {   // wading: spells of feeding head-down, stepping slowly through the shallows, between spells of standing (on one leg, some)
+        b.x = b.px ?? p.x; b.y = b.py ?? p.y; b.px = b.x + (p.x - b.x) * Math.min(1, dt * 1.2); b.py = b.y + (p.y - b.y) * Math.min(1, dt * 1.2);
+        if (b.sp.look.feed && (b.feedT = (b.feedT || 0) - dt) <= 0) { b.feeding = !b.feeding && !night; b.feedT = b.feeding ? 6 + rnd() * 18 : 3 + rnd() * 12; b.one = !b.feeding && rnd() < (b.sp.look.legs.oneLeg || 0); }
+      }
+      if (s.walk && !b.one && b.lt > 4 && rnd() < dt / (b.feeding ? 2.5 : 12)) { const a = b.a + (rnd() - 0.5) * (b.feeding ? 1 : 2), st = (s.wade ? 0.25 : 0.4) + rnd() * 0.8, nx = s.x + Math.cos(a) * st, ny = s.y + Math.sin(a) * st;   // a few steps along the beach (or through the shallows)
+        const w = s.wade && Game.waterAt(nx, ny);
+        if ((s.wade ? wadeable(w, b.sp.wade) : Game.waterAt(nx, ny).depth < -0.05) && !this.list.some(o => o !== b && o.spot && Math.hypot(o.x - nx, o.y - ny) < b.sp.space * 1.2)) {
+          s.x = nx; s.y = ny; s.z = s.wade ? w.ground : Game.groundAt(nx, ny); b.a = a; if (s.wade) Game.ripple(nx, ny, 0.12); } }
+    },
+
+    // flightless birds (penguins): waddling about the colony ashore, down the beach into the sea to swim, porpoise and dive off it, and back out
+    waddle(b, dt) {
+      const sp = b.sp, F = sp.flightless, S = this.home(sp), P = Engine.P, T = Engine.time, pick = L => L && L.length ? L[rnd() * L.length | 0] : null;
+      if (b.st !== 'stand' && b.st !== 'float' && b.st !== 'under') {   // (new, or spawned flying from the panel): put down where it is
+        const w = Game.waterAt(b.x, b.y); b.st = w.depth > 0.3 && !w.iced ? 'float' : 'stand'; b.lt = 0; b.stay = rr(b.st === 'stand' ? F.ashore : F.afloat);
+        b.tgt = null; b.target = null; b.leader = null; b.slot = null; b.leap = 0; b.idle = rnd() * 4; b.v = b.vz = 0; }
+      b.flap = b.want = false; b.spot = null;
+      let land = b.st === 'stand';
+      const near = Math.hypot(b.x - P.x, b.y - P.y), seaward = land && b.lt > b.stay;
+      if (land && S && near < sp.shy * FEAR && !b.flee) { b.flee = true; b.lt = b.stay + 1;   // too close: off to the water, the far side from you
+        b.tgt = null; let best = -1; for (const q of S.sea) { const d = Math.hypot(q[0] - P.x, q[1] - P.y); if (d > best) { best = d; b.tgt = { x: q[0], y: q[1] }; } } }
+      if (!b.tgt && (b.idle -= dt) <= 0) {   // where next: about the colony, or out to sea / back ashore when it's time
+        const q = land ? pick(seaward ? S?.sea : S?.land) : pick(b.lt > b.stay ? S?.land : S?.sea);
+        if (q) b.tgt = { x: q[0] + (rnd() - 0.5) * 2, y: q[1] + (rnd() - 0.5) * 2 }; b.idle = land ? 2 + rnd() * 8 : 0; }
+      let moving = false;
+      if (b.tgt) { const dx = b.tgt.x - b.x, dy = b.tgt.y - b.y, d = Math.hypot(dx, dy);
+        if (d < (land ? 0.4 : 2)) b.tgt = null;
+        else { moving = true; b.a += wrap(Math.atan2(dy, dx) - b.a) * Math.min(1, dt * (land ? 4 : 2)); const v = (land ? F.walk : F.swim * (b.leap ? 1.6 : 1)) * b.sc, step = Math.min(d, v * dt);
+          b.x += Math.cos(b.a) * step; b.y += Math.sin(b.a) * step; } }
+      for (const o of this.list) if (o !== b && o.sp === sp && (o.st === 'stand') === land) { const dx = b.x - o.x, dy = b.y - o.y, d = Math.hypot(dx, dy), need = sp.space;   // elbow room
+        if (d < need && d > 1e-4) { const k = (need - d) / d * Math.min(1, dt * 2); b.x += dx * k; b.y += dy * k; } }
+      const w = Game.waterAt(b.x, b.y);
+      if (land && w.depth > 0.25 && !w.iced) { b.st = 'float'; land = false; b.lt = 0; b.stay = rr(F.afloat); b.flee = false; Game.splash(b.x, b.y, 3); Game.ripple(b.x, b.y, 0.5); }   // a hop into the sea
+      else if (!land && w.depth < 0.12) { b.st = 'stand'; land = true; b.lt = 0; b.stay = rr(F.ashore); b.leap = 0; b.fo = null; Game.ripple(b.x, b.y, 0.3); }   // out onto the shore
+      if (land) { b.z = w.ground + sp.look.legs.len * b.sc; b.pitch = 0; b.roll = moving ? 0.14 * Math.sin(T * 14 + b.wob) : b.roll * 0.9; return; }   // the waddle: rocking side to side
+      const lev = w.level, W = { kd: w.kindId, lev };
+      b.roll = 0.05 * Math.sin(T * 1.3 + b.wob);
+      if (b.leap) { b.leap += dt; const u = b.leap / F.leapTime;   // porpoising: an arc clear of the water
+        if (u >= 1) { b.leap = 0; Game.splash(b.x, b.y, 2); Game.ripple(b.x, b.y, 0.3); } else { b.z = lev + Math.sin(Math.PI * u) * F.leapHeight * b.sc; b.pitch = Math.cos(Math.PI * u) * 0.7; } }
+      else if (b.st === 'under') { b.z += (lev - F.depth * b.sc - b.z) * Math.min(1, dt * 2); b.pitch = -0.1; b.fo = W; if (b.lt > b.under) { b.st = 'float'; b.lt = b.stay2 || 0; Game.ripple(b.x, b.y, 0.4); } }
+      else { b.z = lev + Engine.swellAt(b.x, b.y, w.kindId) + sp.floatZ * b.sc; b.pitch = -0.05;
+        if (moving && w.depth > 1.2 && rnd() < dt / F.leap) { b.leap = 1e-3; Game.splash(b.x, b.y, 2); }
+        else if (w.depth > F.depth + 0.6 && rnd() < dt / F.dive) { b.st = 'under'; b.stay2 = b.lt; b.lt = 0; b.under = rr(F.under); Game.ripple(b.x, b.y, 0.4); } }
+      if (b.st === 'float') b.spot = { kind: 'swim', x: b.x, y: b.y, z: lev, pose: 'float', water: W, key: `p:${b.wob}` };   // (drawn cut at the waterline, like a floating bird)
     },
 
     draw(R, gl, L, E) {
@@ -11406,8 +11885,9 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
       this.say(`Rod in the holder · walk off and listen for the bell · ${pickKey()} at the holder to take it back`, 3.5);
       this.tuiState = null; this.updateTui();
     },
-    pickUpHolder() {
+    pickUpHolder(contact = false) {
       const A = this.ang, H = A.holder, P = this.P; if (!H) return;
+      if (!contact) { if (H.reachT === undefined) H.reachT = 0; return; }
       A.holder = null; A.btnWas = false;
       const eye = [P.x, P.y, P.z + EYE], aim = this.rodAim(eye); A.yaw = aim[0]; A.pitch = aim[1]; A.hand = this.handForReel(A, eye); A.tip = this.rodTip(A);   // in your hands now, so the fight starts from here
       if (A.phase === 'bite' && H.on && A.fish) this.startFight(A.fish);
@@ -11415,6 +11895,9 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
       this.tuiState = null; this.updateTui();
     },
   });
+
+  // Keep the contact completion bound to this rod; the two-rod wrapper selects a rod only on input.
+  const finishHolderReach = E.pickUpHolder;
 
   // the take lasts longer off a holder; a fish that sets itself waits for you instead of fighting an empty rod
   const baseTake = E.fishTake; E.fishTake = function (f) { baseTake.call(this, f); if (this.ang.holder && this.ang.fish === f) this.ang.window *= 4; };
@@ -11452,6 +11935,10 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
   E.holderTick = function (dt) {   // one rod's holder for a frame; returns what the notice should say about it ('' for nothing)
     const A = E.ang, H = A && A.holder;
     if (!H || !A.out) { if (A && H) A.holder = null; return ''; }
+    if (H.reachT !== undefined) {
+      if (Math.hypot(H.x - this.P.x, H.y - this.P.y) >= REACH || Math.abs(H.z - this.P.z) >= 2.5 || this.swim || this.carry) delete H.reachT;
+      else { H.reachT += dt; if (H.reachT >= 0.34) { finishHolderReach.call(this, true); return ''; } }
+    }
     const st = A.phase === 'bite' ? (H.on ? 'on' : 'bite') : A.phase;
     if (st === 'bite' && H.was !== 'bite') { ring(H); H.alert = 'Bite at the rod holder!'; E.say(`Bell! ${H.alert} ${away(H)} m away`, 4); }
     else if (st !== 'bite' && st !== 'on' && (H.was === 'bite' || H.was === 'on')) H.alert = H.was === 'on' ? 'The fish at the holder threw the hook' : 'Missed a bite at the holder';
@@ -11468,7 +11955,10 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
     const t = H.alert && (st === 'bite' || st === 'on' ? H.alert : `${H.alert} · rod still in the holder`);
     return t ? `${t} ${away(H)} m away${st === 'on' ? ` · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s` : ''}` : '';
   };
-  Game.on('update', dt => { const a = E.holderTick(dt); let b = '';
+  Game.on('update', dt => {
+    // Switching focus during a reach cancels it; a background rod must never be picked up by its tick.
+    if (E.ang2 && E.ang2.holder) delete E.ang2.holder.reachT;
+    const a = E.holderTick(dt); let b = '';
     if (E.ang2) { const one = E.ang; E.ang = E.ang2; E.ang2 = one; try { b = E.holderTick(dt); } finally { E.ang2 = E.ang; E.ang = one; } }   // the second rod (fishing/two-rods.js)
     const t = [a, b].filter(Boolean).join('   ·   '); if (t || (chip && !chip.hidden)) showChip(t); });
   // on the map: a dot where the rod stands
@@ -12150,6 +12640,8 @@ globalThis.Urchin = {
     const F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)], R = [-Math.sin(P.a), Math.cos(P.a), 0], U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
     return { eye, F, R, U, at: (d, r, u) => [0, 1, 2].map(k => eye[k] + F[k] * d + R[k] * r + U[k] * u) }; };
 
+  const ease = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+  const snapshot = f => ({ pos: [f.x, f.y, f.z], yaw: f.a, pitch: f.pitch || 0, roll: f.roll || 0 });
   // ---- in your hands ----
   E.carryFish = function (f, meta) {
     const hd = fishHandling(f.def), grips = [hd.hold === 'none' ? 'cradle' : hd.hold].concat(hd.lip ? ['lip'] : []), A = this.ang, hadRod = !!(A && A.out);
@@ -12159,32 +12651,67 @@ globalThis.Urchin = {
     for (const c of this.fishCells.values()) { const i = c.fish.indexOf(f); if (i >= 0) { c.fish.splice(i, 1); break; } }
     this.removeFish(f); f.dead = false; for (const q of this.fish) if (q.leader === f) q.leader = null;   // and its shoal stops following it
     if (this.traps) this.traps.hand = null;
-    this.carry = { f, meta: meta || {}, grips, grip: grips[0], phi: 0, om: 0, hp: null, hv: 0, t: 0, hadRod };
+    this.carry = { f, meta: meta || {}, grips, grip: grips[0], phi: 0, om: 0, hp: null, hv: 0, t: 0, hadRod, from: snapshot(f), liftTime: 0.28 + 0.08 * clamp(f.weightKg / 12, 0, 1) };
     if (hadRod && !A.fish) this.toggleRod(false);
     this.say(`${f.name} · ${f.lengthCm.toFixed(1)} cm · ${kgTxt(f.weightKg)}`, 2.5);
   };
   const freeHands = () => { const c = E.carry; E.carry = null; if (c && c.hadRod && E.ang && !E.ang.out && !E.swim) E.toggleRod(true); return c; };
-  E.swapGrip = function () { const c = this.carry; if (!c || c.grips.length < 2) return; c.grip = c.grips[(c.grips.indexOf(c.grip) + 1) % c.grips.length]; c.t = 0; c.phi = 0; c.om = 0; this.buzz(15); };
+  E.swapGrip = function () { const c = this.carry; if (!c || c.action || c.grips.length < 2 || c.t < c.liftTime + (c.reachTime || 0)) return; c.previousGrip = c.grip; c.from = snapshot(c.f); c.liftTime = 0.38; c.reachTime = 0; c.grip = c.grips[(c.grips.indexOf(c.grip) + 1) % c.grips.length]; c.t = 0; c.phi = 0; c.om = 0; this.buzz(15); };
   E.carryStep = function (dt) {
     const c = this.carry; if (!c) return; const f = c.f, P = this.P, B = f.def.body;
-    if (this.swim) { this.dropFish(); return; }   // both hands needed to swim
-    c.t += dt; const V = view(), e = Math.min(1, dt * 12) * Math.min(1, c.t / 0.25 + 0.2), tx = this.tanX || Math.tan(FOV / 2), ty = this.tanY || tx * 0.56;
+    if (this.swim) { this.dropFish(true); return; }   // both hands needed to swim
+    c.t += dt; const V = view(), e = 1 - Math.exp(-dt * 18), tx = this.tanX || Math.tan(FOV / 2), ty = this.tanY || tx * 0.56;
     let ctr, pitch, yaw = P.a + Math.PI / 2;
     if (!V.eye) {   // third person: at the figure's hand
-      const h = this.hPose.hand; pitch = c.grip === 'lip' ? Math.PI / 2 - 0.1 : 0;
-      ctr = c.grip === 'lip' ? [h[0], h[1], h[2] - f.len * 0.49] : [h[0] + Math.cos(P.a) * 0.15, h[1] + Math.sin(P.a) * 0.15, h[2] + 0.05];
+      const H = this.hPose.fish, h = this.hPose.hand;   // where the posed hands hold it (third-person.js); the right hand, if they haven't caught up yet
+      if (H) { ctr = H.ctr; pitch = H.pitch; yaw = H.yaw; if (c.grip === 'lip') f.open = 0.58 + 0.06 * clamp(f.weightKg / 8, 0, 1); }
+      else { pitch = c.grip === 'lip' ? Math.PI / 2 - 0.1 : 0; ctr = c.grip === 'lip' ? [h[0], h[1], h[2] - f.len * 0.49] : [h[0] + Math.cos(P.a) * 0.15, h[1] + Math.sin(P.a) * 0.15, h[2] + 0.05]; }
     } else if (c.grip === 'lip') {   // hanging from your hand by its jaw. Your hand stays where you hold it; the fish swings under it as you turn and walk
       const d = clamp(f.len * 0.95, 0.42, 0.56), m = V.at(d, Math.min(0.14, d * 0.22), Math.min(0.12, f.len * 0.35));
       if (c.hp && dt > 1e-4) { const v = ((m[0] - c.hp[0]) * V.R[0] + (m[1] - c.hp[1]) * V.R[1]) / dt, a = clamp((v - c.hv) / dt, -40, 40), Lp = Math.max(0.12, f.len * 0.6);
         for (let n = 0, h = Math.min(dt, 0.05) / 2; n < 2; n++) { c.om += (-(9.8 / Lp) * Math.sin(c.phi) - 2.6 * c.om - a / Lp * Math.cos(c.phi)) * h; c.phi = clamp(c.phi + c.om * h, -1.1, 1.1); }
         c.hv = v; }
       c.hp = m; pitch = Math.PI / 2 - c.phi + 0.03 * Math.sin(this.time * 2.1);   // phi: the tail swung toward your right
-      ctr = [m[0] - Math.cos(yaw) * Math.cos(pitch) * f.len * 0.49, m[1] - Math.sin(yaw) * Math.cos(pitch) * f.len * 0.49, m[2] - Math.sin(pitch) * f.len * 0.49]; f.open = 0.85;
+      ctr = [m[0] - Math.cos(yaw) * Math.cos(pitch) * f.len * 0.49, m[1] - Math.sin(yaw) * Math.cos(pitch) * f.len * 0.49, m[2] - Math.sin(pitch) * f.len * 0.49]; f.open = 0.58 + 0.06 * clamp(f.weightKg / 8, 0, 1);   // a modest loaded gape, not a wide-open mouth
     } else {   // across your hands, side on
-      const d = clamp(Math.max(f.len / (0.95 * tx), f.len * B.height / (0.9 * ty)), c.grip === 'hand' ? 0.36 : 0.44, 0.56); ctr = V.at(d, 0, -Math.min(0.12, d * 0.2));
+      const d = clamp(Math.max(f.len / (0.95 * tx), f.len * B.height / (0.9 * ty)), c.grip === 'hand' ? 0.48 : 0.44, 0.56); ctr = V.at(d, c.grip === 'hand' ? 0.045 : 0, -Math.min(0.07, d * 0.15));
       pitch = 0.04 * Math.sin(this.time * 2.3); f.open = 0.25 + 0.2 * Math.sin(this.time * 3); c.hp = null;
     }
-    f.x += (ctr[0] - f.x) * e; f.y += (ctr[1] - f.y) * e; f.z += (ctr[2] - f.z) * e; f.a = yaw; f.pitch = (f.pitch || 0) + (pitch - (f.pitch || 0)) * e; f.roll = (f.roll || 0) * (1 - e);
+    if (c.action) {
+      const act = c.action; act.t += dt;
+      const target = act.w ? [act.w.pos[0], act.w.pos[1], act.w.pos[2] + 0.36] : V.eye ? V.at(0.62, 0, -0.25) : ctr;
+      const u = ease(act.t / 0.32);
+      ctr = act.from.pos.map((x, k) => x + (target[k] - x) * u);
+      f.x = ctr[0]; f.y = ctr[1]; f.z = ctr[2];
+      if (act.t >= 0.34) {
+        if (act.w) {
+          freeHands(); if (!c.meta.logged) { this.logCatch(f, c.meta, true); c.meta.logged = true; }
+          f.stored = true; f.held = true; f.meta = c.meta; act.w.list.push(f);
+          this.buzz(20); this.say(`${f.name} in the ${act.w.name} (${act.w.list.length})`, 2.5);
+        } else this.dropFish(true);
+        return;
+      }
+    } else {
+      const elapsed = Math.max(0, c.t - (c.reachTime || 0)), from = c.from;
+      // Reach the lower edge of the view in 150 ms, then settle into the loaded hold.
+      // This is a continuous two-stage curve, not a teleport of the starting fish.
+      const u = c.previousGrip ? ease(elapsed / c.liftTime) : elapsed < 0.15 ? 0.96 * ease(elapsed / 0.15) : 0.96 + 0.04 * ease((elapsed - 0.15) / (c.liftTime - 0.15));
+      // The visible settling phase carries the weight; the initial reach stays responsive.
+      if (from && u < 1) {
+        ctr = from.pos.map((x, k) => x + (ctr[k] - x) * u);
+        ctr[2] -= Math.sin(Math.PI * u) * 0.035 * clamp(f.weightKg / 8, 0, 1);
+        f.x = ctr[0]; f.y = ctr[1]; f.z = ctr[2];
+        f.a = from.yaw + Math.atan2(Math.sin(yaw - from.yaw), Math.cos(yaw - from.yaw)) * u;
+        f.pitch = from.pitch + (pitch - from.pitch) * u; f.roll = from.roll * (1 - u);
+      } else {
+        const settle = c.t - (c.reachTime || 0) - c.liftTime;
+        ctr[2] += 0.008 * Math.sin(settle * 18) * Math.exp(-settle * 12);
+        f.x += (ctr[0] - f.x) * e; f.y += (ctr[1] - f.y) * e; f.z += (ctr[2] - f.z) * e;
+        f.a += Math.atan2(Math.sin(yaw - f.a), Math.cos(yaw - f.a)) * e;
+        f.pitch = (f.pitch || 0) + (pitch - (f.pitch || 0)) * e; f.roll = (f.roll || 0) * (1 - e);
+        c.previousGrip = null;
+      }
+    }
     f.ph = (f.ph + dt * (2 + 3 * Math.max(0, Math.sin(this.time * 1.7)))) % TAU; f.land = true;
   };
 
@@ -12192,7 +12719,11 @@ globalThis.Urchin = {
   // the deck under a point, if it is over a boat: { b, lx, ly, z }
   const deckAt = (x, y) => { for (const b of E.boats) { const D = b.def, S = D._shape, L = D.hull.length_m, dx = x - b.x, dy = y - b.y, cb = Math.cos(b.a), sb = Math.sin(b.a), lx = cb * dx + sb * dy, ly = -sb * dx + cb * dy, t = lx / L + 0.5;
       if (t > 0.03 && t < 0.97 && Math.abs(ly) < S.hb(t) * 0.92) return { b, lx, ly, z: b.z + E.boatDeckZ(D, lx, ly) + Math.sin(b.pitch || 0) * lx }; } return null; };
-  E.dropFish = function () {
+  E.dropFish = function (immediate = false) {
+    if (!immediate && this.carry) {
+      if (!this.carry.action) this.carry.action = { t: 0, from: snapshot(this.carry.f) };
+      return;
+    }
     const c = freeHands(); if (!c) return; const f = c.f, P = this.P;
     this.loose.push({ f, meta: c.meta, st: 'fall', vx: Math.cos(P.a) * 0.9, vy: Math.sin(P.a) * 0.9, vz: 0.4, hop: 0, side: Math.random() < 0.5 ? 1 : -1, t: 0 });
   };
@@ -12222,27 +12753,46 @@ globalThis.Urchin = {
   const grabStep = dt => { const g = E.grab; if (!g) return; const f = g.l.f, P = E.P; g.t += dt;
     if (!E.loose.includes(g.l) || E.carry || Math.hypot(f.x - P.x, f.y - P.y) > 2.4) { E.grab = null; return; }
     if (!E.thirdP) E.crouchTo([f.x, f.y, f.z - E.fishLie(f).half], Math.min(1, g.t / 0.45) ** 2 * (3 - 2 * Math.min(1, g.t / 0.45)));
-    if (g.t > 0.95) { E.grab = null; E.loose = E.loose.filter(q => q !== g.l); E.carryFish(f, g.l.meta); } };
+    if (g.t > 0.62) { E.grab = null; E.loose = E.loose.filter(q => q !== g.l); E.carryFish(f, g.l.meta); } };
   // straightening up again once nothing is holding you down
-  const standStep = dt => { const o = E.eyeOff; if (!o || E.eyeHold > E.time) return; const k = 1 - Math.min(1, dt * 3.2); o[0] *= k; o[1] *= k; o[2] *= k; if (Math.hypot(o[0], o[1], o[2]) < 0.004) E.eyeOff = null; };
+  const standStep = dt => { const o = E.eyeOff; if (!o || E.eyeHold > E.time) return; const k = Math.exp(-dt * 3.2); o[0] *= k; o[1] *= k; o[2] *= k; if (Math.hypot(o[0], o[1], o[2]) < 0.004) E.eyeOff = null; };
 
   // ---- the bucket / cooler / livewell aboard ----
   const wellOf = b => { let w = b._well; const D = b.def;
     if (!w) { const S = D._shape, L = D.hull.length_m, s = clamp(D.crew.seat_at, 0, 1), t = clamp(s + (s > 0.5 ? -0.22 : 0.22), 0.14, 0.86), lx = S.x(t), ly = S.hb(t) * 0.34;
-      const kind = !['outboard', 'inboard'].includes(D.propulsion.type) || L < 3.6 ? 'bucket' : L < 6.6 ? 'cooler' : 'livewell'; w = b._well = { kind, name: kind, cap: kind === 'bucket' ? 3 : kind === 'cooler' ? 6 : 10, lx, ly }; }
+      const kind = !['outboard', 'inboard'].includes(D.propulsion.type) || L < 3.6 ? 'bucket' : L < 6.6 ? 'cooler' : 'livewell'; w = b._well = { kind, name: kind, cap: Infinity, lx, ly }; }   // (cap: as many as you like)
     if (!b.well) b.well = []; const cb = Math.cos(b.a), sb = Math.sin(b.a);
     w.pos = [b.x + cb * w.lx - sb * w.ly, b.y + sb * w.lx + cb * w.ly, b.z + E.boatDeckZ(D, w.lx, w.ly) + Math.sin(b.pitch || 0) * w.lx]; w.list = b.well; return w; };
   const wellNear = () => { const P = E.P; let best = null, bd = 1.7; for (const b of E.boats) { if (Math.hypot(b.x - P.x, b.y - P.y) > 30) continue; const w = wellOf(b), d = Math.hypot(w.pos[0] - P.x, w.pos[1] - P.y); if (d < bd && Math.abs(w.pos[2] - P.z) < 1.8) { bd = d; best = w; } } return best; };   // aboard, or reaching in from the bank or the water beside it
   E.boatWell = b => wellOf(b);
   E.keepCarried = function () {
-    const c = this.carry; if (!c) return; const f = c.f, w = wellNear();
+    const c = this.carry; if (!c || c.action) return; const w = wellNear();
     if (!w) { const b = this.boat || this.boats.slice().sort((p, q) => Math.hypot(p.x - this.P.x, p.y - this.P.y) - Math.hypot(q.x - this.P.x, q.y - this.P.y))[0], wb = b && wellOf(b);
       return this.say(wb ? `Nothing to keep it in here: carry it to the ${wb.name} in the ${b.def.name.toLowerCase()} (${Math.hypot(wb.pos[0] - this.P.x, wb.pos[1] - this.P.y).toFixed(0)} m)` : 'Nothing to keep it in: you need a boat with a bucket or a cooler', 3); }
-    if (w.list.length >= w.cap) return this.say(`The ${w.name} is full (${w.cap})`, 2.5);
-    freeHands(); if (!c.meta.logged) { this.logCatch(f, c.meta, true); c.meta.logged = true; }
-    f.stored = true; f.held = true; f.meta = c.meta; w.list.push(f); this.buzz(20); this.say(`${f.name} in the ${w.name} (${w.list.length}/${w.cap})`, 2.5);
+    c.action = { t: 0, from: snapshot(c.f), w };
   };
-  E.takeFromWell = function () { const w = !this.carry && wellNear(); if (!w || !w.list.length) return false; const f = w.list.pop(); f.stored = false; f.x = w.pos[0]; f.y = w.pos[1]; f.z = w.pos[2] + 0.3; this.carryFish(f, f.meta || { logged: true }); return true; };
+  // take one out: the i-th (the last by default) of the bucket / cooler / livewell you're at
+  E.takeFromWell = function (i) { const w = !this.carry && wellNear(); if (!w || !w.list.length) return false; const f = w.list.splice(i ?? w.list.length - 1, 1)[0]; f.stored = false; f.x = w.pos[0]; f.y = w.pos[1]; f.z = w.pos[2] + 0.3; this.carryFish(f, f.meta || { logged: true }); this.carry.reachTime = 0.28; return true; };
+  // ---- what's in it: every fish floating in a panel; click / tap one (arrow keys move), then Grab (or click it again) takes it out ----
+  let pickEl = null; E.wellPick = null;   // { w, i } while it's open
+  const pickDraw = () => { const K = E.wellPick;
+    if (!pickEl) { pickEl = document.createElement('div'); pickEl.id = 'wellPick'; pickEl.className = 'panel'; document.body.appendChild(pickEl);
+      pickEl.addEventListener('click', e => { const t = e.target, card = t.closest && t.closest('[data-i]'); if (!E.wellPick) return;
+        if (t.closest('#wpGrab')) return pickTake(); if (t.closest('#wpClose')) return pickClose();
+        if (card) { const i = +card.dataset.i; if (i === E.wellPick.i) return pickTake(); E.wellPick.i = i; pickDraw(); } }); }
+    pickEl.hidden = !K; if (!K) return; const L = K.w.list; K.i = clamp(K.i, 0, L.length - 1);
+    const hint = E.touchUI ? 'Tap one, then Grab' : 'Arrows or click to choose · F to grab · Esc to close';
+    pickEl.innerHTML = `<b>The ${esc(K.w.name)}</b><i>${L.length} fish · ${hint}</i><div class="wp-grid">${L.map((f, i) => `<button data-i="${i}" class="${i === K.i ? 'on' : ''}" style="--d:${(i * 0.37 % 2).toFixed(2)}s">`
+      + `<span class="wp-pic">${animalPicHTML(f.def)}</span><span class="wp-name">${esc(f.name)}</span><small>${f.lengthCm.toFixed(1)} cm · ${kgTxt(f.weightKg)}</small></button>`).join('')}</div>`
+      + `<div class="wp-btns"><button id="wpGrab">Grab</button><button id="wpClose">Close</button></div>`;
+    const on = pickEl.querySelector('.wp-grid .on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' }); };
+  const pickClose = () => { E.wellPick = null; pickDraw(); };
+  const pickTake = () => { const K = E.wellPick; if (!K) return; const i = K.i; pickClose(); E.takeFromWell(i); };
+  const pickMove = code => { const K = E.wellPick, grid = pickEl && pickEl.querySelector('.wp-grid'), first = grid && grid.firstElementChild;
+    const cols = first ? Math.max(1, Math.round(grid.clientWidth / first.offsetWidth)) : 3, d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols }[code];
+    K.i = clamp(K.i + d, 0, K.w.list.length - 1); pickDraw(); };
+  E.openWell = function () { const w = !this.carry && wellNear(); if (!w || !w.list.length) return false;
+    this.wellPick = { w, i: w.list.length - 1 }; if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock(); pickDraw(); return true; };
   const box = (B, x0, x1, y0, y1, z0, z1, col) => { const c = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2], q = (a, b, cc, d) => B.quad(a, b, cc, d, col, c);
     q([x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]); q([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]); q([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]);
     q([x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]); q([x0, y0, z0], [x0, y1, z0], [x0, y1, z1], [x0, y0, z1]); q([x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]); };
@@ -12281,7 +12831,7 @@ globalThis.Urchin = {
     const wells = this.boats.filter(b => Math.hypot(b.x - P.x, b.y - P.y) < 12).map(b => wellOf(b)), wellAt = wells.find(w => onPt([w.pos[0], w.pos[1], w.pos[2] + 0.18], 62));
     if (c && wellAt) return () => this.keepCarried();
     if (!c) { const l = this.loose.find(q => q.st === 'flop' && Math.hypot(q.f.x - P.x, q.f.y - P.y) < 3.2 && onFish(q.f)); if (l) return () => { if (Math.hypot(l.f.x - P.x, l.f.y - P.y) < 1.9) this.pickUpFish(l); else this.say('Get closer to pick it up', 1.5); };
-      if (wellAt && wellAt.list.length && !rod) return () => { if (!this.takeFromWell()) this.say(`Get closer to the ${wellAt.name}`, 1.5); }; }
+      if (wellAt && wellAt.list.length && !rod) return () => { if (!this.openWell()) this.say(`Get closer to the ${wellAt.name}`, 1.5); }; }
     if (!this.boat && !rod) { const nb = this.nearBoat && this.nearBoat(); if (nb && onBoat(nb)) return () => this.boardBoat(nb); }
     if (y > H * 0.7 && x < W * 0.3) return () => this.toggleTackle();
     if (y > H * 0.7 && x > W * 0.7 && !rod && !c && A && !A.out) return () => this.toggleRod(true);
@@ -12298,11 +12848,17 @@ globalThis.Urchin = {
   try { if (localStorage.getItem('embercrown-hudclear') === '1') setClear(true); } catch (e) { /* */ }
   const baseKey = E.keyPress;
   E.keyPress = function (code, e, card) {
+    if (this.wellPick && !card) {   // the cooler's open: it has the keys
+      if (/^Arrow(Up|Down|Left|Right)$/.test(code)) return pickMove(code);
+      if (['KeyF', 'KeyE', 'Enter', 'NumpadEnter', 'Space'].includes(code)) return pickTake();
+      if (['Escape', 'KeyX'].includes(code)) return pickClose();
+      if (/^Key[WASD]|^Shift/.test(code)) return baseKey.call(this, code, e, card);
+      return; }
     if (code === 'KeyZ' && !(e && e.repeat) && !card && !this.pauseOpen && !this.titleOpen) { setClear(!this.hudClear); if (!this.hudClear) this.say('HUD back', 2); return; }
     if (card || (e && e.repeat) || busy() || !['KeyF', 'KeyE', 'KeyX'].includes(code)) return baseKey.call(this, code, e, card);
     if (this.carry) { if (code === 'KeyX') return this.dropFish(); if (code === 'KeyE') return this.keepCarried(); if (this.carry.grips.length > 1) return this.swapGrip(); return baseKey.call(this, code, e, card); }
     if (code === 'KeyF') { const l = nearLoose(); if (l) return this.pickUpFish(l); }
-    if (code === 'KeyE' && this.takeFromWell()) return;
+    if (code === 'KeyE' && this.openWell()) return;
     return baseKey.call(this, code, e, card);
   };
   const baseAct = E.action;
@@ -12317,7 +12873,7 @@ globalThis.Urchin = {
     const base = baseKeys.call(this) || []; if (nearLoose()) base.unshift([K('use'), 'Pick up']); const w = wellNear(); if (w && w.list.length) base.unshift([K('keep'), `Take from ${w.name}`]); return base;
   };
   const chips = $('fishChips'), CH = { ccUnhook: () => E.unhookFish(), ccPick: () => { const l = nearLoose(); if (l) E.pickUpFish(l); }, ccGrip: () => E.swapGrip(), ccRel: () => E.carry ? E.dropFish() : E.finishCatch(false),
-    ccKeep: () => E.carry ? E.keepCarried() : E.finishCatch(true), ccTake: () => E.takeFromWell() };
+    ccKeep: () => E.carry ? E.keepCarried() : E.finishCatch(true), ccTake: () => E.openWell() };
   for (const id in CH) { const b = $(id); if (b) b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); if (!E.pauseOpen) CH[id](); }; }
   // what's in each boat's bucket or livewell lies there to be seen: head down in the bucket, tails out; side by side in the well. A cooler's lid is shut.
   const wellStep = dt => { for (const b of E.boats) { if (!b.well || !b.well.length) continue; const w = wellOf(b);
@@ -12327,7 +12883,8 @@ globalThis.Urchin = {
         else { const k = ((i % 3) - 1) * 0.15; f.a = b.a + (i % 2 ? Math.PI : 0) + 0.12; f.pitch = 0; f.x = w.pos[0] - Math.sin(b.a) * k; f.y = w.pos[1] + Math.cos(b.a) * k; f.z = w.pos[2] + 0.31 + (i > 2 ? 0.05 : 0); } }); } };
   // a fish you are holding, have put down or have stored is never thinned out of the world with the far-off ones (the fish list is rebuilt as you move)
   const keepHeld = () => { const need = f => { if (f && !E.fish.includes(f)) { f.dead = false; E.fish.push(f); } }; if (E.carry) need(E.carry.f); for (const l of E.loose) need(l.f); for (const b of E.boats) if (b.well) for (const f of b.well) need(f); };
-  Game.on('update', dt => { keepHeld(); grabStep(dt || 0); standStep(dt || 0); E.carryStep(dt || 0); E.looseStep(dt || 0); wellStep(dt || 0); });
+  Game.on('update', dt => { if (E.wellPick) { const K = E.wellPick; for (const k of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) E.keys[k] = false; if (E.carry || !K.w.list.length || wellNear() !== K.w) pickClose(); }   // (walk away and it shuts)
+    keepHeld(); grabStep(dt || 0); standStep(dt || 0); E.carryStep(dt || 0); E.looseStep(dt || 0); wellStep(dt || 0); });
   Game.onHud(() => {
     const A = E.ang, H = A && A.phase === 'card' && A.land, c = E.carry, show = {}, set = (id, txt) => { show[id] = txt; }; let anchor = null;
     if (busy()) { if (chips) chips.hidden = true; return; }
@@ -12337,7 +12894,7 @@ globalThis.Urchin = {
       E.hudDetail = `${c.f.name}  ·  ${c.f.lengthCm.toFixed(1)} cm  ·  ${kgTxt(c.f.weightKg)}${w && !near ? `  ·  ${w.name} ${Math.hypot(w.pos[0] - E.P.x, w.pos[1] - E.P.y).toFixed(1)} m` : ''}`; }
     else if (E.grab) { /* on your way down to it */ }
     else { const l = nearLoose(), w = wellNear(); if (l) { anchor = l.f; set('ccPick', 'Pick up'); } else if (w && w.list.length) { anchor = { x: w.pos[0], y: w.pos[1], z: w.pos[2] + 0.35 }; set('ccTake', 'Take out'); }
-      if (w && !E.hudDetail) E.hudDetail = w.list.length ? `${w.name[0].toUpperCase() + w.name.slice(1)} (${w.list.length}/${w.cap})  ·  ${w.list.map(f => `${f.name} ${f.lengthCm.toFixed(0)} cm`).join(', ')}` : `${w.name[0].toUpperCase() + w.name.slice(1)}: empty`; }
+      if (w && !E.hudDetail) E.hudDetail = w.list.length ? `${w.name[0].toUpperCase() + w.name.slice(1)} (${w.list.length})  ·  ${w.list.map(f => `${f.name} ${f.lengthCm.toFixed(0)} cm`).join(', ')}` : `${w.name[0].toUpperCase() + w.name.slice(1)}: empty`; }
     if (!chips) return; const any = Object.keys(show).length > 0 && E.touchUI; chips.hidden = !any; if (!any) return;
     for (const b of chips.children) { const t = show[b.id]; b.hidden = !t; if (t && b.textContent !== t) b.textContent = t; }
     // the fish's box on screen (snout, tail, back, belly), and the row centred under it; above it if that would run into the controls
@@ -12544,7 +13101,8 @@ window.addEventListener('DOMContentLoaded', () => {
         {"blob": [0.0, 0.0, 0.2306, 0.1356, 0.1197, 0.099], "detail": [4, 8], "color": "hat"},
         {"blob": [0.1412, 0.0, 0.225, 0.1073, 0.096, 0.0146], "color": "hat"},
         {"blob": [0.0, 0.0, 0.3296, 0.0203, 0.0203, 0.0113], "detail": [3, 5], "color": "hat"},
-        {"blob": [-0.1322, 0.0, 0.1856, 0.0136, 0.0452, 0.0146], "detail": [3, 5], "color": "hat"}
+        {"blob": [-0.1322, 0.0, 0.1856, 0.0136, 0.0452, 0.0146], "detail": [3, 5], "color": "hat"},
+        {"tube": [0.2, 0.124, 0.18, 0.124], "at": [0.0, 0.0], "sides": 10, "color": "hat", "shade": 0.7}
       ]
     } },
     { "id": "beanie", "name": "Beanie", "parts": {
@@ -12558,12 +13116,12 @@ window.addEventListener('DOMContentLoaded', () => {
       "head": [
         {"blob": [0.0, 0.0, 0.2362, 0.1288, 0.1175, 0.0956], "detail": [4, 8], "color": "hat"},
         {"blob": [0.0, 0.0, 0.2047, 0.2824, 0.2824, 0.0135], "detail": [3, 10], "color": "hat"},
-        {"tube": [0.2475, 0.1276, 0.2137, 0.1322], "sides": 8, "color": "hat"}
+        {"tube": [0.2475, 0.1276, 0.2137, 0.1322], "sides": 8, "color": "hat", "shade": 0.55}
       ]
     } },
     { "id": "flannel", "name": "Flannel shirt", "parts": {
       "torso": [
-        {"oval": [0.012, 0.078, 0.078, -0.04, 0.153, 0.103], "color": "top"},
+        {"oval": [0.012, 0.078, 0.078, -0.04, 0.153, 0.103], "color": "top", "shade": 0.82},
         {"oval": [-0.04, 0.153, 0.103, -0.11, 0.213, 0.113], "color": "top"},
         {"wrap": [-0.11, -0.24, 0.008], "color": "top"},
         {"wrap": [-0.24, -0.52, 0.008], "color": "top", "cap": true},
@@ -12575,7 +13133,7 @@ window.addEventListener('DOMContentLoaded', () => {
       ],
       "fore": [
         {"tube": [0.02, 0.064, -0.24, 0.055], "color": "top"},
-        {"tube": [-0.195, 0.066, -0.25, 0.066], "color": "top", "cap": true}
+        {"tube": [-0.195, 0.066, -0.25, 0.066], "color": "top", "cap": true, "shade": 0.8}
       ]
     } },
     { "id": "vest", "name": "Fishing vest", "parts": {
@@ -12586,14 +13144,18 @@ window.addEventListener('DOMContentLoaded', () => {
         {"wrap": [-0.24, -0.46, 0.026], "color": "vest"},
         {"wrap": [-0.46, -0.478, 0.026, 0.004], "color": "vest"},
         {"blob": [0.157, 0.095, -0.35, 0.022, 0.058, 0.055], "detail": [3, 5], "mirror": true, "color": "vest"},
-        {"blob": [0.173, 0.095, -0.305, 0.01, 0.06, 0.014], "detail": [3, 5], "mirror": true, "color": "vest"}
+        {"blob": [0.173, 0.095, -0.305, 0.01, 0.06, 0.014], "detail": [3, 5], "mirror": true, "color": "vest"},
+        {"blob": [0.158, 0.0, -0.3, 0.006, 0.007, 0.18], "detail": [3, 5], "color": "vest", "shade": 0.5}
       ]
     } },
     { "id": "jacket", "name": "Jacket and gloves", "parts": {
       "torso": [
-        {"oval": [0.012, 0.08, 0.08, -0.04, 0.18, 0.128], "color": "top"},
+        {"oval": [0.012, 0.08, 0.08, -0.04, 0.18, 0.128], "color": "top", "shade": 0.82},
         {"oval": [-0.04, 0.18, 0.128, -0.11, 0.24, 0.14], "color": "top"},
-        {"wrap": [-0.11, -0.61, 0.032], "color": "top", "cap": true},
+        {"wrap": [-0.11, -0.56, 0.032], "color": "top"},
+        {"wrap": [-0.56, -0.61, 0.038], "color": "top", "cap": true, "shade": 0.8},
+        {"blob": [0.165, 0.0, -0.33, 0.007, 0.008, 0.28], "detail": [3, 5], "color": "top", "shade": 0.5},
+        {"blob": [0.161, 0.085, -0.22, 0.005, 0.048, 0.034], "detail": [3, 5], "mirror": true, "color": "top", "shade": 0.88},
         {"oval": [0.06, 0.085, 0.09, 0, 0.125, 0.125], "color": "top"}
       ],
       "upper": [
@@ -12602,16 +13164,18 @@ window.addEventListener('DOMContentLoaded', () => {
       ],
       "fore": [
         {"tube": [0.02, 0.082, -0.24, 0.07], "color": "top"},
-        {"tube": [-0.195, 0.081, -0.25, 0.081], "color": "top", "cap": true},
+        {"tube": [-0.195, 0.081, -0.25, 0.081], "color": "top", "cap": true, "shade": 0.78},
         {"blob": [0, 0, -0.31, 0.058, 0.0505, 0.077], "detail": [3, 5], "color": "gloves"}
       ]
     } },
     { "id": "sunshirt", "name": "Sun shirt", "parts": {
       "torso": [
-        {"oval": [0.012, 0.08, 0.078, -0.04, 0.157, 0.107], "color": "top"},
+        {"oval": [0.012, 0.08, 0.078, -0.04, 0.157, 0.107], "color": "top", "shade": 0.85},
         {"oval": [-0.04, 0.157, 0.107, -0.11, 0.217, 0.117], "color": "top"},
         {"wrap": [-0.11, -0.24, 0.012], "color": "top"},
         {"wrap": [-0.24, -0.56, 0.012, 0.024], "color": "top", "cap": true},
+        {"blob": [0.143, 0.0, -0.2, 0.005, 0.014, 0.16], "detail": [3, 5], "color": "top", "shade": 0.88},
+        {"blob": [0.144, 0.085, -0.2, 0.004, 0.042, 0.036], "detail": [3, 5], "color": "top", "shade": 0.9},
         {"oval": [0.045, 0.072, 0.078, -0.012, 0.104, 0.104], "color": "top"}
       ],
       "upper": [
@@ -12625,7 +13189,9 @@ window.addEventListener('DOMContentLoaded', () => {
     } },
     { "id": "trousers", "name": "Trousers", "parts": {
       "hips": [
-        {"blob": [0, 0, 0, 0.146, 0.2, 0.136], "detail": [4, 8], "color": "bottom"}
+        {"blob": [0, 0, 0, 0.146, 0.2, 0.136], "detail": [4, 8], "color": "bottom"},
+        {"oval": [0.065, 0.188, 0.14, 0.025, 0.206, 0.152], "color": "#3b2a1d"},
+        {"blob": [0.15, 0.0, 0.045, 0.008, 0.028, 0.02], "detail": [3, 5], "color": "#b39a5c", "mat": "plain"}
       ],
       "thigh": [
         {"blob": [0, 0, 0, 0.104, 0.104, 0.104], "detail": [4, 8], "color": "bottom"},
@@ -12648,12 +13214,14 @@ window.addEventListener('DOMContentLoaded', () => {
     } },
     { "id": "boots", "name": "Wellingtons", "parts": {
       "shin": [
+        {"tube": [-0.13, 0.087, -0.16, 0.087], "color": "feet", "mat": "plain", "shade": 0.75},
         {"tube": [-0.15, 0.083, -0.39, 0.074], "color": "feet", "mat": "plain"},
         {"tube": [-0.14, 0.089, -0.215, 0.088], "color": "feet", "mat": "plain"}
       ],
       "foot": [
         {"blob": [0, 0, 0, 0.076, 0.074, 0.06], "color": "feet", "mat": "plain"},
-        {"blob": [0.055, 0, -0.03, 0.13, 0.064, 0.05], "color": "feet", "mat": "plain"}
+        {"blob": [0.055, 0, -0.03, 0.13, 0.064, 0.05], "color": "feet", "mat": "plain"},
+        {"blob": [0.055, 0, -0.064, 0.134, 0.068, 0.012], "color": "feet", "mat": "plain", "shade": 0.4}
       ]
     } },
     { "id": "sandals", "name": "Sandals", "parts": {
@@ -13599,7 +14167,7 @@ window.addEventListener('DOMContentLoaded', () => {
   "dry": 0.25,
   "mesh": {
     "builder": "heath",
-    "color": { "temperate": [0.3, 0.33, 0.17], "arctic": [0.26, 0.31, 0.15], "tropical": [0.3, 0.33, 0.17] },
+    "color": { "temperate": [0.3, 0.33, 0.17], "arctic": [0.26, 0.31, 0.15], "tropical": [0.24, 0.4, 0.15] },
     "tops": { "temperate": [0.6, 0.32, 0.62], "arctic": [0.42, 0.26, 0.16], "tropical": [0.95, 0.8, 0.2] },
     "shade": { "by": "ground", "top": 0.3, "up": 0.3, "root": [0.58, 0.47] }
   }
@@ -14575,6 +15143,101 @@ window.addEventListener('DOMContentLoaded', () => {
         0.44,
         0.56
       ]
+    }
+  }
+}
+</script>
+<script type="application/json" data-builtin="bird">
+{
+  "id": "american_flamingo",
+  "name": "American flamingo",
+  "description": "Tropical islands only. Flocks wade in warm, shallow salt water (lagoons and the flats off a beach), standing on long legs in water up to their knees, many on one leg, the rest walking slowly with their heads down and upside-down in the water, filter-feeding through a bill bent down in the middle. Pink, with black flight feathers that show in the air; they fly in lines with the neck stretched out ahead and the legs trailing behind, honking like geese.",
+  "scale": [0.92, 1.08],
+  "climates": ["tropical"],
+  "habitat": { "sea": 14 },
+  "night": "roost",
+  "down": 0.85,
+  "wade": { "depth": [0.1, 0.55], "kinds": ["sea"] },
+  "flight": { "speed": 13, "flapHz": 2.6, "stroke": 0.5, "flapTime": [4, 9], "glideTime": [0.4, 1.2], "turn": 0.6, "alt": [10, 30], "radius": [30, 80], "soar": false, "followBoats": false, "clear": 6 },
+  "lands": { "water": 0, "ground": 0, "prop": 0, "tree": 0, "boat": 0, "wade": 1 },
+  "landEvery": 25,
+  "stay": [120, 480],
+  "shy": 13,
+  "space": 0.8,
+  "wary": 9,
+  "flocking": { "every": 30, "size": [4, 12], "time": [20, 50], "formation": { "line": 3, "v": 2, "cluster": 1 }, "spacing": 2.2, "landTogether": 0.95 },
+  "voice": { "pitch": [480, 640], "notes": [1, 3], "dur": [0.13, 0.22], "gap": 0.1, "rise": 1.1, "fall": 0.85, "wave": "sawtooth", "band": { "freq": 900, "q": 1.4 }, "highpass": 250, "every": [6, 22], "volume": 0.06, "range": 120 },
+  "look": {
+    "body": [0.22, 0.1, 0.11],
+    "head": 0.034,
+    "bill": { "len": 0.12, "base": 0.021, "hook": 0.004, "taper": 0.6, "bend": 0.95, "kink": 0.42 },
+    "fly": { "neck": [[0.2, 0.0, 0.032], [0.32, 0.005, 0.027], [0.45, 0.01, 0.025]], "head": [0.54, 0.012], "bill": -0.25 },
+    "rest": { "neck": [[0.17, 0.07, 0.034], [0.22, 0.17, 0.028], [0.19, 0.29, 0.026], [0.13, 0.4, 0.025], [0.13, 0.5, 0.025], [0.18, 0.58, 0.025]], "head": [0.22, 0.6], "bill": -0.35 },
+    "feed": { "neck": [[0.18, 0.04, 0.034], [0.27, 0.0, 0.028], [0.33, -0.12, 0.026], [0.35, -0.26, 0.025], [0.34, -0.38, 0.025]], "head": [0.32, -0.46], "bill": -2.3 },
+    "tail": { "len": 0.08, "root": 0.04, "end": 0.05 },
+    "wing": { "span": 0.7, "chord": 1, "tipFrom": 0.3 },
+    "legs": { "len": 0.8, "feet": 1, "trail": true, "oneLeg": 0.35 },
+    "colors": {
+      "mantle": [0.97, 0.6, 0.64],
+      "body": [0.98, 0.66, 0.69],
+      "head": [0.98, 0.58, 0.63],
+      "neck": [0.98, 0.6, 0.65],
+      "eye": [0.95, 0.85, 0.3],
+      "bill": [0.96, 0.86, 0.82],
+      "billTip": [0.06, 0.06, 0.06],
+      "legs": [0.93, 0.48, 0.54],
+      "tail": [0.95, 0.52, 0.58],
+      "wingTop": [0.96, 0.38, 0.47],
+      "wingEdge": [0.07, 0.07, 0.08],
+      "wingTip": [0.06, 0.06, 0.07],
+      "wingUnder": [0.95, 0.42, 0.5],
+      "wingUnderTip": [0.07, 0.07, 0.08]
+    }
+  }
+}
+</script>
+<script type="application/json" data-builtin="bird">
+{
+  "id": "gentoo_penguin",
+  "name": "Gentoo penguin",
+  "description": "Arctic islands only, and only one colony: on the smallest islet the island has, standing about the shore in a crowd, waddling between rocks, hopping down into the sea to swim fast just off the islet, porpoising clear of the water and diving, then coming back out. They can't fly. Black back and head with a white band over the eye, white front, orange bill and feet; a loud braying call. (In reality they live in the far south; here they've found their way north.)",
+  "scale": [0.9, 1.1],
+  "climates": ["arctic"],
+  "habitat": {},
+  "colony": 16,
+  "colonySite": "islet",
+  "night": "active",
+  "flightless": { "walk": 0.35, "swim": 2.4, "ashore": [40, 150], "afloat": [30, 110], "leap": 6, "leapTime": 0.7, "leapHeight": 0.5, "dive": 14, "under": [4, 12], "depth": 1.2 },
+  "lands": { "water": 0, "ground": 0, "prop": 0, "tree": 0, "boat": 0 },
+  "shy": 4,
+  "space": 0.5,
+  "floatZ": 0.01,
+  "voice": { "pitch": [380, 520], "notes": [3, 6], "dur": [0.07, 0.13], "gap": 0.04, "rise": 1.25, "fall": 0.8, "wave": "sawtooth", "rasp": { "rate": [25, 40], "depth": 60 }, "band": { "freq": 1100, "q": 1.2 }, "highpass": 300, "every": [8, 30], "volume": 0.06, "range": 90 },
+  "look": {
+    "body": [0.24, 0.11, 0.12],
+    "mantle": 3,
+    "upright": 1.4,
+    "head": 0.062,
+    "bill": { "len": 0.055, "base": 0.014, "hook": 0.005, "taper": 0.6 },
+    "rest": { "neck": [[0.05, 0.2, 0.085]], "head": [0.07, 0.29], "bill": -0.12 },
+    "swim": { "neck": [[0.22, 0.03, 0.08]], "head": [0.29, 0.05], "bill": -0.08 },
+    "tail": { "len": 0.05, "root": 0.03, "end": 0.035 },
+    "wing": { "span": 0.24, "chord": 0.6, "tipFrom": 0.5, "flipper": true },
+    "legs": { "len": 0.27, "feet": 1.3 },
+    "colors": {
+      "mantle": [0.08, 0.09, 0.11],
+      "body": [0.95, 0.95, 0.93],
+      "head": [0.08, 0.09, 0.11],
+      "neck": [0.08, 0.09, 0.11],
+      "patch": [0.95, 0.95, 0.93],
+      "eye": [0.05, 0.05, 0.05],
+      "bill": [0.96, 0.36, 0.1],
+      "billTip": [0.2, 0.1, 0.08],
+      "legs": [0.98, 0.5, 0.15],
+      "tail": [0.08, 0.09, 0.11],
+      "wingTop": [0.08, 0.09, 0.11],
+      "wingTip": [0.08, 0.09, 0.11],
+      "wingUnder": [0.95, 0.95, 0.93]
     }
   }
 }
@@ -40986,6 +41649,2371 @@ window.addEventListener('DOMContentLoaded', () => {
     "stamina": 0,
     "jumps": 0,
     "runs": 0
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "atlantic_wolffish",
+  "name": "Atlantic wolffish",
+  "scientific": "Anarhichas lupus",
+  "description": "Long, blunt-headed blue-grey fish with dark bands and big crushing canine teeth for crabs, whelks and sea urchins. Lurks among rocks on cold sea floors and bites hard when landed.",
+  "handling": {
+    "lip": false,
+    "hold": "cradle"
+  },
+  "size": {
+    "length_cm": {
+      "min": 50,
+      "typical": 90,
+      "max": 150,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.009,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.75,
+      0.95,
+      1,
+      0.95,
+      0.82,
+      0.65,
+      0.45,
+      0.28
+    ],
+    "height": 0.17,
+    "width": 0.13,
+    "flex": 1.1,
+    "swim": "anguilliform",
+    "head": {
+      "length": 0.2,
+      "snout": 0.8,
+      "mouth": 0.6,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "rounded",
+      "size": 0.1
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.2,
+          "length": 0.74,
+          "height": 0.06,
+          "spiny": true
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.52,
+        "length": 0.42,
+        "height": 0.045
+      },
+      "pectoral": 0.13,
+      "pelvic": 0
+    },
+    "colors": {
+      "back": "#4a5560",
+      "flank": "#6a7480",
+      "belly": "#c8ccd0",
+      "fins": "#4a5460",
+      "eye": "#1a1a14",
+      "mouth": "#d8c8b8"
+    },
+    "pattern": [
+      {
+        "type": "bars",
+        "color": "#2e3640",
+        "count": 10,
+        "width": 0.35,
+        "wavy": 1,
+        "region": "upper_flank",
+        "alpha": 0.7
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate",
+      "arctic"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 15,
+      "preferred": 100,
+      "max": 600
+    },
+    "temperature_c": {
+      "min": -1.5,
+      "optimal": 3,
+      "max": 11
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.2
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "rocks": 1,
+      "open": 0.3
+    }
+  },
+  "population": {
+    "density": 0.08,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 60
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 3,
+    "turn_rate": 1.5,
+    "station_holding": 0.6,
+    "ambush": 0.3,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.05,
+      "bottom": 0.95
+    },
+    "wariness": 0.3,
+    "spook_m": 3,
+    "recover_s": 40,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "crayfish": 0.4,
+      "snails": 0.4,
+      "shrimp": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.05,
+      "bottom": 0.95
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.6,
+    "stamina": 0.5,
+    "jumps": 0,
+    "runs": 0.3,
+    "teeth": 0.4
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "greenland_shark",
+  "name": "Greenland shark",
+  "scientific": "Somniosus microcephalus",
+  "description": "Huge, slow, grey-brown sleeper shark of the cold deep, often with a parasite trailing from each pale eye. The longest-lived vertebrate known, it may pass 250 years. Eats fish, carrion and the odd seal.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 240,
+      "typical": 400,
+      "max": 640,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.005,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.4,
+      0.75,
+      0.95,
+      1,
+      0.95,
+      0.78,
+      0.5,
+      0.28
+    ],
+    "height": 0.16,
+    "width": 0.15,
+    "flex": 0.6,
+    "head": {
+      "length": 0.2,
+      "snout": 0.65,
+      "mouth": 0.5,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "heterocercal",
+      "size": 0.17
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.45,
+          "length": 0.06,
+          "height": 0.04,
+          "spiny": false
+        },
+        {
+          "at": 0.62,
+          "length": 0.06,
+          "height": 0.04,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.8,
+        "length": 0.01,
+        "height": 0.004
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.05
+    },
+    "colors": {
+      "back": "#3e3c38",
+      "flank": "#4e4b46",
+      "belly": "#5e5a54",
+      "fins": "#3a3834",
+      "eye": "#a8b8a0",
+      "mouth": "#b8aaa0"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#2c2a26",
+        "amount": 0.3,
+        "scale": 5,
+        "region": "all",
+        "alpha": 0.4
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "arctic",
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 50,
+      "preferred": 600,
+      "max": 2200
+    },
+    "temperature_c": {
+      "min": -1.8,
+      "optimal": 2,
+      "max": 10
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 1
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1,
+      "rocks": 0.2
+    }
+  },
+  "population": {
+    "density": 0.006,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 4000
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.1,
+    "burst_bl_s": 0.7,
+    "turn_rate": 0.6,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.03,
+      "mid": 0.37,
+      "bottom": 0.6
+    },
+    "wariness": 0.1,
+    "spook_m": 4,
+    "recover_s": 120,
+    "curiosity": 0.7,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.7,
+      "mammals": 0.2,
+      "crayfish": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.03,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "meals_per_day": 0.5
+  },
+  "fight": {
+    "strength": 0.9,
+    "stamina": 0.4,
+    "jumps": 0,
+    "runs": 0.25,
+    "teeth": 0.8
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "opah",
+  "name": "Opah",
+  "scientific": "Lampris guttatus",
+  "description": "Round, plate-shaped moonfish: steel-blue back, rosy flanks with white spots and bright crimson fins. The first fish found to be warm-blooded all over, it hunts squid in the cold twilight water by flapping its long pectoral fins.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 70,
+      "typical": 100,
+      "max": 200,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.03,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.45,
+      0.8,
+      0.97,
+      1,
+      0.92,
+      0.72,
+      0.42,
+      0.18
+    ],
+    "height": 0.55,
+    "width": 0.14,
+    "flex": 0.5,
+    "swim": "thunniform",
+    "head": {
+      "length": 0.22,
+      "snout": 0.55,
+      "mouth": 0.35,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.18,
+      "fork": 0.5
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.3,
+          "height": 0.28,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.62,
+        "length": 0.25,
+        "height": 0.05
+      },
+      "pectoral": 0.16,
+      "pelvic": 0.12
+    },
+    "colors": {
+      "back": "#3a4a78",
+      "flank": "#c07888",
+      "belly": "#d8a8b0",
+      "fins": "#d8202a",
+      "eye": "#d8b040",
+      "mouth": "#d82a30"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#f0f0f0",
+        "density": 0.35,
+        "size": 1,
+        "region": "all",
+        "alpha": 0.85
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate",
+      "tropical"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 30,
+      "preferred": 150,
+      "max": 500
+    },
+    "temperature_c": {
+      "min": 6,
+      "optimal": 14,
+      "max": 26
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.01,
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 1500
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 4,
+    "turn_rate": 1.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.05,
+      "mid": 0.85,
+      "bottom": 0.1
+    },
+    "wariness": 0.4,
+    "spook_m": 8,
+    "recover_s": 60,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.6,
+      "shrimp": 0.4
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.05,
+      "mid": 0.9,
+      "bottom": 0.05
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.8,
+    "stamina": 0.8,
+    "jumps": 0.05,
+    "runs": 0.8,
+    "teeth": 0
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "ocean_sunfish",
+  "name": "Ocean sunfish",
+  "scientific": "Mola mola",
+  "description": "The heaviest bony fish: a tall, grey disc that ends just behind its towering dorsal and anal fins. Dives deep after jellyfish, then lies flat at the surface to warm up, where gulls pick off its parasites. A tiny mouth: it seldom takes a bait.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 100,
+      "typical": 180,
+      "max": 330,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.045,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.6,
+      0.9,
+      1,
+      1,
+      0.98,
+      0.9,
+      0.8,
+      0.68
+    ],
+    "height": 0.62,
+    "width": 0.14,
+    "flex": 0.15,
+    "head": {
+      "length": 0.25,
+      "snout": 0.75,
+      "mouth": 0.15,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "rounded",
+      "size": 0.08
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.62,
+          "length": 0.1,
+          "height": 0.55,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.62,
+        "length": 0.1,
+        "height": 0.5
+      },
+      "pectoral": 0.07,
+      "pelvic": 0
+    },
+    "colors": {
+      "back": "#6a7078",
+      "flank": "#a8b0b4",
+      "belly": "#e0e2e0",
+      "fins": "#6a7076",
+      "eye": "#101010",
+      "mouth": "#c8c0b8"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#d8dcdc",
+        "amount": 0.3,
+        "scale": 5,
+        "region": "all",
+        "alpha": 0.4
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate",
+      "tropical"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 5,
+      "preferred": 60,
+      "max": 600
+    },
+    "temperature_c": {
+      "min": 10,
+      "optimal": 19,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.5
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.006,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 3000
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 1.2,
+    "turn_rate": 0.8,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.35,
+      "mid": 0.6,
+      "bottom": 0.05
+    },
+    "wariness": 0.1,
+    "spook_m": 3,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 0.6,
+      "fish": 0.2,
+      "shrimp": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.3,
+      "mid": 0.8,
+      "bottom": 0.05
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.4,
+    "jumps": 0.1,
+    "runs": 0.3,
+    "teeth": 0.2
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "patagonian_toothfish",
+  "name": "Patagonian toothfish",
+  "scientific": "Dissostichus eleginoides",
+  "description": "Big, grey-brown, heavy-headed cod icefish of the cold continental slopes, sold as Chilean sea bass. Slow-growing and long-lived, it hunts fish and squid near the bottom far below the light.",
+  "handling": {
+    "lip": false,
+    "hold": "cradle"
+  },
+  "size": {
+    "length_cm": {
+      "min": 70,
+      "typical": 110,
+      "max": 215,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.011,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.85,
+      1,
+      0.97,
+      0.86,
+      0.66,
+      0.44,
+      0.28
+    ],
+    "height": 0.2,
+    "width": 0.14,
+    "flex": 0.9,
+    "head": {
+      "length": 0.28,
+      "snout": 0.55,
+      "mouth": 0.75,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "square",
+      "size": 0.14
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.14,
+          "height": 0.07,
+          "spiny": true
+        },
+        {
+          "at": 0.48,
+          "length": 0.3,
+          "height": 0.06,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.52,
+        "length": 0.3,
+        "height": 0.05
+      },
+      "pectoral": 0.12,
+      "pelvic": 0.06
+    },
+    "colors": {
+      "back": "#4a4844",
+      "flank": "#6a665e",
+      "belly": "#a8a49a",
+      "fins": "#3a3834",
+      "eye": "#1a1a14",
+      "mouth": "#d8d0c8"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#3a3630",
+        "amount": 0.35,
+        "scale": 5,
+        "region": "upper",
+        "alpha": 0.5
+      },
+      {
+        "type": "lateral_line",
+        "color": "#8a867c",
+        "v": 0.15,
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "arctic",
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 70,
+      "preferred": 800,
+      "max": 2500
+    },
+    "temperature_c": {
+      "min": -1,
+      "optimal": 3,
+      "max": 9
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 1
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 0.8,
+      "rocks": 0.6
+    }
+  },
+  "population": {
+    "density": 0.02,
+    "school": {
+      "min": 1,
+      "max": 3
+    },
+    "home_range_m": 500
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 3,
+    "turn_rate": 1.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "wariness": 0.3,
+    "spook_m": 5,
+    "recover_s": 60,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.7,
+      "shrimp": 0.2,
+      "crayfish": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.3,
+      "bottom": 0.7
+    },
+    "meals_per_day": 1
+  },
+  "fight": {
+    "strength": 0.7,
+    "stamina": 0.5,
+    "jumps": 0,
+    "runs": 0.4,
+    "teeth": 0.3
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "sablefish",
+  "name": "Sablefish",
+  "scientific": "Anoplopoma fimbria",
+  "description": "Slim, soft, slate-black fish of the cold North Pacific slope, also called black cod though it isn't one. Rich, buttery flesh; it roams the muddy bottom hundreds of metres down in loose groups.",
+  "handling": {
+    "lip": false,
+    "hold": "cradle"
+  },
+  "size": {
+    "length_cm": {
+      "min": 40,
+      "typical": 60,
+      "max": 110,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.011,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.5,
+      0.82,
+      0.97,
+      1,
+      0.9,
+      0.7,
+      0.45,
+      0.25
+    ],
+    "height": 0.18,
+    "width": 0.12,
+    "flex": 1,
+    "head": {
+      "length": 0.24,
+      "snout": 0.55,
+      "mouth": 0.55,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.17,
+      "fork": 0.35
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.33,
+          "length": 0.12,
+          "height": 0.07,
+          "spiny": true
+        },
+        {
+          "at": 0.6,
+          "length": 0.1,
+          "height": 0.06,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.6,
+        "length": 0.1,
+        "height": 0.05
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.06
+    },
+    "colors": {
+      "back": "#2a2e30",
+      "flank": "#4a5054",
+      "belly": "#b8bcbc",
+      "fins": "#2a2e32",
+      "eye": "#101010",
+      "mouth": "#c8c0b8"
+    },
+    "pattern": [
+      {
+        "type": "lateral_line",
+        "color": "#8a9094",
+        "v": 0.2,
+        "alpha": 0.6
+      },
+      {
+        "type": "mottled",
+        "color": "#1e2224",
+        "amount": 0.25,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.4
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 100,
+      "preferred": 500,
+      "max": 1500
+    },
+    "temperature_c": {
+      "min": 1,
+      "optimal": 5,
+      "max": 12
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 1
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1,
+      "rocks": 0.3
+    }
+  },
+  "population": {
+    "density": 0.08,
+    "school": {
+      "min": 1,
+      "max": 6
+    },
+    "home_range_m": 300
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 4,
+    "turn_rate": 1.8,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "wariness": 0.35,
+    "spook_m": 5,
+    "recover_s": 40,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.5,
+      "shrimp": 0.3,
+      "worms": 0.1,
+      "crayfish": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.5,
+    "jumps": 0,
+    "runs": 0.5,
+    "teeth": 0
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "roundnose_grenadier",
+  "name": "Roundnose grenadier",
+  "scientific": "Coryphaenoides rupestris",
+  "description": "Rattail of the deep slope: a big head with a rounded snout and huge eyes, tapering to a long whip of a tail with no tail fin. Swims head-down in schools over the bottom, picking off shrimp and small fish.",
+  "handling": {
+    "lip": false,
+    "hold": "cradle"
+  },
+  "size": {
+    "length_cm": {
+      "min": 50,
+      "typical": 70,
+      "max": 110,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.004,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.75,
+      1,
+      0.95,
+      0.75,
+      0.5,
+      0.32,
+      0.18,
+      0.08
+    ],
+    "height": 0.16,
+    "width": 0.11,
+    "flex": 1.1,
+    "swim": "anguilliform",
+    "head": {
+      "length": 0.22,
+      "snout": 0.7,
+      "mouth": 0.45,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "pointed",
+      "size": 0.05
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.2,
+          "length": 0.04,
+          "height": 0.1,
+          "spiny": true
+        },
+        {
+          "at": 0.35,
+          "length": 0.6,
+          "height": 0.02,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.3,
+        "length": 0.65,
+        "height": 0.025
+      },
+      "pectoral": 0.09,
+      "pelvic": 0.06
+    },
+    "colors": {
+      "back": "#6a5e54",
+      "flank": "#8a8078",
+      "belly": "#5a5048",
+      "fins": "#4a4038",
+      "eye": "#2a3a40",
+      "mouth": "#3a3030"
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#4a4038",
+        "alpha": 0.4,
+        "region": "all"
+      }
+    ],
+    "barbels": 1
+  },
+  "habitat": {
+    "climates": [
+      "temperate",
+      "arctic"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 180,
+      "preferred": 1000,
+      "max": 2600
+    },
+    "temperature_c": {
+      "min": -1,
+      "optimal": 3.5,
+      "max": 8
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 0.8
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1,
+      "rocks": 0.3
+    }
+  },
+  "population": {
+    "density": 0.15,
+    "school": {
+      "min": 4,
+      "max": 15
+    },
+    "home_range_m": 300
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 2,
+    "turn_rate": 1.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "wariness": 0.2,
+    "spook_m": 4,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "shrimp": 0.6,
+      "fish": 0.3,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.5,
+      "bottom": 0.5
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.25,
+    "stamina": 0.2,
+    "jumps": 0,
+    "runs": 0.15,
+    "teeth": 0
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "orange_roughy",
+  "name": "Orange roughy",
+  "scientific": "Hoplostethus atlanticus",
+  "description": "Deep-bodied, big-headed slimehead, brick-orange all over with a blue-black mouth. Gathers in great schools over seamounts and canyons far down the slope, and can live 150 years.",
+  "handling": {
+    "lip": false,
+    "hold": "cradle"
+  },
+  "size": {
+    "length_cm": {
+      "min": 30,
+      "typical": 40,
+      "max": 75,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.02,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.6,
+      0.9,
+      1,
+      0.98,
+      0.85,
+      0.62,
+      0.38,
+      0.22
+    ],
+    "height": 0.42,
+    "width": 0.12,
+    "flex": 0.8,
+    "head": {
+      "length": 0.32,
+      "snout": 0.75,
+      "mouth": 0.75,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.17,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.4,
+          "length": 0.25,
+          "height": 0.12,
+          "spiny": true
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.62,
+        "length": 0.12,
+        "height": 0.07
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.08
+    },
+    "colors": {
+      "back": "#c84a24",
+      "flank": "#e0703a",
+      "belly": "#f0a070",
+      "fins": "#d85a2a",
+      "eye": "#101010",
+      "mouth": "#3a2a5a"
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#a83a1c",
+        "alpha": 0.5,
+        "region": "all"
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 180,
+      "preferred": 900,
+      "max": 1800
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 5,
+      "max": 10
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "rocks": 0.8,
+      "open": 0.6
+    }
+  },
+  "population": {
+    "density": 0.2,
+    "school": {
+      "min": 4,
+      "max": 12
+    },
+    "home_range_m": 200
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 2,
+    "turn_rate": 1.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.6,
+      "bottom": 0.4
+    },
+    "wariness": 0.2,
+    "spook_m": 4,
+    "recover_s": 30,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "shrimp": 0.6,
+      "fish": 0.3,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.6,
+      "bottom": 0.4
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.35,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.2,
+    "teeth": 0
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "black_scabbardfish",
+  "name": "Black scabbardfish",
+  "scientific": "Aphanopus carbo",
+  "description": "Long, ribbon-like coppery-black fish with huge eyes and a mouth full of fangs. Hangs deep on the slope by day and rises to hunt at night. Caught on long drop lines baited with sardine or squid.",
+  "handling": {
+    "lip": false,
+    "hold": "cradle"
+  },
+  "size": {
+    "length_cm": {
+      "min": 80,
+      "typical": 110,
+      "max": 151,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0019,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.45,
+      0.75,
+      0.9,
+      1,
+      1,
+      0.95,
+      0.8,
+      0.5
+    ],
+    "height": 0.07,
+    "width": 0.035,
+    "flex": 1.1,
+    "swim": "anguilliform",
+    "head": {
+      "length": 0.16,
+      "snout": 0.3,
+      "mouth": 0.75,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.06,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.2,
+          "length": 0.3,
+          "height": 0.03,
+          "spiny": true
+        },
+        {
+          "at": 0.52,
+          "length": 0.36,
+          "height": 0.025,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.62,
+        "length": 0.25,
+        "height": 0.02
+      },
+      "pectoral": 0.05,
+      "pelvic": 0
+    },
+    "colors": {
+      "back": "#1a1614",
+      "flank": "#2e2620",
+      "belly": "#3a2e26",
+      "fins": "#1a1412",
+      "eye": "#c8b060",
+      "mouth": "#2a1a2a"
+    },
+    "pattern": [
+      {
+        "type": "stripe",
+        "color": "#8a5a3a",
+        "v": 0,
+        "width": 0.5,
+        "alpha": 0.35,
+        "region": "all"
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 200,
+      "preferred": 800,
+      "max": 1700
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 6,
+      "max": 15
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 1
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1,
+      "rocks": 0.3
+    }
+  },
+  "population": {
+    "density": 0.08,
+    "school": {
+      "min": 1,
+      "max": 4
+    },
+    "home_range_m": 400
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 4,
+    "turn_rate": 1.6,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.7,
+      "bottom": 0.3
+    },
+    "wariness": 0.3,
+    "spook_m": 5,
+    "recover_s": 40,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.6,
+      "shrimp": 0.4
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.7,
+      "bottom": 0.3
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.45,
+    "stamina": 0.4,
+    "jumps": 0,
+    "runs": 0.4,
+    "teeth": 0.8
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "longnose_lancetfish",
+  "name": "Longnose lancetfish",
+  "scientific": "Alepisaurus ferox",
+  "description": "Long, slim, watery-fleshed predator with a towering sail of a dorsal fin, a pointed snout and dagger teeth. Roams the open ocean from the surface down a kilometre or more and eats almost anything, including its own kind.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 100,
+      "typical": 150,
+      "max": 215,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0011,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.4,
+      0.7,
+      0.88,
+      0.97,
+      1,
+      0.9,
+      0.68,
+      0.38
+    ],
+    "height": 0.09,
+    "width": 0.06,
+    "flex": 1.1,
+    "head": {
+      "length": 0.16,
+      "snout": 0.25,
+      "mouth": 0.8,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.12,
+      "fork": 0.5
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.12,
+          "length": 0.5,
+          "height": 0.2,
+          "spiny": false
+        }
+      ],
+      "adipose": true,
+      "anal": {
+        "at": 0.72,
+        "length": 0.08,
+        "height": 0.04
+      },
+      "pectoral": 0.07,
+      "pelvic": 0.04
+    },
+    "colors": {
+      "back": "#3a4048",
+      "flank": "#8a929a",
+      "belly": "#b8bcc0",
+      "fins": "#1e2228",
+      "eye": "#101010",
+      "mouth": "#3a3030"
+    },
+    "pattern": []
+  },
+  "habitat": {
+    "climates": [
+      "tropical",
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 10,
+      "preferred": 400,
+      "max": 1800
+    },
+    "temperature_c": {
+      "min": 3,
+      "optimal": 12,
+      "max": 27
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.01,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 1500
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 4,
+    "turn_rate": 1.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.8,
+      "bottom": 0.1
+    },
+    "wariness": 0.2,
+    "spook_m": 6,
+    "recover_s": 40,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.8,
+      "shrimp": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.8,
+      "bottom": 0.1
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.4,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.3,
+    "teeth": 0.8
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "oarfish",
+  "name": "Oarfish",
+  "scientific": "Regalecus glesne",
+  "description": "The longest bony fish: a silver ribbon several metres long with a crimson crest and a red fin the whole length of its back. Hangs upright in the twilight water sieving krill, and is almost never seen alive at the surface.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 300,
+      "typical": 450,
+      "max": 800,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.00055,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.7,
+      0.95,
+      1,
+      0.95,
+      0.85,
+      0.7,
+      0.5,
+      0.25
+    ],
+    "height": 0.085,
+    "width": 0.02,
+    "flex": 1.2,
+    "swim": "anguilliform",
+    "head": {
+      "length": 0.05,
+      "snout": 0.6,
+      "mouth": 0.3,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "pointed",
+      "size": 0.05
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.01,
+          "length": 0.05,
+          "height": 0.22,
+          "spiny": false
+        },
+        {
+          "at": 0.04,
+          "length": 0.92,
+          "height": 0.07,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.8,
+        "length": 0.01,
+        "height": 0.004
+      },
+      "pectoral": 0.02,
+      "pelvic": 0.14
+    },
+    "colors": {
+      "back": "#9aa4b0",
+      "flank": "#d0d8e0",
+      "belly": "#e8ecf0",
+      "fins": "#d8303a",
+      "eye": "#101010",
+      "mouth": "#c8c0c0"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#3a4250",
+        "density": 0.25,
+        "size": 1,
+        "region": "flank",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "tropical",
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 20,
+      "preferred": 250,
+      "max": 1000
+    },
+    "temperature_c": {
+      "min": 5,
+      "optimal": 16,
+      "max": 28
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.003,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 2000
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.15,
+    "burst_bl_s": 1.5,
+    "turn_rate": 0.8,
+    "station_holding": 0.6,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.85,
+      "bottom": 0.05
+    },
+    "wariness": 0.3,
+    "spook_m": 6,
+    "recover_s": 60,
+    "curiosity": 0.3,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "shrimp": 0.7,
+      "plankton": 0.2,
+      "fish": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.05,
+      "mid": 0.9,
+      "bottom": 0.05
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.4,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.2,
+    "teeth": 0
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "monkfish",
+  "name": "Monkfish",
+  "scientific": "Lophius americanus",
+  "description": "Goosefish: a huge, flat, fringed head that is nearly all mouth, on a tapering brown body. Lies half-buried on the bottom and waves the lure on its first dorsal spine, then swallows whatever comes close, even sea birds.",
+  "handling": {
+    "lip": false,
+    "hold": "cradle"
+  },
+  "size": {
+    "length_cm": {
+      "min": 40,
+      "typical": 70,
+      "max": 120,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.017,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      1,
+      0.97,
+      0.72,
+      0.45,
+      0.32,
+      0.24,
+      0.18,
+      0.13
+    ],
+    "height": 0.16,
+    "width": 0.5,
+    "flex": 0.9,
+    "head": {
+      "length": 0.42,
+      "snout": 1,
+      "mouth": 1,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "square",
+      "size": 0.14
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.12,
+          "length": 0.02,
+          "height": 0.18,
+          "spiny": true
+        },
+        {
+          "at": 0.3,
+          "length": 0.05,
+          "height": 0.05,
+          "spiny": true
+        },
+        {
+          "at": 0.62,
+          "length": 0.12,
+          "height": 0.05,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.66,
+        "length": 0.1,
+        "height": 0.04
+      },
+      "pectoral": 0.2,
+      "pelvic": 0.08
+    },
+    "colors": {
+      "back": "#5a4632",
+      "flank": "#6e5840",
+      "belly": "#e8e0d0",
+      "fins": "#4a3a2a",
+      "eye": "#2a2a1a",
+      "mouth": "#e8d8c8"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#3a2c1e",
+        "amount": 0.5,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.7
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 5,
+      "preferred": 100,
+      "max": 800
+    },
+    "temperature_c": {
+      "min": 0,
+      "optimal": 8,
+      "max": 21
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 1
+    },
+    "turbidity_max": 0.5,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 0.8,
+      "rocks": 0.5,
+      "weeds": 0.4
+    }
+  },
+  "population": {
+    "density": 0.08,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 40
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.1,
+    "burst_bl_s": 3,
+    "turn_rate": 1.2,
+    "station_holding": 0.9,
+    "ambush": 1,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0,
+      "bottom": 1
+    },
+    "wariness": 0.1,
+    "spook_m": 2,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.9,
+      "crayfish": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.1,
+      "bottom": 0.9
+    },
+    "meals_per_day": 1
+  },
+  "fight": {
+    "strength": 0.45,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.2,
+    "teeth": 0.5
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "acadian_redfish",
+  "name": "Acadian redfish",
+  "scientific": "Sebastes fasciatus",
+  "description": "Bright red, big-eyed rockfish of cold, deep water, also called ocean perch. Schools over rocky bottom and the slope, grows very slowly and bears live young.",
+  "handling": {
+    "lip": false,
+    "hold": "hand"
+  },
+  "size": {
+    "length_cm": {
+      "min": 18,
+      "typical": 28,
+      "max": 45,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.014,
+      "b": 3.05
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.55,
+      0.88,
+      1,
+      1,
+      0.9,
+      0.68,
+      0.42,
+      0.28
+    ],
+    "height": 0.3,
+    "width": 0.13,
+    "flex": 1,
+    "head": {
+      "length": 0.3,
+      "snout": 0.45,
+      "mouth": 0.7,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "emarginate",
+      "size": 0.15,
+      "fork": 0.2
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.24,
+          "height": 0.12,
+          "spiny": true
+        },
+        {
+          "at": 0.55,
+          "length": 0.12,
+          "height": 0.08,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.68,
+        "length": 0.08,
+        "height": 0.08
+      },
+      "pectoral": 0.13,
+      "pelvic": 0.08
+    },
+    "colors": {
+      "back": "#b8302a",
+      "flank": "#e05a3a",
+      "belly": "#f0a080",
+      "fins": "#d84a30",
+      "eye": "#101010",
+      "mouth": "#e07050"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#8a2018",
+        "amount": 0.25,
+        "scale": 6,
+        "region": "upper",
+        "alpha": 0.5
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate",
+      "arctic"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 50,
+      "preferred": 250,
+      "max": 600
+    },
+    "temperature_c": {
+      "min": 1,
+      "optimal": 5,
+      "max": 12
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "rocks": 0.8,
+      "open": 0.6
+    }
+  },
+  "population": {
+    "density": 0.4,
+    "school": {
+      "min": 3,
+      "max": 12
+    },
+    "home_range_m": 80
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.5,
+    "burst_bl_s": 4,
+    "turn_rate": 2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "wariness": 0.3,
+    "spook_m": 4,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "shrimp": 0.6,
+      "fish": 0.3,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.5,
+      "bottom": 0.5
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.3,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.3,
+    "teeth": 0
+  }
+}
+</script>
+<script type="application/json" data-builtin="fish">
+{
+  "schema": "embercrown-fish/1",
+  "id": "sloanes_viperfish",
+  "name": "Sloane's viperfish",
+  "scientific": "Chauliodus sloani",
+  "description": "Small, slender black dragon of the deep with fangs too long to close its mouth over and rows of blue lights along its belly. Rises toward the surface at night to hunt.",
+  "handling": {
+    "lip": false,
+    "hold": "hand"
+  },
+  "size": {
+    "length_cm": {
+      "min": 15,
+      "typical": 22,
+      "max": 30,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.003,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.6,
+      0.85,
+      0.98,
+      1,
+      0.9,
+      0.72,
+      0.5,
+      0.3
+    ],
+    "height": 0.12,
+    "width": 0.06,
+    "flex": 1.1,
+    "head": {
+      "length": 0.18,
+      "snout": 0.3,
+      "mouth": 1,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.1,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.25,
+          "length": 0.04,
+          "height": 0.08,
+          "spiny": false
+        }
+      ],
+      "adipose": true,
+      "anal": {
+        "at": 0.85,
+        "length": 0.05,
+        "height": 0.03
+      },
+      "pectoral": 0.05,
+      "pelvic": 0.05
+    },
+    "colors": {
+      "back": "#1a1e24",
+      "flank": "#2e3a44",
+      "belly": "#3a4652",
+      "fins": "#1a1e22",
+      "eye": "#101010",
+      "mouth": "#1a1416"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#6ac8e8",
+        "density": 0.25,
+        "size": 1,
+        "region": "lower",
+        "alpha": 0.9
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate",
+      "tropical"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 50,
+      "preferred": 600,
+      "max": 2500
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 7,
+      "max": 24
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 1
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.08,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 200
+  },
+  "activity": {
+    "pattern": "nocturnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 4,
+    "turn_rate": 1.8,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.95,
+      "bottom": 0.05
+    },
+    "wariness": 0.2,
+    "spook_m": 3,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.6,
+      "shrimp": 0.4
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.95,
+      "bottom": 0.05
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.08,
+    "stamina": 0.1,
+    "jumps": 0,
+    "runs": 0.1,
+    "teeth": 0.6
   }
 }
 </script>

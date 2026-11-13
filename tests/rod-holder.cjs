@@ -50,12 +50,14 @@ step(0.5, 10); A(sounds.filter(s => s[0] === 'bell').length >= 3, 'bell keeps ri
 A(E.fishingStatus().alert && /Fish on/.test(E.fishingStatus().title), 'status: fish on');
 // walk back and pick it up: straight into the fight, notice gone
 E.P.x = 0.2; A(E.holderNear(), 'back at it'); E.based = false; E.action();
+A(Ang.holder === H && H.reachT === 0, 'reach before contact'); E.action(); step(0.15);
+A(Ang.holder === H && E.fights === 0, 'still reaching, repeat input did not take rod'); step(0.2);
 A(!Ang.holder && E.fights === 1 && Ang.phase === 'fight' && !E.based && E.rodInHand(), 'picked up into the fight'); step(0.016); A(els[0].hidden, 'chip cleared');
 // again, and leave it: after HOLD_S the fish throws the hook, the notice stays until you come back
 Ang.phase = 'water'; Ang.fish = null; Ang.lure = fresh(); key('KeyH'); E.P.x = -30; E.fishTake(fish()); step(0.016);
 for (let t = 0; t < 12 && !Ang.holder.on; t += 0.1) E.biteStep(0.1, false, false); step(0.5, 95);
 A(E.lost.at(-1) === 'thrown' && Ang.phase === 'water' && /threw the hook/.test(els[0].textContent) && !els[0].hidden, 'thrown after a while: ' + els[0].textContent);
-E.P.x = 0; key('KeyH'); step(0.016); A(!Ang.holder && Ang.phase === 'water' && /line still out/.test(said.at(-1)) && els[0].hidden, 'H at the holder picks it up: ' + said.at(-1));
+E.P.x = 0; key('KeyH'); step(0.1); E.P.x = -30; step(0.3); A(Ang.holder && Ang.holder.reachT === undefined, 'walking away cancels reach'); E.P.x = 0; key('KeyH'); step(0.35); A(!Ang.holder && Ang.phase === 'water' && /line still out/.test(said.at(-1)) && els[0].hidden, 'H at the holder picks it up: ' + said.at(-1));
 // a J hook left alone mostly drops it: random 0.99 fails the 12% self-set
 Ang.S.hookKind = 'J'; key('KeyH'); E.P.x = -20; Math.random = () => 0; E.fishTake(fish()); Math.random = () => 0.99; step(0.016);
 for (let t = 0; t < 30 && Ang.phase === 'bite'; t += 0.1) E.biteStep(0.1, false, false); step(0.016);
@@ -79,7 +81,7 @@ E.boat = null; E.P.x = 24; step(0.016); A(Ang.out && Ang.holder === B && !E.rodI
 Math.random = () => 0; E.fishTake(fish()); step(0.016); A(/Bite at the rod holder/.test(els[0].textContent), 'it still rings from the boat: ' + els[0].textContent); Math.random = r0;
 b.x = 26; E.holderHand(B); A(Math.abs(B.x - (26 - B.ly)) < 1e-9, 'and drifts with it');
 E.P.x = 25.5; E.P.y = 0; A(E.holderNear(), 'swum back to it'); E.nearBoat = () => b; E.based = false; E.action(); A(E.based && Ang.holder === B && E.contextKeys()[0][0] === 'H', 'beside the boat, Use boards it (H picks the rod up)');
-key('KeyH'); A(!Ang.holder && Ang.out, 'H picks it up'); E.nearBoat = () => null;
+key('KeyH'); step(0.35); A(!Ang.holder && Ang.out, 'H picks it up'); E.nearBoat = () => null;
 E.boat = b; E.boatMode = 'drive'; Ang.holder = null; Ang.phase = 'water'; key('KeyH'); A(!Ang.holder && /helm/.test(said.at(-1)), 'not from the helm');
 map.forEach(f => f({ beginPath() {}, arc() {}, fill() {}, stroke() {} }, (x, y) => [x, y]));
 console.log('ok:', said.slice(-4).join(' | '));

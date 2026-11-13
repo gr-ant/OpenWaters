@@ -1,0 +1,153 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "longnose_lancetfish",
+  "name": "Longnose lancetfish",
+  "scientific": "Alepisaurus ferox",
+  "description": "Long, slim, watery-fleshed predator with a towering sail of a dorsal fin, a pointed snout and dagger teeth. Roams the open ocean from the surface down a kilometre or more and eats almost anything, including its own kind.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 100,
+      "typical": 150,
+      "max": 215,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.0011,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.4,
+      0.7,
+      0.88,
+      0.97,
+      1,
+      0.9,
+      0.68,
+      0.38
+    ],
+    "height": 0.09,
+    "width": 0.06,
+    "flex": 1.1,
+    "head": {
+      "length": 0.16,
+      "snout": 0.25,
+      "mouth": 0.8,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.12,
+      "fork": 0.5
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.12,
+          "length": 0.5,
+          "height": 0.2,
+          "spiny": false
+        }
+      ],
+      "adipose": true,
+      "anal": {
+        "at": 0.72,
+        "length": 0.08,
+        "height": 0.04
+      },
+      "pectoral": 0.07,
+      "pelvic": 0.04
+    },
+    "colors": {
+      "back": "#3a4048",
+      "flank": "#8a929a",
+      "belly": "#b8bcc0",
+      "fins": "#1e2228",
+      "eye": "#101010",
+      "mouth": "#3a3030"
+    },
+    "pattern": []
+  },
+  "habitat": {
+    "climates": [
+      "tropical",
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 10,
+      "preferred": 400,
+      "max": 1800
+    },
+    "temperature_c": {
+      "min": 3,
+      "optimal": 12,
+      "max": 27
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.01,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 1500
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 4,
+    "turn_rate": 1.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.8,
+      "bottom": 0.1
+    },
+    "wariness": 0.2,
+    "spook_m": 6,
+    "recover_s": 40,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.8,
+      "shrimp": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.1,
+      "mid": 0.8,
+      "bottom": 0.1
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.4,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.3,
+    "teeth": 0.8
+  }
+}

@@ -193,7 +193,7 @@ const PLANT_BUILDERS = {
     for (const [ox, oy, r, c, rot] of m.clams) B.blob([ox, oy, 0.015], r, r * 0.85, 0.035, 2, 9, (i, j) => mul(c, 0.9 + 0.12 * (j % 2)), null, rot);
     B.blob([0.05, -0.32, 0.01], 0.09, 0.09, 0.012, 2, 10, m.dollar);
   },
-  // ---- land cover (triangles: grass 30, flowers 36, fern 40, bush 80, heath 32, moss 16), coloured for the climate ----
+  // ---- land cover (triangles: grass 30, flowers 36, fern 40, bush 80, heath 48, moss 16), coloured for the climate ----
   // grass tuft: single-triangle blades, shorter toward the rim
   grass(B, m, C) {
     B.mat = MT.LEAF; const GC = C.ground, n = m.blades;
@@ -225,10 +225,16 @@ const PLANT_BUILDERS = {
     const bcol = s => (i, j) => mul(BC, 0.75 + 0.45 * hash2(i + s, j, 116)), lump = s => (i, j) => 0.7 + 0.5 * hash2(i + s, j, 115);
     m.lumps.forEach(([x, y, z, r], k) => B.blob([x, y, z], r, r * 0.95, r * 0.85, 3, 5, bcol(k * 3), lump(k * 4), k));
   },
-  // heath: a low cushion with flowering (or berried) tops
+  // heath: a low leafy cushion with small tufts of flowers (or berries) dotted over its top
   heath(B, m, C) {
-    B.mat = MT.LEAF; const HC = C.pick(m.color), HF = C.pick(m.tops);
-    B.blob([0, 0, 0.04], 0.5, 0.44, 0.28, 3, 8, (i, j) => i < 2 && (j + i) % 2 ? HF : mul(HC, 0.85 + 0.3 * hash2(i, j, 117)), (i, j) => 0.8 + 0.35 * hash2(i, j, 118));
+    B.mat = MT.LEAF; const HC = C.pick(m.color), HF = C.pick(m.tops), rx = 0.5, ry = 0.44, rz = 0.24;
+    B.blob([0, 0, 0.02], rx, ry, rz, 4, 8, (i, j) => mul(HC, 0.8 + 0.35 * hash2(i, j, 117)), (i, j) => 0.9 + 0.2 * hash2(i, j, 118));
+    B.mat = MT.CLOTH;
+    for (let k = 0; k < 16; k++) {   // small blooms scattered over the top, each one triangle at its own turn and size, just proud of the leaves
+      const a = k * 2.399 + hash2(k, 1, 121), s = 0.08 + 0.6 * Math.sqrt((k + 0.5) / 16), x = Math.cos(a) * s * rx, y = Math.sin(a) * s * ry, w = hash2(k, 4, 121) * 6.2832;
+      const z = 0.02 + rz * Math.sqrt(1 - s * s) * 1.08 + 0.008, r = 0.022 + 0.022 * hash2(k, 2, 121), c = mul(HF, 0.8 + 0.35 * hash2(k, 3, 121));
+      B.tri(...[0, 1, 2].map(q => [x + Math.cos(w + q * 2.0944) * r, y + Math.sin(w + q * 2.0944) * r, z]), c, [x, y, z - 1]);
+    }
   },
   // moss: a flat lumpy cushion, half sunk into the ground
   moss(B, m, C) {

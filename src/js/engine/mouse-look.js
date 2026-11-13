@@ -4,7 +4,7 @@
 Object.assign(Engine, {
   mouseLookBlocked() {
     // the catch card counts too: it releases the cursor itself, which must not read as an Escape press
-    return this.pauseOpen || (this.ang && this.ang.phase === 'card') || this.showMap || this.menu || this.invOpen || this.spawnOpen || this.tackleOpen || this.journalOpen || (this.hud && !this.hud.hHelp.hidden);
+    return this.pauseOpen || (this.ang && this.ang.phase === 'card') || this.showMap || this.menu || this.invOpen || this.spawnOpen || this.tackleOpen || this.journalOpen || this.wellPick || (this.hud && !this.hud.hHelp.hidden);
   },
   resetMouseLook() {
     this.lookDX = this.lookDY = 0;

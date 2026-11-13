@@ -157,12 +157,12 @@ Object.assign(Engine, {
     } else {   // 'down' | 'unhook' | 'free'
       if (H.st === 'unhook' && !H.big) {   // down to it where it lies: the rod is laid aside, one hand pins the fish, the other works the hook out (drawArms)
         const hop = this.fishFlop(f, H, dt, 0.12); f.x = H.spot[0]; f.y = H.spot[1]; f.z = H.spot[2] + half + hop * 0.3; f.roll = lie.roll; f.open = 0.6;
-        this.crouchTo([f.x, f.y, H.spot[2]], ez(Math.min(1, H.t / 0.7))); H.hooked = H.t < 1.95; look = [f.x, f.y, f.z];
+        this.crouchTo([f.x, f.y, H.spot[2]], ez(Math.min(1, H.t / 0.48))); H.hooked = H.t < 1.35; look = [f.x, f.y, f.z];
       } else if (H.big) {   // alongside, held at the surface on a short line
         f.z += (f.wl - Math.max(0.06, f.len * B.height * 0.3) - f.z) * Math.min(1, dt * 3); f.ph = (f.ph + dt * (2 + 2 * Math.max(0, Math.sin(this.time * 1.3)))) % 6.2832; f.open = 0.3 + 0.15 * Math.sin(this.time * 2.5);
         look = [f.x, f.y, f.z];
       } else { const hop = this.fishFlop(f, H, dt); f.x = H.spot[0]; f.y = H.spot[1]; f.z = H.spot[2] + half + hop; f.roll = lie.roll; look = [f.x, f.y, f.z]; }
-      if (H.st === 'unhook' && H.t > (H.big ? 0.6 : 2.25)) {
+      if (H.st === 'unhook' && H.t > (H.big ? 0.6 : 1.62)) {
         H.hooked = false; this.buzz(20);
         if (H.big) { H.st = 'free'; this.finishCatch(false); return; }   // too big to lift or to keep: the hook out, and away it goes
         else {   // off the hook and in your hands: fishing is over for this one, and you can walk off with it

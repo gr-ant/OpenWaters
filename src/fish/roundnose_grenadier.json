@@ -1,0 +1,169 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "roundnose_grenadier",
+  "name": "Roundnose grenadier",
+  "scientific": "Coryphaenoides rupestris",
+  "description": "Rattail of the deep slope: a big head with a rounded snout and huge eyes, tapering to a long whip of a tail with no tail fin. Swims head-down in schools over the bottom, picking off shrimp and small fish.",
+  "handling": {
+    "lip": false,
+    "hold": "cradle"
+  },
+  "size": {
+    "length_cm": {
+      "min": 50,
+      "typical": 70,
+      "max": 110,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.004,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.75,
+      1,
+      0.95,
+      0.75,
+      0.5,
+      0.32,
+      0.18,
+      0.08
+    ],
+    "height": 0.16,
+    "width": 0.11,
+    "flex": 1.1,
+    "swim": "anguilliform",
+    "head": {
+      "length": 0.22,
+      "snout": 0.7,
+      "mouth": 0.45,
+      "jaw": "inferior"
+    },
+    "tail": {
+      "shape": "pointed",
+      "size": 0.05
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.2,
+          "length": 0.04,
+          "height": 0.1,
+          "spiny": true
+        },
+        {
+          "at": 0.35,
+          "length": 0.6,
+          "height": 0.02,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.3,
+        "length": 0.65,
+        "height": 0.025
+      },
+      "pectoral": 0.09,
+      "pelvic": 0.06
+    },
+    "colors": {
+      "back": "#6a5e54",
+      "flank": "#8a8078",
+      "belly": "#5a5048",
+      "fins": "#4a4038",
+      "eye": "#2a3a40",
+      "mouth": "#3a3030"
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#4a4038",
+        "alpha": 0.4,
+        "region": "all"
+      }
+    ],
+    "barbels": 1
+  },
+  "habitat": {
+    "climates": [
+      "temperate",
+      "arctic"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 180,
+      "preferred": 1000,
+      "max": 2600
+    },
+    "temperature_c": {
+      "min": -1,
+      "optimal": 3.5,
+      "max": 8
+    },
+    "current_ms": {
+      "preferred": 0.05,
+      "max": 0.8
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1,
+      "rocks": 0.3
+    }
+  },
+  "population": {
+    "density": 0.15,
+    "school": {
+      "min": 4,
+      "max": 15
+    },
+    "home_range_m": 300
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 2,
+    "turn_rate": 1.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.4,
+      "bottom": 0.6
+    },
+    "wariness": 0.2,
+    "spook_m": 4,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "shrimp": 0.6,
+      "fish": 0.3,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.5,
+      "bottom": 0.5
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.25,
+    "stamina": 0.2,
+    "jumps": 0,
+    "runs": 0.15,
+    "teeth": 0
+  }
+}

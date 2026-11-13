@@ -148,14 +148,20 @@ Object.assign(Engine, {
       if (rolled.length) { gl.uniform1f(L.u.roll, 0); rolled.length = 0; }
       gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.fsh, 0);
     }
-    if (this.boats.length) { // boats: one draw each (they pitch and heel on their own)
+    if (this.boats.length) { // boats: fittings and a one-sided hull shell (each boat pitches and heels)
       gl.uniform1f(L.u.fsh, 1); gl.uniform1f(L.u.wig, 0); gl.uniform1f(L.u.swm, 0); gl.uniform3f(L.u.jawP, 0, 0, 0); gl.uniform1f(L.u.hull, 1);
       for (const b of this.boats) {
         if (Math.abs(b.x - E[0]) > 900 || Math.abs(b.y - E[1]) > 900) continue;
         let g = b.def._gpu;   // kept on the def: a boat already afloat when its type is reloaded keeps drawing its own model
         if (!g) g = b.def._gpu = this.instMesh(b.def._mesh, 40);
         gl.uniform1f(L.u.roll, b.roll || 0);
-        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.def._oars || b.def._helm ? b.def._hullN : g.n, 1);
+        this.upInst(g, [b.x, b.y, b.z, 1, b.a, 0.5, b.wl, WATER[b.kd || 0].murk, 0, b.pitch || 0]); gl.bindVertexArray(g.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, b.def._shellStart, 1);
+        // The view is mirrored, so use the same cull side as terrain. Both the skin
+        // and liner face their visible side: no hidden near-coplanar back faces
+        // compete for depth, even on a 16-bit buffer. Fittings remain two-sided.
+        gl.enable(gl.CULL_FACE); gl.cullFace(CULL_SIDE);
+        gl.drawArraysInstanced(gl.TRIANGLES, b.def._shellStart, b.def._shellN, 1);
+        gl.disable(gl.CULL_FACE);
         const W = b.def._helm, hN = b.def._helmN || 0; if (W) { if (b === this.boat) {   // the wheel and throttle you're driving with: posed into their own buffer, like the oars
             if (!g.helm) { g.helm = { vb: gl.createBuffer(), data: new Float32Array(W.wheel.length + W.lever.length) }; g.helm.vao = this.litVao(g.helm.vb, VB, g.ib, 40); }
             helmPose(b.def, b.helmS || 0, b.thrS || 0, g.helm.data); gl.bindBuffer(gl.ARRAY_BUFFER, g.helm.vb); gl.bufferData(gl.ARRAY_BUFFER, g.helm.data, gl.STREAM_DRAW); gl.bindVertexArray(g.helm.vao); gl.drawArraysInstanced(gl.TRIANGLES, 0, hN, 1); gl.bindVertexArray(g.vao); }

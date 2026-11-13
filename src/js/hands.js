@@ -18,6 +18,8 @@
     const F = [Math.cos(P.a) * cp, Math.sin(P.a) * cp, Math.sin(P.pitch)], R = [-Math.sin(P.a), Math.cos(P.a), 0], U = [F[1] * R[2] - F[2] * R[1], F[2] * R[0] - F[0] * R[2], F[0] * R[1] - F[1] * R[0]];
     return { eye, F, R, U, at: (d, r, u) => [0, 1, 2].map(k => eye[k] + F[k] * d + R[k] * r + U[k] * u) }; };
 
+  const ease = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+  const snapshot = f => ({ pos: [f.x, f.y, f.z], yaw: f.a, pitch: f.pitch || 0, roll: f.roll || 0 });
   // ---- in your hands ----
   E.carryFish = function (f, meta) {
     const hd = fishHandling(f.def), grips = [hd.hold === 'none' ? 'cradle' : hd.hold].concat(hd.lip ? ['lip'] : []), A = this.ang, hadRod = !!(A && A.out);
@@ -27,32 +29,67 @@
     for (const c of this.fishCells.values()) { const i = c.fish.indexOf(f); if (i >= 0) { c.fish.splice(i, 1); break; } }
     this.removeFish(f); f.dead = false; for (const q of this.fish) if (q.leader === f) q.leader = null;   // and its shoal stops following it
     if (this.traps) this.traps.hand = null;
-    this.carry = { f, meta: meta || {}, grips, grip: grips[0], phi: 0, om: 0, hp: null, hv: 0, t: 0, hadRod };
+    this.carry = { f, meta: meta || {}, grips, grip: grips[0], phi: 0, om: 0, hp: null, hv: 0, t: 0, hadRod, from: snapshot(f), liftTime: 0.28 + 0.08 * clamp(f.weightKg / 12, 0, 1) };
     if (hadRod && !A.fish) this.toggleRod(false);
     this.say(`${f.name} · ${f.lengthCm.toFixed(1)} cm · ${kgTxt(f.weightKg)}`, 2.5);
   };
   const freeHands = () => { const c = E.carry; E.carry = null; if (c && c.hadRod && E.ang && !E.ang.out && !E.swim) E.toggleRod(true); return c; };
-  E.swapGrip = function () { const c = this.carry; if (!c || c.grips.length < 2) return; c.grip = c.grips[(c.grips.indexOf(c.grip) + 1) % c.grips.length]; c.t = 0; c.phi = 0; c.om = 0; this.buzz(15); };
+  E.swapGrip = function () { const c = this.carry; if (!c || c.action || c.grips.length < 2 || c.t < c.liftTime + (c.reachTime || 0)) return; c.previousGrip = c.grip; c.from = snapshot(c.f); c.liftTime = 0.38; c.reachTime = 0; c.grip = c.grips[(c.grips.indexOf(c.grip) + 1) % c.grips.length]; c.t = 0; c.phi = 0; c.om = 0; this.buzz(15); };
   E.carryStep = function (dt) {
     const c = this.carry; if (!c) return; const f = c.f, P = this.P, B = f.def.body;
-    if (this.swim) { this.dropFish(); return; }   // both hands needed to swim
-    c.t += dt; const V = view(), e = Math.min(1, dt * 12) * Math.min(1, c.t / 0.25 + 0.2), tx = this.tanX || Math.tan(FOV / 2), ty = this.tanY || tx * 0.56;
+    if (this.swim) { this.dropFish(true); return; }   // both hands needed to swim
+    c.t += dt; const V = view(), e = 1 - Math.exp(-dt * 18), tx = this.tanX || Math.tan(FOV / 2), ty = this.tanY || tx * 0.56;
     let ctr, pitch, yaw = P.a + Math.PI / 2;
     if (!V.eye) {   // third person: at the figure's hand
-      const h = this.hPose.hand; pitch = c.grip === 'lip' ? Math.PI / 2 - 0.1 : 0;
-      ctr = c.grip === 'lip' ? [h[0], h[1], h[2] - f.len * 0.49] : [h[0] + Math.cos(P.a) * 0.15, h[1] + Math.sin(P.a) * 0.15, h[2] + 0.05];
+      const H = this.hPose.fish, h = this.hPose.hand;   // where the posed hands hold it (third-person.js); the right hand, if they haven't caught up yet
+      if (H) { ctr = H.ctr; pitch = H.pitch; yaw = H.yaw; if (c.grip === 'lip') f.open = 0.58 + 0.06 * clamp(f.weightKg / 8, 0, 1); }
+      else { pitch = c.grip === 'lip' ? Math.PI / 2 - 0.1 : 0; ctr = c.grip === 'lip' ? [h[0], h[1], h[2] - f.len * 0.49] : [h[0] + Math.cos(P.a) * 0.15, h[1] + Math.sin(P.a) * 0.15, h[2] + 0.05]; }
     } else if (c.grip === 'lip') {   // hanging from your hand by its jaw. Your hand stays where you hold it; the fish swings under it as you turn and walk
       const d = clamp(f.len * 0.95, 0.42, 0.56), m = V.at(d, Math.min(0.14, d * 0.22), Math.min(0.12, f.len * 0.35));
       if (c.hp && dt > 1e-4) { const v = ((m[0] - c.hp[0]) * V.R[0] + (m[1] - c.hp[1]) * V.R[1]) / dt, a = clamp((v - c.hv) / dt, -40, 40), Lp = Math.max(0.12, f.len * 0.6);
         for (let n = 0, h = Math.min(dt, 0.05) / 2; n < 2; n++) { c.om += (-(9.8 / Lp) * Math.sin(c.phi) - 2.6 * c.om - a / Lp * Math.cos(c.phi)) * h; c.phi = clamp(c.phi + c.om * h, -1.1, 1.1); }
         c.hv = v; }
       c.hp = m; pitch = Math.PI / 2 - c.phi + 0.03 * Math.sin(this.time * 2.1);   // phi: the tail swung toward your right
-      ctr = [m[0] - Math.cos(yaw) * Math.cos(pitch) * f.len * 0.49, m[1] - Math.sin(yaw) * Math.cos(pitch) * f.len * 0.49, m[2] - Math.sin(pitch) * f.len * 0.49]; f.open = 0.85;
+      ctr = [m[0] - Math.cos(yaw) * Math.cos(pitch) * f.len * 0.49, m[1] - Math.sin(yaw) * Math.cos(pitch) * f.len * 0.49, m[2] - Math.sin(pitch) * f.len * 0.49]; f.open = 0.58 + 0.06 * clamp(f.weightKg / 8, 0, 1);   // a modest loaded gape, not a wide-open mouth
     } else {   // across your hands, side on
-      const d = clamp(Math.max(f.len / (0.95 * tx), f.len * B.height / (0.9 * ty)), c.grip === 'hand' ? 0.36 : 0.44, 0.56); ctr = V.at(d, 0, -Math.min(0.12, d * 0.2));
+      const d = clamp(Math.max(f.len / (0.95 * tx), f.len * B.height / (0.9 * ty)), c.grip === 'hand' ? 0.48 : 0.44, 0.56); ctr = V.at(d, c.grip === 'hand' ? 0.045 : 0, -Math.min(0.07, d * 0.15));
       pitch = 0.04 * Math.sin(this.time * 2.3); f.open = 0.25 + 0.2 * Math.sin(this.time * 3); c.hp = null;
     }
-    f.x += (ctr[0] - f.x) * e; f.y += (ctr[1] - f.y) * e; f.z += (ctr[2] - f.z) * e; f.a = yaw; f.pitch = (f.pitch || 0) + (pitch - (f.pitch || 0)) * e; f.roll = (f.roll || 0) * (1 - e);
+    if (c.action) {
+      const act = c.action; act.t += dt;
+      const target = act.w ? [act.w.pos[0], act.w.pos[1], act.w.pos[2] + 0.36] : V.eye ? V.at(0.62, 0, -0.25) : ctr;
+      const u = ease(act.t / 0.32);
+      ctr = act.from.pos.map((x, k) => x + (target[k] - x) * u);
+      f.x = ctr[0]; f.y = ctr[1]; f.z = ctr[2];
+      if (act.t >= 0.34) {
+        if (act.w) {
+          freeHands(); if (!c.meta.logged) { this.logCatch(f, c.meta, true); c.meta.logged = true; }
+          f.stored = true; f.held = true; f.meta = c.meta; act.w.list.push(f);
+          this.buzz(20); this.say(`${f.name} in the ${act.w.name} (${act.w.list.length})`, 2.5);
+        } else this.dropFish(true);
+        return;
+      }
+    } else {
+      const elapsed = Math.max(0, c.t - (c.reachTime || 0)), from = c.from;
+      // Reach the lower edge of the view in 150 ms, then settle into the loaded hold.
+      // This is a continuous two-stage curve, not a teleport of the starting fish.
+      const u = c.previousGrip ? ease(elapsed / c.liftTime) : elapsed < 0.15 ? 0.96 * ease(elapsed / 0.15) : 0.96 + 0.04 * ease((elapsed - 0.15) / (c.liftTime - 0.15));
+      // The visible settling phase carries the weight; the initial reach stays responsive.
+      if (from && u < 1) {
+        ctr = from.pos.map((x, k) => x + (ctr[k] - x) * u);
+        ctr[2] -= Math.sin(Math.PI * u) * 0.035 * clamp(f.weightKg / 8, 0, 1);
+        f.x = ctr[0]; f.y = ctr[1]; f.z = ctr[2];
+        f.a = from.yaw + Math.atan2(Math.sin(yaw - from.yaw), Math.cos(yaw - from.yaw)) * u;
+        f.pitch = from.pitch + (pitch - from.pitch) * u; f.roll = from.roll * (1 - u);
+      } else {
+        const settle = c.t - (c.reachTime || 0) - c.liftTime;
+        ctr[2] += 0.008 * Math.sin(settle * 18) * Math.exp(-settle * 12);
+        f.x += (ctr[0] - f.x) * e; f.y += (ctr[1] - f.y) * e; f.z += (ctr[2] - f.z) * e;
+        f.a += Math.atan2(Math.sin(yaw - f.a), Math.cos(yaw - f.a)) * e;
+        f.pitch = (f.pitch || 0) + (pitch - (f.pitch || 0)) * e; f.roll = (f.roll || 0) * (1 - e);
+        c.previousGrip = null;
+      }
+    }
     f.ph = (f.ph + dt * (2 + 3 * Math.max(0, Math.sin(this.time * 1.7)))) % TAU; f.land = true;
   };
 
@@ -60,7 +97,11 @@
   // the deck under a point, if it is over a boat: { b, lx, ly, z }
   const deckAt = (x, y) => { for (const b of E.boats) { const D = b.def, S = D._shape, L = D.hull.length_m, dx = x - b.x, dy = y - b.y, cb = Math.cos(b.a), sb = Math.sin(b.a), lx = cb * dx + sb * dy, ly = -sb * dx + cb * dy, t = lx / L + 0.5;
       if (t > 0.03 && t < 0.97 && Math.abs(ly) < S.hb(t) * 0.92) return { b, lx, ly, z: b.z + E.boatDeckZ(D, lx, ly) + Math.sin(b.pitch || 0) * lx }; } return null; };
-  E.dropFish = function () {
+  E.dropFish = function (immediate = false) {
+    if (!immediate && this.carry) {
+      if (!this.carry.action) this.carry.action = { t: 0, from: snapshot(this.carry.f) };
+      return;
+    }
     const c = freeHands(); if (!c) return; const f = c.f, P = this.P;
     this.loose.push({ f, meta: c.meta, st: 'fall', vx: Math.cos(P.a) * 0.9, vy: Math.sin(P.a) * 0.9, vz: 0.4, hop: 0, side: Math.random() < 0.5 ? 1 : -1, t: 0 });
   };
@@ -90,27 +131,46 @@
   const grabStep = dt => { const g = E.grab; if (!g) return; const f = g.l.f, P = E.P; g.t += dt;
     if (!E.loose.includes(g.l) || E.carry || Math.hypot(f.x - P.x, f.y - P.y) > 2.4) { E.grab = null; return; }
     if (!E.thirdP) E.crouchTo([f.x, f.y, f.z - E.fishLie(f).half], Math.min(1, g.t / 0.45) ** 2 * (3 - 2 * Math.min(1, g.t / 0.45)));
-    if (g.t > 0.95) { E.grab = null; E.loose = E.loose.filter(q => q !== g.l); E.carryFish(f, g.l.meta); } };
+    if (g.t > 0.62) { E.grab = null; E.loose = E.loose.filter(q => q !== g.l); E.carryFish(f, g.l.meta); } };
   // straightening up again once nothing is holding you down
-  const standStep = dt => { const o = E.eyeOff; if (!o || E.eyeHold > E.time) return; const k = 1 - Math.min(1, dt * 3.2); o[0] *= k; o[1] *= k; o[2] *= k; if (Math.hypot(o[0], o[1], o[2]) < 0.004) E.eyeOff = null; };
+  const standStep = dt => { const o = E.eyeOff; if (!o || E.eyeHold > E.time) return; const k = Math.exp(-dt * 3.2); o[0] *= k; o[1] *= k; o[2] *= k; if (Math.hypot(o[0], o[1], o[2]) < 0.004) E.eyeOff = null; };
 
   // ---- the bucket / cooler / livewell aboard ----
   const wellOf = b => { let w = b._well; const D = b.def;
     if (!w) { const S = D._shape, L = D.hull.length_m, s = clamp(D.crew.seat_at, 0, 1), t = clamp(s + (s > 0.5 ? -0.22 : 0.22), 0.14, 0.86), lx = S.x(t), ly = S.hb(t) * 0.34;
-      const kind = !['outboard', 'inboard'].includes(D.propulsion.type) || L < 3.6 ? 'bucket' : L < 6.6 ? 'cooler' : 'livewell'; w = b._well = { kind, name: kind, cap: kind === 'bucket' ? 3 : kind === 'cooler' ? 6 : 10, lx, ly }; }
+      const kind = !['outboard', 'inboard'].includes(D.propulsion.type) || L < 3.6 ? 'bucket' : L < 6.6 ? 'cooler' : 'livewell'; w = b._well = { kind, name: kind, cap: Infinity, lx, ly }; }   // (cap: as many as you like)
     if (!b.well) b.well = []; const cb = Math.cos(b.a), sb = Math.sin(b.a);
     w.pos = [b.x + cb * w.lx - sb * w.ly, b.y + sb * w.lx + cb * w.ly, b.z + E.boatDeckZ(D, w.lx, w.ly) + Math.sin(b.pitch || 0) * w.lx]; w.list = b.well; return w; };
   const wellNear = () => { const P = E.P; let best = null, bd = 1.7; for (const b of E.boats) { if (Math.hypot(b.x - P.x, b.y - P.y) > 30) continue; const w = wellOf(b), d = Math.hypot(w.pos[0] - P.x, w.pos[1] - P.y); if (d < bd && Math.abs(w.pos[2] - P.z) < 1.8) { bd = d; best = w; } } return best; };   // aboard, or reaching in from the bank or the water beside it
   E.boatWell = b => wellOf(b);
   E.keepCarried = function () {
-    const c = this.carry; if (!c) return; const f = c.f, w = wellNear();
+    const c = this.carry; if (!c || c.action) return; const w = wellNear();
     if (!w) { const b = this.boat || this.boats.slice().sort((p, q) => Math.hypot(p.x - this.P.x, p.y - this.P.y) - Math.hypot(q.x - this.P.x, q.y - this.P.y))[0], wb = b && wellOf(b);
       return this.say(wb ? `Nothing to keep it in here: carry it to the ${wb.name} in the ${b.def.name.toLowerCase()} (${Math.hypot(wb.pos[0] - this.P.x, wb.pos[1] - this.P.y).toFixed(0)} m)` : 'Nothing to keep it in: you need a boat with a bucket or a cooler', 3); }
-    if (w.list.length >= w.cap) return this.say(`The ${w.name} is full (${w.cap})`, 2.5);
-    freeHands(); if (!c.meta.logged) { this.logCatch(f, c.meta, true); c.meta.logged = true; }
-    f.stored = true; f.held = true; f.meta = c.meta; w.list.push(f); this.buzz(20); this.say(`${f.name} in the ${w.name} (${w.list.length}/${w.cap})`, 2.5);
+    c.action = { t: 0, from: snapshot(c.f), w };
   };
-  E.takeFromWell = function () { const w = !this.carry && wellNear(); if (!w || !w.list.length) return false; const f = w.list.pop(); f.stored = false; f.x = w.pos[0]; f.y = w.pos[1]; f.z = w.pos[2] + 0.3; this.carryFish(f, f.meta || { logged: true }); return true; };
+  // take one out: the i-th (the last by default) of the bucket / cooler / livewell you're at
+  E.takeFromWell = function (i) { const w = !this.carry && wellNear(); if (!w || !w.list.length) return false; const f = w.list.splice(i ?? w.list.length - 1, 1)[0]; f.stored = false; f.x = w.pos[0]; f.y = w.pos[1]; f.z = w.pos[2] + 0.3; this.carryFish(f, f.meta || { logged: true }); this.carry.reachTime = 0.28; return true; };
+  // ---- what's in it: every fish floating in a panel; click / tap one (arrow keys move), then Grab (or click it again) takes it out ----
+  let pickEl = null; E.wellPick = null;   // { w, i } while it's open
+  const pickDraw = () => { const K = E.wellPick;
+    if (!pickEl) { pickEl = document.createElement('div'); pickEl.id = 'wellPick'; pickEl.className = 'panel'; document.body.appendChild(pickEl);
+      pickEl.addEventListener('click', e => { const t = e.target, card = t.closest && t.closest('[data-i]'); if (!E.wellPick) return;
+        if (t.closest('#wpGrab')) return pickTake(); if (t.closest('#wpClose')) return pickClose();
+        if (card) { const i = +card.dataset.i; if (i === E.wellPick.i) return pickTake(); E.wellPick.i = i; pickDraw(); } }); }
+    pickEl.hidden = !K; if (!K) return; const L = K.w.list; K.i = clamp(K.i, 0, L.length - 1);
+    const hint = E.touchUI ? 'Tap one, then Grab' : 'Arrows or click to choose · F to grab · Esc to close';
+    pickEl.innerHTML = `<b>The ${esc(K.w.name)}</b><i>${L.length} fish · ${hint}</i><div class="wp-grid">${L.map((f, i) => `<button data-i="${i}" class="${i === K.i ? 'on' : ''}" style="--d:${(i * 0.37 % 2).toFixed(2)}s">`
+      + `<span class="wp-pic">${animalPicHTML(f.def)}</span><span class="wp-name">${esc(f.name)}</span><small>${f.lengthCm.toFixed(1)} cm · ${kgTxt(f.weightKg)}</small></button>`).join('')}</div>`
+      + `<div class="wp-btns"><button id="wpGrab">Grab</button><button id="wpClose">Close</button></div>`;
+    const on = pickEl.querySelector('.wp-grid .on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' }); };
+  const pickClose = () => { E.wellPick = null; pickDraw(); };
+  const pickTake = () => { const K = E.wellPick; if (!K) return; const i = K.i; pickClose(); E.takeFromWell(i); };
+  const pickMove = code => { const K = E.wellPick, grid = pickEl && pickEl.querySelector('.wp-grid'), first = grid && grid.firstElementChild;
+    const cols = first ? Math.max(1, Math.round(grid.clientWidth / first.offsetWidth)) : 3, d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols }[code];
+    K.i = clamp(K.i + d, 0, K.w.list.length - 1); pickDraw(); };
+  E.openWell = function () { const w = !this.carry && wellNear(); if (!w || !w.list.length) return false;
+    this.wellPick = { w, i: w.list.length - 1 }; if (document.exitPointerLock && document.pointerLockElement) document.exitPointerLock(); pickDraw(); return true; };
   const box = (B, x0, x1, y0, y1, z0, z1, col) => { const c = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2], q = (a, b, cc, d) => B.quad(a, b, cc, d, col, c);
     q([x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]); q([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]); q([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]);
     q([x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]); q([x0, y0, z0], [x0, y1, z0], [x0, y1, z1], [x0, y0, z1]); q([x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]); };
@@ -149,7 +209,7 @@
     const wells = this.boats.filter(b => Math.hypot(b.x - P.x, b.y - P.y) < 12).map(b => wellOf(b)), wellAt = wells.find(w => onPt([w.pos[0], w.pos[1], w.pos[2] + 0.18], 62));
     if (c && wellAt) return () => this.keepCarried();
     if (!c) { const l = this.loose.find(q => q.st === 'flop' && Math.hypot(q.f.x - P.x, q.f.y - P.y) < 3.2 && onFish(q.f)); if (l) return () => { if (Math.hypot(l.f.x - P.x, l.f.y - P.y) < 1.9) this.pickUpFish(l); else this.say('Get closer to pick it up', 1.5); };
-      if (wellAt && wellAt.list.length && !rod) return () => { if (!this.takeFromWell()) this.say(`Get closer to the ${wellAt.name}`, 1.5); }; }
+      if (wellAt && wellAt.list.length && !rod) return () => { if (!this.openWell()) this.say(`Get closer to the ${wellAt.name}`, 1.5); }; }
     if (!this.boat && !rod) { const nb = this.nearBoat && this.nearBoat(); if (nb && onBoat(nb)) return () => this.boardBoat(nb); }
     if (y > H * 0.7 && x < W * 0.3) return () => this.toggleTackle();
     if (y > H * 0.7 && x > W * 0.7 && !rod && !c && A && !A.out) return () => this.toggleRod(true);
@@ -166,11 +226,17 @@
   try { if (localStorage.getItem('embercrown-hudclear') === '1') setClear(true); } catch (e) { /* */ }
   const baseKey = E.keyPress;
   E.keyPress = function (code, e, card) {
+    if (this.wellPick && !card) {   // the cooler's open: it has the keys
+      if (/^Arrow(Up|Down|Left|Right)$/.test(code)) return pickMove(code);
+      if (['KeyF', 'KeyE', 'Enter', 'NumpadEnter', 'Space'].includes(code)) return pickTake();
+      if (['Escape', 'KeyX'].includes(code)) return pickClose();
+      if (/^Key[WASD]|^Shift/.test(code)) return baseKey.call(this, code, e, card);
+      return; }
     if (code === 'KeyZ' && !(e && e.repeat) && !card && !this.pauseOpen && !this.titleOpen) { setClear(!this.hudClear); if (!this.hudClear) this.say('HUD back', 2); return; }
     if (card || (e && e.repeat) || busy() || !['KeyF', 'KeyE', 'KeyX'].includes(code)) return baseKey.call(this, code, e, card);
     if (this.carry) { if (code === 'KeyX') return this.dropFish(); if (code === 'KeyE') return this.keepCarried(); if (this.carry.grips.length > 1) return this.swapGrip(); return baseKey.call(this, code, e, card); }
     if (code === 'KeyF') { const l = nearLoose(); if (l) return this.pickUpFish(l); }
-    if (code === 'KeyE' && this.takeFromWell()) return;
+    if (code === 'KeyE' && this.openWell()) return;
     return baseKey.call(this, code, e, card);
   };
   const baseAct = E.action;
@@ -185,7 +251,7 @@
     const base = baseKeys.call(this) || []; if (nearLoose()) base.unshift([K('use'), 'Pick up']); const w = wellNear(); if (w && w.list.length) base.unshift([K('keep'), `Take from ${w.name}`]); return base;
   };
   const chips = $('fishChips'), CH = { ccUnhook: () => E.unhookFish(), ccPick: () => { const l = nearLoose(); if (l) E.pickUpFish(l); }, ccGrip: () => E.swapGrip(), ccRel: () => E.carry ? E.dropFish() : E.finishCatch(false),
-    ccKeep: () => E.carry ? E.keepCarried() : E.finishCatch(true), ccTake: () => E.takeFromWell() };
+    ccKeep: () => E.carry ? E.keepCarried() : E.finishCatch(true), ccTake: () => E.openWell() };
   for (const id in CH) { const b = $(id); if (b) b.onclick = ev => { ev.preventDefault(); ev.stopPropagation(); if (!E.pauseOpen) CH[id](); }; }
   // what's in each boat's bucket or livewell lies there to be seen: head down in the bucket, tails out; side by side in the well. A cooler's lid is shut.
   const wellStep = dt => { for (const b of E.boats) { if (!b.well || !b.well.length) continue; const w = wellOf(b);
@@ -195,7 +261,8 @@
         else { const k = ((i % 3) - 1) * 0.15; f.a = b.a + (i % 2 ? Math.PI : 0) + 0.12; f.pitch = 0; f.x = w.pos[0] - Math.sin(b.a) * k; f.y = w.pos[1] + Math.cos(b.a) * k; f.z = w.pos[2] + 0.31 + (i > 2 ? 0.05 : 0); } }); } };
   // a fish you are holding, have put down or have stored is never thinned out of the world with the far-off ones (the fish list is rebuilt as you move)
   const keepHeld = () => { const need = f => { if (f && !E.fish.includes(f)) { f.dead = false; E.fish.push(f); } }; if (E.carry) need(E.carry.f); for (const l of E.loose) need(l.f); for (const b of E.boats) if (b.well) for (const f of b.well) need(f); };
-  Game.on('update', dt => { keepHeld(); grabStep(dt || 0); standStep(dt || 0); E.carryStep(dt || 0); E.looseStep(dt || 0); wellStep(dt || 0); });
+  Game.on('update', dt => { if (E.wellPick) { const K = E.wellPick; for (const k of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']) E.keys[k] = false; if (E.carry || !K.w.list.length || wellNear() !== K.w) pickClose(); }   // (walk away and it shuts)
+    keepHeld(); grabStep(dt || 0); standStep(dt || 0); E.carryStep(dt || 0); E.looseStep(dt || 0); wellStep(dt || 0); });
   Game.onHud(() => {
     const A = E.ang, H = A && A.phase === 'card' && A.land, c = E.carry, show = {}, set = (id, txt) => { show[id] = txt; }; let anchor = null;
     if (busy()) { if (chips) chips.hidden = true; return; }
@@ -205,7 +272,7 @@
       E.hudDetail = `${c.f.name}  ·  ${c.f.lengthCm.toFixed(1)} cm  ·  ${kgTxt(c.f.weightKg)}${w && !near ? `  ·  ${w.name} ${Math.hypot(w.pos[0] - E.P.x, w.pos[1] - E.P.y).toFixed(1)} m` : ''}`; }
     else if (E.grab) { /* on your way down to it */ }
     else { const l = nearLoose(), w = wellNear(); if (l) { anchor = l.f; set('ccPick', 'Pick up'); } else if (w && w.list.length) { anchor = { x: w.pos[0], y: w.pos[1], z: w.pos[2] + 0.35 }; set('ccTake', 'Take out'); }
-      if (w && !E.hudDetail) E.hudDetail = w.list.length ? `${w.name[0].toUpperCase() + w.name.slice(1)} (${w.list.length}/${w.cap})  ·  ${w.list.map(f => `${f.name} ${f.lengthCm.toFixed(0)} cm`).join(', ')}` : `${w.name[0].toUpperCase() + w.name.slice(1)}: empty`; }
+      if (w && !E.hudDetail) E.hudDetail = w.list.length ? `${w.name[0].toUpperCase() + w.name.slice(1)} (${w.list.length})  ·  ${w.list.map(f => `${f.name} ${f.lengthCm.toFixed(0)} cm`).join(', ')}` : `${w.name[0].toUpperCase() + w.name.slice(1)}: empty`; }
     if (!chips) return; const any = Object.keys(show).length > 0 && E.touchUI; chips.hidden = !any; if (!any) return;
     for (const b of chips.children) { const t = show[b.id]; b.hidden = !t; if (t && b.textContent !== t) b.textContent = t; }
     // the fish's box on screen (snout, tail, back, belly), and the row centred under it; above it if that would run into the controls

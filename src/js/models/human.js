@@ -21,7 +21,7 @@ function humanParts(look, climate = 'temperate', clothes = []) {
   const skin = rgb(K.skin) || [0.86, 0.66, 0.52], hair = rgb(Hr.color) || [0.34, 0.22, 0.15], top = H.neck + H.head;
   const worn = (Array.isArray(W.wear) ? W.wear : []).map(id => clothes.find(g => g && g.id === id)).filter(Boolean);
   // an oval ring from height z0 (half-width a0 across the shoulders, half-depth c0 front to back) down to z1 (a1, c1): chests and coats aren't round
-  const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 20, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 20 * 6.2832) / (e ? a1 : a0), Math.sin(k / 20 * 6.2832) / (e ? c1 : c0)));
+  const oval = (B, z0, z1, [a0, c0], [a1, c1], col, cap) => B.tube([0, 0, z0], [0, 0, z1], 1, 1, 32, col, cap, (k, e) => 1 / Math.hypot(Math.cos(k / 32 * 6.2832) / (e ? a1 : a0), Math.sin(k / 32 * 6.2832) / (e ? c1 : c0)));
   const sh = [G.shoulder + 0.02, 0.105], grow = ([a, c], g) => [a + g, c + g], mix = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
   const sec = z => z > -0.24 ? mix(sh, G.chest, clamp((z + 0.11) / -0.13, 0, 1)) : mix(G.chest, G.waist, clamp((z + 0.24) / (0.24 - H.torso), 0, 1));   // the torso's cross-section z below the shoulders
   const nums = (v, n) => Array.isArray(v) && v.length >= n && v.every(Number.isFinite);
@@ -34,9 +34,18 @@ function humanParts(look, climate = 'temperate', clothes = []) {
     else if (nums(q.wrap, 3)) oval(B, q.wrap[0], q.wrap[1], grow(sec(q.wrap[0]), q.wrap[2]), grow(sec(q.wrap[1]), q.wrap[3] ?? q.wrap[2]), col, !!q.cap);
   };
   // meshBuilder(true) and smoothTube: smooth-shaded blobs and tubes, at twice the detail the shapes ask for, so the figure is soft, not faceted
-  const part = (name, body) => { const B = meshBuilder(true), tb = B.tube, bl = B.blob; B.smoothTube = true; B.mat = MT.GEN;
-    B.tube = (p0, p1, r0, r1, n, col, cap, jit) => tb(p0, p1, r0, r1, jit ? n : n * 2, col, cap, jit);   // (an oval's jit counts its own sides)
-    B.blob = (c, rx, ry, rz, rings, segs, ...a) => bl(c, rx, ry, rz, rings * 2, segs * 2, ...a); body(B); for (const g of worn) for (const q of (g.parts && g.parts[name]) || []) if (q) shape(B, q); return new Float32Array(B.v); };
+  const part = (name, body, keep = () => true) => { const B = meshBuilder(true), tb = B.tube, bl = B.blob; B.smoothTube = true; B.mat = MT.GEN;
+    B.tube = (p0, p1, r0, r1, n, col, cap, jit) => tb(p0, p1, r0, r1, jit ? n : n * 3, col, cap, jit);   // (an oval's jit counts its own sides)
+    B.blob = (c, rx, ry, rz, rings, segs, ...a) => bl(c, rx, ry, rz, rings * 2, segs * 3, ...a); body(B); for (const g of worn) for (const q of (g.parts && g.parts[name]) || []) if (q && keep(q)) shape(B, q);
+    return clothShade(name, new Float32Array(B.v)); };
+  // soft shading baked into the clothes' colours (skin, hair and plain boots are left alone): lighter toward the top of each part, darker on
+  // faces turned down (under a hem, a cuff, the brim) and in the armpits, and a faint unevenness, so a garment reads as cloth, not one flat colour
+  const clothShade = (name, m) => { if (name === 'head') return m; let lo = 1e9, hi = -1e9; for (let i = 2; i < m.length; i += VS) { lo = Math.min(lo, m[i]); hi = Math.max(hi, m[i]); }
+    for (let i = 0; i < m.length; i += VS) { if (m[i + 9] !== MT.CLOTH) continue; const x = m[i], y = m[i + 1], z = m[i + 2], nz = m[i + 5];
+      let f = (0.9 + 0.1 * (z - lo) / (hi - lo || 1)) * (1 - 0.14 * Math.max(0, -nz)) * (1 + 0.03 * Math.sin(x * 41 + z * 23) * Math.sin(y * 37 - z * 17));
+      if (name === 'torso') f *= 1 - 0.12 * clamp((Math.abs(y) - G.chest[0] * 0.8) / 0.05, 0, 1) * clamp(1 - Math.abs(z + 0.15) / 0.1, 0, 1);   // the armpits
+      for (let k = 6; k < 9; k++) m[i + k] *= f; }
+    return m; };
   return {
     head: part('head', B => { B.tube([0, 0, -0.02], [0, 0, H.neck + 0.03], 0.058, 0.055, 8, skin, false); B.blob([0.01, 0, top], 0.122, 0.108, H.head, 4, 8, skin);   // a short neck, a good-sized head
       for (const y of [-0.106, 0.106]) B.blob([0, y, top - 0.01], 0.022, 0.017, 0.034, 3, 4, skin);   // ears
@@ -46,7 +55,15 @@ function humanParts(look, climate = 'temperate', clothes = []) {
     torso: part('torso', B => { oval(B, 0.01, -0.04, [0.07, 0.07], [0.145, 0.095], skin); oval(B, -0.04, -0.11, [0.145, 0.095], sh, skin); oval(B, -0.11, -0.24, sh, G.chest, skin); oval(B, -0.24, -H.torso, G.chest, G.waist, skin, true); }),   // shoulders sloping well down from the neck, chest, waist
     hips: part('hips', B => B.blob([0, 0, 0], G.hips[1] - 0.008, G.hips[0] - 0.007, 0.112, 4, 8, skin)),
     upper: part('upper', B => { B.blob([0, 0, -0.02], 0.074, 0.074, 0.092, 4, 8, skin); B.tube([0, 0, -0.04], [0, 0, -H.upper], 0.07, 0.056, 8, skin, true); }),   // a tall soft cap for the shoulder (no flat top), the upper arm below it
-    fore: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.044, 8, skin, false); B.blob([0, 0, -H.fore - 0.04], 0.044, 0.038, 0.06, 4, 6, skin); }),   // elbow, forearm, hand
+    fore: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.028, 8, skin, false); B.blob([0, 0, -H.fore - 0.035], 0.019, 0.034, 0.044, 3, 8, skin);
+      for (let i = 0; i < 4; i++) {
+        const y = (i - 1.5) * 0.016, len = [0.05, 0.056, 0.052, 0.041][i], r = i === 3 ? 0.008 : 0.009;
+        const a = [0, y, -H.fore - 0.06], b = [0.008, y, a[2] - len * 0.6], c = [0.02, y, a[2] - len];
+        B.tube(a, b, r, r * 0.9, 6, skin, true); B.blob(b, r, r, r, 2, 6, skin); B.tube(b, c, r * 0.9, r * 0.7, 6, skin, true);
+      }
+      B.tube([0.008, -0.027, -H.fore - 0.015], [0.025, -0.04, -H.fore - 0.045], 0.012, 0.009, 6, skin, true); }),   // elbow, forearm, hand
+    // the forearm alone (sleeve and all, no hand, no glove): drawn with the first-person hand on its end, curled for what it holds (third-person.js)
+    foreArm: part('fore', B => { B.blob([0, 0, 0], 0.056, 0.056, 0.056, 3, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.fore], 0.056, 0.028, 8, skin, false); }, q => q.color !== 'gloves'),
     thigh: part('thigh', B => { B.blob([0, 0, 0], 0.094, 0.094, 0.094, 4, 8, skin); B.tube([0, 0, 0.03], [0, 0, -H.thigh], 0.094, 0.072, 8, skin, true); }),   // a ball at the hip, so the leg stays whole when it swings out
     shin: part('shin', B => { B.blob([0, 0, -0.005], 0.076, 0.074, 0.08, 4, 8, skin); B.tube([0, 0, 0.02], [0, 0, -H.shin], 0.072, 0.054, 8, skin, false); }),   // knee, shin
     foot: part('foot', B => { B.blob([0, 0, 0], 0.056, 0.054, 0.05, 3, 6, skin); B.blob([0.055, 0, -H.foot + 0.055], 0.115, 0.058, 0.04, 4, 8, skin); }),   // ankle, foot (the sole is H.foot below the ankle)

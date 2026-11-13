@@ -11,6 +11,67 @@ const api = new Function('location', 'history', 'matchMedia', 'localStorage', so
 const { BoatDB, Engine: E, oarPose, oarXform, VS, buildBoat, MT, helmPose } = api;
 for (const [, name] of read('src/index.html').matchAll(/data-builtin="boat" src="([^"]+)"/g)) assert.ok(BoatDB.register(JSON.parse(read(`src/${name}`)), { quiet: true }).def, name);
 assert.ok(BoatDB.list.length >= 13);
+// Every JSON boat is covered, including definitions added without a menu entry.
+for (const name of fs.readdirSync('src/boats').filter(n => n.endsWith('.json') && n !== 'parts.json')) {
+  const raw = JSON.parse(read(`src/boats/${name}`));
+  if (!BoatDB.byId[raw.id]) assert.ok(BoatDB.register(raw, { quiet: true }).def, name);
+}
+// Measure against the rendered triangles, not the smooth hull formula. Also check
+// triangle centres/edge midpoints: clear vertices alone can hide crossing panels.
+const sub = (a, b) => a.map((v, i) => v - b[i]);
+const dot = (a, b) => a.reduce((v, x, i) => v + x * b[i], 0);
+const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const face = (m, i) => {
+  const a = [...m.slice(i, i + 3)], b = [...m.slice(i + VS, i + VS + 3)], c = [...m.slice(i + 2*VS, i + 2*VS + 3)];
+  const ab = sub(b, a), ac = sub(c, a), n = cross(ab, ac), len = Math.hypot(...n);
+  return { a, b, c, ab, ac, n: n.map(x => x / len), lo: a.map((v, j) => Math.min(v, b[j], c[j])), hi: a.map((v, j) => Math.max(v, b[j], c[j])) };
+};
+function distanceToFace(p, f) {
+  const { a, b, c, ab, ac, n } = f, ap = sub(p, a), signed = dot(ap, n);
+  const d00 = dot(ab, ab), d01 = dot(ab, ac), d11 = dot(ac, ac), d20 = dot(ap, ab), d21 = dot(ap, ac), den = d00*d11-d01*d01;
+  const v = (d11*d20-d01*d21)/den, w = (d00*d21-d01*d20)/den;
+  if (v >= 0 && w >= 0 && v + w <= 1) return { distance: Math.abs(signed), signed };
+  const edge = (a, b) => { const e = sub(b, a), q = sub(p, a), t = Math.max(0, Math.min(1, dot(q, e)/dot(e, e))); return Math.hypot(...q.map((x, i) => x - t*e[i])); };
+  return { distance: Math.min(edge(a, b), edge(b, c), edge(c, a)), signed };
+}
+for (const D of BoatDB.list) {
+  const m = D._mesh, start = D._shellStart * VS, skinEnd = start + D._skinN * VS, wallEnd = skinEnd + D._wallN * VS;
+  assert.equal(D._shellStart + D._shellN, D._hullN, `${D.id}: shell draw range`);
+  assert.ok(D._skinN > 0 && D._wallN > 0, `${D.id}: both skin and liner`);
+  const skin = [];
+  for (let i = start; i < skinEnd; i += 3*VS) {
+    const f = face(m, i); skin.push(f);
+    assert.ok(dot(f.n, [...m.slice(i + 3, i + 6)]) > 0, `${D.id}: outward skin winding`);
+  }
+  // End caps have opposite outward/inward winding and a real thickness too.
+  for (let i = wallEnd; i < (D._shellStart + D._shellN) * VS; i += 3*VS) {
+    const f = face(m, i), endDistance = D.hull.length_m/2 - Math.abs(f.a[0]);
+    assert.ok(Math.abs(f.n[0]) > 0.999, `${D.id}: planar end cap`);
+    if (endDistance < 1e-5) assert.ok(f.n[0] * f.a[0] > 0, `${D.id}: outward end cap`);
+    else {
+      assert.ok(endDistance >= 0.003, `${D.id}: end liner clearance`);
+      assert.ok(f.n[0] * f.a[0] < 0, `${D.id}: inward end liner`);
+    }
+  }
+  const samples = new Map();
+  for (let i = skinEnd; i < wallEnd; i += 3*VS) {
+    const f = face(m, i), { a, b, c } = f;
+    assert.ok(f.n[1] * (a[1] + b[1] + c[1]) < 0, `${D.id}: inward liner winding`);
+    for (const p of [a, b, c, a.map((v, j) => (v+b[j]+c[j])/3), ...[[a,b], [b,c], [c,a]].map(([a,b]) => a.map((v,j) => (v+b[j])/2))]) samples.set(p.join(','), p);
+  }
+  for (const p of samples.values()) {
+    const bound = f => Math.max(0, f.lo[0]-p[0], p[0]-f.hi[0], f.lo[1]-p[1], p[1]-f.hi[1], f.lo[2]-p[2], p[2]-f.hi[2]);
+    let closestBox = skin[0], lower = Infinity;
+    for (const f of skin) { const d = bound(f); if (d < lower) { lower = d; closestBox = f; } }
+    let nearest = distanceToFace(p, closestBox);
+    for (const f of skin) {
+      if (bound(f) > nearest.distance) continue;
+      const d = distanceToFace(p, f); if (d.distance < nearest.distance) nearest = d;
+    }
+    assert.ok(nearest.distance >= 0.003 && nearest.signed < 0, `${D.id}: liner clearance at ${p}: ${JSON.stringify(nearest)}`);
+  }
+}
+
 // the wheel and throttle lever stand clear of the console and its dash however they're turned or pushed
 let consoles = 0;
 for (const D of BoatDB.list) { const cs = D.features.console; if (!cs || !D._helm) continue; consoles++;

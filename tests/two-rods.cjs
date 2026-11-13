@@ -49,9 +49,9 @@ E.keyPress('KeyQ', {}, false); A(/Both rods are out/.test(said.at(-1)) && E.ang 
 map.forEach(f => f({ beginPath() {}, arc(x) { dots.push(x); }, fill() {}, stroke() {} }, (x, y) => [x, y])); A(dots.length === 3, 'both holders on the map');
 // walk to the first rod and Use: it becomes the rod in your hands (fish on: straight into the fight); the second stays in its holder
 E.P.x = one.holder.x; E.P.y = one.holder.y; A(E.holderNear(), 'near the first rod'); one.holder.on = true; one.fish = one.fish || fish();
-E.action(); A(E.ang === one && !one.holder && E.ang2 === two && two.holder && E.fights === 1, 'picked up the first, fighting: ' + said.at(-1));
+E.action(); A(E.ang === one && one.holder.reachT === 0, 'reaching for selected rod'); step(0.35); A(E.ang === one && !one.holder && E.ang2 === two && two.holder && E.fights === 1, 'picked up the first, fighting: ' + said.at(-1));
 // with a rod in your hands and its line out, Use at the other holder sets yours down here and takes that one
-one.phase = 'water'; one.fish = null; one.lure = { x: 10, y: 40, z: -1, kd: 0, land: false }; E.P.x = two.holder.x; E.P.y = two.holder.y; E.action();
+one.phase = 'water'; one.fish = null; one.lure = { x: 10, y: 40, z: -1, kd: 0, land: false }; E.P.x = two.holder.x; E.P.y = two.holder.y; E.action(); step(0.35);
 A(E.ang === two && !two.holder && E.ang2 === one && one.holder, 'swapped rods at the second holder: ' + said.at(-1));
 // put the one in your hands away: the rod in the holder is the one you have out; travel takes them all
 two.phase = 'ready'; two.lure = null; E.keyPress('KeyQ', {}, false); A(E.ang === one && !E.ang2 && one.out && one.holder, 'stowed the hand rod, the holder rod remains');

@@ -66,12 +66,13 @@ function hullShape(H) {
 // meshBuilder(true): rounded parts are smooth-shaded. Surfaces are MT.PLASTER (plain paint): the generic material draws rock strata on upright faces and wood draws plank grain, and on a
 // hull both read as stray lines.
 function boatMesh(D) {
-  const H = D.hull, S = hullShape(H), M = meshBuilder(true), C = {}; for (const k in BOAT_DEFAULTS.colors) C[k] = hexRGB(D.colors[k] || D.colors.hull || BOAT_DEFAULTS.colors[k]);
+  const H = D.hull, S = hullShape(H), M = meshBuilder(true), shell = meshBuilder(true), walls = meshBuilder(true), C = {}; for (const k in BOAT_DEFAULTS.colors) C[k] = hexRGB(D.colors[k] || D.colors.hull || BOAT_DEFAULTS.colors[k]);
   const NT = 36, NS = 12, th = H.thickness_m, fz = H.floor_m, wl = 0.01, below = C.bottom ? C.bottom : C.hull;
   const decked = t => (H.decks && (t > 1 - (H.decks.bow || 0) || t < (H.decks.stern || 0))) || (H.cockpit && (t < H.cockpit[0] || t > H.cockpit[1]));
   const P = (t, s, sd) => { const [y, z] = S.sec(t, s); return [S.x(t), sd * y, z]; };
   // outer skin (antifouling below the waterline)
-  M.mat = MT.PLASTER;
+  M.mat = shell.mat = walls.mat = MT.PLASTER;
+  const planes = Array.from({ length: NT }, () => []);
   // each panel is cut along the waterline, so the antifouling meets the topsides in a clean line, not a staircase of whole panels
   const sWl = t => { let lo = 0, hi = 1; for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < wl) lo = m; else hi = m; } return (lo + hi) / 2; };
   // the skin is smooth-shaded: each corner takes the hull's own slope there, so the panels blend into one fair curve
@@ -80,21 +81,42 @@ function boatMesh(D) {
     n = norm3(n); return n[1] * p[1] + n[2] * (p[2] - 0.3) < 0 ? [-n[0], -n[1], -n[2]] : n; };   // pointing out, away from the middle of the boat
   const skin = (qa, qb, qc, qd, sd, col) => { const v = [qa, qb, qc, qd].map(q => P(q[0], q[1], sd)), n = [qa, qb, qc, qd].map(q => nrm(q[0], q[1], sd));
     for (const [i, j, k] of [[0, 1, 2], [0, 2, 3]]) { const f = cross3([v[j][0] - v[i][0], v[j][1] - v[i][1], v[j][2] - v[i][2]], [v[k][0] - v[i][0], v[k][1] - v[i][1], v[k][2] - v[i][2]]), out = f[0] * n[i][0] + f[1] * n[i][1] + f[2] * n[i][2] >= 0;   // wound to face outward
-      if (Math.hypot(...f) > 1e-12) out ? M.triN(v[i], v[j], v[k], n[i], n[j], n[k], col, col, col) : M.triN(v[i], v[k], v[j], n[i], n[k], n[j], col, col, col); } };
+      if (sd === 1 && Math.hypot(...f) > 1e-12) { const fn = norm3(f).map(x => out ? x : -x); planes[Math.min(NT - 1, Math.round(qa[0] * NT))].push({ n: fn, p: v[i] }); }
+      if (Math.hypot(...f) > 1e-12) out ? shell.triN(v[i], v[j], v[k], n[i], n[j], n[k], col, col, col) : shell.triN(v[i], v[k], v[j], n[i], n[k], n[j], col, col, col); } };
   for (let i = 0; i < NT; i++) { const t0 = i / NT, t1 = (i + 1) / NT, w0 = sWl(t0), w1 = sWl(t1);
     for (let j = 0; j < NS; j++) for (const sd of [1, -1]) {
       const s0 = j / NS, s1 = (j + 1) / NS, m0 = clamp(w0, s0, s1), m1 = clamp(w1, s0, s1);
       if (m0 > s0 || m1 > s0) skin([t0, s0], [t1, s0], [t1, m1], [t0, m0], sd, below);
       if (m0 < s1 || m1 < s1) skin([t0, m0], [t1, m1], [t1, s1], [t0, s1], sd, C.hull);
     } }
-  // inside: walls down to the floor, the floor, and the rim along the gunwale
-  const inner = (t, sd, z) => { let y = 0; for (let k = 0; k <= 20; k++) { const [yy, zz] = S.sec(t, k / 20); if (zz >= z) { y = yy; break; } y = yy; } return [S.x(t), sd * Math.max(0, y - th), z]; };
+  D._skinN = shell.v.length / VS;
+  // Inset against the actual triangulated skin, including waterline cuts. A y-only
+  // thickness underestimates clearance on flared sides; curved-section samples can
+  // even lie outside the mesh's chords. Offset each adjacent face plane by th along
+  // its normal, then intersect at the requested x/z. Shared stations satisfy both
+  // neighbouring strips, keeping entire wall triangles inside as well as vertices.
+  const inner = (t, sd, z) => {
+    const x = S.x(t), u = t * NT, station = Math.abs(u - Math.round(u)) < 1e-8 ? Math.round(u) : u;
+    let y = S.hb(t) - th;
+    for (let i = Math.max(0, Math.ceil(station - 1)); i <= Math.min(NT - 1, Math.floor(station)); i++) {
+      for (const { n, p } of planes[i]) if (n[1] > 1e-7)
+        y = Math.min(y, p[1] + (-th - n[0] * (x - p[0]) - n[2] * (z - p[2])) / n[1]);
+    }
+    return [x, sd * Math.max(0, y), z];
+  };
+  // a strip of the liner, smooth-shaded like the skin (each corner takes the hull's inward slope there) and wound to face into the boat
+  const sAt = (t, z) => { let lo = 0, hi = 1; for (let k = 0; k < 16; k++) { const m = (lo + hi) / 2; if (S.sec(t, m)[1] < z) lo = m; else hi = m; } return (lo + hi) / 2; };
+  const wallQuad = (q, sd) => { const v = q.map(([t, z]) => inner(t, sd, z)), n = q.map(([t, z]) => nrm(t, sAt(t, z), sd).map(x => -x));
+    for (const [i, j, k] of [[0, 1, 2], [0, 2, 3]]) { const f = cross3([v[j][0] - v[i][0], v[j][1] - v[i][1], v[j][2] - v[i][2]], [v[k][0] - v[i][0], v[k][1] - v[i][1], v[k][2] - v[i][2]]); if (Math.hypot(...f) < 1e-12) continue;
+      f[0] * n[i][0] + f[1] * n[i][1] + f[2] * n[i][2] >= 0 ? walls.triN(v[i], v[j], v[k], n[i], n[j], n[k], C.interior, C.interior, C.interior) : walls.triN(v[i], v[k], v[j], n[i], n[k], n[j], C.interior, C.interior, C.interior); } };
+  const WALL = 6;   // the inside walls in strips down to the floor, so they follow the hull's curve and never cut through the skin
   for (let i = 0; i < NT; i++) {
     const t0 = i / NT, t1 = (i + 1) / NT, tm = (t0 + t1) / 2;
     for (const sd of [1, -1]) {
       const g0 = S.gun(t0), g1 = S.gun(t1), o0 = P(t0, 1, sd), o1 = P(t1, 1, sd), in0 = inner(t0, sd, g0 - 0.005), in1 = inner(t1, sd, g1 - 0.005);
       M.mat = MT.PLASTER; M.quad(o0, o1, in1, in0, C.trim, [o0[0], 0, -1]);   // gunwale rim
-      if (!decked(tm)) { const f0 = inner(t0, sd, fz), f1 = inner(t1, sd, fz); M.mat = MT.PLASTER; M.quad(in0, in1, f1, f0, C.interior, [o0[0], sd * 2, (g0 + fz) / 2]); }
+      if (!decked(tm)) { M.mat = MT.PLASTER; for (let k = 0; k < WALL; k++) { const za = k / WALL, zb = (k + 1) / WALL, h0 = z => g0 - 0.005 + (fz - g0 + 0.005) * z, h1 = z => g1 - 0.005 + (fz - g1 + 0.005) * z;
+        wallQuad([[t0, h0(za)], [t1, h1(za)], [t1, h1(zb)], [t0, h0(zb)]], sd); } }
     }
     if (!decked(tm)) { const a = inner(t0, 1, fz), b = inner(t1, 1, fz), c = inner(t1, -1, fz), e = inner(t0, -1, fz); M.mat = MT.PLASTER; M.quad(a, b, c, e, V3.mul(C.interior, 0.9), [a[0], 0, -1]); }
     else { // a deck, crowned a little in the middle, from gunwale to gunwale
@@ -103,13 +125,15 @@ function boatMesh(D) {
       M.mat = MT.PLASTER; for (const sd of [1, -1]) M.quad(D0(sd), D1(sd), m1, m0, C.deck, [m0[0], 0, -1]);
     }
   }
+  D._wallN = walls.v.length / VS;
+  for (const v of walls.v) shell.v.push(v);
   // closing walls where an open cockpit meets a deck (bulkheads), and the transom
-  const bulk = t => { const g = S.gun(t), n = 10; for (const sd of [1, -1]) for (let k = 0; k < n; k++) { const z0 = fz + (g - fz) * k / n, z1 = fz + (g - fz) * (k + 1) / n; M.quad(inner(t, sd, z0), inner(t, sd, z1), [S.x(t), 0, z1], [S.x(t), 0, z0], C.interior, [S.x(t) + 1, 0, 0]); } };
+  const bulk = (t, builder = M, direction = -1) => { const g = S.gun(t), n = 10; for (const sd of [1, -1]) for (let k = 0; k < n; k++) { const z0 = fz + (g - fz) * k / n, z1 = fz + (g - fz) * (k + 1) / n; builder.quad(inner(t, sd, z0), inner(t, sd, z1), [S.x(t), 0, z1], [S.x(t), 0, z0], C.interior, [S.x(t) - direction, 0, 0]); } };
   M.mat = MT.PLASTER;
   for (let i = 1; i < NT; i++) { const t = i / NT, a = decked(t - 0.5 / NT), b = decked(t + 0.5 / NT); if (a !== b) bulk(t); }
-  if (H.stern === 'transom') { M.mat = MT.PLASTER; for (let j = 0; j < NS; j++) for (const sd of [1, -1]) { const a = P(0, j / NS, sd), b = P(0, (j + 1) / NS, sd); M.tri([S.x(0), 0, S.gun(0) * 0.3 - S.keel(0) * 0.7], a, b, (a[2] + b[2]) / 2 < wl ? below : C.hull, [S.x(0) + 1, 0, 0]); }
-    M.tri([S.x(0), 0, S.gun(0)], P(0, 1, 1), P(0, 1, -1), C.hull, [S.x(0) + 1, 0, 0]); if (!decked(0.02)) bulk(0.001); }
-  if (H.bow === 'blunt') { const t = 1, n = NS; for (let j = 0; j < n; j++) for (const sd of [1, -1]) M.tri([S.x(t), 0, S.gun(t) * 0.5 - S.keel(t) * 0.5], P(t, j / n, sd), P(t, (j + 1) / n, sd), C.hull, [S.x(t) - 1, 0, 0]); if (!decked(0.98)) bulk(0.999); }
+  if (H.stern === 'transom') { M.mat = MT.PLASTER; for (let j = 0; j < NS; j++) for (const sd of [1, -1]) { const a = P(0, j / NS, sd), b = P(0, (j + 1) / NS, sd); shell.tri([S.x(0), 0, S.gun(0) * 0.3 - S.keel(0) * 0.7], a, b, (a[2] + b[2]) / 2 < wl ? below : C.hull, [S.x(0) + 1, 0, 0]); }
+    shell.tri([S.x(0), 0, S.gun(0) * 0.3 - S.keel(0) * 0.7], P(0, 1, 1), P(0, 1, -1), C.hull, [S.x(0) + 1, 0, 0]); if (!decked(0.02)) bulk(th / S.L, shell, 1); }
+  if (H.bow === 'blunt') { const t = 1, n = NS; for (let j = 0; j < n; j++) for (const sd of [1, -1]) shell.tri([S.x(t), 0, S.gun(t) * 0.5 - S.keel(t) * 0.5], P(t, j / n, sd), P(t, (j + 1) / n, sd), C.hull, [S.x(t) - 1, 0, 0]); shell.tri([S.x(t), 0, S.gun(t) * 0.5 - S.keel(t) * 0.5], P(t, 1, 1), P(t, 1, -1), C.hull, [S.x(t) - 1, 0, 0]); if (!decked(0.98)) bulk(1 - th / S.L, shell, -1); }
   if (H.cockpit) { const [c0, c1] = H.cockpit, n = 18; M.mat = MT.PLASTER;   // a coaming lip round the cockpit
     for (let k = 0; k < n; k++) { const a0 = k / n * TAU, a1 = (k + 1) / n * TAU, cx = S.x((c0 + c1) / 2), rx = (c1 - c0) / 2 * S.L, ry = S.hb((c0 + c1) / 2) * 0.82, z = S.gun((c0 + c1) / 2) + 0.05;
       M.tube([cx + Math.cos(a0) * rx, Math.sin(a0) * ry, z], [cx + Math.cos(a1) * rx, Math.sin(a1) * ry, z], 0.018, 0.018, 4, C.trim); } }
@@ -152,6 +176,8 @@ function boatMesh(D) {
         M.quad(L(p, q, u0, za), L(p, q, u1, za), L(p, q, u1, zb), L(p, q, u0, zb), C.deck, [(x0 + x1) / 2, 0, (z0 + z1) / 2]);
     M.quad([x0 - 0.05, -w - 0.05, z1], [x1 + 0.05, -w - 0.05, z1], [x1 + 0.05, w + 0.05, z1], [x0 - 0.05, w + 0.05, z1], C.trim, [x0, 0, 0]); }
   if (typeof boatDetail === 'function') boatDetail(D, S, M, C, { inner, P, fz, decked, motors: motorAt });   // trim and fittings (boat-detail.js)
+  D._shellStart = M.v.length / VS; D._shellN = shell.v.length / VS;
+  for (const v of shell.v) M.v.push(v);
   D._hullN = M.v.length / VS;   // the hull's own vertices; the wheel and throttle lever, then the oars / paddle (at rest) follow, for the menu picture
   D._helmN = 0; if (D._helm) { for (const v of D._helm.wheel) M.v.push(v); for (const v of D._helm.lever) M.v.push(v); D._helmN = (D._helm.wheel.length + D._helm.lever.length) / VS; }
   const O = D._oars = boatOars(D, S, C); if (O) { const m = new Float32Array(O.mesh.length); for (const sd of O.kind === 'oars' ? [1, -1] : [1]) { oarPose(D, O, 0, 0, sd, false, O.m); oarXform(O.mesh, O.m, m); for (const v of m) M.v.push(v); } }

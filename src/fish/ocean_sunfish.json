@@ -1,0 +1,162 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "ocean_sunfish",
+  "name": "Ocean sunfish",
+  "scientific": "Mola mola",
+  "description": "The heaviest bony fish: a tall, grey disc that ends just behind its towering dorsal and anal fins. Dives deep after jellyfish, then lies flat at the surface to warm up, where gulls pick off its parasites. A tiny mouth: it seldom takes a bait.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 100,
+      "typical": 180,
+      "max": 330,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.045,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.6,
+      0.9,
+      1,
+      1,
+      0.98,
+      0.9,
+      0.8,
+      0.68
+    ],
+    "height": 0.62,
+    "width": 0.14,
+    "flex": 0.15,
+    "head": {
+      "length": 0.25,
+      "snout": 0.75,
+      "mouth": 0.15,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "rounded",
+      "size": 0.08
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.62,
+          "length": 0.1,
+          "height": 0.55,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.62,
+        "length": 0.1,
+        "height": 0.5
+      },
+      "pectoral": 0.07,
+      "pelvic": 0
+    },
+    "colors": {
+      "back": "#6a7078",
+      "flank": "#a8b0b4",
+      "belly": "#e0e2e0",
+      "fins": "#6a7076",
+      "eye": "#101010",
+      "mouth": "#c8c0b8"
+    },
+    "pattern": [
+      {
+        "type": "mottled",
+        "color": "#d8dcdc",
+        "amount": 0.3,
+        "scale": 5,
+        "region": "all",
+        "alpha": 0.4
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate",
+      "tropical"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 5,
+      "preferred": 60,
+      "max": 600
+    },
+    "temperature_c": {
+      "min": 10,
+      "optimal": 19,
+      "max": 30
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 1.5
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.006,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 3000
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 1.2,
+    "turn_rate": 0.8,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.35,
+      "mid": 0.6,
+      "bottom": 0.05
+    },
+    "wariness": 0.1,
+    "spook_m": 3,
+    "recover_s": 30,
+    "curiosity": 0.6,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "plankton": 0.6,
+      "fish": 0.2,
+      "shrimp": 0.2
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.3,
+      "mid": 0.8,
+      "bottom": 0.05
+    },
+    "meals_per_day": 6
+  },
+  "fight": {
+    "strength": 0.5,
+    "stamina": 0.4,
+    "jumps": 0.1,
+    "runs": 0.3,
+    "teeth": 0.2
+  }
+}

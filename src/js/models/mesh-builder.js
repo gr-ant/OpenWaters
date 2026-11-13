@@ -60,9 +60,9 @@ function meshBuilder(smooth = false) { // smooth: round, smooth-shaded blobs (fi
     } else for (let k = 0; k < n; k++) quad(P(p0, r0, k, 0), P(p0, r0, k + 1, 0), P(p1, r1, k + 1, 1), P(p1, r1, k, 1), col, ctr);
     if (cap) for (let k = 0; k < n; k++) tri(P(p1, r1, k, 1), P(p1, r1, k + 1, 1), p1, col, p0);
   };
-  // low-poly ellipsoid (rings x segs), radii rx ry rz, optional per-vertex bump(i,j) and color fn
+  // low-poly ellipsoid (rings x segs), radii rx ry rz, optional per-vertex bump(i,j) and color fn (one bump at each pole, so the ends close to a point)
   const blob = (c, rx, ry, rz, rings, segs, col, bump, rot = 0) => {
-    const V = (i, j) => { const th = i / rings * Math.PI, ph = j / segs * 6.2832 + rot, b = bump ? bump(i, j % segs) : 1; return [c[0] + Math.sin(th) * Math.cos(ph) * rx * b, c[1] + Math.sin(th) * Math.sin(ph) * ry * b, c[2] + Math.cos(th) * rz * b]; };
+    const V = (i, j) => { const th = i / rings * Math.PI, ph = j / segs * 6.2832 + rot, b = bump ? bump(i, i === 0 || i === rings ? 0 : j % segs) : 1; return [c[0] + Math.sin(th) * Math.cos(ph) * rx * b, c[1] + Math.sin(th) * Math.sin(ph) * ry * b, c[2] + Math.cos(th) * rz * b]; };
     const N = (i, j) => { const q = V(i, j); return norm3([(q[0] - c[0]) / (rx * rx), (q[1] - c[1]) / (ry * ry), (q[2] - c[2]) / (rz * rz)]); };
     for (let i = 0; i < rings; i++) for (let j = 0; j < segs; j++) {
       const cc = typeof col === 'function' ? col(i, j) : col;

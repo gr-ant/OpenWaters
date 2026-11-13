@@ -1,0 +1,163 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "opah",
+  "name": "Opah",
+  "scientific": "Lampris guttatus",
+  "description": "Round, plate-shaped moonfish: steel-blue back, rosy flanks with white spots and bright crimson fins. The first fish found to be warm-blooded all over, it hunts squid in the cold twilight water by flapping its long pectoral fins.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 70,
+      "typical": 100,
+      "max": 200,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.03,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.45,
+      0.8,
+      0.97,
+      1,
+      0.92,
+      0.72,
+      0.42,
+      0.18
+    ],
+    "height": 0.55,
+    "width": 0.14,
+    "flex": 0.5,
+    "swim": "thunniform",
+    "head": {
+      "length": 0.22,
+      "snout": 0.55,
+      "mouth": 0.35,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "lunate",
+      "size": 0.18,
+      "fork": 0.5
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.28,
+          "length": 0.3,
+          "height": 0.28,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.62,
+        "length": 0.25,
+        "height": 0.05
+      },
+      "pectoral": 0.16,
+      "pelvic": 0.12
+    },
+    "colors": {
+      "back": "#3a4a78",
+      "flank": "#c07888",
+      "belly": "#d8a8b0",
+      "fins": "#d8202a",
+      "eye": "#d8b040",
+      "mouth": "#d82a30"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#f0f0f0",
+        "density": 0.35,
+        "size": 1,
+        "region": "all",
+        "alpha": 0.85
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate",
+      "tropical"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 30,
+      "preferred": 150,
+      "max": 500
+    },
+    "temperature_c": {
+      "min": 6,
+      "optimal": 14,
+      "max": 26
+    },
+    "current_ms": {
+      "preferred": 0.2,
+      "max": 2
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.01,
+    "school": {
+      "min": 1,
+      "max": 2
+    },
+    "home_range_m": 1500
+  },
+  "activity": {
+    "pattern": "diurnal"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.4,
+    "burst_bl_s": 4,
+    "turn_rate": 1.2,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.05,
+      "mid": 0.85,
+      "bottom": 0.1
+    },
+    "wariness": 0.4,
+    "spook_m": 8,
+    "recover_s": 60,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "fish": 0.6,
+      "shrimp": 0.4
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.05,
+      "mid": 0.9,
+      "bottom": 0.05
+    },
+    "meals_per_day": 2
+  },
+  "fight": {
+    "strength": 0.8,
+    "stamina": 0.8,
+    "jumps": 0.05,
+    "runs": 0.8,
+    "teeth": 0
+  }
+}

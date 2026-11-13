@@ -1,0 +1,169 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "oarfish",
+  "name": "Oarfish",
+  "scientific": "Regalecus glesne",
+  "description": "The longest bony fish: a silver ribbon several metres long with a crimson crest and a red fin the whole length of its back. Hangs upright in the twilight water sieving krill, and is almost never seen alive at the surface.",
+  "handling": {
+    "lip": false,
+    "hold": "none"
+  },
+  "size": {
+    "length_cm": {
+      "min": 300,
+      "typical": 450,
+      "max": 800,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.00055,
+      "b": 3.0
+    },
+    "condition_sd": 0.1
+  },
+  "body": {
+    "profile": [
+      0.7,
+      0.95,
+      1,
+      0.95,
+      0.85,
+      0.7,
+      0.5,
+      0.25
+    ],
+    "height": 0.085,
+    "width": 0.02,
+    "flex": 1.2,
+    "swim": "anguilliform",
+    "head": {
+      "length": 0.05,
+      "snout": 0.6,
+      "mouth": 0.3,
+      "jaw": "terminal"
+    },
+    "tail": {
+      "shape": "pointed",
+      "size": 0.05
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.01,
+          "length": 0.05,
+          "height": 0.22,
+          "spiny": false
+        },
+        {
+          "at": 0.04,
+          "length": 0.92,
+          "height": 0.07,
+          "spiny": false
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.8,
+        "length": 0.01,
+        "height": 0.004
+      },
+      "pectoral": 0.02,
+      "pelvic": 0.14
+    },
+    "colors": {
+      "back": "#9aa4b0",
+      "flank": "#d0d8e0",
+      "belly": "#e8ecf0",
+      "fins": "#d8303a",
+      "eye": "#101010",
+      "mouth": "#c8c0c0"
+    },
+    "pattern": [
+      {
+        "type": "spots",
+        "color": "#3a4250",
+        "density": 0.25,
+        "size": 1,
+        "region": "flank",
+        "alpha": 0.6
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "tropical",
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 20,
+      "preferred": 250,
+      "max": 1000
+    },
+    "temperature_c": {
+      "min": 5,
+      "optimal": 16,
+      "max": 28
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1.5
+    },
+    "turbidity_max": 0.2,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "open": 1
+    }
+  },
+  "population": {
+    "density": 0.003,
+    "school": {
+      "min": 1,
+      "max": 1
+    },
+    "home_range_m": 2000
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.15,
+    "burst_bl_s": 1.5,
+    "turn_rate": 0.8,
+    "station_holding": 0.6,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0.1,
+      "mid": 0.85,
+      "bottom": 0.05
+    },
+    "wariness": 0.3,
+    "spook_m": 6,
+    "recover_s": 60,
+    "curiosity": 0.3,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "shrimp": 0.7,
+      "plankton": 0.2,
+      "fish": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0.05,
+      "mid": 0.9,
+      "bottom": 0.05
+    },
+    "meals_per_day": 4
+  },
+  "fight": {
+    "strength": 0.4,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.2,
+    "teeth": 0
+  }
+}

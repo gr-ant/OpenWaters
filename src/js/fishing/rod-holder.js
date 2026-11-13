@@ -54,8 +54,9 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
       this.say(`Rod in the holder · walk off and listen for the bell · ${pickKey()} at the holder to take it back`, 3.5);
       this.tuiState = null; this.updateTui();
     },
-    pickUpHolder() {
+    pickUpHolder(contact = false) {
       const A = this.ang, H = A.holder, P = this.P; if (!H) return;
+      if (!contact) { if (H.reachT === undefined) H.reachT = 0; return; }
       A.holder = null; A.btnWas = false;
       const eye = [P.x, P.y, P.z + EYE], aim = this.rodAim(eye); A.yaw = aim[0]; A.pitch = aim[1]; A.hand = this.handForReel(A, eye); A.tip = this.rodTip(A);   // in your hands now, so the fight starts from here
       if (A.phase === 'bite' && H.on && A.fish) this.startFight(A.fish);
@@ -63,6 +64,9 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
       this.tuiState = null; this.updateTui();
     },
   });
+
+  // Keep the contact completion bound to this rod; the two-rod wrapper selects a rod only on input.
+  const finishHolderReach = E.pickUpHolder;
 
   // the take lasts longer off a holder; a fish that sets itself waits for you instead of fighting an empty rod
   const baseTake = E.fishTake; E.fishTake = function (f) { baseTake.call(this, f); if (this.ang.holder && this.ang.fish === f) this.ang.window *= 4; };
@@ -100,6 +104,10 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
   E.holderTick = function (dt) {   // one rod's holder for a frame; returns what the notice should say about it ('' for nothing)
     const A = E.ang, H = A && A.holder;
     if (!H || !A.out) { if (A && H) A.holder = null; return ''; }
+    if (H.reachT !== undefined) {
+      if (Math.hypot(H.x - this.P.x, H.y - this.P.y) >= REACH || Math.abs(H.z - this.P.z) >= 2.5 || this.swim || this.carry) delete H.reachT;
+      else { H.reachT += dt; if (H.reachT >= 0.34) { finishHolderReach.call(this, true); return ''; } }
+    }
     const st = A.phase === 'bite' ? (H.on ? 'on' : 'bite') : A.phase;
     if (st === 'bite' && H.was !== 'bite') { ring(H); H.alert = 'Bite at the rod holder!'; E.say(`Bell! ${H.alert} ${away(H)} m away`, 4); }
     else if (st !== 'bite' && st !== 'on' && (H.was === 'bite' || H.was === 'on')) H.alert = H.was === 'on' ? 'The fish at the holder threw the hook' : 'Missed a bite at the holder';
@@ -116,7 +124,10 @@ function holderMesh(drop) {   // origin at the reel seat, the rod along +x tilte
     const t = H.alert && (st === 'bite' || st === 'on' ? H.alert : `${H.alert} · rod still in the holder`);
     return t ? `${t} ${away(H)} m away${st === 'on' ? ` · ${Math.max(0, HOLD_S - H.onT).toFixed(0)} s` : ''}` : '';
   };
-  Game.on('update', dt => { const a = E.holderTick(dt); let b = '';
+  Game.on('update', dt => {
+    // Switching focus during a reach cancels it; a background rod must never be picked up by its tick.
+    if (E.ang2 && E.ang2.holder) delete E.ang2.holder.reachT;
+    const a = E.holderTick(dt); let b = '';
     if (E.ang2) { const one = E.ang; E.ang = E.ang2; E.ang2 = one; try { b = E.holderTick(dt); } finally { E.ang2 = E.ang; E.ang = one; } }   // the second rod (fishing/two-rods.js)
     const t = [a, b].filter(Boolean).join('   ·   '); if (t || (chip && !chip.hidden)) showChip(t); });
   // on the map: a dot where the rod stands

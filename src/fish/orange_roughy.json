@@ -1,0 +1,161 @@
+{
+  "schema": "embercrown-fish/1",
+  "id": "orange_roughy",
+  "name": "Orange roughy",
+  "scientific": "Hoplostethus atlanticus",
+  "description": "Deep-bodied, big-headed slimehead, brick-orange all over with a blue-black mouth. Gathers in great schools over seamounts and canyons far down the slope, and can live 150 years.",
+  "handling": {
+    "lip": false,
+    "hold": "cradle"
+  },
+  "size": {
+    "length_cm": {
+      "min": 30,
+      "typical": 40,
+      "max": 75,
+      "spread": 0.2
+    },
+    "weight": {
+      "a": 0.02,
+      "b": 3.0
+    },
+    "condition_sd": 0.09
+  },
+  "body": {
+    "profile": [
+      0.6,
+      0.9,
+      1,
+      0.98,
+      0.85,
+      0.62,
+      0.38,
+      0.22
+    ],
+    "height": 0.42,
+    "width": 0.12,
+    "flex": 0.8,
+    "head": {
+      "length": 0.32,
+      "snout": 0.75,
+      "mouth": 0.75,
+      "jaw": "superior"
+    },
+    "tail": {
+      "shape": "forked",
+      "size": 0.17,
+      "fork": 0.3
+    },
+    "fins": {
+      "dorsal": [
+        {
+          "at": 0.4,
+          "length": 0.25,
+          "height": 0.12,
+          "spiny": true
+        }
+      ],
+      "adipose": false,
+      "anal": {
+        "at": 0.62,
+        "length": 0.12,
+        "height": 0.07
+      },
+      "pectoral": 0.1,
+      "pelvic": 0.08
+    },
+    "colors": {
+      "back": "#c84a24",
+      "flank": "#e0703a",
+      "belly": "#f0a070",
+      "fins": "#d85a2a",
+      "eye": "#101010",
+      "mouth": "#3a2a5a"
+    },
+    "pattern": [
+      {
+        "type": "scales",
+        "color": "#a83a1c",
+        "alpha": 0.5,
+        "region": "all"
+      }
+    ]
+  },
+  "habitat": {
+    "climates": [
+      "temperate"
+    ],
+    "waters": {
+      "sea": 1
+    },
+    "depth_m": {
+      "min": 180,
+      "preferred": 900,
+      "max": 1800
+    },
+    "temperature_c": {
+      "min": 2,
+      "optimal": 5,
+      "max": 10
+    },
+    "current_ms": {
+      "preferred": 0.1,
+      "max": 1
+    },
+    "turbidity_max": 0.3,
+    "oxygen_min_mgL": 4,
+    "cover": {
+      "rocks": 0.8,
+      "open": 0.6
+    }
+  },
+  "population": {
+    "density": 0.2,
+    "school": {
+      "min": 4,
+      "max": 12
+    },
+    "home_range_m": 200
+  },
+  "activity": {
+    "pattern": "cathemeral"
+  },
+  "behavior": {
+    "cruise_bl_s": 0.3,
+    "burst_bl_s": 2,
+    "turn_rate": 1.4,
+    "station_holding": 0,
+    "ambush": 0,
+    "depth_zone": {
+      "surface": 0,
+      "mid": 0.6,
+      "bottom": 0.4
+    },
+    "wariness": 0.2,
+    "spook_m": 4,
+    "recover_s": 30,
+    "curiosity": 0.5,
+    "rise_per_hour": 0
+  },
+  "diet": {
+    "food": {
+      "shrimp": 0.6,
+      "fish": 0.3,
+      "plankton": 0.1
+    },
+    "piscivore_from_cm": 0,
+    "feeding_zone": {
+      "surface": 0,
+      "mid": 0.6,
+      "bottom": 0.4
+    },
+    "meals_per_day": 3
+  },
+  "fight": {
+    "strength": 0.35,
+    "stamina": 0.3,
+    "jumps": 0,
+    "runs": 0.2,
+    "teeth": 0
+  }
+}

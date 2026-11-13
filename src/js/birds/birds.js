@@ -21,18 +21,20 @@
 const Birds = globalThis.Birds = (() => {
   const TAU = Math.PI * 2, rnd = Math.random, wrap = a => { a = (a + Math.PI) % TAU; return a < 0 ? a + Math.PI : a - Math.PI; };
   const rr = r => r[0] + rnd() * (r[1] - r[0]);
-  const NF = 12, F_GLIDE = NF, F_SOAR = NF + 1, F_DIVE = NF + 2, F_SIT = NF + 3, F_STAND = NF + 4;
+  const NF = 12, F_GLIDE = NF, F_SOAR = NF + 1, F_DIVE = NF + 2, F_SIT = NF + 3, F_STAND = NF + 4, F_FEED = NF + 5, F_ONE = NF + 6;   // (feed, one leg: only species whose look has them)
 
   // =================== the model: +x forward, +y left, z up, metres; built from a species' look ===================
   const SU0 = [0, 0.1, 0.2, 0.3, 0.4, 0.48, 0.55, 0.62], XL0 = [0.07, 0.075, 0.075, 0.07, 0.04, 0.01, -0.03, -0.08];
   const XT0 = [-0.1, -0.11, -0.11, -0.1, -0.11, -0.11, -0.1, -0.088], TH0 = [0.018, 0.016, 0.013, 0.011, 0.008, 0.006, 0.004, 0.0015];
   const XLR = [0.07, 0.075, 0.075, 0.072, 0.066, 0.056, 0.04, 0.004], XTR = [-0.1, -0.115, -0.12, -0.12, -0.115, -0.105, -0.085, -0.042];   // broad, blunt-tipped wings (a preset; or give look.wing.planform { lead, trail })
-  function buildBird(K, o) {   // K: look, o: pose { t1, t2, sweep, shrink } or { fold, legs }
+  function buildBird(K, o) {   // K: look, o: pose { t1, t2, sweep, shrink } or { fold, legs, feed?, one? }
     const B = meshBuilder(true), C = K.colors, [bx, by, bz] = K.body, hr = K.head, bl = K.bill, sh = bx / 0.16;
     B.mat = MT.CLOTH;
-    B.blob([0, 0, 0], bx, by, bz, 7, 12, i => i < 2 ? C.mantle : C.body);
-    // neck and head: where they sit in flight and at rest (look.fly / look.rest; long-necked birds can tuck the head back to fly)
-    const HP = (o.fold ? K.rest : K.fly) || { neck: [[0.11 * sh, 0.025 * sh, 0]], head: [0.185 * sh, 0.05 * sh], bill: -0.117 };
+    B.blob([0, 0, 0], bx, by, bz, 7, 12, i => i < (K.mantle ?? 2) ? C.mantle : C.body);
+    const nBody = B.v.length;
+    // neck and head: where they sit in flight and at rest (look.fly / look.rest; long-necked birds can tuck the head back to fly;
+    // look.feed: head down in the water while wading; look.swim: on the water, for birds whose rest pose is upright)
+    const HP = (o.fold ? (o.feed && K.feed) || (!o.legs && K.swim) || K.rest : K.fly) || { neck: [[0.11 * sh, 0.025 * sh, 0]], head: [0.185 * sh, 0.05 * sh], bill: -0.117 };
     const NK = [];   // a long neck is a chain of overlapping blobs, densified so it reads as one smooth S
     HP.neck.forEach((q, i) => { const p = HP.neck[i - 1]; if (p && p[2] && q[2]) { const n = Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / (Math.min(p[2], q[2]) * 0.45));
       for (let j = 1; j < n; j++) { const t = j / n; NK.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t]); } } NK.push(q); });
@@ -41,32 +43,50 @@ const Birds = globalThis.Birds = (() => {
     for (const [nx, nz, nr] of NK) B.blob([nx, 0, nz], nr ? nr * 1.1 : 0.07 * sh, nr || by * 0.76, nr || bz * 0.8, 6, 10, C.neck || C.head);
     const [hx, hz] = HP.head; B.blob([hx, 0, hz], hr * 1.15, hr, hr * 1.05, 6, 10, C.head);
     B.mat = MT.GEN;
+    if (C.patch) for (const s of [1, -1]) B.blob([hx + hr * 0.2, s * hr * 0.62, hz + hr * 0.38], hr * 0.5, hr * 0.42, hr * 0.3, 4, 8, C.patch);   // a pale patch over the eye (gentoo)
     const er = Math.max(0.007, hr * 0.15); for (const s of [1, -1]) B.blob([hx + hr * 0.45, s * hr * 0.82, hz + hr * 0.27], er, er * 0.57, er, 3, 6, C.eye);
     const bp = HP.bill, dx = Math.cos(bp), dz = Math.sin(bp), dn = [dz, 0, -dx];   // bill direction, and "down" across it
     const at = (p, a, d = 0) => [p[0] + dx * a + dn[0] * d, 0, p[2] + dz * a + dn[2] * d];
     const b0 = [hx + hr * 0.95 * dx, 0, hz - hr * 0.07 + hr * 0.95 * dz], b1 = at(b0, bl.len * 0.85);
-    B.tube(b0, b1, bl.base, bl.base * (bl.taper ?? 0.55), 6, C.bill);
-    B.tube(b1, at(b1, bl.len * 0.17, bl.hook), bl.base * (bl.taper ?? 0.55), bl.base * 0.25, 5, C.billTip || C.bill, true);
+    if (bl.bend) {   // a bill that kinks down partway along (a flamingo's): the outer part turned down by bend (rad)
+      const k = bl.kink ?? 0.45, c = Math.cos(bl.bend), sn = Math.sin(bl.bend), ex = dx * c + dn[0] * sn, ez = dz * c + dn[2] * sn, m = at(b0, bl.len * k), L2 = bl.len * (0.83 - k);
+      const e = [m[0] + ex * L2, 0, m[2] + ez * L2], tip = [e[0] + ex * bl.len * 0.17 + ez * bl.hook, 0, e[2] + ez * bl.len * 0.17 - ex * bl.hook];
+      B.tube(b0, m, bl.base, bl.base * 0.85, 6, C.bill); B.tube(m, e, bl.base * 0.85, bl.base * (bl.taper ?? 0.55), 6, C.billTip || C.bill);
+      B.tube(e, tip, bl.base * (bl.taper ?? 0.55), bl.base * 0.25, 5, C.billTip || C.bill, true);
+    } else {
+      B.tube(b0, b1, bl.base, bl.base * (bl.taper ?? 0.55), 6, C.bill);
+      B.tube(b1, at(b1, bl.len * 0.17, bl.hook), bl.base * (bl.taper ?? 0.55), bl.base * 0.25, 5, C.billTip || C.bill, true);
+    }
     if (C.billSpot) B.blob(at(b1, -bl.len * 0.12, bl.base * 0.6), 0.007, 0.006, 0.005, 3, 6, C.billSpot);
     if (bl.pouch) B.tube(at(b0, -bl.base * 0.5, bl.base * 0.7), at(b0, bl.len * 0.8, bl.base * 0.55), bl.base * bl.pouch, bl.base * 0.45, 8, C.pouch || C.bill, true);   // the throat pouch
+    const nTail = B.v.length;
     B.mat = MT.CLOTH;   // tail: a thin fan, two faces a few mm apart so it reads from above and below
     const T = K.tail, x0 = -bx * 0.82, x1 = x0 - T.len, tz = o.fold ? 0.03 : 0.012, fk = T.fork || 0;
     const tl = [[x0, T.root], [x0, -T.root], [x1 + fk, -T.end], [x1, -T.end * 0.6], [x1, T.end * 0.6], [x1 + fk, T.end]];
     for (const [dz, c] of [[0.004, -1], [-0.004, 1]]) { const P = tl.map(([x, y]) => [x, y, tz + dz]), ctr = [x0, 0, tz + c];
       B.quad(P[0], P[1], P[2], P[5], C.tail, ctr); B.quad(P[2], P[3], P[4], P[5], C.tail, ctr); }
-    if (o.fold) {   // wings folded along the back, primaries crossed over the tail
+    if (o.fold && K.wing.flipper) for (const s of [1, -1]) B.blob([bx * 0.2, s * by * 0.98, -bz * 0.05], K.wing.span * 0.5, by * 0.13, bz * 0.38, 5, 10, i => i < 3 ? C.wingTop : C.wingUnder);   // flippers flat against the sides
+    else if (o.fold) {   // wings folded along the back, primaries crossed over the tail
       for (const s of [1, -1]) {
         B.blob([-0.03 * sh, s * by * 0.85, bz * 0.42], bx * 0.94, by * 0.38, bz * 0.67, 5, 10, C.wingTop);
         B.mat = MT.GEN; B.tube([-0.12 * sh, s * by * 0.66, bz * 0.62], [x0 - T.len * 0.3, s * 0.018, 0.05], 0.024 * sh, 0.005, 6, C.wingTip, true);
         if (C.mirror) B.blob([x0 - T.len * 0.25, s * 0.022, 0.053], 0.012, 0.006, 0.006, 3, 6, C.mirror); B.mat = MT.CLOTH;
       }
     } else wings(B, K, o);
+    if (o.legs && K.upright) {   // standing upright (penguins): body, tail and wings tipped nose-up by look.upright (rad); the head stays where look.rest puts it
+      const c = Math.cos(K.upright), s = Math.sin(K.upright), V = B.v, turn = (a, b) => { for (let i = a; i < b; i += VS) for (const q of [i, i + 3]) { const x = V[q], z = V[q + 2]; V[q] = x * c - z * s; V[q + 2] = x * s + z * c; } };
+      turn(0, nBody); turn(nTail, V.length);
+    }
     B.mat = MT.GEN;
-    const LG = K.legs;
+    const LG = K.legs, ft = LG.feet ?? 1, ly = by * 0.5;
     if (o.legs) for (const s of [1, -1]) {
-      const ft = LG.feet ?? 1, ly = by * 0.5;
+      if (o.one && s < 0) {   // resting on one leg: the other drawn up under the body, the foot folded back
+        const k = [-0.02, s * ly * 0.7, -bz * 0.7 - LG.len * 0.22]; B.tube([0, s * ly, -bz * 0.7], k, 0.009 * ft, 0.008 * ft, 5, C.legs); B.tube(k, [-0.02 - LG.len * 0.2, s * ly * 0.6, -bz * 0.7 - 0.01], 0.008 * ft, 0.006 * ft, 5, C.legs, true); continue; }
       B.tube([0, s * ly, -bz * 0.7], [0, s * (ly + 0.005), -LG.len + 0.005], 0.009 * ft, 0.007 * ft, 5, C.legs);
       for (const d of [-1, 0, 1]) B.tube([0, s * (ly + 0.005), -LG.len + 0.004], [0.05 * ft, s * (ly + 0.005) + d * 0.022 * ft, -LG.len + 0.002], 0.005 * ft, 0.003 * ft, 4, C.legs, true);
+    } else if (!o.fold && LG.trail) for (const s of [1, -1]) {   // long legs stretched out behind in flight (flamingos, herons)
+      const a = [-bx * 0.4, s * ly * 0.6, -bz * 0.6], e = [-bx * 0.4 - LG.len, s * ly * 0.35, -bz * 0.6 + 0.01];
+      B.tube(a, e, 0.009 * ft, 0.007 * ft, 5, C.legs); B.tube(e, [e[0] - 0.06 * ft, e[1], e[2]], 0.007 * ft, 0.003 * ft, 4, C.legs, true);
     } else if (!o.fold) for (const s of [1, -1]) B.blob([x0 + 0.01, s * 0.018, -0.032], 0.025, 0.01, 0.01, 3, 6, C.legs);   // feet tucked under the tail
     return new Float32Array(B.v);
   }
@@ -92,12 +112,14 @@ const Birds = globalThis.Birds = (() => {
       }
     }
   }
-  function posesFor(F) {   // wing poses: NF flap frames (the hand folds in on the upstroke), glide, soar, dive, sitting, standing
-    const A = F.stroke ?? 0.52, P = [];
+  function posesFor(sp) {   // wing poses: NF flap frames (the hand folds in on the upstroke), glide, soar, dive, sitting, standing (+ feeding, one-legged)
+    const F = sp.flight, A = F.stroke ?? 0.52, P = [];
     for (let j = 0; j < NF; j++) { const f = j / NF * TAU, up = Math.max(0, Math.cos(f)), t1 = 0.12 + A * Math.sin(f);
       P.push({ t1, t2: t1 + A * 0.62 * Math.sin(f - 1), sweep: 0.07 * up, shrink: 0.18 * up }); }
     P.push({ t1: 0.1, t2: -0.06, sweep: 0.02, shrink: 0 }, { t1: 0.22, t2: -0.2, sweep: 0.05, shrink: 0.06 }, { t1: 0.35, t2: -0.35, sweep: 0.12, shrink: 0.25 },
       { fold: true }, { fold: true, legs: true });
+    if (sp.look.feed) P[F_FEED] = { fold: true, legs: true, feed: true };
+    if (sp.look.legs.oneLeg) P[F_ONE] = { fold: true, legs: true, one: true };
     return P;
   }
 
@@ -197,6 +219,10 @@ const Birds = globalThis.Birds = (() => {
           const s = { kind: 'tree', x: px, y: py, z: d[i + 2] + t[2] * sc, pose: 'stand', high: true, key: `t:${d[i].toFixed(1)}:${d[i + 1].toFixed(1)}`, tree: { bx: d[i], by: d[i + 1], sc, rot: ro, h: t[2] } };
           s.at = T => { const p = treeSway(s, T); return { x: p[0], y: p[1], z: s.z }; }; out.push(s); } }
       return out; },
+    wade(x, y, R, bird) { const W = (bird ? bird.sp : DEFAULTS).wade, out = [], a0 = rnd() * TAU;   // standing in shallow water on long legs: where a few rays out cross the shallows
+      for (let k = 0; k < 8; k++) { const q = shallows(x, y, a0 + k / 8 * TAU, R, W);
+        if (q) out.push({ kind: 'wade', x: q.x, y: q.y, z: q.w.ground, pose: 'stand', walk: true, wade: true, key: `d:${q.x | 0}:${q.y | 0}` }); }
+      return out; },
     cliff(x, y, R) { const out = [];   // the grassy rims of sea stacks, a few steps in from the drop
       for (const k of seaStacks()) { if (Math.hypot(k.x - x, k.y - y) > R + k.r) continue;
         for (let i = 0; i < 12; i++) { const a = i / 12 * TAU + k.ph, px = k.x + Math.cos(a) * k.rin, py = k.y + Math.sin(a) * k.rin, z = Game.groundAt(px, py);
@@ -211,6 +237,53 @@ const Birds = globalThis.Birds = (() => {
       return out; },
   };
   for (const k in BUILTIN) providers.set(k, BUILTIN[k]);
+  const wadeable = (w, W) => !w.iced && W.kinds.includes(w.kind) && w.depth >= W.depth[0] && w.depth <= W.depth[1];
+  function shallows(x, y, a, R, W) {   // along a ray: the first place the water is wading-deep (often only a strip a few metres wide along a beach), or null
+    const c = Math.cos(a), s = Math.sin(a), t = (W.depth[0] + W.depth[1]) / 2, at = d => Game.waterAt(x + c * d, y + s * d);
+    let d0 = 0, w0 = at(0);
+    for (let d = 6; d <= R; d += 6) { const w = at(d);
+      if ((w0.depth < t) !== (w.depth < t)) { let lo = d0, hi = d, up = w0.depth < t;   // crossed it: narrow it down
+        for (let i = 0; i < 6; i++) { const m = (lo + hi) / 2; if ((at(m).depth < t) === up) lo = m; else hi = m; }
+        const m = (lo + hi) / 2, q = at(m); if (wadeable(q, W)) return { x: x + c * m, y: y + s * m, w: q }; }
+      d0 = d; w0 = w; }
+    return null;
+  }
+
+  // =================== the islet: one small island standing on its own, for a colony that keeps to it (colonySite: 'islet') ===================
+  // Deterministic from the seed: round each lesser blob of the island layout (islets, slivers, knobs, outlying islands) the base
+  // terrain is sampled every 80 m; a patch of land that doesn't reach the edge of its box is an island of its own. Smallest first.
+  let ISLETS, SITE;
+  function islets() {
+    if (ISLETS) return ISLETS; ISLETS = [];
+    const S = 80, R = CONFIG.islandSize / 2;
+    for (const b of LAYOUT.blobs) { const rb = Math.max(b.rx, b.ry); if (rb > 0.3 * R) continue;
+      const half = rb + 560, n = Math.ceil(2 * half / S), x0 = b.cx - half, y0 = b.cy - half, land = new Uint8Array(n * n);   // (560: the coast's warp)
+      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) land[j * n + i] = islandBase(x0 + (i + 0.5) * S, y0 + (j + 0.5) * S) > WLW + 0.5 ? 1 : 0;
+      for (let k = 0; k < n * n; k++) if (land[k] === 1) { const st = [k]; land[k] = 2; let c = 0, sx = 0, sy = 0, edge = false;
+        while (st.length) { const q = st.pop(), i = q % n, j = (q / n) | 0; c++; sx += i; sy += j; if (!i || !j || i === n - 1 || j === n - 1) edge = true;
+          for (const r of [i > 0 && q - 1, i < n - 1 && q + 1, j > 0 && q - n, j < n - 1 && q + n]) if (r !== false && land[r] === 1) { land[r] = 2; st.push(r); } }
+        const x = x0 + (sx / c + 0.5) * S, y = y0 + (sy / c + 0.5) * S;
+        if (!edge && c >= 3 && !ISLETS.some(o => Math.hypot(o.x - x, o.y - y) < S)) ISLETS.push({ x, y, c, r: S * Math.sqrt(c / Math.PI) }); } }   // (boxes overlap: once each)
+    return ISLETS.sort((a, b) => a.c - b.c);
+  }
+  // where the colony stands: on the smallest islet with a beach, walking out from its middle on a seeded bearing to the first low shore,
+  // with places to stand ashore (within 22 m) and to swim off it (out to 80 m); null if the seed has no islet with such a shore
+  function isletSite() {
+    if (SITE !== undefined) return SITE; SITE = null;
+    const rng = mulberry32((SEED ^ 0x9e9a1) >>> 0), a0 = rng() * TAU;
+    for (const I of islets()) for (let k = 0; k < 16 && !SITE; k++) { const a = a0 + k / 16 * TAU, c = Math.cos(a), s = Math.sin(a); let land = false;
+      for (let d = 0; d < I.r * 2 + 300; d += 3) { const w = Game.waterAt(I.x + c * d, I.y + s * d); if (w.depth < -0.1) { land = true; continue; } if (!land) continue;
+        const x = I.x + c * (d - 10), y = I.y + s * (d - 10), g = Game.waterAt(x, y), L = [], Sea = [];
+        if (g.depth > -0.1 || g.ground > w.level + 4) break;   // a cliff, not a beach: try another bearing
+        for (let q = 0; q < 160 && L.length < 40; q++) { const r = Math.sqrt(rng()) * 22, b = rng() * TAU, px = x + Math.cos(b) * r, py = y + Math.sin(b) * r, h = Game.waterAt(px, py);
+          const sl = Math.abs(Game.groundAt(px + 0.6, py) - Game.groundAt(px - 0.6, py)) + Math.abs(Game.groundAt(px, py + 0.6) - Game.groundAt(px, py - 0.6));
+          if (h.depth < -0.1 && h.ground < w.level + 6 && sl < 0.7) L.push([px, py]); }
+        for (let q = 0; q < 120 && Sea.length < 30; q++) { const b = a + (rng() - 0.5) * 2.2, r = 20 + rng() * 60, px = x + Math.cos(b) * r, py = y + Math.sin(b) * r;
+          if (Game.waterAt(px, py).depth > 0.8) Sea.push([px, py]); }
+        if (L.length >= 6 && Sea.length >= 4) SITE = { x, y, a, r: I.r, islet: I, land: L, sea: Sea };
+        break; } }
+    return SITE;
+  }
   const Perches = {
     providers,
     add(name, fn) { providers.set(name, fn); },
@@ -238,7 +311,14 @@ const Birds = globalThis.Birds = (() => {
     habitat: {},                    // flock size near each kind of water: { sea, lake, river, creek, pond, any }
     night: 'roost',                 // 'roost': settle at dusk and stay till dawn · 'active'
     climates: null,                 // null = any island; or e.g. ['temperate', 'tropical']
-    colony: 0,                      // > 0: nests on sea stacks; within 500 m of one the flock is this big and stays round them
+    colony: 0,                      // > 0: a colony; within 500 m of it the flock is this big and stays round it
+    colonySite: 'stacks',           // where the colony is: 'stacks' (sea stacks) · 'islet' (one small island of its own, chosen from the seed)
+    down: 0.5,                      // the share already down (on a perch) when you arrive somewhere
+    wade: { depth: [0.08, 0.45], kinds: ['sea'] },   // lands.wade: standing in water this deep (m), of these kinds, on its legs
+    // flightless: null, or walking and swimming instead of flying (penguins): walk / swim m/s · ashore / afloat: [s, s] before
+    //   heading for the sea / back to the colony · leap: mean s between porpoising leaps, leapTime s, leapHeight m · dive: mean s
+    //   between dives, under: [s, s], depth m. Needs a colony to keep to (colonySite 'islet'); elsewhere it stays put
+    flightless: null,
     flight: { speed: 9, flapHz: 3, stroke: 0.52, flapTime: [1, 3], glideTime: [2, 6], turn: 0.85, alt: [8, 25], radius: [15, 45], soar: true, followBoats: false,
       clear: 5 },                   // least height over water while circling (low for wave-skimmers)
     // fishing on the wing: one strike behaviour, shaped entirely by these numbers (null = never)
@@ -259,6 +339,10 @@ const Birds = globalThis.Birds = (() => {
     look: {
       body: [0.16, 0.068, 0.072], head: 0.044, bill: { len: 0.074, base: 0.012, hook: 0.009 },
       tail: { len: 0.14, root: 0.035, end: 0.062, fork: 0 }, wing: { span: 0.62, chord: 1, tipFrom: 0.48 }, legs: { len: 0.2 },
+      // also: mantle (body rings from the top in the mantle colour, 2) · upright (rad: stands tipped nose-up, penguins) · bill.bend / bill.kink (a bill
+      // turned down by bend rad at kink of its length) · wing.flipper (flat flippers) · legs.trail (stretched out behind in flight) · legs.oneLeg (chance
+      // it rests on one leg) · fly / rest / feed / swim: { neck: [[x, z, r]...], head: [x, z], bill: rad } in flight, standing, feeding head-down, swimming
+      // · colors.neck, billTip, billSpot, pouch, mirror, wingEdge, wingUnderTip, patch (over the eye)
       colors: { mantle: [0.6, 0.55, 0.5], body: [0.8, 0.78, 0.74], head: [0.8, 0.78, 0.74], eye: [0.08, 0.07, 0.05], bill: [0.3, 0.3, 0.3], tail: [0.6, 0.55, 0.5],
         wingTop: [0.6, 0.55, 0.5], wingTip: [0.3, 0.28, 0.26], wingUnder: [0.8, 0.78, 0.74], legs: [0.4, 0.35, 0.3] },
     },
@@ -266,7 +350,7 @@ const Birds = globalThis.Birds = (() => {
   };
   const species = {};
   function register(def) {
-    const sp = deepMerge(DEFAULTS, def); sp.id = def.id; sp.poses = posesFor(sp.flight); sp.meshes = sp.poses.map(p => buildBird(sp.look, p)); sp.gpu = [];
+    const sp = deepMerge(DEFAULTS, def); sp.id = def.id; sp.poses = posesFor(sp); sp.meshes = sp.poses.map(p => buildBird(sp.look, p)); sp.gpu = [];
     sp.flock = { x: 0, y: 0, lev: 0, ax: 0, ay: 0, at: 0 }; sp.want = 0;
     species[sp.id] = sp; return sp;
   }
@@ -281,15 +365,18 @@ const Birds = globalThis.Birds = (() => {
         roll: 0, pitch: 0, dir: rnd() < 0.5 ? 1 : -1, R0: rr(F.radius), alt: rr(F.alt), ox: (rnd() - 0.5) * 30, oy: (rnd() - 0.5) * 30, sc: rr(sp.scale),
         tint: 0.42 + rnd() * 0.16, wob: rnd() * 100, callT: 3 + rnd() * 20, voice: sp.voice ? rr(sp.voice.pitch || [1000, 1100]) : 0, gzT: 0, gzv: 0, stay: 0, frame: 0, spot: null };
       b.gzv = surfAt(x, y); b.z = Math.max(sp.flock.lev, b.gzv) + b.alt;
-      if (st !== 'fly') { const s = Perches.near(x, y, 4, [st === 'float' ? 'water' : 'ground'])[0]; if (s) this.settle(b, s, true); }
+      if (sp.flightless) { const S = st === 'colony' && this.home(sp), L = S && (rnd() < 0.7 ? S.land : S.sea), q = L && L[rnd() * L.length | 0];   // at the colony: most ashore, a few out swimming
+        if (q) { b.x = q[0] + (rnd() - 0.5) * 2; b.y = q[1] + (rnd() - 0.5) * 2; } b.st = 'new'; this.waddle(b, 0); }
+      else if (st !== 'fly') { const s = Perches.near(x, y, 4, [st === 'float' ? 'water' : 'ground'])[0]; if (s) this.settle(b, s, true); }
       this.list.push(b); return b;
     },
     bodyZ(b, s, p) { return s.pose === 'float' ? s.water.lev + Engine.swellAt(p.x, p.y, s.water.kd) + b.sp.floatZ * b.sc : p.z + b.sp.look.legs.len * b.sc; },
     settle(b, s, quiet) {
       if (b.group) b.group.end = Engine.time + 4;   // give the followers a moment to see where the leader came down (school() disbands after)
-      b.st = s.pose === 'float' ? 'float' : 'stand'; b.spot = s; b.v = b.vz = 0; b.lt = 0; b.roll = 0;
+      b.st = s.pose === 'float' ? 'float' : 'stand'; b.spot = s; b.px = b.py = null; b.v = b.vz = 0; b.lt = 0; b.roll = 0;
       b.stay = this.night() && b.sp.night === 'roost' ? 1e9 : rr(b.sp.stay) * (s.kind === 'boat' ? 0.5 : 1); b.callT = 4 + rnd() * 25;
-      if (!quiet && s.pose === 'float') Game.ripple(b.x, b.y, 0.45);
+      if (b.sp.look.legs.oneLeg) { b.one = rnd() < b.sp.look.legs.oneLeg; b.feeding = false; }
+      if (!quiet && (s.pose === 'float' || s.wade)) Game.ripple(b.x, b.y, 0.45);
       if (!quiet) Game.emit('birdLand', b, s);
     },
     takeoff(b) {
@@ -318,25 +405,31 @@ const Birds = globalThis.Birds = (() => {
       const P = Engine.P;
       if (sp.climates && !sp.climates.includes(CLIMATE.key)) return 0;
       let n = sp.habitat.any || 0; for (const k of seen) n = Math.max(n, sp.habitat[k] || 0);
-      if (sp.colony && this.colonyNear(P)) n = Math.max(n, sp.colony);
+      if (sp.lands.wade > 0 && !sp.flock.flats) n = 0;   // waders: only where there are shallows to stand in
+      if (sp.colony && this.colonyNear(P, sp)) n = Math.max(n, sp.colony);
       return Math.round(n * [0, 0.5, 1, 1.6][clamp(CONFIG.wildlife | 0, 0, 3)]);
     },
-    colonyNear(P) { let best = null, bd = 500; for (const k of seaStacks()) { const d = Math.hypot(k.x - P.x, k.y - P.y); if (d < bd) { bd = d; best = k; } } return best; },
+    home: sp => sp.colonySite === 'islet' ? isletSite() : null,
+    colonyNear(P, sp) {
+      if (sp && sp.colonySite === 'islet') { const S = isletSite(); return S && Math.hypot(S.x - P.x, S.y - P.y) < 500 + S.r ? S : null; }
+      let best = null, bd = 500; for (const k of seaStacks()) { const d = Math.hypot(k.x - P.x, k.y - P.y); if (d < bd) { bd = d; best = k; } } return best; },
     anchor(sp) {   // where a flock hangs about: over water near you (round the stacks, for colony birds); in your wake when you're under way (if it follows boats)
-      const P = Engine.P, fl = sp.flock, bt = Engine.boat, home = sp.colony && this.colonyNear(P);
+      const P = Engine.P, fl = sp.flock, bt = Engine.boat, home = sp.colony && this.colonyNear(P, sp);
       if (home) { const a = rnd() * TAU, r = home.r + 10 + rnd() * 60; fl.ax = home.x + Math.cos(a) * r; fl.ay = home.y + Math.sin(a) * r; fl.lev = WLW; return; }
       if (sp.flight.followBoats && bt && Math.abs(bt.speed || 0) > 1.5 && rnd() < 0.5) { const d = 36 + rnd() * 40; fl.ax = bt.x - Math.cos(bt.a) * d; fl.ay = bt.y - Math.sin(bt.a) * d; return; }
+      if (sp.lands.wade > 0) { fl.flats = false; const a0 = rnd() * TAU;   // waders: over shallows they can stand in, found along a few rays out from you
+        for (let k = 0; k < 8; k++) { const q = shallows(P.x, P.y, a0 + k / 8 * TAU, 220, sp.wade); if (q) { fl.ax = q.x; fl.ay = q.y; fl.lev = q.w.level; fl.flats = true; return; } } }
       for (let k = 0; k < 12; k++) { const r = 50 + rnd() * 110, a = rnd() * TAU, x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r, w = Game.waterAt(x, y);
         if (w.depth > 0.5) { fl.ax = x; fl.ay = y; fl.lev = w.level; return; } }
       fl.ax = P.x + (rnd() - 0.5) * 60; fl.ay = P.y + (rnd() - 0.5) * 60; fl.lev = Math.max(fl.lev, surfAt(P.x, P.y) - 5);
     },
-    populate() {   // straight away (start, or after travelling): some already down, the rest circling
+    populate() {   // straight away (start, or after travelling): some already down (a share `down`; 0.5: every other one), the rest circling
       this.list.length = 0; const seen = this.waterSeen();
       for (const sp of Object.values(species)) {
-        sp.want = this.census(sp, seen); this.anchor(sp); Object.assign(sp.flock, { x: sp.flock.ax, y: sp.flock.ay });
+        this.anchor(sp); sp.want = this.census(sp, seen); Object.assign(sp.flock, { x: sp.flock.ax, y: sp.flock.ay });
         for (let i = 0; i < sp.want; i++) {
-          const b = this.make(sp, sp.flock.x + (rnd() - 0.5) * 60, sp.flock.y + (rnd() - 0.5) * 60, 'fly');
-          if (i % 2 === 0) { const s = this.pickSpot(b); if (s && s.kind !== 'boat') { const p = Perches.at(s); b.x = p.x; b.y = p.y; this.settle(b, s, true); } }
+          const b = this.make(sp, sp.flock.x + (rnd() - 0.5) * 60, sp.flock.y + (rnd() - 0.5) * 60, sp.flightless ? 'colony' : 'fly');
+          if (!sp.flightless && Math.ceil((i + 1) * sp.down) > Math.ceil(i * sp.down)) { const s = this.pickSpot(b); if (s && s.kind !== 'boat') { const p = Perches.at(s); b.x = p.x; b.y = p.y; this.settle(b, s, true); } }
         }
       }
     },
@@ -374,7 +467,7 @@ const Birds = globalThis.Birds = (() => {
           if ((fl.at -= 2.5) <= 0) { this.anchor(sp); fl.at = 8 + rnd() * 6; }
           const mine = this.list.filter(b => b.sp === sp && !b.spawned), flying = mine.filter(b => b.st === 'fly');
           this.school(sp, mine);
-          if (mine.length < sp.want) { const a = rnd() * TAU, r = 170 + rnd() * 60, b = this.make(sp, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, 'fly'); b.a = a + Math.PI; }
+          if (mine.length < sp.want) { const a = rnd() * TAU, r = 170 + rnd() * 60, b = this.make(sp, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, sp.flightless ? 'colony' : 'fly'); b.a = a + Math.PI; }
           else if (mine.length > sp.want + 1 && flying.length) flying[rnd() * flying.length | 0].st = 'leave';
         }
       }
@@ -386,11 +479,12 @@ const Birds = globalThis.Birds = (() => {
         if (Math.hypot(b.x - P.x, b.y - P.y) > (b.st === 'leave' ? 420 : 650)) { this.disband(b); this.list.splice(i, 1); continue; }
         if ((b.callT -= dt) <= 0) { const V = b.sp.voice; b.callT = rr(V?.every || [8, 30]) * (b.st === 'fly' ? 1 : 2); if (!night || rnd() < 0.2) call(b); }
         if ((b.gzT -= dt) <= 0) { b.gzT = 0.4; b.gzv = surfAt(b.x, b.y); }
-        if (b.st === 'float' || b.st === 'stand') this.perched(b, dt, night);
+        if (b.sp.flightless) this.waddle(b, dt);
+        else if (b.st === 'float' || b.st === 'stand') this.perched(b, dt, night);
         else this.fly(b, dt, night, wd, ws, T);
         if (b.flap) { b.ph += dt * b.hz * TAU * (b.st === 'takeoff' ? 1.35 : b.st === 'land' ? 1 + 0.9 * (b.flare || 0) : 1); if (b.ph >= TAU) { b.ph -= TAU; if (!b.want) b.flap = false; } }   // finish the stroke before gliding
         else if (b.want) b.flap = true;
-        b.frame = b.st === 'float' || b.st === 'under' ? F_SIT : b.st === 'stand' ? F_STAND : b.st === 'dive' && b.sp.forage?.tuck ? F_DIVE : b.flap ? Math.floor(b.ph / TAU * NF) % NF
+        b.frame = b.st === 'float' || b.st === 'under' ? F_SIT : b.st === 'stand' ? (b.feeding && b.sp.meshes[F_FEED] ? F_FEED : b.one && b.sp.meshes[F_ONE] ? F_ONE : F_STAND) : b.st === 'dive' && b.sp.forage?.tuck ? F_DIVE : b.flap ? Math.floor(b.ph / TAU * NF) % NF
           : b.vz < -2.2 ? F_DIVE : b.sp.flight.soar && (ws > 0.55 || b.roll * b.roll > 0.12) ? F_SOAR : F_GLIDE;
       }
     },
@@ -525,9 +619,51 @@ const Birds = globalThis.Birds = (() => {
       b.x = p.x; b.y = p.y; b.z = this.bodyZ(b, s, p);
       if (p.yaw !== undefined) {   // a moving perch sets the heading and the tilt; now and then it looks about
         b.a = p.yaw + 0.35 * Math.sin(Engine.time * 0.4 + b.wob) * (Math.sin(Engine.time * 0.11 + b.wob) > 0.6 ? 1 : 0.15); b.roll = p.roll || 0; b.pitch = (p.pitch || 0) + 0.08;
-      } else { const wa = (ENV.windDir ?? 0.8) + Math.PI; b.a += wrap(wa + 0.6 * Math.sin(b.wob + Engine.time * 0.03) - b.a) * Math.min(1, dt * 0.2); b.pitch = 0.1; b.roll = 0; }
-      if (s.walk && b.lt > 4 && rnd() < dt / 12) { const a = b.a + (rnd() - 0.5) * 2, st = 0.4 + rnd() * 0.8, nx = s.x + Math.cos(a) * st, ny = s.y + Math.sin(a) * st;   // a few steps along the beach
-        if (Game.waterAt(nx, ny).depth < -0.05 && !this.list.some(o => o !== b && o.spot && Math.hypot(o.x - nx, o.y - ny) < b.sp.space * 1.2)) { s.x = nx; s.y = ny; s.z = Game.groundAt(nx, ny); b.a = a; } }
+      } else { const wa = (ENV.windDir ?? 0.8) + Math.PI; b.a += wrap(wa + 0.6 * Math.sin(b.wob + Engine.time * 0.03) - b.a) * Math.min(1, dt * 0.2); b.pitch = b.feeding ? -0.12 : 0.1; b.roll = 0; }
+      if (s.wade) {   // wading: spells of feeding head-down, stepping slowly through the shallows, between spells of standing (on one leg, some)
+        b.x = b.px ?? p.x; b.y = b.py ?? p.y; b.px = b.x + (p.x - b.x) * Math.min(1, dt * 1.2); b.py = b.y + (p.y - b.y) * Math.min(1, dt * 1.2);
+        if (b.sp.look.feed && (b.feedT = (b.feedT || 0) - dt) <= 0) { b.feeding = !b.feeding && !night; b.feedT = b.feeding ? 6 + rnd() * 18 : 3 + rnd() * 12; b.one = !b.feeding && rnd() < (b.sp.look.legs.oneLeg || 0); }
+      }
+      if (s.walk && !b.one && b.lt > 4 && rnd() < dt / (b.feeding ? 2.5 : 12)) { const a = b.a + (rnd() - 0.5) * (b.feeding ? 1 : 2), st = (s.wade ? 0.25 : 0.4) + rnd() * 0.8, nx = s.x + Math.cos(a) * st, ny = s.y + Math.sin(a) * st;   // a few steps along the beach (or through the shallows)
+        const w = s.wade && Game.waterAt(nx, ny);
+        if ((s.wade ? wadeable(w, b.sp.wade) : Game.waterAt(nx, ny).depth < -0.05) && !this.list.some(o => o !== b && o.spot && Math.hypot(o.x - nx, o.y - ny) < b.sp.space * 1.2)) {
+          s.x = nx; s.y = ny; s.z = s.wade ? w.ground : Game.groundAt(nx, ny); b.a = a; if (s.wade) Game.ripple(nx, ny, 0.12); } }
+    },
+
+    // flightless birds (penguins): waddling about the colony ashore, down the beach into the sea to swim, porpoise and dive off it, and back out
+    waddle(b, dt) {
+      const sp = b.sp, F = sp.flightless, S = this.home(sp), P = Engine.P, T = Engine.time, pick = L => L && L.length ? L[rnd() * L.length | 0] : null;
+      if (b.st !== 'stand' && b.st !== 'float' && b.st !== 'under') {   // (new, or spawned flying from the panel): put down where it is
+        const w = Game.waterAt(b.x, b.y); b.st = w.depth > 0.3 && !w.iced ? 'float' : 'stand'; b.lt = 0; b.stay = rr(b.st === 'stand' ? F.ashore : F.afloat);
+        b.tgt = null; b.target = null; b.leader = null; b.slot = null; b.leap = 0; b.idle = rnd() * 4; b.v = b.vz = 0; }
+      b.flap = b.want = false; b.spot = null;
+      let land = b.st === 'stand';
+      const near = Math.hypot(b.x - P.x, b.y - P.y), seaward = land && b.lt > b.stay;
+      if (land && S && near < sp.shy * FEAR && !b.flee) { b.flee = true; b.lt = b.stay + 1;   // too close: off to the water, the far side from you
+        b.tgt = null; let best = -1; for (const q of S.sea) { const d = Math.hypot(q[0] - P.x, q[1] - P.y); if (d > best) { best = d; b.tgt = { x: q[0], y: q[1] }; } } }
+      if (!b.tgt && (b.idle -= dt) <= 0) {   // where next: about the colony, or out to sea / back ashore when it's time
+        const q = land ? pick(seaward ? S?.sea : S?.land) : pick(b.lt > b.stay ? S?.land : S?.sea);
+        if (q) b.tgt = { x: q[0] + (rnd() - 0.5) * 2, y: q[1] + (rnd() - 0.5) * 2 }; b.idle = land ? 2 + rnd() * 8 : 0; }
+      let moving = false;
+      if (b.tgt) { const dx = b.tgt.x - b.x, dy = b.tgt.y - b.y, d = Math.hypot(dx, dy);
+        if (d < (land ? 0.4 : 2)) b.tgt = null;
+        else { moving = true; b.a += wrap(Math.atan2(dy, dx) - b.a) * Math.min(1, dt * (land ? 4 : 2)); const v = (land ? F.walk : F.swim * (b.leap ? 1.6 : 1)) * b.sc, step = Math.min(d, v * dt);
+          b.x += Math.cos(b.a) * step; b.y += Math.sin(b.a) * step; } }
+      for (const o of this.list) if (o !== b && o.sp === sp && (o.st === 'stand') === land) { const dx = b.x - o.x, dy = b.y - o.y, d = Math.hypot(dx, dy), need = sp.space;   // elbow room
+        if (d < need && d > 1e-4) { const k = (need - d) / d * Math.min(1, dt * 2); b.x += dx * k; b.y += dy * k; } }
+      const w = Game.waterAt(b.x, b.y);
+      if (land && w.depth > 0.25 && !w.iced) { b.st = 'float'; land = false; b.lt = 0; b.stay = rr(F.afloat); b.flee = false; Game.splash(b.x, b.y, 3); Game.ripple(b.x, b.y, 0.5); }   // a hop into the sea
+      else if (!land && w.depth < 0.12) { b.st = 'stand'; land = true; b.lt = 0; b.stay = rr(F.ashore); b.leap = 0; b.fo = null; Game.ripple(b.x, b.y, 0.3); }   // out onto the shore
+      if (land) { b.z = w.ground + sp.look.legs.len * b.sc; b.pitch = 0; b.roll = moving ? 0.14 * Math.sin(T * 14 + b.wob) : b.roll * 0.9; return; }   // the waddle: rocking side to side
+      const lev = w.level, W = { kd: w.kindId, lev };
+      b.roll = 0.05 * Math.sin(T * 1.3 + b.wob);
+      if (b.leap) { b.leap += dt; const u = b.leap / F.leapTime;   // porpoising: an arc clear of the water
+        if (u >= 1) { b.leap = 0; Game.splash(b.x, b.y, 2); Game.ripple(b.x, b.y, 0.3); } else { b.z = lev + Math.sin(Math.PI * u) * F.leapHeight * b.sc; b.pitch = Math.cos(Math.PI * u) * 0.7; } }
+      else if (b.st === 'under') { b.z += (lev - F.depth * b.sc - b.z) * Math.min(1, dt * 2); b.pitch = -0.1; b.fo = W; if (b.lt > b.under) { b.st = 'float'; b.lt = b.stay2 || 0; Game.ripple(b.x, b.y, 0.4); } }
+      else { b.z = lev + Engine.swellAt(b.x, b.y, w.kindId) + sp.floatZ * b.sc; b.pitch = -0.05;
+        if (moving && w.depth > 1.2 && rnd() < dt / F.leap) { b.leap = 1e-3; Game.splash(b.x, b.y, 2); }
+        else if (w.depth > F.depth + 0.6 && rnd() < dt / F.dive) { b.st = 'under'; b.stay2 = b.lt; b.lt = 0; b.under = rr(F.under); Game.ripple(b.x, b.y, 0.4); } }
+      if (b.st === 'float') b.spot = { kind: 'swim', x: b.x, y: b.y, z: lev, pose: 'float', water: W, key: `p:${b.wob}` };   // (drawn cut at the waterline, like a floating bird)
     },
 
     draw(R, gl, L, E) {

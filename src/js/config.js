@@ -90,7 +90,7 @@ const CONFIG = {
   stars: true, clouds: true,
   // graphics
   maxPixelRatio: 2, maxPixelRatioTouch: 1.5,
-  showArms: true, skinColor: '#d9a27c', sleeveColor: '#4b5d52',   // your arms in first person: on the rod and reel, round a pot or net, under a fish
+  showArms: true, skinColor: '#dba985', sleeveColor: '#4b5d52',   // your arms in first person: on the rod and reel, round a pot or net, under a fish
   adaptiveResolution: true,           // lower the 3D view's resolution when frames run long, raise it again when there's room (the HUD stays sharp)
   minResolutionScale: 0.55,           // ... never below this share of the pixel ratio above
   windSway: 1,                        // tree sway strength, 0 = still
