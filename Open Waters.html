@@ -914,6 +914,1096 @@ const CONFIG = {
 </script>
 <script>
 'use strict';
+// Shared simulation, part 1: seeded random numbers and small maths. The same file runs as a plain <script> in the game
+// (it adds to the OWSim namespace) and as a CommonJS module in Node (require('./core.js')). No browser globals and no
+// Math.random here: everything random is drawn from a seeded stream passed in or made from the seed.
+(function (factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory({});
+  else { const S = globalThis.OWSim = globalThis.OWSim || {}; Object.assign(S, factory(S)); }
+})(function () {
+  // mulberry32: a seeded 32-bit stream, 0..1
+  function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  // a fixed hash of a grid point and a seed, 0..1
+  const hash2 = (x, y, s) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + s | 0; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };
+  // a stream seeded from a grid point (the per-cell populations use this)
+  const cellRng = (x, y, s) => mulberry32((hash2(x, y, s) * 4294967296) >>> 0);
+  const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+  const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  // statistics: a normal draw (Box-Muller), and a Poisson count (normal approximation past 30)
+  function gauss(rng) { return Math.sqrt(-2 * Math.log(rng() + 1e-12)) * Math.cos(6.2832 * rng()); }
+  function poisson(lam, rng) { if (lam <= 0) return 0; if (lam > 30) return Math.max(0, Math.round(lam + Math.sqrt(lam) * gauss(rng))); let k = 0, p = 1; const L = Math.exp(-lam); do { k++; p *= rng(); } while (p > L); return k - 1; }
+  // individual length (log-normal around the typical size, truncated) and weight (W = a·L^b, with condition noise)
+  function sampleFishSize(D, rng) {
+    const L = D.size.length_cm; let cm = L.typical;
+    for (let k = 0; k < 6; k++) { cm = Math.exp(D._mu + D._sig * gauss(rng)); if (cm >= L.min && cm <= L.max) break; }
+    cm = clamp(cm, L.min, L.max);
+    return { cm, kg: D.size.weight.a * cm ** D.size.weight.b * Math.exp(D.size.condition_sd * gauss(rng)) / 1000 };
+  }
+  // Seeded 2D Perlin noise, output roughly [-0.7, 0.7]
+  function makeNoise(seed) {
+    const r = mulberry32(seed), p = new Uint8Array(512), P = [...Array(256).keys()];
+    for (let i = 255; i > 0; i--) { const j = r() * (i + 1) | 0; [P[i], P[j]] = [P[j], P[i]]; }
+    for (let i = 0; i < 512; i++) p[i] = P[i & 255];
+    const GX = [1, -1, 1, -1, 1, -1, 0, 0], GY = [1, 1, -1, -1, 0, 0, 1, -1];
+    return (x, y) => {
+      const X = Math.floor(x), Y = Math.floor(y), xf = x - X, yf = y - Y, xi = X & 255, yi = Y & 255;
+      const aa = p[p[xi] + yi] & 7, ab = p[p[xi] + yi + 1] & 7, ba = p[p[xi + 1] + yi] & 7, bb = p[p[xi + 1] + yi + 1] & 7;
+      const u = xf * xf * xf * (xf * (xf * 6 - 15) + 10), v = yf * yf * yf * (yf * (yf * 6 - 15) + 10);
+      const g00 = GX[aa] * xf + GY[aa] * yf, g10 = GX[ba] * (xf - 1) + GY[ba] * yf;
+      const g01 = GX[ab] * xf + GY[ab] * (yf - 1), g11 = GX[bb] * (xf - 1) + GY[bb] * (yf - 1);
+      const x1 = g00 + u * (g10 - g00), x2 = g01 + u * (g11 - g01);
+      return x1 + v * (x2 - x1);
+    };
+  }
+  // preference curves: 1 at the preferred value, falling off to the limits (0 beyond them)
+  const fitRange = (v, lo, opt, hi) => v < lo || v > hi ? 0 : 1 - 0.88 * ((v - opt) / Math.max(1e-3, v < opt ? opt - lo : hi - opt)) ** 2;
+  function currentFit(c, H) { const p = H.current_ms.preferred, m = H.current_ms.max; return c > m ? 0 : c < p ? 1 - 0.6 * ((p - c) / Math.max(p, 0.3)) ** 2 : 1 - 0.85 * ((c - p) / Math.max(1e-3, m - p)) ** 2; }
+  const COVER_KEYS = ['rocks', 'weeds', 'reeds', 'lilies', 'wood', 'coral', 'anemone', 'open'];
+  function coverFit(c, H) { const P = H.cover; let s = 0, m = 0; for (const k of COVER_KEYS) { s += (P[k] || 0) * (c[k] || 0); m = Math.max(m, P[k] || 0); }
+    const fl = 0.25 * (1 - clamp(H.cover_required || 0, 0, 1)); return fl + (1 - fl) * Math.min(1, s / (m || 1)); }
+  // the kinds of water, by id (the terrain reports one of these for every point)
+  const OCEAN = 0, LAKE = 1, POND = 2, RIVER = 3, CREEK = 4;
+  const WATER_KEYS = ['sea', 'lake', 'pond', 'river', 'creek'];
+  const WATER_MURK = [0.05, 0.22, 0.72, 0.14, 0.04];   // 0 clear .. 1 green-brown (the game's WATER table in world/island-layout.js)
+
+  // ---- climate: the seed decides where in the world the island lies ----
+  // air: [mean, swing] of the seasonal air temperature; water: °C added to each water's temperature (sea, lake, pond, river,
+  // creek), amp: how much the water's temperature swings over the year; the rest switch biome features on and off.
+  const CLIMATES = {
+    temperate: { name: 'Temperate', air: [9, 12], water: [0, 0, 0, 0, 0], amp: 1, seaCurrent: true, trees: 1, broad: 1 },
+    arctic: { name: 'Arctic', air: [-5, 13], water: [-10, -9.5, -9, -8, -6], amp: 0.8, seaIce: true, bergs: true, trees: 0.3, broad: 0.15,
+      mats: { 2: [0.55, 0.53, 0.5], 3: [0.5, 0.52, 0.32], 4: [0.2, 0.32, 0.22], 6: [0.42, 0.45, 0.33] } },   // grey shingle, tundra, taiga, moss
+    tropical: { name: 'Tropical', air: [27, 1.5], water: [15, 13, 12, 12, 10], amp: 0.2, reefsEverywhere: true, palms: true, evergreen: true, trees: 1.1, broad: 1,
+      mats: { 2: [0.96, 0.92, 0.78], 3: [0.36, 0.66, 0.2], 4: [0.1, 0.38, 0.12] } },   // white coral sand, lush grass, jungle
+  };
+  // the island's climate: one asked for (#climate-arctic, CONFIG.climate), or the seed's
+  function pickClimate(seed, want) {
+    const r = mulberry32((seed ^ 0xc11a7e) >>> 0)(), k = want && CLIMATES[want] ? want : r < 0.4 ? 'temperate' : r < 0.7 ? 'arctic' : 'tropical';
+    return Object.assign({ key: k }, CLIMATES[k]);
+  }
+
+  return { mulberry32, hash2, cellRng, clamp, sstep, gauss, poisson, sampleFishSize, makeNoise, fitRange, currentFit, coverFit, COVER_KEYS,
+    OCEAN, LAKE, POND, RIVER, CREEK, WATER_KEYS, WATER_MURK, CLIMATES, pickClimate };
+});
+</script>
+<script>
+'use strict';
+// Shared simulation, part 2: species. Species are data (src/fish/*.json, format unchanged): this fills a definition's
+// defaults (FISH_DEFAULTS, merged the way the game always has) and works out the fields the simulation reads (_mu, _sig,
+// _hid, _act, _herp, _shell, _air, _benthic, _jelly, _needCover). The game's FishDB (creatures/reptiles-amphibians.js)
+// adds the body-plan checks and the meshes on top; a server can use prepareSpecies / createSpeciesDB on their own.
+(function (factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./core.js'));
+  else { const S = globalThis.OWSim = globalThis.OWSim || {}; Object.assign(S, factory(S)); }
+})(function (S) {
+  const { clamp, WATER_KEYS } = S;
+  const FISH_SCHEMA = 'embercrown-fish/1';
+  const FISH_DEFAULTS = {
+    schema: FISH_SCHEMA, id: '', name: '', scientific: '', description: '',
+    size: { length_cm: { min: 10, typical: 25, max: 50, spread: 0.25 }, weight: { a: 0.01, b: 3.0 }, condition_sd: 0.08 },
+    body: {
+      profile: [0.5, 0.82, 0.97, 1, 0.92, 0.72, 0.46, 0.28], height: 0.2, width: 0.11, flex: 1,
+      head: { length: 0.24, snout: 0.5, mouth: 0.5, jaw: 'terminal', bill: 0, bill_kind: 'spear' },
+      tail: { shape: 'forked', size: 0.18, fork: 0.25 },
+      fins: { dorsal: [{ at: 0.42, length: 0.14, height: 0.1, spiny: false }], adipose: false, anal: { at: 0.72, length: 0.1, height: 0.07 }, pectoral: 0.1, pelvic: 0.07 },
+      barbels: 0, plan: 'fish', parts: {},
+      lie: '', swim: 'auto',   // lie: 'left' / 'right' = a flatfish lying on that side (eyes on the other); swim: how the body moves
+      colors: { back: '#4a4a30', flank: '#a09060', belly: '#eee4c8', fins: '#7a6a48', eye: '#101010', mouth: '#5a1e1a' },
+      pattern: [],
+    },
+    habitat: {
+      climates: null,                     // island climates it lives in, e.g. ["temperate", "arctic"]; null = any (water temperature decides)
+      waters: { lake: 0.5, pond: 0.5, river: 0.5, creek: 0.5 },
+      depth_m: { min: 0.3, preferred: 2, max: 10 },
+      temperature_c: { min: 4, optimal: 18, max: 28 },
+      current_ms: { preferred: 0, max: 1 },
+      turbidity_max: 0.8,
+      cover: { rocks: 0.4, weeds: 0.4, reeds: 0.3, lilies: 0.3, wood: 0.3, coral: 0, anemone: 0, open: 0.4 },
+      cover_required: 0,                  // 0..1: 1 = only found where its favourite cover is (a clownfish and its anemone)
+      oxygen_min_mgL: 4,                  // below this (dissolved oxygen) the fish is stressed and leaves
+    },
+    population: { density: 0.6, school: { min: 1, max: 1 }, home_range_m: 15 },
+    activity: { pattern: 'crepuscular' },
+    behavior: { cruise_bl_s: 0.8, burst_bl_s: 8, turn_rate: 2.2, station_holding: 0, ambush: 0,
+      depth_zone: { surface: 0.15, mid: 0.5, bottom: 0.35 }, wariness: 0.5, spook_m: 5, recover_s: 40, curiosity: 0.4, rise_per_hour: 1,
+      // air breathers (marine mammals): seconds between breaths, seconds at the surface, leaps an hour, how much it hauls
+      // out on shore to rest (0..1), and how big a blow it shows when it surfaces (0 none .. 1 a whale's spout)
+      breath_hold_s: 0, surface_s: 5, leap_per_hour: 0, haul_out: 0, blow: 0 },
+    diet: { food: { insects: 0.3, worms: 0.3, fish: 0.2, nymphs: 0.2 }, piscivore_from_cm: 0, feeding_zone: { surface: 0.2, mid: 0.4, bottom: 0.4 }, meals_per_day: 3 },
+    fight: { strength: 0.5, stamina: 0.5, jumps: 0.2, runs: 0.5, teeth: 0 },   // teeth 0..1: how easily it bites through line (a wire leader stops it)
+    // once it's unhooked. lip: true = can be held by the lower jaw (bass, crappie, trout), false = not (teeth, a small or
+    // underslung mouth, a bill). hold: 'hand' (one hand round it), 'cradle' (two hands under the belly) or 'none' (too big or
+    // too dangerous to lift: it is unhooked in the water, alongside). 'auto' works either out from the body (fishHandling).
+    handling: { lip: 'auto', hold: 'auto' },
+  };
+  const FISH_REPLACE = new Set(['waters', 'cover', 'food', 'feeding_zone', 'depth_zone', 'dorsal', 'pattern', 'profile']);
+  const ACTIVITY_PRESETS = { // relative activity for each hour 0..23
+    diurnal: [.15, .12, .1, .1, .12, .25, .5, .75, .9, 1, 1, .95, .9, .9, .95, 1, 1, .95, .85, .6, .4, .3, .22, .18],
+    crepuscular: [.3, .25, .22, .25, .45, .85, 1, .95, .7, .5, .4, .35, .32, .35, .4, .5, .65, .85, 1, 1, .8, .55, .42, .35],
+    nocturnal: [.95, 1, 1, .95, .85, .7, .45, .3, .2, .15, .12, .12, .12, .12, .15, .2, .3, .45, .7, .9, 1, 1, 1, 1],
+    cathemeral: [.5, .48, .45, .45, .5, .65, .75, .75, .7, .65, .6, .6, .6, .6, .62, .65, .7, .75, .8, .75, .65, .58, .55, .52],
+  };
+  const FISH_FOODS = ['insects', 'nymphs', 'worms', 'crayfish', 'fish', 'frogs', 'snails', 'shrimp', 'plankton', 'plants', 'eggs', 'leeches', 'mammals'];
+  // defaults under a definition: objects merge key by key, anything else (and any key in `replace`) is taken whole
+  function deepMerge(base, over, replace, key) {
+    if (over === undefined) return base;
+    if (Array.isArray(base) || Array.isArray(over) || (replace && replace.has(key)) || typeof base !== 'object' || base === null || typeof over !== 'object' || over === null) return over;
+    const o = {}; for (const k of new Set([...Object.keys(base), ...Object.keys(over)])) o[k] = deepMerge(base[k], over[k], replace, k); return o;
+  }
+  const fishMerge = (base, over) => deepMerge(base, over, FISH_REPLACE);
+  const HERP_PLANS = ['turtle', 'crocodilian', 'lizard', 'salamander', 'snake', 'frog'];
+  // the fields the simulation reads, worked out once when a species is registered (the same in the game and on a server)
+  function deriveSpecies(d) {
+    d._act = typeof d.activity.pattern === 'string' ? ACTIVITY_PRESETS[d.activity.pattern] : d.activity.pattern.map(v => clamp(v, 0, 1));
+    d._herp = HERP_PLANS.includes(d.body.plan);   // reptiles and amphibians
+    d._shell = !!d.body.plan && !['fish', 'ray', 'pinniped'].includes(d.body.plan) && !d._herp;   // rays and mammals count with fishAbundance, herps with herpAbundance
+    d._air = d.behavior.breath_hold_s > 0;   // breathes air: surfaces to blow, may leap, may haul out
+    d._hid = [...d.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261) >>> 0;   // stable per-species seed (all 32 bits: 16 gave two species the same one)
+    d._needCover = (d.habitat.cover_required || 0) >= 0.5 ? Object.keys(d.habitat.cover).filter(k => k !== 'open').sort((a, b) => d.habitat.cover[b] - d.habitat.cover[a])[0] : null;   // e.g. a clownfish's anemone
+    d._jelly = d.body.plan === 'jelly';   // drawn see-through in their own pass; may sting
+    d._benthic = ['bivalve', 'snail', 'crab', 'lobster', 'octopus'].includes(d.body.plan) || (['ray', 'jelly'].includes(d.body.plan) && d.body.parts.bottom >= 0.5);   // crawlers, sessile animals and stingrays live on the bed
+    const L = d.size.length_cm; d._mu = Math.log(L.typical); d._sig = L.spread;
+    return d;
+  }
+  // defaults and derived fields without the game's body-plan checks and meshes (enough to simulate it: a server).
+  // The game registers through FishDB, which validates the body as well; the simulation fields come out the same.
+  function prepareSpecies(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !raw.id) return null;
+    const d = fishMerge(FISH_DEFAULTS, raw);
+    if (d.body === FISH_DEFAULTS.body) d.body = Object.assign({}, d.body);   // (never write into the shared defaults)
+    d.body.parts = Object.assign({}, raw.body && raw.body.parts);   // only 'bottom' matters to the simulation (unset = 0, as in the game's plans)
+    if (!('_zmin' in d)) d._zmin = 0;   // the game reads the lowest point of the mesh; without meshes, animals rest on the bed at its surface
+    return deriveSpecies(d);
+  }
+  // species that can live in each kind of water on this island's climate, in list order (so cells come out the same as
+  // scoring every species); fish first, then reptiles and amphibians, then shellfish: a cell fills in this order
+  function speciesByKind(db, kind, climateKey) {
+    if (db._kindRev !== db.revision || db._kindClimate !== climateKey) { db._kindRev = db.revision; db._kindClimate = climateKey; db._kind = WATER_KEYS.map(W => db.list.map((D, si) => [D, si]).filter(([D]) => (D.habitat.waters[W] || 0) > 0 && (!D.habitat.climates || D.habitat.climates.includes(climateKey))).sort((a, b) => (a[0]._shell ? 2 : a[0]._herp ? 1 : 0) - (b[0]._shell ? 2 : b[0]._herp ? 1 : 0))); }
+    return db._kind[kind] || [];
+  }
+  // a species list for a server (the game has FishDB): register(raw) in the game's load order (index.html), then byKind
+  function createSpeciesDB(climateKey) {
+    const db = {
+      list: [], byId: {}, revision: 0,
+      register(raw) { const d = prepareSpecies(raw); if (!d) return null; const old = this.byId[d.id];
+        if (old) this.list[this.list.indexOf(old)] = d; else this.list.push(d); this.byId[d.id] = d; this.revision++; return d; },
+      byKind(kind) { return speciesByKind(this, kind, climateKey); },
+    };
+    return db;
+  }
+
+  return { FISH_SCHEMA, FISH_DEFAULTS, FISH_REPLACE, ACTIVITY_PRESETS, FISH_FOODS, deepMerge, fishMerge, HERP_PLANS, deriveSpecies, prepareSpecies, speciesByKind, createSpeciesDB };
+});
+</script>
+<script>
+'use strict';
+// Shared simulation, part 3: the water fish live in. Seasons and weather (the ENV state machine), water temperature,
+// springs, the warm sea current, pack ice, dissolved oxygen, how well a spot suits a species (habitatScore, envAt), food
+// and activity curves. installEnvironment(world) adds these to a world made by createWorld (sim/index.js); they read the
+// world's seed, climate, config, clock and terrain (world.terrain) instead of the game's globals.
+(function (factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./core.js'));
+  else { const S = globalThis.OWSim = globalThis.OWSim || {}; Object.assign(S, factory(S)); }
+})(function (S) {
+  const { mulberry32, clamp, sstep, fitRange, currentFit, coverFit, OCEAN, LAKE, POND, RIVER, CREEK, WATER_KEYS } = S;
+  // A short year (config.daysPerSeason game days per season). yf: 0..1 through the year, 0 = first day of spring.
+  const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
+  const WEATHER = { // the look and feel of each kind of weather (blended over about an hour of game time)
+    clear:    { cloud: 0.08, rain: 0, wind: 0.2, fog: 0, storm: 0, p: 1023 },
+    fair:     { cloud: 0.35, rain: 0, wind: 0.35, fog: 0, storm: 0, p: 1017 },
+    overcast: { cloud: 0.88, rain: 0, wind: 0.3, fog: 0.12, storm: 0, p: 1009 },
+    drizzle:  { cloud: 0.92, rain: 0.3, wind: 0.25, fog: 0.3, storm: 0, p: 1006 },
+    rain:     { cloud: 0.96, rain: 0.75, wind: 0.5, fog: 0.25, storm: 0, p: 1001 },
+    storm:    { cloud: 1, rain: 1, wind: 0.95, fog: 0.2, storm: 1, p: 994 },
+    fog:      { cloud: 0.55, rain: 0, wind: 0.04, fog: 1, storm: 0, p: 1019 },
+  };
+  // what tends to follow what (weights), nudged by season below
+  const WEATHER_NEXT = {
+    clear: { clear: 4, fair: 4, overcast: 1, fog: 1 }, fair: { clear: 2, fair: 3, overcast: 3, drizzle: 1 },
+    overcast: { fair: 2, overcast: 2, drizzle: 2, rain: 2, storm: 0.5 }, drizzle: { overcast: 2, drizzle: 1, rain: 2, fair: 1 },
+    rain: { overcast: 2, drizzle: 1, rain: 1, storm: 1, fair: 1 }, storm: { rain: 2, overcast: 2, fair: 1 }, fog: { clear: 2, fair: 2, overcast: 1 },
+  };
+
+  function installEnvironment(world) {
+    const terr = world.terrain, murk = k => (terr.murk ? terr.murk(k) : S.WATER_MURK[k]);
+    const todNow = () => world.tod(world.config.startHour / 24);   // time of day 0..1
+    // ENV holds the live conditions: air temperature, cloud, rain or snow, wind, fog, pressure and its trend, how wet
+    // the land is, snow cover, leaf state, plant growth and ice. Water temperature and oxygen follow from them.
+    const ENV = world.env = {
+      yf: 0, day: 0, hours: 0, block: -1, blockStart: 0, blockEnd: 0, kind: 'fair', next: 'fair', blockLen: 5,
+      cloud: 0.3, rain: 0, wind: 0.3, fog: 0, storm: 0, pressure: 1015, pTarget: 1015, trend: 0, pHist: [],
+      airT: 15, airMean: 15, wet: 0, snowCover: 0, flash: 0, flashT: 4, snowing: 0, hatch: 0,
+      leaf: 1, autumn: 0, young: 0, dormant: 0, growth: 1, iceLake: 0, icePond: 0, iceSea: 0, turb: 0, light: 1,
+      get season() { return SEASONS[Math.floor(this.yf * 4) % 4]; },
+      get yearDays() { return world.config.daysPerSeason * 4; },
+      label() {
+        const s = this.yf * 4 % 1, part = s < 0.34 ? 'Early' : s < 0.67 ? 'Mid' : 'Late', S = this.season;
+        const sky = this.snowing > 0.3 ? (this.rain > 0.6 ? 'Heavy snow' : 'Snow') : this.storm > 0.5 ? 'Thunderstorm' : this.rain > 0.55 ? 'Rain' : this.rain > 0.15 ? 'Drizzle'
+          : this.fog > 0.6 ? 'Fog' : this.cloud > 0.75 ? 'Overcast' : this.cloud > 0.3 ? 'Partly cloudy' : 'Clear';
+        return `${part} ${S[0].toUpperCase() + S.slice(1)} · day ${Math.floor(this.day % this.yearDays) + 1} · ${this.airT.toFixed(0)}°C · ${sky} · wind ${(this.wind * 12).toFixed(0)} m/s`;
+      },
+      // seasonal mean air temperature (°C): coldest in mid winter, warmest in mid summer
+      airMeanAt(yf) { return world.climate.air[0] + world.climate.air[1] * Math.cos(6.2832 * (yf - 0.375)); },
+      // start (or jump) to a point in the year; weather restarts from something typical for it
+      setDate(yf, hour) {
+        this.yf = ((yf % 1) + 1) % 1; const h = hour ?? todNow() * 24;
+        this.hours = Math.floor(this.yf * this.yearDays) * 24 + h; this.day = this.hours / 24; this.yf = (this.day / this.yearDays) % 1;
+        if (hour !== undefined) world.setTod(hour / 24);
+        this.block = -1; this.settle = true; this.wet = 0.2; this.pHist.length = 0; this.forced = 0;   // (the clock may have gone back: old pressure samples and a forced weather would be from the future)
+        this.snowCover = world.climate.key === 'tropical' ? 0 : world.climate.key === 'arctic' ? (this.airMeanAt(this.yf - 0.03) < 1 ? 1 : 0.15) : this.yf > 0.78 || this.yf < 0.04 ? 0.8 : 0;
+      },
+      setWeather(kind) { if (!WEATHER[kind]) return; this.kind = this.next = kind; this.settle = true; this.forced = this.hours + 6; },
+      pickNext(rng) {
+        const W = Object.assign({}, WEATHER_NEXT[this.kind]), S = this.season;
+        if (S === 'summer') { W.clear = (W.clear || 0) * 1.4; W.storm = (W.storm || 0) * 1.8; W.fog = (W.fog || 0) * 0.5; }
+        if (S === 'autumn') { W.fog = (W.fog || 0) * 1.8 + 0.5; W.rain = (W.rain || 0) * 1.3; }
+        if (S === 'winter') { W.overcast = (W.overcast || 0) * 1.5; W.storm = (W.storm || 0) * 0.3; }
+        if (S === 'spring') { W.drizzle = (W.drizzle || 0) * 1.5; W.rain = (W.rain || 0) * 1.3; }
+        if (world.climate.key === 'tropical') { W.fog = 0; W.storm = (W.storm || 0) * (S === 'summer' || S === 'autumn' ? 3 : 1); W.rain = (W.rain || 0) * (S === 'summer' ? 2 : 0.6); W.clear = (W.clear || 0) * (S === 'winter' ? 2 : 1); }   // a wet and a dry season
+        if (world.climate.key === 'arctic') { W.overcast = (W.overcast || 0) * 1.6; W.fog = (W.fog || 0) * (S === 'summer' ? 2.5 : 0.5); W.storm = (W.storm || 0) * 0.3; }
+        let tot = 0; for (const k in W) tot += W[k]; let r = rng() * tot;
+        for (const k in W) if ((r -= W[k]) <= 0) return k; return 'fair';
+      },
+      update(dtH, dt) {
+        this.hours += dtH; this.day = this.hours / 24; this.yf = (this.day / this.yearDays) % 1;
+        const tod = todNow(), hour = tod * 24, yf = this.yf;
+        // weather: a new kind every few hours, chosen from what usually follows; the front's pressure arrives first
+        if (this.block < 0 || this.hours >= this.blockEnd) {
+          const blk = this.block < 0 ? Math.floor(this.hours / 5) : this.block + 1, rng = mulberry32((world.seed ^ Math.imul(blk + 7919, 2654435761)) >>> 0);
+          if (this.block < 0) { if (!(this.forced && this.hours < this.forced)) this.kind = this.pickNext(rng); this.next = this.pickNext(rng); }
+          else if (this.forced && this.hours < this.forced) this.next = this.kind;   // a forced weather holds for a few hours
+          else { this.kind = this.next; this.next = this.pickNext(rng); }
+          this.block = blk; this.blockLen = 3 + 5 * rng(); this.blockStart = this.hours; this.blockEnd = this.hours + this.blockLen;
+        }
+        const W = WEATHER[this.kind], Wn = WEATHER[this.next], into = clamp((this.hours - this.blockStart) / this.blockLen, 0, 1);
+        const lerpK = this.settle ? 1 : Math.min(1, dtH * 0.9);
+        const ease = (k, v) => { this[k] += (v - this[k]) * lerpK; };
+        ease('cloud', W.cloud); ease('rain', W.rain); ease('wind', W.wind); ease('fog', W.fog * (hour < 4 || hour > 21 || (hour > 4 && hour < 10) ? 1 : 0.35)); ease('storm', W.storm);
+        this.pTarget = W.p + (Wn.p - W.p) * sstep(0.4, 1, into);   // the next front's pressure starts to show before it arrives
+        this.pressure += (this.pTarget - this.pressure) * (this.settle ? 1 : Math.min(1, dtH * 0.5));
+        { const H = this.pHist, last = H.length ? H[H.length - 1][0] : -1e9;   // a sample a game-minute (not a frame): ~180 entries for the 3-hour window
+          if (this.hours - last >= 1 / 60 || this.settle) { H.push([this.hours, this.pressure]); let drop = 0; while (H.length - drop > 2 && this.hours - H[drop][0] > 3) drop++; if (drop) H.splice(0, drop); } }
+        this.trend = this.pressure - this.pHist[0][1];   // hPa over the last ~3 hours
+        // air temperature: season, day/night (less under cloud), and the weather
+        this.airMean = this.airMeanAt(yf);
+        const sunUp = Math.sin((hour - 6) / 24 * 6.2832);
+        this.airT = this.airMean + sunUp * (5.5 - 3.5 * this.cloud) - 2.5 * this.rain + (this.kind === 'clear' && sunUp < 0 ? -2 : 0);
+        this.snowing = this.rain > 0.05 && this.airT < 1.2 ? 1 : 0;
+        // the land: wet after rain, drying in sun and wind; snow lies when it's cold, melts when it isn't
+        this.wet = clamp(this.wet + dtH * (this.rain * (this.snowing ? 0.05 : 0.35) - 0.03 * (1 + 2 * (1 - this.cloud) * Math.max(0, sunUp) + this.wind)), 0, 1);
+        this.snowCover = clamp(this.snowCover + dtH * (this.snowing * this.rain * 0.25 - (this.airT > 1 ? 0.012 * (this.airT - 1) * (1 + this.rain) : 0)), 0, 1);
+        this.turb = clamp(this.wet * 0.9 + this.rain * 0.3 - 0.15, 0, 1) * (this.snowing ? 0.3 : 1);   // streams run muddy after rain
+        // lightning in storms
+        this.flash = Math.max(0, this.flash - dt * 6);
+        if (this.storm > 0.5 && (this.flashT -= dt) <= 0) { this.flash = 1; this.flashT = 3 + world.fxRng() * 12; }
+        // leaves: bud-burst in early spring, autumn colour, then the fall; grass browns over winter
+        this.leaf = world.climate.evergreen ? 1 : sstep(0.05, 0.14, yf) * (1 - sstep(0.64, 0.73, yf));
+        this.young = world.climate.evergreen ? 0 : sstep(0.03, 0.07, yf) * (1 - sstep(0.16, 0.26, yf));
+        this.autumn = world.climate.evergreen ? 0 : sstep(0.53, 0.64, yf) * (yf < 0.9 ? 1 : 0);
+        this.dormant = world.climate.evergreen ? 0 : Math.max(sstep(0.6, 0.76, yf), 1 - sstep(0.02, 0.13, yf)) * (yf > 0.4 || yf < 0.15 ? 1 : 0);
+        this.growth = world.climate.evergreen ? 1 : sstep(0.08, 0.3, yf) * (1 - sstep(0.62, 0.8, yf));   // water plants: lilies and weed beds
+        // ice on still water when its surface is at freezing
+        // (they freeze after a spell of frost: lakes a few weeks behind the air, ponds sooner)
+        this.iceLake = sstep(-0.6, -2.4, this.airMeanAt(yf - 0.035) - world.config.waterTempOffset); this.icePond = sstep(0.6, -1.4, this.airMeanAt(yf - 0.015) - world.config.waterTempOffset);
+        this.iceSea = world.climate.seaIce ? sstep(-3, -14, this.airMeanAt(yf - 0.06) - world.config.waterTempOffset) : 0;   // arctic pack ice: floes in spring and autumn, solid in winter
+        this.light = sstep(-0.1, 0.25, sunUp) * (1 - 0.6 * this.cloud) * (1 - 0.3 * this.fog);
+        // insect hatches: spring into summer, peaking around dusk (and on mild grey days), not in cold or storms
+        const dh = ((hour - 19.5 + 36) % 24) - 12, dusk = Math.exp(-dh * dh / 3) + 0.5 * Math.exp(-((hour - 8) ** 2) / 4);
+        this.hatch = sstep(0.06, 0.18, yf) * (1 - sstep(0.5, 0.62, yf)) * Math.min(1, dusk + 0.35 * sstep(0.6, 0.9, this.cloud) * (1 - this.rain)) * sstep(8, 14, this.airT) * (1 - 0.7 * this.storm) * (1 - 0.5 * sstep(0.6, 1, this.wind));
+        this.windDir = 0.8 + 1.4 * Math.sin(this.hours / 31) + 0.5 * Math.sin(this.hours / 7.3);
+        this.settle = false;
+      },
+      iced(kind, dep, x, y) {
+        if (kind === OCEAN) return this.iceSea > 0 && (x === undefined ? dep < this.iceSea * 16 - 0.2 : floe(x, y) < this.iceSea * 0.95 - 0.12 + 0.18 * (1 - sstep(2, 12, dep)));
+        const a = kind === LAKE ? this.iceLake : kind === POND ? this.icePond : 0; return a > 0 && dep < a * 16 - 0.2; },
+    };
+    // surface water temperature through the year (no weather, no day/night); `raw` can go below freezing (= ice)
+    function rawSurfaceT(kind, yf) {
+      const k = [[11, 6, 0.45], [12, 11, 0.41], [13, 12, 0.39], [10, 8, 0.4], [9, 4, 0.4]][kind];   // [mean, swing, warmest point of the year]
+      return k[0] + world.climate.water[kind] + k[1] * world.climate.amp * Math.cos(6.2832 * (yf - k[2])) + world.config.waterTempOffset;
+    }
+    // pack ice floes: the same value noise as the water shader's (so what you see is what you can stand on), 0..1
+    function h21js(x, y) { x = ((x % 512) + 512) % 512 * 0.1031; y = ((y % 512) + 512) % 512 * 0.1030; x -= Math.floor(x); y -= Math.floor(y); const d = x * (y + 33.33) + y * (x + 33.33); x += d; y += d; const v = (x + y) * x; return v - Math.floor(v); }
+    function vnjs(x, y) { const i = Math.floor(x), j = Math.floor(y); let fx = x - i, fy = y - j; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+      const a = h21js(i, j), b = h21js(i + 1, j), c = h21js(i, j + 1), d = h21js(i + 1, j + 1); return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy; }
+    const floe = (x, y) => 0.65 * vnjs(x * 0.025, y * 0.025) + 0.35 * vnjs(x * 0.09 + 3, y * 0.09 + 7);
+    // A warm current washes the island's south-east shore (coral reefs, clear blue water, tropical fish offshore);
+    // the north-west coast gets cold water. 0 = cold side .. 1 = warm side.
+    function seaWarm(x, y) { if (world.climate.reefsEverywhere) return 1; if (!world.climate.seaCurrent) return 0; if (x === undefined) return 0.3; const R = world.config.islandSize / 2; return sstep(-0.35, 0.45, (x * 0.35 + y * 0.94) / R + 0.12 * world.noise(x / 2600 + 9, y / 2600 - 4)); }
+    // groundwater wells up at springs at a steady ~9 °C: creek water near one stays cool in summer and open in winter
+    function springPull(x, y) {
+      const springs = terr.springs; if (!springs || x === undefined) return 0; let best = 1e9;
+      for (const sp of springs) { const d = Math.abs(sp.x - x) + Math.abs(sp.y - y); if (d < best) best = d; }
+      return 1 - sstep(12, 140, best);
+    }
+    // Water temperature (°C) `below` metres under the surface. live = false gives the reference midsummer noon the
+    // populations are laid out for (so fish don't vanish in winter: they move and slow down instead).
+    function waterTemp(kind, level, below, x, y, live = true) {
+      const yf = live ? world.env.yf : 0.33, surfRaw = rawSurfaceT(kind, yf), Tmin = kind === OCEAN ? -1.8 : 0.2;   // salt water stays liquid to -1.8 °C
+      let T = Math.max(Tmin, surfRaw) - Math.max(0, level - terr.seaLevel) * 0.05;
+      if (live) {
+        T += [0.02, 0.06, 0.25, 0.12, 0.05][kind] * (world.env.airT - world.env.airMean);
+        T += [0.3, 1, 1.6, 0.6, 0.5][kind] * (1 - 0.6 * world.env.cloud) * Math.sin((world.tod(world.config.startHour / 24) * 24 - 9) / 24 * 6.2832);
+      } else T += [0.3, 1, 1.6, 0.6, 0.5][kind] * 0.5;
+      if (kind === CREEK || kind === RIVER) { const s = springPull(x, y) * (kind === CREEK ? 1 : 0.4); T += (9 - T) * s; }
+      const w = kind === OCEAN ? seaWarm(x, y) : 0;   // the warm current's mixed layer is deep and stays warm far down
+      if (kind === OCEAN && world.climate.seaCurrent) T += 5.5 * w - 2.5;   // a mild current to the south-east (~20 °C in summer), cold water to the north-west
+      if (kind === LAKE || kind === OCEAN) {   // layers: warm (or, under ice, cold) water on top, ~4-7 °C below
+        const deep = kind === OCEAN ? (world.climate.key === 'arctic' ? Math.max(-1.5, Math.min(T, 1.5)) : Math.min(T, 6 + (world.climate.reefsEverywhere ? 14 : 6) * w)) : T > 4 ? Math.min(T, 4 + 2.5 * sstep(0, 0.3, yf)) : 4;
+        const top = kind === OCEAN ? 8 + (world.climate.reefsEverywhere ? 30 : 8) * w : T > 12 ? 3 : 1.5, bot = kind === OCEAN ? 30 + 80 * w : T > 12 ? 9 : 5;
+        T += (deep - T) * sstep(top, bot, below);
+        if (kind === OCEAN) T += ((world.climate.key === 'arctic' ? 0.5 : 4) - T) * sstep(150, 800, below);   // under the thermocline the deep sea is ~4 °C everywhere, warm current or not
+      } else if (kind === POND) T = T > 4 ? T - below * 0.5 : Math.min(4, T + below * 0.9);
+      return Math.max(Tmin, T);
+    }
+    function waterTempAt(x, y, below = 0.5) { const s = terr.sample(x, y, world.scratch); return waterTemp(s.kind, s.level, Math.max(0, Math.min(below, s.level - s.ground)), x, y); }
+    // Dissolved oxygen (mg/L): cold water holds more; rapids and wind stir it in; warm still ponds run short (more so at
+    // night, when weeds stop making it); a summer lake's deep layer is cut off from the air; ice seals it in.
+    function oxygen(kind, T, below = 0.5, rap = 0, live = true) {
+      const sat = 14.6 - 0.394 * T + 0.0072 * T * T;
+      let f = [0.97, 0.95, 0.82, 1, 1.02][kind];
+      if (!live) return sat * f;
+      const hour = world.tod(0.4) * 24, photo = Math.sin((hour - 6) / 12 * 3.1416);
+      if (kind === POND) f += (photo > 0 ? 0.22 * photo * (1 - 0.6 * world.env.cloud) : 0.18 * photo) * (0.4 + 0.6 * world.env.growth) - 0.3 * sstep(18, 27, T);
+      if (kind === LAKE && T > 12) f *= 1 - 0.45 * sstep(4, 11, below);
+      if (kind === LAKE || kind === POND) f += 0.08 * world.env.wind;
+      if (kind === POND) f *= 1 - 0.55 * world.env.icePond; if (kind === LAKE) f *= 1 - 0.2 * world.env.iceLake;
+      if (kind >= RIVER) f = Math.max(f, 1.02 + 0.12 * rap);
+      return sat * f;
+    }
+    const oxyFit = (D, mg) => D._air || D.habitat.oxygen_min_mgL <= 0 ? 1 : sstep(D.habitat.oxygen_min_mgL * 0.7, D.habitat.oxygen_min_mgL * 1.25, mg);   // air breathers don't care
+    // how well a spot suits a species (0..1). env: { kind, level, dep, cur, cover }
+    // the deepest a fish goes here: the bottom, or for a mid-water fish over deep sea, its own depth limit
+    const fishFloor = (D, wl, g) => D._benthic ? g : Math.max(g, wl - D.habitat.depth_m.max);
+    function habitatScore(D, env, below, live = true) {
+      const H = D.habitat, w = H.waters[WATER_KEYS[env.kind]] || 0; if (!w) return 0;
+      const bz = below ?? Math.min(env.dep, Math.max(0.3, H.depth_m.preferred)), T = waterTemp(env.kind, env.level, bz, env.x, env.y, live);
+      const tf = fitRange(T, H.temperature_c.min, H.temperature_c.optimal, H.temperature_c.max);   // laying out populations (live = false), a poor growing season counts for more
+      // water deeper than the species goes: bottom fish can't use it, mid-water fish just swim above the deep (see fishFloor)
+      let df = fitRange(env.dep, H.depth_m.min, H.depth_m.preferred, H.depth_m.max * 1.5);
+      if (env.dep > H.depth_m.preferred && !D._benthic) { const Z = D.behavior.depth_zone, zb = (Z.bottom || 0) / ((Z.surface || 0) + (Z.mid || 0) + (Z.bottom || 0) || 1); df += (1 - df) * (1 - zb) ** 2; }
+      return w * df * (live ? tf : Math.pow(tf, 2.5))
+        * currentFit(env.cur, H) * ((murk(env.kind) + (live && env.kind >= RIVER ? world.env.turb * 0.4 : 0)) > H.turbidity_max ? 0.35 : 1) * (env.cover ? coverFit(env.cover, H) : 1)
+        * (0.15 + 0.85 * oxyFit(D, oxygen(env.kind, T, bz, env.rap || 0, live)));
+    }
+    function envAt(x, y, withCover = true, live = true) {
+      const s = terr.sample(x, y, world.scratch), kind = s.kind, level = s.level, dep = s.level - s.ground, rap = s.rap;
+      return { x, y, kind, level, dep, rap, ground: level - dep, cur: dep > 0 && kind >= RIVER ? terr.flowAt(x, y, kind)[2] : 0, cover: withCover && dep > 0 ? terr.coverAt(x, y, 3.5, live) : null };
+    }
+    // ---- food: what there is to eat, where and when (0..1 per food) ----
+    // the zones each food is found in: [surface, mid-water, bottom]
+    const FOOD_ZONES = { insects: [1, 0.35, 0], nymphs: [0.1, 0.45, 1], worms: [0, 0.15, 1], crayfish: [0, 0, 1], fish: [0.3, 1, 0.45], frogs: [1, 0.1, 0],
+      snails: [0, 0.2, 1], shrimp: [0, 0.6, 1], plankton: [0.4, 1, 0.1], plants: [0.2, 0.8, 0.6], eggs: [0, 0.1, 1], leeches: [0, 0.4, 1] };
+    // how much of each food each kind of water has, by kind id (insects' sea entry hangs on the wind, so it stays in foodAvail)
+    const FOOD_KIND = { nymphs: [0, 0.35, 0.45, 0.9, 1], crayfish: [0, 0.75, 0.8, 1, 0.8], fish: [0.8, 0.7, 0.6, 0.7, 0.5], frogs: [0, 0.5, 1, 0.3, 0.3],
+      shrimp: [1, 0.15, 0.1, 0.35, 0.1], plankton: [0.9, 0.8, 0.9, 0.2, 0.05], leeches: [0, 0.6, 1, 0.3, 0.2] };
+    const FOOD_COVER = { rocks: 0.2, weeds: 0.2, reeds: 0.1, lilies: 0.1, wood: 0, open: 0.5 };   // when the spot's cover isn't known
+    function foodAvail(food, env, T) {
+      const k = env.kind, c = env.cover || FOOD_COVER, hour = world.tod(0.4) * 24, yf = world.env.yf;
+      const night = 1 - sstep(5, 7, hour) * (1 - sstep(20, 22, hour)), warm = sstep(5, 15, T), shore = 1 - sstep(1, 3.5, env.dep);
+      const veg = Math.min(1, c.weeds + c.reeds + c.lilies + c.wood * 0.6), rocks = Math.min(1, c.rocks + c.wood * 0.5), rap = env.rap || 0;
+      const iced = world.env.iced(k, env.dep, env.x, env.y) ? 1 : 0;
+      switch (food) {
+        case 'insects': return clamp([0, 0.45 + 0.5 * world.env.wind, 0.9, 0.85, 1][k] * warm * (0.15 + 0.85 * world.env.hatch + 0.25 * veg * sstep(0.15, 0.4, yf) * (1 - sstep(0.6, 0.7, yf))) * (1 - iced), 0, 1);
+        case 'nymphs': return clamp(FOOD_KIND.nymphs[k] * (0.35 + 0.65 * Math.max(rocks, rap)) * (0.4 + 0.6 * warm) * (1 + 0.5 * world.env.hatch), 0, 1);
+        case 'worms': return clamp((k === OCEAN ? 0.1 : 1) * shore * (0.2 + 0.8 * world.env.wet) * (0.5 + 0.5 * warm), 0, 1);
+        case 'crayfish': return clamp(FOOD_KIND.crayfish[k] * (0.25 + 0.75 * rocks) * (0.3 + 0.7 * night) * warm, 0, 1);
+        case 'fish': return clamp(FOOD_KIND.fish[k] * (0.35 + 0.65 * veg) * (env.dep < 4 ? 1 : 0.6) * (0.5 + 0.5 * warm) * (1 + 0.4 * sstep(0.3, 1, 1 - world.env.light)), 0, 1);
+        case 'frogs': return clamp(FOOD_KIND.frogs[k] * Math.min(1, c.lilies + c.reeds) * sstep(14, 20, T) * (0.35 + 0.65 * night), 0, 1);
+        case 'snails': return clamp((k === OCEAN ? 0.5 : 1) * (0.2 + 0.8 * Math.max(c.weeds, c.lilies)) * (0.3 + 0.7 * world.env.growth), 0, 1);
+        case 'shrimp': return FOOD_KIND.shrimp[k] * (0.4 + 0.6 * night);
+        case 'plankton': return clamp(FOOD_KIND.plankton[k] * (0.25 + 0.75 * world.env.growth) * (1 - shore * 0.5), 0, 1);
+        case 'plants': return clamp(c.weeds + c.lilies * 0.7, 0, 1) * (0.3 + 0.7 * world.env.growth);
+        case 'eggs': return clamp(((k === LAKE || k === POND) ? shore * sstep(0.04, 0.1, yf) * (1 - sstep(0.18, 0.26, yf)) : 0) + (k >= RIVER ? rap * sstep(0.55, 0.6, yf) * (1 - sstep(0.7, 0.76, yf)) : 0), 0, 1);
+        case 'leeches': return clamp(FOOD_KIND.leeches[k] * (1 - rocks) * warm * (0.5 + 0.5 * night), 0, 1);
+      }
+      return 0.2;
+    }
+    // how much of what this species eats is here, and in which zone: { q: 0..1, zone }
+    function foodScore(D, env, T) {
+      const F = D.diet.food, Z = D.diet.feeding_zone, zm = Math.max(Z.surface || 0, Z.mid || 0, Z.bottom || 0) || 1, tot = [0, 0, 0]; let P = 0;
+      for (const k in F) { const p = F[k]; if (!p) continue; P += p; const a = foodAvail(k, env, T); if (!a) continue; const fz = FOOD_ZONES[k] || [0.3, 1, 0.5]; for (let z = 0; z < 3; z++) tot[z] += p * a * fz[z]; }
+      const w = D._benthic ? [0, 0, 1] : [(Z.surface || 0) / zm, (Z.mid || 0) / zm, (Z.bottom || 0) / zm];
+      let best = 2, q = -1; for (let z = 0; z < 3; z++) { const v = tot[z] * w[z]; if (v > q) { q = v; best = z; } }
+      return { q: P ? clamp(q / P * 1.6, 0, 1) : 0, zone: ['surface', 'mid', 'bottom'][best] };
+    }
+    // what a simulated animal counts as on a predator's menu
+    const preyFood = D => D.body.plan === 'frog' || D.body.plan === 'salamander' ? 'frogs' : D._herp ? null : D._air ? 'mammals' : ({ fish: 'fish', squid: 'fish', cuttlefish: 'fish', octopus: 'crayfish', crab: 'crayfish', lobster: 'crayfish', shrimp: 'shrimp', snail: 'snails' })[D.body.plan || 'fish'] || null;   // a bass eats frogs and newts; snakes, lizards, turtles and alligators aren't on anyone's menu here
+    const activityAt = (D, hour) => { const a = D._act, h = ((hour % 24) + 24) % 24, i = Math.floor(h), u = h - i; return a[i] + (a[(i + 1) % 24] - a[i]) * u; };
+    Object.assign(world, { rawSurfaceT, h21js, vnjs, floe, seaWarm, springPull, waterTemp, waterTempAt, oxygen, oxyFit,
+      fishFloor, habitatScore, envAt, FOOD_ZONES, FOOD_KIND, FOOD_COVER, foodAvail, foodScore, preyFood, activityAt });
+    return world;
+  }
+
+  return { SEASONS, WEATHER, WEATHER_NEXT, installEnvironment };
+});
+</script>
+<script>
+'use strict';
+// Shared simulation, part 5: fish behaviour. Depth zones, decisions (rest, cruise, forage, hunt, hold, flee, haul out),
+// prey, eating, swimming, air-breathers surfacing and leaping, and being spooked by people, boats and splashes.
+// installBehaviour(world) adds these. Everything that is not simulation comes in through a context `ctx`:
+//   ctx.time, ctx.tod, ctx.dtH, ctx.frameDt   clock: seconds, time of day 0..1, game hours this frame, the frame's dt
+//   ctx.rng                                   the random stream (the game passes Math.random; a server a seeded one)
+//   ctx.players                               [{ x, y, inWater, moving }]: swimmers/waders scare fish within their
+//                                             spook range; someone moving on the bank scares shallow fish nearby
+//   ctx.noises                                [{ x, y, s, t }]: splashes, boats, casts (see disturb)
+//   ctx.fishAround(x, y, r, fn)               the fish near a point (prey)
+//   ctx.lureFor(f)                            the lure a 'lure'-state fish follows, while it is still fishable (or null)
+//   ctx.lureArrive(f)                         it reached the lure: the game's bite decision (fishing stays client-side)
+//   ctx.emit(name, ...args)                   events: fishFeed, fishRise, fishEaten, mammalBlow, mammalLeap
+//   ctx.fx.rise(f) / splashdown(f) / blow(f) / leap(f) / kill(f, g)   rings, drops and spray (rendering; optional)
+(function (factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./core.js'));
+  else { const S = globalThis.OWSim = globalThis.OWSim || {}; Object.assign(S, factory(S)); }
+})(function (S) {
+  const { clamp, sstep, fitRange, currentFit, coverFit, OCEAN, LAKE, POND, RIVER } = S;
+  const NOFX = {};
+  // a splash, a boat, a cast: fish within its reach (× its strength) take fright for the next 0.4 s
+  function disturb(ctx, x, y, s = 1) { ctx.noises.push({ x, y, s, t: ctx.time }); if (ctx.noises.length > 16) ctx.noises.shift(); }
+  // frightened at once, away from (x, y): a diving bird, a missed strike, a fish let go
+  function spookFish(f, x, y) { f.stress = 1; f.thx = x; f.thy = y; f.tNext = 0; }
+
+  function installBehaviour(world) {
+    const terr = world.terrain, env = () => world.env;
+    const sampleAt = (x, y) => terr.sample(x, y, world.scratch);
+    function pickZone(ctx, w) { const t = (w.surface || 0) + (w.mid || 0) + (w.bottom || 0); let r = ctx.rng() * (t || 1); if ((r -= w.surface || 0) < 0) return 'surface'; if ((r -= w.mid || 0) < 0) return 'mid'; return 'bottom'; }
+    function zoneZ(ctx, f, zone, wl, g, kind) { // a depth for this zone; in stratified water the fish looks for its preferred temperature
+      g = world.fishFloor(f.def, wl, g);
+      const lo = g + (f.def._jelly && !f.def._benthic ? f.len * 0.2 : Math.max(0.01, -f.def._zmin * f.len)) + 0.01, hi = Math.max(lo, wl - 0.12), dep = wl - g;
+      if (f.def._benthic) return lo;
+      let z = zone === 'surface' ? hi - 0.1 : zone === 'bottom' ? lo + 0.05 : g + dep * (0.3 + 0.4 * ctx.rng());
+      if (((dep > 3 && (kind === LAKE || kind === OCEAN)) || (dep > 1.2 && kind === POND)) && zone !== 'surface') {   // the layer with the right temperature and enough oxygen
+        const H = f.def.habitat.temperature_c; let bz = z, bf = -1;
+        for (let k = 0; k <= 4; k++) { const zz = lo + (hi - lo) * k / 4, T = world.waterTemp(kind, wl, wl - zz, f.x, f.y), ff = fitRange(T, H.min, H.optimal, H.max) * (0.2 + 0.8 * world.oxyFit(f.def, world.oxygen(kind, T, wl - zz))) - Math.abs(zz - z) * 0.02; if (ff > bf) { bf = ff; bz = zz; } }
+        z = bz;
+      }
+      return clamp(z, lo, hi);
+    }
+    function fishSpot(ctx, f, cx, cy, radius, n, score) { // best of n random spots of the same water within radius
+      let best = null, bs = -1;
+      for (let k = 0; k < n; k++) {
+        const a = ctx.rng() * 6.2832, r = radius * Math.sqrt(ctx.rng()), x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+        const s = sampleAt(x, y), SK = s.kind, SW = s.level, dep = SW - s.ground, SR = s.rap; if (SK !== f.kd || dep < Math.max(0.25, f.len * 0.8)) continue;
+        const e = { x, y, kind: SK, level: SW, dep, ground: SW - dep, cur: 0, cover: null, rap: SR };
+        const sc = score(x, y, e) * (0.85 + 0.3 * ctx.rng()); if (sc > bs) { bs = sc; best = e; best.x = x; best.y = y; }
+      }
+      return best;
+    }
+    function fishDecide(ctx, f) {
+      const D = f.def, B = D.behavior, H = D.habitat, rnd = ctx.rng, hour = (ctx.tod ?? 0) * 24, ENV = env();
+      const s0 = sampleAt(f.x, f.y), rap = s0.rap; f.wl = s0.level; f.ground = s0.ground;
+      const fl = terr.flowAt(f.x, f.y, f.kd); f.fx = fl[0]; f.fy = fl[1]; f.cur = f.kd >= RIVER ? fl[2] : 0;
+      const below = clamp(f.wl - f.z, 0, f.wl - f.ground);
+      f.temp = world.waterTemp(f.kd, f.wl, below, f.x, f.y); f.oxy = world.oxygen(f.kd, f.temp, below, rap);
+      f.tfit = fitRange(f.temp, H.temperature_c.min, H.temperature_c.optimal, H.temperature_c.max);
+      f.metab = clamp(2 ** ((f.temp - H.temperature_c.optimal) / 10), 0.12, 1.3);   // metabolism follows the water temperature
+      const ofit = world.oxyFit(D, f.oxy);
+      // weather: a falling barometer ahead of a front turns fish on; the bright, high-pressure day after one turns them off
+      const wx = 1 + 0.35 * sstep(0.4, 3, -ENV.trend) - 0.25 * sstep(0.4, 3, ENV.trend) * (1 - ENV.cloud);
+      f.act = world.activityAt(D, hour) * (0.12 + 0.88 * f.tfit) * (1 - 0.85 * f.stress) * wx * (0.35 + 0.65 * ofit) * (f.temp < H.temperature_c.min ? 0.5 : 1);
+      const go = (state, e, zone, tNext) => { f.state = state; f.zone = zone; if (e) { f.tx = e.x; f.ty = e.y; f.tz = zoneZ(ctx, f, zone, e.level, e.ground, f.kd); } f.tNext = tNext; };
+      if (f.stress > 0.5) { // bolt for deeper water and cover, away from the threat
+        const P = ctx.players[0] || f, tx = f.thx ?? P.x, ty = f.thy ?? P.y;
+        const e = fishSpot(ctx, f, f.x, f.y, 14, 6, (x, y, v) => coverFit(terr.coverAt(x, y, 3), H) * (0.4 + Math.min(1, v.dep / 4)) * (0.3 + Math.min(1, Math.hypot(x - tx, y - ty) / 12)));
+        return go('flee', e, 'bottom', 3 + rnd() * 4);
+      }
+      if (ofit < 0.5 && rnd() < 0.8) { // gasping: find water with more oxygen (moving water, the windward shore, a cooler layer)
+        const e = fishSpot(ctx, f, f.x, f.y, Math.max(12, D.population.home_range_m * 1.5), 6, (x, y, v) => { v.cur = v.kind >= RIVER ? terr.flowAt(x, y, v.kind)[2] : 0; return world.habitatScore(D, v); });
+        return go('cruise', e, 'mid', 6 + rnd() * 6);
+      }
+      if (f.leader && !f.leader.dead && f.leader.stress < 0.5) { f.state = 'school'; f.tNext = 1 + rnd() * 2; return; }
+      if (rnd() < f.act * f.hunger * 0.9) { // feed: hunt something alive, or work the spot with the most of what it eats
+        if (f.hunger > 0.35 && rnd() < 0.75) { const prey = findPrey(ctx, f); if (prey) { f.state = 'hunt'; f.prey = prey; f.zone = 'mid'; f.tNext = 5 + rnd() * 6; return; } }
+        const e = B.burst_bl_s <= 0 ? null : fishSpot(ctx, f, f.x, f.y, B.ambush > 0.5 ? 4 : 9, 4, (x, y, v) => { v.cover = terr.coverAt(x, y, 2.5); const fs = world.foodScore(D, v, f.temp); v.fq = fs.q; v.fz = fs.zone; return 0.05 + fs.q; });
+        f.mealQ = e ? e.fq : 0.3; f.tries = (f.tries || 0) + 1;
+        return go('forage', e || { x: f.x, y: f.y, level: f.wl, ground: f.ground }, e ? e.fz : D._benthic ? 'bottom' : pickZone(ctx, D.diet.feeding_zone), 8);
+      }
+      f.tries = 0;
+      if (f.cur > 0.15 && rnd() < B.station_holding) { // hold a lie in the current, behind cover
+        const e = fishSpot(ctx, f, f.homeX, f.homeY, Math.min(D.population.home_range_m, 8), 5, (x, y, v) => currentFit(terr.flowAt(x, y, v.kind)[2], H) * coverFit(terr.coverAt(x, y, 2.5), H) * (0.6 + 0.4 * world.foodScore(D, v, f.temp).q));
+        return go('hold', e, pickZone(ctx, B.depth_zone), 10 + rnd() * 20);
+      }
+      if (B.haul_out > 0) { // seals and sea lions rest ashore, then slip back into the water
+        if (f.land) { if (rnd() < 0.65) { f.state = 'haul'; f.tx = f.x; f.ty = f.y; f.tNext = 30 + rnd() * 90; return; }
+          const e = fishSpot(ctx, f, f.x, f.y, 16, 10, (x, y, v) => v.dep); if (e) return go('cruise', e, 'mid', 10); }
+        else if (rnd() < B.haul_out * (D._herp ? 0.6 + 0.6 * ENV.light : 0.35) * (1 - (D._herp ? 0.5 : 1) * f.hunger)) { /* reptiles and frogs bask, most in sunshine */ const e = shoreSpot(ctx, f, 40); if (e) { f.state = 'haul'; f.zone = 'bottom'; f.tx = e.x; f.ty = e.y; f.tz = e.z; f.tNext = 90 + rnd() * 200; return; } }
+      }
+      // bright sun drives wary fish down and into cover; grey days, rain and dusk bring them out
+      const shy = B.wariness * ENV.light * (1 - 0.6 * ENV.rain);
+      if (rnd() < f.act * (1 - 0.7 * B.ambush) * (1 - 0.5 * shy)) { // roam the home range, favouring good habitat
+        const toHome = Math.hypot(f.x - f.homeX, f.y - f.homeY) > D.population.home_range_m;
+        const e = fishSpot(ctx, f, toHome ? f.homeX : f.x, toHome ? f.homeY : f.y, D.population.home_range_m, 5, (x, y, v) => { v.cur = v.kind >= RIVER ? terr.flowAt(x, y, v.kind)[2] : 0; v.cover = terr.coverAt(x, y, 3); return world.habitatScore(D, v); });
+        return go('cruise', e, rnd() < shy * 0.6 ? 'bottom' : pickZone(ctx, B.depth_zone), 6 + rnd() * 10);
+      }
+      const e = fishSpot(ctx, f, f.x, f.y, 5, 4, (x, y, v) => coverFit(terr.coverAt(x, y, 2.5), H) * (1 + shy) * fitRange(v.dep, H.depth_m.min, H.depth_m.preferred * (1 + shy), H.depth_m.max * 1.5));
+      go('rest', e, rnd() < shy ? 'bottom' : pickZone(ctx, B.depth_zone), (6 + rnd() * 14) * (1 + B.ambush) * (f.tfit < 0.2 ? 2 : 1));
+    }
+    // the best thing to chase nearby: on the menu, small enough to swallow, in the same water
+    function findPrey(ctx, f) {
+      const D = f.def, F = D.diet.food, gape = f.len * (0.22 + 0.3 * D.body.head.mouth), reach = 5 + 8 * Math.min(1, f.len * 2);
+      if (F.fish && D.diet.piscivore_from_cm && f.lengthCm < D.diet.piscivore_from_cm && !F.crayfish && !F.shrimp) return null;
+      let best = null, bs = 0;
+      ctx.fishAround(f.x, f.y, reach, g => {   // only fish in the grid cells within reach
+        if (g === f || g.dead || g.kd !== f.kd || g.len > gape || g.len < f.len * 0.06) return;
+        const cat = world.preyFood(g.def); if (!cat || !F[cat]) return;
+        if (cat === 'fish' && D.diet.piscivore_from_cm && f.lengthCm < D.diet.piscivore_from_cm) return;
+        const d = Math.hypot(g.x - f.x, g.y - f.y); if (d > reach) return;
+        const sc = F[cat] / (1 + d * 0.4) * (g.stress < 0.3 ? 1.3 : 1) * (g.def === D ? 0.3 : 1);
+        if (sc > bs) { bs = sc; best = g; }
+      });
+      return best;
+    }
+    function fishEat(ctx, f, q = f.mealQ ?? 0.5) {
+      f.hunger = Math.max(0, f.hunger - 0.1 - 0.5 * q - 0.1 * ctx.rng()); f.gulp = 1; f.tries = 0;
+      if (f.zone === 'surface' && world.config.fishRises) { // a rise: rings and a few drops
+        if ((ctx.fx || NOFX).rise) ctx.fx.rise(f);
+        ctx.emit('fishRise', f);
+      }
+      ctx.emit('fishFeed', f, f.zone);
+      f.state = 'rest'; f.zone = null; f.tNext = 0.5 + ctx.rng() * 2;
+    }
+    // how frightened f is right now (0..1), and of what (sets f.thx, f.thy): the nearest swimmer or wader, someone moving
+    // on the bank above shallow fish, a fresh splash or boat, a predator closing in. Rain on the surface, muddy water
+    // and low light hide you; bright calm days don't.
+    function fishThreat(ctx, f) {
+      const B = f.def.behavior, ENV = env();
+      const hide = (1 - 0.35 * ENV.rain) * (f.kd >= RIVER ? 1 - 0.35 * ENV.turb : 1) * (0.7 + 0.3 * ENV.light);
+      const sp = B.spook_m * (0.6 + 0.8 * f.sizeRank) * (0.5 + B.wariness) * hide;
+      let th = 0;
+      for (const P of ctx.players) {
+        const d = Math.hypot(f.x - P.x, f.y - P.y); let t = 0;
+        if (P.inWater) t = d < sp ? 1 - d / sp : 0;
+        else if (P.moving && d < sp * 0.6 && f.wl - f.z < 1.5) t = 0.5 * (1 - d / (sp * 0.6));
+        if (t > th) { th = t; f.thx = P.x; f.thy = P.y; }
+      }
+      for (const n of ctx.noises) { if (ctx.time - n.t > 0.4) continue; const r = sp * n.s, dn = Math.hypot(f.x - n.x, f.y - n.y); if (dn < r && (1 - dn / r) * Math.min(1, n.s) > th) { th = (1 - dn / r) * Math.min(1, n.s); f.thx = n.x; f.thy = n.y; } }
+      if (f.chaser && ctx.time - f.chasedT < 0.4 && !f.chaser.dead) { // being hunted: it notices if it's alert and close enough
+        const c = f.chaser, dc = Math.hypot(c.x - f.x, c.y - f.y), see = (2 + 4 * B.wariness) * (0.6 + 0.4 * ENV.light);
+        if (dc < see && 1 - dc / see > th) { th = (1 - dc / see) * 0.9; f.thx = c.x; f.thy = c.y; }
+      }
+      return th;
+    }
+    function fishStep(ctx, f, dt) {
+      const D = f.def, B = D.behavior, ENV = env(), rng = ctx.rng;
+      // metabolism: hunger grows with the meals it needs a day, much slower in cold water (Q10 ~ 2)
+      const dtH = ctx.dtH * dt / Math.max(1e-6, ctx.frameDt || dt);   // game hours in this step (a far fish's step covers several frames)
+      const metab = f.metab ?? (f.metab = clamp(2 ** (((f.temp ?? 15) - D.habitat.temperature_c.optimal) / 10), 0.12, 1.3));   // refreshed when it decides
+      f.hunger = Math.min(1, f.hunger + dtH * D.diet.meals_per_day / 24 * 0.9 * metab);
+      f.stress = Math.max(0, f.stress - dt / B.recover_s);
+      const th = fishThreat(ctx, f);
+      if (th > 0) { const was = f.stress; f.stress = Math.min(1, f.stress + th * (0.3 + B.wariness) * dt * 5); if (was <= 0.5 && f.stress > 0.5) f.tNext = 0; }
+      if ((f.tNext -= dt) <= 0) fishDecide(ctx, f);
+      if (!D._benthic && f.state !== 'flee' && f.state !== 'forage' && f.state !== 'hunt' && f.state !== 'lure' && f.wl - f.ground < 8 && !ENV.iced(f.kd, f.wl - f.ground, f.x, f.y)
+        && rng() < B.rise_per_hour * f.act * dtH * (0.2 + 1.8 * ENV.hatch) * sstep(5, 12, f.temp ?? 15)) { // takes something off the top (most during a hatch)
+        f.mealQ = 0.25 + 0.5 * ENV.hatch;
+        f.state = 'forage'; f.zone = 'surface'; f.tx = f.x + (rng() * 3 - 1.5); f.ty = f.y + (rng() * 3 - 1.5); f.tz = f.wl - 0.1; f.tNext = 6;
+      }
+      if (D._air && mammalStep(ctx, f, dt)) return;   // breathing, and leaping clear of the water
+      let tx = f.tx, ty = f.ty, tz = f.tz, L = null;
+      if (f.state === 'school' && f.leader) { const Ld = f.leader, c = Math.cos(Ld.a), s = Math.sin(Ld.a); tx = Ld.x + c * f.ox - s * f.oy; ty = Ld.y + s * f.ox + c * f.oy; tz = Ld.z + f.oz; }
+      if (f.state === 'hunt') { // stalk, then lunge, leading the prey a little
+        const g = f.prey;
+        if (!g || g.dead || Math.hypot(g.x - f.x, g.y - f.y) > 18) { f.state = 'rest'; f.prey = null; f.tNext = 1 + rng() * 2; }
+        else { const lead = Math.min(1, Math.hypot(g.x - f.x, g.y - f.y) / 3) * 0.4; tx = g.x + Math.cos(g.a) * g.spd * g.len * lead; ty = g.y + Math.sin(g.a) * g.spd * g.len * lead; tz = g.z; g.chaser = f; g.chasedT = ctx.time; }
+      }
+      if (f.state === 'lure') { // following your lure or bait in (the game's fishing: ctx.lureFor)
+        L = ctx.lureFor ? ctx.lureFor(f) : null;
+        if (!L) { f.state = 'rest'; f.tNext = 0.5 + rng(); }
+        else { tx = L.x; ty = L.y; tz = L.z; }
+      }
+      const dist = Math.hypot(tx - f.x, ty - f.y);
+      let want;   // swimming speed (body lengths a second) for what it's doing; only the current behaviour is worked out
+      switch (f.state) {
+        case 'rest': want = 0.12; break;
+        case 'cruise': want = B.cruise_bl_s * (0.6 + 0.4 * f.act); break;
+        case 'hold': want = 0.25; break;
+        case 'forage': want = B.ambush > 0.5 && dist < 3 ? B.burst_bl_s : B.cruise_bl_s * 1.8; break;
+        case 'flee': want = B.burst_bl_s; break;
+        case 'hunt': want = dist < 2.5 + f.len * 3 ? B.burst_bl_s : B.cruise_bl_s * (B.ambush > 0.5 ? 0.6 : 1.6); break;
+        case 'breathe': want = B.cruise_bl_s * 1.1; break;
+        case 'haul': want = Math.max(B.cruise_bl_s, 0.35 / f.len); break;   // heading for the bank: at least ~0.35 m/s, so a turtle gets there
+        case 'lure': want = Math.min(B.burst_bl_s * (L && L.spd > 1.2 ? 1 : 0.5), Math.max(B.cruise_bl_s * 2.5, (dist < 1.2 ? 0.35 : 0.7) / f.len, L ? L.spd * 1.3 / f.len : 0)); break;   // a trolled lure gets run down flat out
+        case 'school': want = f.leader ? Math.max(0.2, f.leader.spd * f.leader.len / f.len) + dist * 0.5 / f.len : B.cruise_bl_s; break;
+        default: want = 0.5;
+      }
+      let desired = Math.atan2(ty - f.y, tx - f.x);
+      if (B.burst_bl_s <= 0) { want = 0; desired = f.a; }   // sessile (burst_bl_s 0, e.g. giant clam): never moves or turns
+      if (dist < Math.max(0.35, f.len * 0.8) && Math.abs(tz - f.z) < 0.4) { // arrived
+        if (f.state !== 'school') { want = 0.04; desired = f.a; }
+        if (f.state === 'forage') { // did it find anything? richer spots pay off more often
+          if (rng() < 0.3 + 0.7 * (f.mealQ ?? 0.5) || (f.tries || 0) > 3) fishEat(ctx, f); else { f.state = 'rest'; f.tNext = 0.3 + rng(); }
+        } else if (f.state === 'hunt') fishStrike(ctx, f);
+        else if (f.state === 'lure') { if (ctx.lureArrive) ctx.lureArrive(f); else { f.state = 'rest'; f.tNext = 0.5; } }
+        else if (f.state === 'cruise') f.tNext = Math.min(f.tNext, 0.5 + rng());
+      }
+      if (f.state === 'hold' && f.cur > 0.05 && dist < 2) desired = Math.atan2(-f.fy, -f.fx);   // nose into the current
+      if (f.land) want = Math.min(want, 0.3);   // seals hump along slowly ashore
+      const da = Math.atan2(Math.sin(desired - f.a), Math.cos(desired - f.a)), tr = B.turn_rate * (f.state === 'flee' ? 1.8 : 1);
+      f.a += clamp(da, -tr * dt, tr * dt);
+      f.spd += (want * (Math.abs(da) > 1.5 ? 0.4 : 1) - f.spd) * Math.min(1, dt * (f.state === 'flee' || f.state === 'forage' ? 6 : 1.8));
+      const v = f.spd * f.len; let nx = f.x + Math.cos(f.a) * v * dt, ny = f.y + Math.sin(f.a) * v * dt;
+      if (f.cur > 0.05 && f.state !== 'hold') { nx += f.fx * 0.3 * dt; ny += f.fy * 0.3 * dt; }   // the current carries it a little
+      const s = sampleAt(nx, ny), SW = s.level, SK = s.kind, gnd = s.ground, dep = SW - gnd;
+      // seals and sea lions may cross the shoreline when hauling out (or heading back in): low, gentle ground only
+      const amph = B.haul_out > 0 && (f.state === 'haul' || f.land), ok = amph ? (dep > -2.2 && gnd - f.ground < 0.7 && (SK === f.kd || dep < 0)) : dep >= Math.max(0.18, f.len * 0.35) && SK === f.kd;
+      if (!ok) { f.a += (rng() < 0.5 ? 1 : -1) * 1.2; f.spd *= 0.3; if (f.state !== 'school') f.tNext = Math.min(f.tNext, 0.3); }
+      else { f.x = nx; f.y = ny; f.wl = SW; f.ground = SW - dep;
+        if (B.haul_out > 0) { const ic = ENV.iced(SK, dep, nx, ny); f.land = dep < f.len * 0.3 || ic; if (ic) f.ground = SW; } }   // on an ice floe the 'ground' is the ice
+      const lo = f.ground + (D._jelly && !D._benthic ? f.len * 0.2 : Math.max(0.01, -f.def._zmin * f.len)) + 0.01, hi = Math.max(lo, f.wl - (f.state === 'breathe' ? f.len * 0.035 : 0.08));   // a breathing whale's back breaks the surface
+      const vz = Math.min(0.6, Math.max(0.02, B.burst_bl_s * f.len * 0.5)) * dt, z0 = f.z;   // a clam doesn't bob up and down like a trout
+      f.z = D._benthic ? lo : clamp(f.z + clamp(clamp(tz, lo, hi) - f.z, -vz, vz), lo, hi);
+      // pitch: nose up when climbing, down when diving (not for things lying on the bottom or ashore)
+      const ptg = D._benthic || D._jelly || f.land || D.body.lie ? 0 : clamp(Math.atan2((f.z - z0) / Math.max(dt, 1e-3), Math.max(0.15, v)), -0.6, 0.6);
+      f.pitch = (f.pitch || 0) + (ptg - (f.pitch || 0)) * Math.min(1, dt * 3);
+      const beat = 1.6 + 2.2 * Math.min(6, f.state === 'hold' ? f.cur / f.len * 0.6 + 0.4 : f.spd);   // tail beats faster when working
+      f.ph = (f.ph + dt * beat * 3.1416) % 6.2832;
+      // mouth: slow breathing (faster when frightened), wide open closing on food, a snap when it eats
+      f.gulp = Math.max(0, (f.gulp || 0) - dt * 3); f.bph = ((f.bph ?? f.tint * 9) + dt * (1.6 + 3 * f.stress)) % 6.2832;
+      f.open = typeof f.mouthOpen === 'number' ? clamp(f.mouthOpen, 0, 1)
+        : B.burst_bl_s <= 0 ? (f.open ?? 0.8) + ((f.stress > 0.3 ? 0.05 : 0.8) - (f.open ?? 0.8)) * Math.min(1, dt * 0.4)   // sessile: gapes wide, slowly shuts when disturbed
+        : Math.max(0.06 + 0.07 * (0.5 + 0.5 * Math.sin(f.bph)), f.state === 'forage' && dist < Math.max(1, f.len * 3) ? 0.75 : 0, Math.sin(Math.min(1, f.gulp) * 3.1416) * 0.9);
+    }
+    // air breathers: when the breath runs out, swim up and breathe at the surface (whales and dolphins blow), now and
+    // then leap clear of the water. Returns true while airborne (it moves itself).
+    function mammalStep(ctx, f, dt) {
+      const B = f.def.behavior, fx = ctx.fx || NOFX, rng = ctx.rng;
+      if (f.leapV !== undefined) {
+        const sp = Math.max(f.spd, B.burst_bl_s * 0.5) * f.len, nx = f.x + Math.cos(f.a) * sp * dt, ny = f.y + Math.sin(f.a) * sp * dt;
+        { const s = sampleAt(nx, ny); if (s.level - s.ground > f.len * 0.5 && s.kind === f.kd) { f.x = nx; f.y = ny; } else f.a += 2 * dt; }
+        f.leapV -= 9.8 * dt; f.z += f.leapV * dt; f.pitch = clamp(Math.atan2(f.leapV, sp), -1.1, 1.1); f.ph = (f.ph + dt * 7) % 6.2832;
+        if (f.leapV < 0 && f.z < f.wl - f.len * 0.12) { // splashdown
+          disturb(ctx, f.x, f.y, Math.min(2, 0.4 + f.len * 0.3)); if (fx.splashdown) fx.splashdown(f);
+          f.leapV = undefined; f.z = f.wl - f.len * 0.25; f.pitch = -0.4;
+        }
+        return true;
+      }
+      if (f.land) { f.air = B.breath_hold_s; return false; }
+      if (f.state !== 'breathe') { f.air -= dt * (f.state === 'flee' || f.state === 'hunt' ? 1.6 : 1); if (f.air <= 0) { f.state = 'breathe'; f.surfT = 0; f.blew = false; f.tNext = 60; } }
+      if (f.state !== 'breathe') return false;
+      f.tx = f.x + Math.cos(f.a) * f.len * 3; f.ty = f.y + Math.sin(f.a) * f.len * 3; f.tz = f.wl;
+      if (f.wl - f.z > f.len * 0.12 + 0.2) return false;
+      if (!f.blew) { // the blow: a burst of spray from the blowhole
+        f.blew = true; if (fx.blow) fx.blow(f);
+        ctx.emit('mammalBlow', f);
+      }
+      f.surfT += dt;
+      if (B.leap_per_hour > 0 && rng() < B.leap_per_hour * ctx.dtH * dt / Math.max(1e-6, ctx.frameDt || dt)) { // a leap (dolphins often; a whale's breach now and then)
+        const h = clamp(f.len * (0.35 + 0.7 * rng()), 0.5, 6); f.leapV = Math.sqrt(2 * 9.8 * h); f.z = f.wl - f.len * 0.1; f.spd = B.burst_bl_s * 0.6;
+        if (fx.leap) fx.leap(f); ctx.emit('mammalLeap', f); return true;
+      }
+      if (f.surfT > B.surface_s) { f.air = B.breath_hold_s * (0.6 + 0.8 * rng()); f.state = 'cruise'; f.tNext = 0; }
+      return false;
+    }
+    // a low, gentle bit of shore near a seal to haul out on (null if none)
+    function shoreSpot(ctx, f, R) {
+      for (let k = 0; k < 16; k++) {
+        const a = ctx.rng() * 6.2832, r = R * Math.sqrt(ctx.rng()), x = f.x + Math.cos(a) * r, y = f.y + Math.sin(a) * r;
+        const s = sampleAt(x, y), g = s.ground, SW = s.level, SK = s.kind, dep = SW - g;
+        if (dep > -1.1 && dep < -0.12 && Math.abs(terr.groundAt(x + 1.5, y) - terr.groundAt(x - 1.5, y)) < 0.7 && Math.abs(terr.groundAt(x, y + 1.5) - terr.groundAt(x, y - 1.5)) < 0.7) return { x, y, z: g };
+        if (SK === f.kd && dep > 0.3 && env().iced(SK, dep, x, y)) return { x, y, z: SW, ice: true };   // an ice floe will do
+      }
+      return null;
+    }
+    // a predator reaches its prey: a lunge that may miss (alert prey and open water favour the prey)
+    function fishStrike(ctx, f) {
+      const g = f.prey, B = f.def.behavior; f.prey = null;
+      if (!g || g.dead) { f.state = 'rest'; f.tNext = 1; return; }
+      const p = clamp(0.25 + 0.35 * B.ambush + 0.3 * (1 - g.stress) - 0.15 * g.def.behavior.wariness + 0.15 * (1 - env().light), 0.08, 0.9);
+      if (ctx.rng() < p) {
+        // Queries and rendering skip dead animals immediately; the cells drop them on their next sync.
+        g.dead = true; g.eatenBy = f.id;
+        if (g.wl - g.z < 0.8 && (ctx.fx || NOFX).kill) ctx.fx.kill(f, g);
+        disturb(ctx, g.x, g.y, 0.25);
+        ctx.emit('fishEaten', f, g);
+        f.zone = 'mid'; fishEat(ctx, f, 0.9 + Math.min(1, g.len / f.len));
+      } else { g.stress = 1; g.thx = f.x; g.thy = f.y; g.tNext = 0; f.state = 'rest'; f.tNext = 1 + ctx.rng() * 3; }
+    }
+    Object.assign(world, { pickZone, zoneZ, fishSpot, fishDecide, findPrey, fishEat, fishThreat, fishStep, mammalStep, shoreSpot, fishStrike });
+    return world;
+  }
+
+  // A fish grid for prey and spook queries (8 m buckets), rebuilt each tick from the live list.
+  function createFishGrid() {
+    const G = new Map(), pool = [];
+    return {
+      rebuild(fish) {
+        for (const bucket of G.values()) { bucket.length = 0; pool.push(bucket); } G.clear();
+        for (const f of fish) { if (f.dead) continue; const k = (Math.floor(f.x / 8) + 32768) * 65536 + Math.floor(f.y / 8) + 32768; let b = G.get(k); if (!b) G.set(k, b = pool.pop() || []); b.push(f); }
+      },
+      around(x, y, r, fn) {
+        const c = 8, x0 = Math.floor((x - r) / c), x1 = Math.floor((x + r) / c), y0 = Math.floor((y - r) / c), y1 = Math.floor((y + r) / c);
+        for (let gy = y0; gy <= y1; gy++) for (let gx = x0; gx <= x1; gx++) { const a = G.get((gx + 32768) * 65536 + gy + 32768); if (a) for (const f of a) if (!f.dead && (f.x - x) ** 2 + (f.y - y) ** 2 <= r * r && fn(f)) return; }
+      },
+    };
+  }
+
+  return { disturb, spookFish, installBehaviour, createFishGrid };
+});
+</script>
+<script>
+'use strict';
+// Shared simulation, part 4: fixed fish populations. Each 16 m cell of water has a fixed population (same seed -> same
+// fish in the same places, with the same ids, homes, lengths and weights); makeFish turns a record into a live animal,
+// syncCells keeps the cells around the players (or lures) populated under a cap. installPopulations(world) adds these.
+(function (factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./core.js'));
+  else { const S = globalThis.OWSim = globalThis.OWSim || {}; Object.assign(S, factory(S)); }
+})(function (S) {
+  const { mulberry32, hash2, poisson, sampleFishSize, fitRange } = S;
+  const FISH_CELL = 16;
+  const WILDLIFE_SCALE = { 1: 0.4, 2: 1, 3: 2.2 };   // the Settings levels: sparse, standard, abundant
+
+  function installPopulations(world) {
+    const terr = world.terrain;
+    // The fixed population of cell (cx, cy): records { si, id, hx, hy, size: { cm, kg }, lead, r }.
+    function cellFish(cx, cy) {
+      const C = world.config, SEED = world.seed, db = world.species;
+      const rng = mulberry32((hash2(cx, cy, SEED + 911) * 4294967296) >>> 0), pts = [];
+      for (let k = 0; k < 6; k++) { const x = (cx + 0.08 + 0.84 * rng()) * FISH_CELL, y = (cy + 0.08 + 0.84 * rng()) * FISH_CELL, s = terr.sample(x, y, world.scratch); if (s.level - s.ground > 0.3) pts.push([x, y, s.kind]); }
+      const out = [];
+      for (const kind of new Set(pts.map(p => p[2]))) { // a cell can hold two waters (a creek mouth, say): each gets its own fish
+        const here = pts.filter(p => p[2] === kind), area = FISH_CELL * FISH_CELL * here.length / 6, env = world.envAt(here[0][0], here[0][1], true, false);
+        for (const [D, si] of db.byKind(kind)) {   // only species that live in this kind of water
+          if (out.length >= C.cellMaxAnimals) break;   // later species cannot add a group
+          const Ck = D._needCover, req = !!Ck;
+          const s = world.habitatScore(D, req ? Object.assign({}, env, { cover: { [Ck]: 1 } }) : env, undefined, false); if (s < 0.02) continue;   // laid out for midsummer: in other seasons fish move rather than vanish
+          const Sc = D.population.school, mean = (Sc.min + Sc.max) / 2;
+          // each species draws from its own random stream and numbers its own fish, so adding or removing a species
+          // never changes (or resurrects) the others
+          const rs = mulberry32((hash2(cx * 7 + kind, cy, SEED + D._hid) * 4294967296) >>> 0);
+          let groups = poisson(D.population.density * s * area / 100 * WILDLIFE_SCALE[C.wildlife] * (D._shell ? C.shellfishAbundance : D._herp ? C.herpAbundance : C.fishAbundance) / mean, rs);
+          if (D._herp) groups = Math.min(groups, 2);   // reptiles and amphibians: two at most per cell
+          if (!groups) continue;
+          let homes = null;
+          if (req) { // e.g. clownfish: each group lives on one anemone (the terrain knows where its cover grows)
+            homes = terr.coverHomes ? terr.coverHomes(cx, cy, FISH_CELL, Ck, kind) : [];
+            if (!homes.length) continue; groups = Math.min(groups, homes.length);
+          }
+          for (let g = 0; g < groups && out.length < C.cellMaxAnimals; g++) {
+            const n = D._herp ? 1 : Math.round(Sc.min + rs() * (Sc.max - Sc.min)), [hx, hy] = homes ? homes[g] : here[rs() * here.length | 0], lead = out.length;
+            for (let k = 0; k < n; k++) out.push({ si, id: `${D.id}@${cx},${cy}.${kind}#${g}.${k}`, hx: hx + (rs() - 0.5) * (homes ? 0.6 : 3), hy: hy + (rs() - 0.5) * (homes ? 0.6 : 3), size: sampleFishSize(D, rs), lead: k ? lead : -1, r: rs() });
+          }
+        }
+      }
+      return out;
+    }
+    // a live animal from a population record (or a spawned one): where it is, its fixed size, and its starting state
+    function makeFish(sp) {
+      const D = world.species.list[sp.si], s = terr.sample(sp.hx, sp.hy, world.scratch); const wl = s.level, g0 = s.ground, SK = s.kind, g = world.fishFloor(D, wl, g0), Lr = D.size.length_cm, T = world.waterTemp(SK, wl, (wl - g) * 0.5, sp.hx, sp.hy), H = D.habitat.temperature_c, z0 = D._benthic ? g + Math.max(0.01, -D._zmin * sp.size.cm / 100) + 0.01 : g + (wl - g) * 0.5;
+      return { temp: T, tfit: fitRange(T, H.min, H.optimal, H.max), id: sp.id, sp: sp.si, def: D, species: D.id, name: D.name, lengthCm: sp.size.cm, weightKg: sp.size.kg, len: sp.size.cm / 100,
+        x: sp.hx, y: sp.hy, z: z0, a: sp.r * 6.2832, spd: 0, homeX: sp.hx, homeY: sp.hy, kd: SK, wl, ground: g0,
+        state: 'rest', zone: null, tx: sp.hx, ty: sp.hy, tz: z0, tNext: sp.r * 3, hunger: 0.3 + 0.6 * sp.r, stress: 0, act: 0.5, air: D.behavior.breath_hold_s * sp.r, pitch: 0,
+        fx: 0, fy: 0, cur: 0, ph: sp.r * 6.28, tint: 0.35 + 0.3 * sp.r, leader: null, lead: sp.lead, ox: 0, oy: 0, oz: 0,
+        sizeRank: (sp.size.cm - Lr.min) / Math.max(1, Lr.max - Lr.min) };
+    }
+    // keep as many whole groups (a school with its leader, or a single fish) as fit in `room`, picked in a fixed
+    // pseudo-random order so no species is always the one left out; followers never lose their leader
+    function trimCell(fish, room) {
+      const members = new Set(fish), groups = new Map(); for (const f of fish) { const k = f.leader && members.has(f.leader) ? f.leader : f; (groups.get(k) || groups.set(k, []).get(k)).push(f); }
+      const keep = new Set(); let n = 0;
+      for (const [k, g] of [...groups].sort((a, b) => a[0].tint - b[0].tint)) if (n + g.length <= room) { g.forEach(f => keep.add(f)); n += g.length; }
+      return fish.filter(f => keep.has(f));
+    }
+    // Keep the cells around `centres` ([x, y, r] circles: players, a lure far out) populated, nearest first, at most
+    // `limit` animals in all and `perCall` new cells a call. cells: Map 'cx,cy' -> { cx, cy, fish }. keepCell(c): hold on
+    // to a cell out of range (a fish on someone's line); isGone(id): caught and kept (see sim/ledger.js); rng: the school
+    // members' places around their leader (the game passes Math.random, a server its seeded stream).
+    function syncCells(cells, { centres, limit, keepCell = () => false, isGone = () => false, rng, perCall = 3 }) {
+      const cs = FISH_CELL, far = (x, y) => Math.min(...centres.map(([cx, cy, r]) => Math.hypot(x - cx, y - cy) - r));   // < 0 inside a circle
+      for (const [k, c] of cells) if (far((c.cx + 0.5) * cs, (c.cy + 0.5) * cs) > 24 && !keepCell(c)) cells.delete(k);
+      const want = [], seen = new Set();
+      for (const [x0, y0, r] of centres) { const ccx = Math.floor(x0 / cs), ccy = Math.floor(y0 / cs), rc = Math.ceil(r / cs);
+        for (let dy = -rc; dy <= rc; dy++) for (let dx = -rc; dx <= rc; dx++) { const cx = ccx + dx, cy = ccy + dy, k = cx + ',' + cy, d = far((cx + 0.5) * cs, (cy + 0.5) * cs);
+          if (d < 0 && !seen.has(k)) { seen.add(k); want.push([d, cx, cy]); } } }
+      want.sort((a, b) => a[0] - b[0]);
+      let total = 0, added = 0;
+      for (const c of cells.values()) { c.fish = c.fish.filter(f => !f.dead); total += c.fish.length; }
+      if (total > limit) {
+        let room = limit;
+        const sorted = [...cells.values()].sort((a, b) => far((a.cx + 0.5) * cs, (a.cy + 0.5) * cs) - far((b.cx + 0.5) * cs, (b.cy + 0.5) * cs));
+        for (const c of sorted) { if (c.fish.length > room) c.fish = trimCell(c.fish, room); room -= c.fish.length; }
+        total = limit - room;
+      }
+      for (const [, cx, cy] of want) {
+        const key = cx + ',' + cy; if (cells.has(key)) continue;
+        if (total >= limit || added >= perCall) break;   // a few cells per tick keeps frames smooth
+        const all = cellFish(cx, cy).map(sp => makeFish(sp));
+        all.forEach(f => { if (f.lead >= 0) { f.leader = all[f.lead]; const s = f.len * 1.6 + 0.3; f.ox = (rng() - 0.7) * s * 2; f.oy = (rng() - 0.5) * s * 2; f.oz = (rng() - 0.5) * 0.5; } });
+        let fish = all.filter(f => !isGone(f.id));
+        if (fish.length > limit - total) fish = trimCell(fish, limit - total);   // never past the cap
+        cells.set(key, { cx, cy, fish }); total += fish.length; added++;
+      }
+      return cells;
+    }
+    Object.assign(world, { FISH_CELL, WILDLIFE_SCALE, cellFish, makeFish, trimCell, syncCells });
+    return world;
+  }
+
+  return { FISH_CELL, WILDLIFE_SCALE, installPopulations };
+});
+</script>
+<script>
+'use strict';
+// Shared simulation, part 6: who has which fish. Hook claims (the first claim wins, a second gets "taken"), and the
+// fish that are gone: a kept catch is out of the world for everyone for config.fishRespawnMinutes (fish-gone), a released
+// one never left. The game keeps the gone list in localStorage per island (store), a server in memory.
+(function (factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else { const S = globalThis.OWSim = globalThis.OWSim || {}; Object.assign(S, factory(S)); }
+})(function () {
+  // now(): ms (the game: Date.now, real minutes); respawnMinutes: a number or a function (the live Settings value);
+  // store: { load() -> { id: ms } | null, save(gone) } (optional); onEvent(e): fish-gone / fish-back / claimed events
+  function createFishLedger({ now, respawnMinutes = 30, store = null, onEvent = null } = {}) {
+    const mins = typeof respawnMinutes === 'function' ? respawnMinutes : () => respawnMinutes;
+    const claims = new Map();   // fish id -> who has it on the line
+    const L = {
+      gone: null,
+      load() { if (!this.gone) { let g = null; try { g = store && store.load(); } catch (e) { g = null; } this.gone = g && typeof g === 'object' ? g : {}; } return this.gone; },
+      save() { try { if (store) store.save(this.gone); } catch (e) { /* storage unavailable */ } },
+      // caught and kept, and not back yet
+      isGone(id) { const t = this.load()[id]; return t && now() - t < mins() * 60000; },
+      // a kept catch: gone for everyone until it respawns (f: the live fish, or { id })
+      remove(f) {
+        if (!f || f.dead) return null; f.dead = true; const g = this.load(), t = now(); g[f.id] = t;
+        for (const k in g) if (t - g[k] > mins() * 60000) delete g[k];
+        this.save(); claims.delete(f.id);
+        const e = { type: 'fish-gone', id: f.id, until: t + mins() * 60000 }; if (onEvent) onEvent(e); return e;
+      },
+      // let go (or taken back out of a keep net): it never left
+      restore(id) { const g = this.load(); claims.delete(id); if (g[id]) { delete g[id]; this.save(); if (onEvent) onEvent({ type: 'fish-back', id }); } },
+      // a hook claim: the first one wins; a second player gets "taken" (and a fish that's gone can't be hooked)
+      claim(id, by) {
+        if (this.isGone(id)) return { ok: false, reason: 'gone' };
+        const c = claims.get(id); if (c !== undefined && c !== by) return { ok: false, reason: 'taken', by: c };
+        claims.set(id, by); if (onEvent && c === undefined) onEvent({ type: 'claimed', id, by }); return { ok: true };
+      },
+      claimOf(id) { return claims.get(id); },
+      // off the hook without being landed (it got away, the line broke): free for anyone again
+      unclaim(id, by) { if (claims.get(id) === by) { claims.delete(id); if (onEvent) onEvent({ type: 'unclaimed', id, by }); return true; } return false; },
+      // landed by whoever holds the claim: kept -> gone for everyone; released -> back in the water, still there
+      land(f, by, keep) {
+        const c = claims.get(f.id); if (c !== undefined && c !== by) return { ok: false, reason: 'taken', by: c };
+        if (keep) return { ok: true, kept: true, event: this.remove(f) };
+        this.restore(f.id); return { ok: true, kept: false };
+      },
+    };
+    return L;
+  }
+  return { createFishLedger };
+});
+</script>
+<script>
+'use strict';
+// Shared simulation, part 7: what scares a bird. A perched or floating bird flushes when someone comes too close (closer
+// still on a swimmer, further off from a fast boat); a flightless one (penguins) doesn't take off: it waddles off to the
+// sea, to the spot furthest from you, and swims or dives. A diving bird scatters the fish below it. The flight itself,
+// the perches and the meshes stay in the game (birds/birds.js); these are the decisions a server needs to agree on.
+(function (factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./behaviour.js'));
+  else { const S = globalThis.OWSim = globalThis.OWSim || {}; Object.assign(S, factory(S)); }
+})(function (S) {
+  const FEAR = 2;   // scales every species' shy (and, × 0.9, wary) distance: birds keep well clear of you
+  // does person P ({ x, y, z, boatSpeed, swimming }) flush bird b, sitting on `spot` (bold: lands on boats; high: up a tree)?
+  function birdSpooked(sp, spot, b, P) {
+    const near = Math.hypot(b.x - P.x, b.y - P.y), d3 = Math.hypot(near, b.z - P.z - 1), sh = sp.shy * FEAR;
+    return spot.bold ? d3 < 2.5 : spot.high ? d3 < sh * 0.75 : near < (Math.abs(P.boatSpeed || 0) > 1.5 ? sh * 2.2 : P.swimming ? sh * 0.65 : sh);
+  }
+  // any of several people (a server's players)
+  const birdSpookedByAny = (sp, spot, b, players) => players.some(P => birdSpooked(sp, spot, b, P));
+  // what a frightened bird does: flying birds take off; flightless ones waddle to the water (and swim or dive off it)
+  const birdFlight = sp => sp.flightless ? 'waddle' : 'takeoff';
+  // a flightless bird ashore, `near` metres from you: too close?
+  const flightlessSpooked = (sp, near) => near < sp.shy * FEAR;
+  // where it heads: the colony's sea spot furthest from you ([x, y] list -> { x, y } or null)
+  function fleeSpot(spots, P) { let best = -1, out = null; for (const q of spots || []) { const d = Math.hypot(q[0] - P.x, q[1] - P.y); if (d > best) { best = d; out = { x: q[0], y: q[1] }; } } return out; }
+  // a bird hits the water: every fish within `r` (the species' forage.scare) bolts away from it
+  function birdScatter(fish, x, y, r) { let n = 0; for (const f of fish) if (!f.dead && (f.x - x) ** 2 + (f.y - y) ** 2 <= r * r) { S.spookFish(f, x, y); n++; } return n; }
+  return { FEAR, birdSpooked, birdSpookedByAny, birdFlight, flightlessSpooked, fleeSpot, birdScatter };
+});
+</script>
+<script>
+'use strict';
+// Shared simulation, the front door. Loaded last of the src/sim/ files: in the game it completes the OWSim namespace (the
+// other parts are <script>s before it, see index.html); in Node require('./src/sim/index.js') (or import it) gives the
+// whole module. createWorld(...) is what the game builds on (its terrain, clock, CONFIG and FishDB passed in);
+// createSim(...) is a headless simulation for a server: a world, its fish cells, the ledger and a fixed tick.
+// See src/sim/README.md for what lives where.
+(function (factory) {
+  if (typeof module === 'object' && module.exports) {
+    const parts = [require('./core.js'), require('./species.js'), require('./environment.js'), require('./behaviour.js'), require('./populations.js'), require('./ledger.js'), require('./birds.js')];
+    const S = Object.assign({}, ...parts); module.exports = Object.assign(S, factory(S));   // the whole module, as OWSim in the game
+  } else { const S = globalThis.OWSim = globalThis.OWSim || {}; Object.assign(S, factory(S)); }
+})(function (S) {
+  const { mulberry32, hash2, clamp, makeNoise, pickClimate, createSpeciesDB, installEnvironment, installBehaviour, installPopulations,
+    createFishGrid, createFishLedger, disturb, spookFish, SEASONS, LAKE } = S;
+
+  // the CONFIG values the simulation reads (the game's src/js/config.js defaults)
+  const DEFAULT_CONFIG = {
+    startHour: 9, dayLengthSeconds: 2400, daysPerSeason: 5, startSeason: 'spring', startSeasonPart: 0.7, islandSize: 6000,
+    maxFish: 1200, fishAbundance: 0.6, shellfishAbundance: 0.5, herpAbundance: 0.3, wildlife: 2, cellMaxAnimals: 60,
+    fishRises: true, fishRespawnMinutes: 30, waterTempOffset: 0,
+  };
+
+  // A world: seed, climate, config, terrain, species and clock, with the environment, behaviour and populations installed.
+  //   seed      island number (as the game's SEED)
+  //   climate   'temperate' | 'arctic' | 'tropical' | a climate object | undefined (the seed decides, as in the game)
+  //   config    an object with the DEFAULT_CONFIG keys (the game passes its live CONFIG, so Settings apply at once)
+  //   terrain   { sample(x, y, out) -> out { level, ground, kind, rap }, flowAt(x, y, kind) -> [fx, fy, speed],
+  //               coverAt(x, y, r, live) -> { rocks, weeds, reeds, lilies, wood, coral, anemone, open }, groundAt(x, y),
+  //               seaLevel, springs?: [{ x, y }], coverHomes?(cx, cy, cell, cover, kind) -> [[x, y]], murk?(kind) }
+  //   species   a species list ({ list, byId, revision, byKind(kind) }: the game's FishDB, or createSpeciesDB), or a
+  //             function returning it (the game's FishDB is made by a later script)
+  //   tod       (fallback) -> time of day 0..1 (the game: Engine.tod); setTod(t); fxRng: a stream for lightning timing
+  function createWorld(o = {}) {
+    const seed = o.seed >>> 0, clock = { tod: undefined };
+    const climate = o.climate && typeof o.climate === 'object' ? o.climate : pickClimate(seed, o.climate);
+    const world = {
+      seed, climate, config: o.config || Object.assign({}, DEFAULT_CONFIG), terrain: o.terrain,
+      scratch: { level: 0, ground: 0, kind: 0, rap: 0 },   // terrain.sample writes here (read it before sampling again)
+      noise: o.noise || makeNoise(seed),                 // the game's nE: the warm current's wobble
+      tod: o.tod || (fallback => clock.tod ?? fallback),
+      setTod: o.setTod || (t => { clock.tod = t; }),
+      fxRng: o.fxRng || mulberry32((seed ^ 0x5f3759df) >>> 0),
+    };
+    if (typeof o.species === 'function') Object.defineProperty(world, 'species', { get: o.species, enumerable: true });
+    else world.species = o.species || createSpeciesDB(climate.key);
+    installEnvironment(world); installBehaviour(world); installPopulations(world);
+    return world;
+  }
+
+  // A stand-in terrain for headless use and tests: NOT the game's island (world/island-*.js is not ported; see README).
+  // One round basin of water of the given kind (default a lake) centred on (0, 0), `radius` metres across to the shore and
+  // `depth` metres at the middle, a gently rising shore beyond, still water, and seeded patches of rocks and weeds.
+  function createSimpleTerrain({ seed = 1, kind = LAKE, radius = 120, depth = 6, seaLevel = 0 } = {}) {
+    const nz = makeNoise((seed ^ 0x7e11a) >>> 0);
+    const groundAt = (x, y) => { const r = Math.hypot(x, y) / radius;
+      return r < 1 ? seaLevel - depth * (1 - r * r) * (0.85 + 0.3 * (nz(x / 40, y / 40) + 0.5)) : seaLevel + (r - 1) * radius * 0.05 + 0.05; };
+    return {
+      seaLevel, springs: [], kind,
+      sample(x, y, o = {}) { o.level = seaLevel; o.ground = groundAt(x, y); o.kind = kind; o.rap = 0; return o; },
+      groundAt,
+      flowAt() { return [0, 0, 0]; },
+      coverAt(x, y, r = 4) {
+        const a = nz(x / 25 + 3, y / 25 - 7) + 0.5, b = nz(x / 18 - 5, y / 18 + 2) + 0.5, sh = 1 - clamp(Math.hypot(x, y) / radius, 0, 1);
+        const c = { rocks: clamp(a * 0.8 - 0.2, 0, 1), weeds: clamp((b - 0.35) * 1.4, 0, 1) * (0.4 + 0.6 * (1 - sh)), reeds: 0, lilies: 0, wood: hash2(Math.floor(x / 8), Math.floor(y / 8), seed) < 0.05 ? 1 : 0, coral: 0, anemone: 0 };
+        c.open = Math.max(0, 1 - c.rocks - c.weeds - c.reeds - c.lilies - c.wood - c.coral);
+        return c;
+      },
+      coverHomes() { return []; },   // no anemones here: species that need one (clownfish) don't appear
+    };
+  }
+
+  // A headless simulation for a server (or a test): a world from a seed and climate, the fish cells around the players,
+  // fish behaviour on a fixed tick, hook claims, catches and the fish-gone ledger. Everything random comes from the seed.
+  //   species   raw species JSON objects (src/fish/*.json, in the game's load order), or a ready species list
+  //   terrain   see createWorld (default: createSimpleTerrain, a stand-in)
+  //   now       () -> ms for the ledger (default: the sim's own clock, so the fish-gone respawn runs on sim time)
+  function createSim(o = {}) {
+    const seed = o.seed >>> 0, config = Object.assign({}, DEFAULT_CONFIG, o.config);
+    const climate = o.climate && typeof o.climate === 'object' ? o.climate : pickClimate(seed, o.climate);
+    let db = o.species;
+    if (!db || Array.isArray(db)) { const raws = db || []; db = createSpeciesDB(climate.key); for (const r of raws) db.register(r); }
+    const clock = { time: 0, tod: config.startHour / 24, dtH: 0, frameDt: 0 };
+    const world = createWorld({ seed, climate, config, species: db, terrain: o.terrain || createSimpleTerrain({ seed }),
+      tod: fallback => clock.tod ?? fallback, setTod: t => { clock.tod = t; } });
+    const rng = mulberry32((hash2(seed, 0x51, 0x5eed) * 4294967296) >>> 0);   // fish decisions and school places
+    const events = [], cells = new Map(), grid = createFishGrid();
+    let fish = [], players = [], noises = [], cellT = 0;
+    const ledger = createFishLedger({ now: o.now || (() => clock.time * 1000), respawnMinutes: () => config.fishRespawnMinutes, onEvent: e => events.push(e) });
+    const ctx = {
+      get time() { return clock.time; }, get tod() { return clock.tod; }, get dtH() { return clock.dtH; }, get frameDt() { return clock.frameDt; },
+      rng, get players() { return players; }, get noises() { return noises; },
+      fishAround: (x, y, r, fn) => grid.around(x, y, r, fn),
+      lureFor: () => null,                                    // fishing (lures, bites, the fight) stays client-side
+      lureArrive(f) { f.state = 'rest'; f.tNext = 0.5; },
+      emit(type, f, g) { events.push(g ? { type, id: f && f.id, prey: g.id } : { type, id: f && f.id }); },
+    };
+    // start of the year as the game does (CONFIG.startSeason, CONFIG.startSeasonPart)
+    world.env.setDate((Math.max(0, SEASONS.indexOf(o.season || config.startSeason)) + (o.season ? 0.45 : config.startSeasonPart)) / 4);
+    if (o.weather) world.env.setWeather(o.weather);
+
+    const byId = id => fish.find(f => f.id === id) || null;
+    const dropFromCells = f => { for (const c of cells.values()) { const i = c.fish.indexOf(f); if (i >= 0) { c.fish.splice(i, 1); return; } } };
+    // fish whose fish-gone time is over come back to a cell that is still loaded (the game rebuilds the cell instead,
+    // once you've been away); they come back from the same fixed record: same id, home, length and weight
+    function respawn() {
+      for (const c of cells.values()) {
+        if (!c.gone || !c.gone.size) continue;
+        const back = [...c.gone].filter(id => !ledger.isGone(id)); if (!back.length) continue;
+        const recs = world.cellFish(c.cx, c.cy);
+        for (const id of back) {
+          c.gone.delete(id); const i = recs.findIndex(r => r.id === id); if (i < 0) continue;
+          const f = world.makeFish(recs[i]);
+          if (recs[i].lead >= 0) { const L = c.fish.find(q => q.id === recs[recs[i].lead].id); if (L) { f.leader = L; const s = f.len * 1.6 + 0.3; f.ox = (rng() - 0.7) * s * 2; f.oy = (rng() - 0.5) * s * 2; f.oz = (rng() - 0.5) * 0.5; } }
+          c.fish.push(f); events.push({ type: 'fish-respawn', id });
+        }
+      }
+    }
+    function sync() {
+      const centres = players.map(P => [P.x, P.y, P.r ?? 72]);
+      if (!centres.length) return;
+      const before = new Set(cells.keys());
+      world.syncCells(cells, { centres, limit: config.maxFish, rng, isGone: id => ledger.isGone(id), keepCell: c => c.fish.some(f => f.hooked) });
+      for (const [k, c] of cells) if (!before.has(k)) {   // remember which of a new cell's fish were gone, to bring them back in time
+        const have = new Set(c.fish.map(f => f.id)); c.gone = new Set(world.cellFish(c.cx, c.cy).map(r => r.id).filter(id => !have.has(id) && ledger.isGone(id)));
+      }
+      respawn();
+      fish = []; for (const c of cells.values()) for (const f of c.fish) if (!f.dead) fish.push(f);
+    }
+
+    const sim = {
+      world, env: world.env, ledger, cells, config, seed, climate, species: db, events, ctx,
+      get fish() { return fish; }, get time() { return clock.time; }, get tod() { return clock.tod; },
+      // players: [{ id, x, y, inWater, moving, r? }] (r: how far round them fish are simulated, default 72 m)
+      setPlayers(list) { players = list.map(p => Object.assign({}, p)); },
+      // one fixed tick: the clock, seasons and weather, the fish cells (every 0.4 s), then every fish (no level of detail:
+      // a server steps every fish at the full tick)
+      step(dt) {
+        clock.time += dt; clock.frameDt = dt;
+        clock.tod = (clock.tod + dt / config.dayLengthSeconds) % 1;
+        clock.dtH = dt / config.dayLengthSeconds * 24;
+        world.env.update(clock.dtH, dt);
+        if ((cellT -= dt) <= 0) { cellT = 0.4; sync(); }
+        grid.rebuild(fish);
+        for (const f of fish) if (!f.dead && !f.hooked) world.fishStep(ctx, f, dt);
+        noises = noises.filter(n => clock.time - n.t < 1);
+        return sim;
+      },
+      run(seconds, dt = 0.05) { for (let t = 0; t < seconds - 1e-9; t += dt) sim.step(dt); return sim; },
+      // a splash, a cast, a boat: fish within its reach (× strength) take fright
+      disturb(x, y, s = 1) { disturb(ctx, x, y, s); },
+      // frightened at once, away from (x, y), within r metres (a missed strike, a bird hitting the water)
+      spook(x, y, r) { let n = 0; for (const f of fish) if (!f.dead && Math.hypot(f.x - x, f.y - y) <= r) { spookFish(f, x, y); n++; } return n; },
+      fishById: byId,
+      // a hook claim: the first player wins, a second gets { ok: false, reason: 'taken' }
+      hook(id, by) {
+        const f = byId(id); if (!f || f.dead) return { ok: false, reason: 'gone' };
+        const r = ledger.claim(id, by); if (r.ok) { f.hooked = by; f.state = 'hooked'; } return r;
+      },
+      // off the hook without being landed (it got away, the line broke): free for anyone, and frightened
+      unhook(id, by) { const f = byId(id); if (!ledger.unclaim(id, by)) return false; if (f) { f.hooked = false; spookFish(f, f.x, f.y); } return true; },
+      // landed: keep -> gone for everyone until it respawns (fish-gone); release -> back in the water, frightened
+      land(id, by, keep) {
+        const f = byId(id); if (!f) return { ok: false, reason: 'gone' };
+        const r = ledger.land(f, by, keep); if (!r.ok) return r;
+        if (keep) { dropFromCells(f); fish = fish.filter(q => q !== f); for (const q of fish) if (q.leader === f) q.leader = null;
+          const m = /@(-?\d+),(-?\d+)\./.exec(f.id), c = m && cells.get(m[1] + ',' + m[2]); if (c) (c.gone || (c.gone = new Set())).add(f.id); }   // ids: species@cx,cy.kind#group.member
+        else { f.hooked = false; spookFish(f, f.x, f.y); }
+        return r;
+      },
+      // what a server would broadcast each tick
+      snapshot() { return fish.filter(f => !f.dead).map(f => ({ id: f.id, species: f.species, x: f.x, y: f.y, z: f.z, a: f.a, spd: f.spd, state: f.state, stress: f.stress, hooked: f.hooked || false })); },
+      drainEvents() { return events.splice(0); },
+    };
+    return sim;
+  }
+
+  return { DEFAULT_CONFIG, createWorld, createSimpleTerrain, createSim };
+});
+</script>
+<script>
+'use strict';
 // ======================================================================
 //  CONTROLS — rebindable keys. Every action has a "canonical" key code: the key the game itself listens for (the
 //  original layout). Pressing a physical key/button looks up the actions bound to it and acts as their canonical
@@ -988,6 +2078,8 @@ Controls.load();
 <script>
 'use strict';
 // ================= World generation =================
+// the seeded random numbers, noise, climates and small maths are the shared simulation's (src/sim/core.js)
+const { mulberry32, makeNoise, clamp, sstep, CLIMATES, pickClimate } = OWSim;
 const params = new URLSearchParams(location.search);
 // TITLE: a plain load opens on the start menu, on a fresh random island. Rolling a new island from the map (N) reloads
 // with &map in the address: that keeps its seed and goes straight back into play.
@@ -999,44 +2091,12 @@ const SEED = (parseInt(params.get('seed') || hashSeed) || (Math.random() * 1e9 |
 const HASH_OPTS = (HASH.match(/(?:climate|season|weather)-\w+/g) || []).join('&');   // #climate-arctic, #season-winter, #weather-rain (kept with the seed)
 try { if (!hashSeed) history.replaceState(null, '', '#seed-' + SEED + (HASH_OPTS ? '&' + HASH_OPTS : '')); } catch (e) { /* sandboxed: fine */ }
 
-// ---- climate: the seed decides where in the world the island lies ----
-// air: [mean, swing] of the seasonal air temperature; water: °C added to each water's temperature (sea, lake, pond, river,
-// creek), amp: how much the water's temperature swings over the year; the rest switch biome features on and off.
-const CLIMATES = {
-  temperate: { name: 'Temperate', air: [9, 12], water: [0, 0, 0, 0, 0], amp: 1, seaCurrent: true, trees: 1, broad: 1 },
-  arctic: { name: 'Arctic', air: [-5, 13], water: [-10, -9.5, -9, -8, -6], amp: 0.8, seaIce: true, bergs: true, trees: 0.3, broad: 0.15,
-    mats: { 2: [0.55, 0.53, 0.5], 3: [0.5, 0.52, 0.32], 4: [0.2, 0.32, 0.22], 6: [0.42, 0.45, 0.33] } },   // grey shingle, tundra, taiga, moss
-  tropical: { name: 'Tropical', air: [27, 1.5], water: [15, 13, 12, 12, 10], amp: 0.2, reefsEverywhere: true, palms: true, evergreen: true, trees: 1.1, broad: 1,
-    mats: { 2: [0.96, 0.92, 0.78], 3: [0.36, 0.66, 0.2], 4: [0.1, 0.38, 0.12] } },   // white coral sand, lush grass, jungle
-};
-const CLIMATE = (() => {
-  const h = (HASH.match(/climate-(temperate|arctic|tropical)/) || [])[1] || (CONFIG.climate !== 'auto' ? CONFIG.climate : null);
-  const r = mulberry32((SEED ^ 0xc11a7e) >>> 0)(), k = h && CLIMATES[h] ? h : r < 0.4 ? 'temperate' : r < 0.7 ? 'arctic' : 'tropical';
-  return Object.assign({ key: k }, CLIMATES[k]);
-})();
-function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// ---- climate: the seed decides where in the world the island lies (CLIMATES and pickClimate: src/sim/core.js) ----
+const CLIMATE = pickClimate(SEED, (HASH.match(/climate-(temperate|arctic|tropical)/) || [])[1] || (CONFIG.climate !== 'auto' ? CONFIG.climate : null));
 
-// Seeded 2D Perlin noise, output roughly [-0.7, 0.7]
-function makeNoise(seed) {
-  const r = mulberry32(seed), p = new Uint8Array(512), P = [...Array(256).keys()];
-  for (let i = 255; i > 0; i--) { const j = r() * (i + 1) | 0; [P[i], P[j]] = [P[j], P[i]]; }
-  for (let i = 0; i < 512; i++) p[i] = P[i & 255];
-  const GX = [1, -1, 1, -1, 1, -1, 0, 0], GY = [1, 1, -1, -1, 0, 0, 1, -1];
-  return (x, y) => {
-    const X = Math.floor(x), Y = Math.floor(y), xf = x - X, yf = y - Y, xi = X & 255, yi = Y & 255;
-    const aa = p[p[xi] + yi] & 7, ab = p[p[xi] + yi + 1] & 7, ba = p[p[xi + 1] + yi] & 7, bb = p[p[xi + 1] + yi + 1] & 7;
-    const u = xf * xf * xf * (xf * (xf * 6 - 15) + 10), v = yf * yf * yf * (yf * (yf * 6 - 15) + 10);
-    const g00 = GX[aa] * xf + GY[aa] * yf, g10 = GX[ba] * (xf - 1) + GY[ba] * yf;
-    const g01 = GX[ab] * xf + GY[ab] * (yf - 1), g11 = GX[bb] * (xf - 1) + GY[bb] * (yf - 1);
-    const x1 = g00 + u * (g10 - g00), x2 = g01 + u * (g11 - g01);
-    return x1 + v * (x2 - x1);
-  };
-}
 const nE = makeNoise(SEED), nM = makeNoise(SEED ^ 0x9e3779b9), nR = makeNoise(SEED + 7);
 const nW = makeNoise((SEED ^ 0x51ed2701) >>> 0), nRv = makeNoise((SEED + 1013) >>> 0), nCk = makeNoise((SEED + 2029) >>> 0), nSh = makeNoise((SEED ^ 0x2545f491) >>> 0);
 function fbm(n, x, y, oct) { let s = 0, a = 1, f = 1, t = 0; for (let k = 0; k < oct; k++) { s += a * n(x * f, y * f); t += a; a *= 0.5; f *= 2; } return s / t; }
-const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
-const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const lerp3 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];   // between two points or colours
 function moist(x, y) { return clamp(fbm(nM, x / 900, y / 900, 4) * 1.8 + 0.5, 0, 1); }
 
@@ -1844,7 +2904,7 @@ const FOV = CONFIG.fieldOfView * Math.PI / 180, FAR = CONFIG.viewDistance, EYE =
 const CHW = CHK * SP;                 // terrain chunk width in world units
 const VIEW = CONFIG.terrainChunkRadius, TREE_VIEW = CONFIG.treeChunkRadius;
 const TREE_GRID = CONFIG.treeSpacing;
-const hash2 = (x, y, s) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + s | 0; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };
+const hash2 = OWSim.hash2;   // the fixed grid hash (src/sim/core.js)
 const ITEMS = {}; // filled by Game.registerItem
 </script>
 <script>
@@ -2955,46 +4015,9 @@ function mul4(a, b, o = new Float32Array(16)) { for (let c = 0; c < 4; c++) for 
 // Mesh detail for fish and shellfish in the game (the Fish Studio builds at FISH_SUB 6 / PLAN_Q 1 for close-ups)
 const FISH_SUB = 2, PLAN_Q = 0.5;
 const ZERO3 = [0, 0, 0];
-const FISH_SCHEMA = 'embercrown-fish/1';
-const WATER_KEYS = ['sea', 'lake', 'pond', 'river', 'creek'];
-const FISH_DEFAULTS = {
-  schema: FISH_SCHEMA, id: '', name: '', scientific: '', description: '',
-  size: { length_cm: { min: 10, typical: 25, max: 50, spread: 0.25 }, weight: { a: 0.01, b: 3.0 }, condition_sd: 0.08 },
-  body: {
-    profile: [0.5, 0.82, 0.97, 1, 0.92, 0.72, 0.46, 0.28], height: 0.2, width: 0.11, flex: 1,
-    head: { length: 0.24, snout: 0.5, mouth: 0.5, jaw: 'terminal', bill: 0, bill_kind: 'spear' },
-    tail: { shape: 'forked', size: 0.18, fork: 0.25 },
-    fins: { dorsal: [{ at: 0.42, length: 0.14, height: 0.1, spiny: false }], adipose: false, anal: { at: 0.72, length: 0.1, height: 0.07 }, pectoral: 0.1, pelvic: 0.07 },
-    barbels: 0, plan: 'fish', parts: {},
-    lie: '', swim: 'auto',   // lie: 'left' / 'right' = a flatfish lying on that side (eyes on the other); swim: how the body moves
-    colors: { back: '#4a4a30', flank: '#a09060', belly: '#eee4c8', fins: '#7a6a48', eye: '#101010', mouth: '#5a1e1a' },
-    pattern: [],
-  },
-  habitat: {
-    climates: null,                     // island climates it lives in, e.g. ["temperate", "arctic"]; null = any (water temperature decides)
-    waters: { lake: 0.5, pond: 0.5, river: 0.5, creek: 0.5 },
-    depth_m: { min: 0.3, preferred: 2, max: 10 },
-    temperature_c: { min: 4, optimal: 18, max: 28 },
-    current_ms: { preferred: 0, max: 1 },
-    turbidity_max: 0.8,
-    cover: { rocks: 0.4, weeds: 0.4, reeds: 0.3, lilies: 0.3, wood: 0.3, coral: 0, anemone: 0, open: 0.4 },
-    cover_required: 0,                  // 0..1: 1 = only found where its favourite cover is (a clownfish and its anemone)
-    oxygen_min_mgL: 4,                  // below this (dissolved oxygen) the fish is stressed and leaves
-  },
-  population: { density: 0.6, school: { min: 1, max: 1 }, home_range_m: 15 },
-  activity: { pattern: 'crepuscular' },
-  behavior: { cruise_bl_s: 0.8, burst_bl_s: 8, turn_rate: 2.2, station_holding: 0, ambush: 0,
-    depth_zone: { surface: 0.15, mid: 0.5, bottom: 0.35 }, wariness: 0.5, spook_m: 5, recover_s: 40, curiosity: 0.4, rise_per_hour: 1,
-    // air breathers (marine mammals): seconds between breaths, seconds at the surface, leaps an hour, how much it hauls
-    // out on shore to rest (0..1), and how big a blow it shows when it surfaces (0 none .. 1 a whale's spout)
-    breath_hold_s: 0, surface_s: 5, leap_per_hour: 0, haul_out: 0, blow: 0 },
-  diet: { food: { insects: 0.3, worms: 0.3, fish: 0.2, nymphs: 0.2 }, piscivore_from_cm: 0, feeding_zone: { surface: 0.2, mid: 0.4, bottom: 0.4 }, meals_per_day: 3 },
-  fight: { strength: 0.5, stamina: 0.5, jumps: 0.2, runs: 0.5, teeth: 0 },   // teeth 0..1: how easily it bites through line (a wire leader stops it)
-  // once it's unhooked. lip: true = can be held by the lower jaw (bass, crappie, trout), false = not (teeth, a small or
-  // underslung mouth, a bill). hold: 'hand' (one hand round it), 'cradle' (two hands under the belly) or 'none' (too big or
-  // too dangerous to lift: it is unhooked in the water, alongside). 'auto' works either out from the body (fishHandling).
-  handling: { lip: 'auto', hold: 'auto' },
-};
+// the species defaults, merge rules and activity presets are the shared simulation's (src/sim/species.js), so the game and
+// a server fill a definition the same way
+const { FISH_SCHEMA, WATER_KEYS, FISH_DEFAULTS, FISH_REPLACE, ACTIVITY_PRESETS, FISH_FOODS, deepMerge, fishMerge } = OWSim;
 function fishHandling(D) {
   const h = D.handling || {}, B = D.body, plan = B.plan || 'fish', L = D.size.length_cm.typical, kg = D.size.weight.a * Math.pow(L, D.size.weight.b) / 1000;
   let lip = false, hold;
@@ -3004,24 +4027,8 @@ function fishHandling(D) {
     lip = ((D.fight && D.fight.teeth) || 0) < 0.4 && B.head.mouth >= 0.5 && B.head.jaw !== 'inferior' && !B.head.bill && B.swim !== 'anguilliform' && !B.lie && L >= 15 && L <= 110; }
   return { lip: typeof h.lip === 'boolean' ? h.lip : lip, hold: ['hand', 'cradle', 'none'].includes(h.hold) ? h.hold : hold };
 }
-// weight maps and lists are replaced whole (a species listing waters {creek:1} means no other waters)
-const FISH_REPLACE = new Set(['waters', 'cover', 'food', 'feeding_zone', 'depth_zone', 'dorsal', 'pattern', 'profile']);
-const ACTIVITY_PRESETS = { // relative activity for each hour 0..23
-  diurnal: [.15, .12, .1, .1, .12, .25, .5, .75, .9, 1, 1, .95, .9, .9, .95, 1, 1, .95, .85, .6, .4, .3, .22, .18],
-  crepuscular: [.3, .25, .22, .25, .45, .85, 1, .95, .7, .5, .4, .35, .32, .35, .4, .5, .65, .85, 1, 1, .8, .55, .42, .35],
-  nocturnal: [.95, 1, 1, .95, .85, .7, .45, .3, .2, .15, .12, .12, .12, .12, .15, .2, .3, .45, .7, .9, 1, 1, 1, 1],
-  cathemeral: [.5, .48, .45, .45, .5, .65, .75, .75, .7, .65, .6, .6, .6, .6, .62, .65, .7, .75, .8, .75, .65, .58, .55, .52],
-};
-const FISH_FOODS = ['insects', 'nymphs', 'worms', 'crayfish', 'fish', 'frogs', 'snails', 'shrimp', 'plankton', 'plants', 'eggs', 'leeches', 'mammals'];
 const hexRGB = h => { let s = String(h).replace('#', ''); if (s.length === 3) s = s.split('').map(c => c + c).join(''); const n = parseInt(s, 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
 const isHex = h => typeof h === 'string' && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(h);
-// defaults under a definition: objects merge key by key, anything else (and any key in `replace`) is taken whole
-function deepMerge(base, over, replace, key) {
-  if (over === undefined) return base;
-  if (Array.isArray(base) || Array.isArray(over) || (replace && replace.has(key)) || typeof base !== 'object' || base === null || typeof over !== 'object' || over === null) return over;
-  const o = {}; for (const k of new Set([...Object.keys(base), ...Object.keys(over)])) o[k] = deepMerge(base[k], over[k], replace, k); return o;
-}
-const fishMerge = (base, over) => deepMerge(base, over, FISH_REPLACE);
 // Fill defaults and check a definition. Returns { def, errors, warnings }; errors mean it can't be used.
 function validateFish(raw) {
   const errors = [], warnings = [];
@@ -4013,25 +5020,17 @@ function planMesh(D) {
 
 
 // ---- registry ----
-const HERP_PLANS = ['turtle', 'crocodilian', 'lizard', 'salamander', 'snake', 'frog'];
+const HERP_PLANS = OWSim.HERP_PLANS;
 const FishDB = {
   list: [], byId: {}, gpu: [], revision: 0,
   register(raw, { save = false, quiet = false } = {}) {
     const r = validateFish(raw);
     if (!r.def) { if (!quiet) console.warn('Fish rejected:', raw && raw.id, r.errors); return r; }
     const d = r.def;
-    d._act = typeof d.activity.pattern === 'string' ? ACTIVITY_PRESETS[d.activity.pattern] : d.activity.pattern.map(v => clamp(v, 0, 1));
     // the mesh (and its lowest point) is built the first time something needs it: a species nobody meets costs nothing
     Object.defineProperty(d, '_mesh', { configurable: true, get: () => FishDB.mesh(d).m });
     Object.defineProperty(d, '_zmin', { configurable: true, get: () => FishDB.mesh(d).zmin });   // lowest point (model units): rests on the bed
-    d._herp = HERP_PLANS.includes(d.body.plan);   // reptiles and amphibians
-    d._shell = !!d.body.plan && !['fish', 'ray', 'pinniped'].includes(d.body.plan) && !d._herp;   // rays and mammals count with fishAbundance, herps with herpAbundance
-    d._air = d.behavior.breath_hold_s > 0;   // breathes air: surfaces to blow, may leap, may haul out
-    d._hid = [...d.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261) >>> 0;   // stable per-species seed (all 32 bits: 16 gave two species the same one)
-    d._needCover = (d.habitat.cover_required || 0) >= 0.5 ? Object.keys(d.habitat.cover).filter(k => k !== 'open').sort((a, b) => d.habitat.cover[b] - d.habitat.cover[a])[0] : null;   // e.g. a clownfish's anemone
-    d._jelly = d.body.plan === 'jelly';   // drawn see-through in their own pass; may sting
-    d._benthic = ['bivalve', 'snail', 'crab', 'lobster', 'octopus'].includes(d.body.plan) || (['ray', 'jelly'].includes(d.body.plan) && d.body.parts.bottom >= 0.5);   // crawlers, sessile animals and stingrays live on the bed
-    const L = d.size.length_cm; d._mu = Math.log(L.typical); d._sig = L.spread;
+    OWSim.deriveSpecies(d);   // the fields the simulation reads (_act, _herp, _shell, _air, _hid, _needCover, _jelly, _benthic, _mu, _sig): src/sim/species.js
     const old = this.byId[d.id];
     if (old) { const i = this.list.indexOf(old); this.list[i] = d; if (this.gpu[i]) this.gpu[i].stale = true; } else this.list.push(d);
     this.byId[d.id] = d; this.revision++;
@@ -4045,10 +5044,7 @@ const FishDB = {
     return (d.__mesh = { m, zmin });
   },
   // species that can live in each kind of water on this island's climate, in list order (so cells come out the same as scoring every species)
-  byKind(kind) {
-    if (this._kindRev !== this.revision) { this._kindRev = this.revision; this._kind = WATER_KEYS.map(W => this.list.map((D, si) => [D, si]).filter(([D]) => (D.habitat.waters[W] || 0) > 0 && (!D.habitat.climates || D.habitat.climates.includes(CLIMATE.key))).sort((a, b) => (a[0]._shell ? 2 : a[0]._herp ? 1 : 0) - (b[0]._shell ? 2 : b[0]._herp ? 1 : 0))); }   // fish first: a cell fills in this order
-    return this._kind[kind] || [];
-  },
+  byKind(kind) { return OWSim.speciesByKind(this, kind, CLIMATE.key); },   // fish first: a cell fills in this order
   saved() { try { const s = JSON.parse(localStorage.getItem('embercrown-fish-defs') || '{}'); return s && typeof s === 'object' && !Array.isArray(s) ? s : {}; } catch (e) { return {}; } },
   forget(id) { const s = this.saved(); delete s[id]; try { localStorage.setItem('embercrown-fish-defs', JSON.stringify(s)); } catch (e) { /* */ } },
 };
@@ -4058,115 +5054,38 @@ const FishDB = {
 </script>
 <script>
 'use strict';
-// Seasons and weather: SEASONS, WEATHER kinds and transitions, the live ENV conditions object, and the start-of-year setup from CONFIG / #season- / #weather- in the address.
-// A short year (CONFIG.daysPerSeason game days per season). yf: 0..1 through the year, 0 = first day of spring.
-// ENV holds the live conditions: air temperature, cloud, rain or snow, wind, fog, pressure and its trend, how wet
-// the land is, snow cover, leaf state, plant growth and ice. Water temperature and oxygen follow from them.
-const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
-function todNow() { try { return Engine.tod ?? CONFIG.startHour / 24; } catch (e) { return CONFIG.startHour / 24; } }   // time of day 0..1, safe before the engine exists
-const WEATHER = { // the look and feel of each kind of weather (blended over about an hour of game time)
-  clear:    { cloud: 0.08, rain: 0, wind: 0.2, fog: 0, storm: 0, p: 1023 },
-  fair:     { cloud: 0.35, rain: 0, wind: 0.35, fog: 0, storm: 0, p: 1017 },
-  overcast: { cloud: 0.88, rain: 0, wind: 0.3, fog: 0.12, storm: 0, p: 1009 },
-  drizzle:  { cloud: 0.92, rain: 0.3, wind: 0.25, fog: 0.3, storm: 0, p: 1006 },
-  rain:     { cloud: 0.96, rain: 0.75, wind: 0.5, fog: 0.25, storm: 0, p: 1001 },
-  storm:    { cloud: 1, rain: 1, wind: 0.95, fog: 0.2, storm: 1, p: 994 },
-  fog:      { cloud: 0.55, rain: 0, wind: 0.04, fog: 1, storm: 0, p: 1019 },
+// The game's world for the shared simulation (src/sim/): the browser adapter. Seasons and weather (the ENV state
+// machine), water temperature, habitat, food and the fixed fish populations now live in src/sim/; this builds the world
+// they run in from the game's own pieces (the island's sample() and its globals, the plant grid, CONFIG, FishDB, the
+// engine's clock) and keeps the old global names (ENV, SEASONS, WEATHER, ...) for the rest of the game. Then the start of
+// the year, from CONFIG / #season- / #weather- in the address.
+// the island, as the simulation sees it: sample() leaves its answers in globals (SE, SW, SK, SR); the simulation wants them
+// in an object it passes in
+const SIM_TERRAIN = {
+  sample(x, y, o) { sample(x, y); o.level = SW; o.ground = hW(SE); o.kind = SK; o.rap = SR; return o; },
+  flowAt: (x, y, kind) => flowAt(x, y, kind),
+  coverAt: (x, y, r, live) => coverAt(x, y, r, live),
+  groundAt: (x, y) => groundAt(x, y),
+  murk: k => WATER[k].murk,
+  get seaLevel() { return WLW; },
+  get springs() { return ISL ? ISL.springs : null; },
+  // where a species that needs one kind of cover can live in cell (cx, cy): the plants giving it, in that water (a clownfish's anemones)
+  coverHomes(cx, cy, cell, Ck, kind) {
+    const want = COVER_PLANT[Ck] || [], homes = [];
+    for (let gy = Math.ceil(cy * cell / 2.5); gy * 2.5 < (cy + 1) * cell; gy++) for (let gx = Math.ceil(cx * cell / 2.5); gx * 2.5 < (cx + 1) * cell; gx++) if (want.includes(plantAt(gx, gy)) && PL.kd === kind) homes.push([PL.x, PL.y]);
+    return homes;
+  },
 };
-// what tends to follow what (weights), nudged by season below
-const WEATHER_NEXT = {
-  clear: { clear: 4, fair: 4, overcast: 1, fog: 1 }, fair: { clear: 2, fair: 3, overcast: 3, drizzle: 1 },
-  overcast: { fair: 2, overcast: 2, drizzle: 2, rain: 2, storm: 0.5 }, drizzle: { overcast: 2, drizzle: 1, rain: 2, fair: 1 },
-  rain: { overcast: 2, drizzle: 1, rain: 1, storm: 1, fair: 1 }, storm: { rain: 2, overcast: 2, fair: 1 }, fog: { clear: 2, fair: 2, overcast: 1 },
-};
-const ENV = {
-  yf: 0, day: 0, hours: 0, block: -1, blockStart: 0, blockEnd: 0, kind: 'fair', next: 'fair', blockLen: 5,
-  cloud: 0.3, rain: 0, wind: 0.3, fog: 0, storm: 0, pressure: 1015, pTarget: 1015, trend: 0, pHist: [],
-  airT: 15, airMean: 15, wet: 0, snowCover: 0, flash: 0, flashT: 4, snowing: 0, hatch: 0,
-  leaf: 1, autumn: 0, young: 0, dormant: 0, growth: 1, iceLake: 0, icePond: 0, iceSea: 0, turb: 0, light: 1,
-  get season() { return SEASONS[Math.floor(this.yf * 4) % 4]; },
-  get yearDays() { return CONFIG.daysPerSeason * 4; },
-  label() {
-    const s = this.yf * 4 % 1, part = s < 0.34 ? 'Early' : s < 0.67 ? 'Mid' : 'Late', S = this.season;
-    const sky = this.snowing > 0.3 ? (this.rain > 0.6 ? 'Heavy snow' : 'Snow') : this.storm > 0.5 ? 'Thunderstorm' : this.rain > 0.55 ? 'Rain' : this.rain > 0.15 ? 'Drizzle'
-      : this.fog > 0.6 ? 'Fog' : this.cloud > 0.75 ? 'Overcast' : this.cloud > 0.3 ? 'Partly cloudy' : 'Clear';
-    return `${part} ${S[0].toUpperCase() + S.slice(1)} · day ${Math.floor(this.day % this.yearDays) + 1} · ${this.airT.toFixed(0)}°C · ${sky} · wind ${(this.wind * 12).toFixed(0)} m/s`;
-  },
-  // seasonal mean air temperature (°C): coldest in mid winter, warmest in mid summer
-  airMeanAt(yf) { return CLIMATE.air[0] + CLIMATE.air[1] * Math.cos(6.2832 * (yf - 0.375)); },
-  // start (or jump) to a point in the year; weather restarts from something typical for it
-  setDate(yf, hour) {
-    this.yf = ((yf % 1) + 1) % 1; const h = hour ?? todNow() * 24;
-    this.hours = Math.floor(this.yf * this.yearDays) * 24 + h; this.day = this.hours / 24; this.yf = (this.day / this.yearDays) % 1;
-    if (hour !== undefined) try { Engine.tod = hour / 24; } catch (e) { /* not started yet */ }
-    this.block = -1; this.settle = true; this.wet = 0.2; this.pHist.length = 0; this.forced = 0;   // (the clock may have gone back: old pressure samples and a forced weather would be from the future)
-    this.snowCover = CLIMATE.key === 'tropical' ? 0 : CLIMATE.key === 'arctic' ? (this.airMeanAt(this.yf - 0.03) < 1 ? 1 : 0.15) : this.yf > 0.78 || this.yf < 0.04 ? 0.8 : 0;
-  },
-  setWeather(kind) { if (!WEATHER[kind]) return; this.kind = this.next = kind; this.settle = true; this.forced = this.hours + 6; },
-  pickNext(rng) {
-    const W = Object.assign({}, WEATHER_NEXT[this.kind]), S = this.season;
-    if (S === 'summer') { W.clear = (W.clear || 0) * 1.4; W.storm = (W.storm || 0) * 1.8; W.fog = (W.fog || 0) * 0.5; }
-    if (S === 'autumn') { W.fog = (W.fog || 0) * 1.8 + 0.5; W.rain = (W.rain || 0) * 1.3; }
-    if (S === 'winter') { W.overcast = (W.overcast || 0) * 1.5; W.storm = (W.storm || 0) * 0.3; }
-    if (S === 'spring') { W.drizzle = (W.drizzle || 0) * 1.5; W.rain = (W.rain || 0) * 1.3; }
-    if (CLIMATE.key === 'tropical') { W.fog = 0; W.storm = (W.storm || 0) * (S === 'summer' || S === 'autumn' ? 3 : 1); W.rain = (W.rain || 0) * (S === 'summer' ? 2 : 0.6); W.clear = (W.clear || 0) * (S === 'winter' ? 2 : 1); }   // a wet and a dry season
-    if (CLIMATE.key === 'arctic') { W.overcast = (W.overcast || 0) * 1.6; W.fog = (W.fog || 0) * (S === 'summer' ? 2.5 : 0.5); W.storm = (W.storm || 0) * 0.3; }
-    let tot = 0; for (const k in W) tot += W[k]; let r = rng() * tot;
-    for (const k in W) if ((r -= W[k]) <= 0) return k; return 'fair';
-  },
-  update(dtH, dt) {
-    this.hours += dtH; this.day = this.hours / 24; this.yf = (this.day / this.yearDays) % 1;
-    const tod = todNow(), hour = tod * 24, yf = this.yf;
-    // weather: a new kind every few hours, chosen from what usually follows; the front's pressure arrives first
-    if (this.block < 0 || this.hours >= this.blockEnd) {
-      const blk = this.block < 0 ? Math.floor(this.hours / 5) : this.block + 1, rng = mulberry32((SEED ^ Math.imul(blk + 7919, 2654435761)) >>> 0);
-      if (this.block < 0) { if (!(this.forced && this.hours < this.forced)) this.kind = this.pickNext(rng); this.next = this.pickNext(rng); }
-      else if (this.forced && this.hours < this.forced) this.next = this.kind;   // a forced weather holds for a few hours
-      else { this.kind = this.next; this.next = this.pickNext(rng); }
-      this.block = blk; this.blockLen = 3 + 5 * rng(); this.blockStart = this.hours; this.blockEnd = this.hours + this.blockLen;
-    }
-    const W = WEATHER[this.kind], Wn = WEATHER[this.next], into = clamp((this.hours - this.blockStart) / this.blockLen, 0, 1);
-    const lerpK = this.settle ? 1 : Math.min(1, dtH * 0.9);
-    const ease = (k, v) => { this[k] += (v - this[k]) * lerpK; };
-    ease('cloud', W.cloud); ease('rain', W.rain); ease('wind', W.wind); ease('fog', W.fog * (hour < 4 || hour > 21 || (hour > 4 && hour < 10) ? 1 : 0.35)); ease('storm', W.storm);
-    this.pTarget = W.p + (Wn.p - W.p) * sstep(0.4, 1, into);   // the next front's pressure starts to show before it arrives
-    this.pressure += (this.pTarget - this.pressure) * (this.settle ? 1 : Math.min(1, dtH * 0.5));
-    { const H = this.pHist, last = H.length ? H[H.length - 1][0] : -1e9;   // a sample a game-minute (not a frame): ~180 entries for the 3-hour window
-      if (this.hours - last >= 1 / 60 || this.settle) { H.push([this.hours, this.pressure]); let drop = 0; while (H.length - drop > 2 && this.hours - H[drop][0] > 3) drop++; if (drop) H.splice(0, drop); } }
-    this.trend = this.pressure - this.pHist[0][1];   // hPa over the last ~3 hours
-    // air temperature: season, day/night (less under cloud), and the weather
-    this.airMean = this.airMeanAt(yf);
-    const sunUp = Math.sin((hour - 6) / 24 * 6.2832);
-    this.airT = this.airMean + sunUp * (5.5 - 3.5 * this.cloud) - 2.5 * this.rain + (this.kind === 'clear' && sunUp < 0 ? -2 : 0);
-    this.snowing = this.rain > 0.05 && this.airT < 1.2 ? 1 : 0;
-    // the land: wet after rain, drying in sun and wind; snow lies when it's cold, melts when it isn't
-    this.wet = clamp(this.wet + dtH * (this.rain * (this.snowing ? 0.05 : 0.35) - 0.03 * (1 + 2 * (1 - this.cloud) * Math.max(0, sunUp) + this.wind)), 0, 1);
-    this.snowCover = clamp(this.snowCover + dtH * (this.snowing * this.rain * 0.25 - (this.airT > 1 ? 0.012 * (this.airT - 1) * (1 + this.rain) : 0)), 0, 1);
-    this.turb = clamp(this.wet * 0.9 + this.rain * 0.3 - 0.15, 0, 1) * (this.snowing ? 0.3 : 1);   // streams run muddy after rain
-    // lightning in storms
-    this.flash = Math.max(0, this.flash - dt * 6);
-    if (this.storm > 0.5 && (this.flashT -= dt) <= 0) { this.flash = 1; this.flashT = 3 + Math.random() * 12; }
-    // leaves: bud-burst in early spring, autumn colour, then the fall; grass browns over winter
-    this.leaf = CLIMATE.evergreen ? 1 : sstep(0.05, 0.14, yf) * (1 - sstep(0.64, 0.73, yf));
-    this.young = CLIMATE.evergreen ? 0 : sstep(0.03, 0.07, yf) * (1 - sstep(0.16, 0.26, yf));
-    this.autumn = CLIMATE.evergreen ? 0 : sstep(0.53, 0.64, yf) * (yf < 0.9 ? 1 : 0);
-    this.dormant = CLIMATE.evergreen ? 0 : Math.max(sstep(0.6, 0.76, yf), 1 - sstep(0.02, 0.13, yf)) * (yf > 0.4 || yf < 0.15 ? 1 : 0);
-    this.growth = CLIMATE.evergreen ? 1 : sstep(0.08, 0.3, yf) * (1 - sstep(0.62, 0.8, yf));   // water plants: lilies and weed beds
-    // ice on still water when its surface is at freezing
-    // (they freeze after a spell of frost: lakes a few weeks behind the air, ponds sooner)
-    this.iceLake = sstep(-0.6, -2.4, this.airMeanAt(yf - 0.035) - CONFIG.waterTempOffset); this.icePond = sstep(0.6, -1.4, this.airMeanAt(yf - 0.015) - CONFIG.waterTempOffset);
-    this.iceSea = CLIMATE.seaIce ? sstep(-3, -14, this.airMeanAt(yf - 0.06) - CONFIG.waterTempOffset) : 0;   // arctic pack ice: floes in spring and autumn, solid in winter
-    this.light = sstep(-0.1, 0.25, sunUp) * (1 - 0.6 * this.cloud) * (1 - 0.3 * this.fog);
-    // insect hatches: spring into summer, peaking around dusk (and on mild grey days), not in cold or storms
-    const dh = ((hour - 19.5 + 36) % 24) - 12, dusk = Math.exp(-dh * dh / 3) + 0.5 * Math.exp(-((hour - 8) ** 2) / 4);
-    this.hatch = sstep(0.06, 0.18, yf) * (1 - sstep(0.5, 0.62, yf)) * Math.min(1, dusk + 0.35 * sstep(0.6, 0.9, this.cloud) * (1 - this.rain)) * sstep(8, 14, this.airT) * (1 - 0.7 * this.storm) * (1 - 0.5 * sstep(0.6, 1, this.wind));
-    this.windDir = 0.8 + 1.4 * Math.sin(this.hours / 31) + 0.5 * Math.sin(this.hours / 7.3);
-    this.settle = false;
-  },
-  iced(kind, dep, x, y) {
-    if (kind === OCEAN) return this.iceSea > 0 && (x === undefined ? dep < this.iceSea * 16 - 0.2 : floe(x, y) < this.iceSea * 0.95 - 0.12 + 0.18 * (1 - sstep(2, 12, dep)));
-    const a = kind === LAKE ? this.iceLake : kind === POND ? this.icePond : 0; return a > 0 && dep < a * 16 - 0.2; },
-};
+const engineTod = fallback => { try { return Engine.tod ?? fallback; } catch (e) { return fallback; } };   // safe before the engine exists
+const SIM = OWSim.createWorld({
+  seed: SEED, climate: CLIMATE, config: CONFIG, terrain: SIM_TERRAIN, noise: nE,
+  species: () => FishDB,   // (made by creatures/reptiles-amphibians.js)
+  tod: engineTod, setTod: t => { try { Engine.tod = t; } catch (e) { /* not started yet */ } },
+  fxRng: Math.random,      // lightning timing: not part of the shared state
+});
+const { SEASONS, WEATHER, WEATHER_NEXT } = OWSim;
+const ENV = SIM.env;
+const todNow = () => engineTod(CONFIG.startHour / 24);   // time of day 0..1
 { // start of the year: CONFIG.startSeason, or #season-autumn (and #weather-rain) in the address
   const hs = (HASH.match(/season-(spring|summer|autumn|fall|winter)/) || [])[1], hw = (HASH.match(/weather-(\w+)/) || [])[1];
   const S = (hs === 'fall' ? 'autumn' : hs) || CONFIG.startSeason;
@@ -4176,62 +5095,9 @@ const ENV = {
 </script>
 <script>
 'use strict';
-// Water temperature, springs, warm sea current, pack-ice floe noise and dissolved oxygen.
-// surface water temperature through the year (no weather, no day/night); `raw` can go below freezing (= ice)
-function rawSurfaceT(kind, yf) {
-  const k = [[11, 6, 0.45], [12, 11, 0.41], [13, 12, 0.39], [10, 8, 0.4], [9, 4, 0.4]][kind];   // [mean, swing, warmest point of the year]
-  return k[0] + CLIMATE.water[kind] + k[1] * CLIMATE.amp * Math.cos(6.2832 * (yf - k[2])) + CONFIG.waterTempOffset;
-}
-// pack ice floes: the same value noise as the water shader's (so what you see is what you can stand on), 0..1
-function h21js(x, y) { x = ((x % 512) + 512) % 512 * 0.1031; y = ((y % 512) + 512) % 512 * 0.1030; x -= Math.floor(x); y -= Math.floor(y); const d = x * (y + 33.33) + y * (x + 33.33); x += d; y += d; const v = (x + y) * x; return v - Math.floor(v); }
-function vnjs(x, y) { const i = Math.floor(x), j = Math.floor(y); let fx = x - i, fy = y - j; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
-  const a = h21js(i, j), b = h21js(i + 1, j), c = h21js(i, j + 1), d = h21js(i + 1, j + 1); return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy; }
-const floe = (x, y) => 0.65 * vnjs(x * 0.025, y * 0.025) + 0.35 * vnjs(x * 0.09 + 3, y * 0.09 + 7);
-// A warm current washes the island's south-east shore (coral reefs, clear blue water, tropical fish offshore);
-// the north-west coast gets cold water. 0 = cold side .. 1 = warm side.
-function seaWarm(x, y) { if (CLIMATE.reefsEverywhere) return 1; if (!CLIMATE.seaCurrent) return 0; if (x === undefined) return 0.3; const R = CONFIG.islandSize / 2; return sstep(-0.35, 0.45, (x * 0.35 + y * 0.94) / R + 0.12 * nE(x / 2600 + 9, y / 2600 - 4)); }
-// groundwater wells up at springs at a steady ~9 °C: creek water near one stays cool in summer and open in winter
-function springPull(x, y) {
-  if (!ISL || x === undefined) return 0; let best = 1e9;
-  for (const sp of ISL.springs) { const d = Math.abs(sp.x - x) + Math.abs(sp.y - y); if (d < best) best = d; }
-  return 1 - sstep(12, 140, best);
-}
-// Water temperature (°C) `below` metres under the surface. live = false gives the reference midsummer noon the
-// populations are laid out for (so fish don't vanish in winter: they move and slow down instead).
-function waterTemp(kind, level, below, x, y, live = true) {
-  const yf = live ? ENV.yf : 0.33, surfRaw = rawSurfaceT(kind, yf), Tmin = kind === OCEAN ? -1.8 : 0.2;   // salt water stays liquid to -1.8 °C
-  let T = Math.max(Tmin, surfRaw) - Math.max(0, level - WLW) * 0.05;
-  if (live) {
-    T += [0.02, 0.06, 0.25, 0.12, 0.05][kind] * (ENV.airT - ENV.airMean);
-    T += [0.3, 1, 1.6, 0.6, 0.5][kind] * (1 - 0.6 * ENV.cloud) * Math.sin(((Engine.tod ?? CONFIG.startHour / 24) * 24 - 9) / 24 * 6.2832);
-  } else T += [0.3, 1, 1.6, 0.6, 0.5][kind] * 0.5;
-  if (kind === CREEK || kind === RIVER) { const s = springPull(x, y) * (kind === CREEK ? 1 : 0.4); T += (9 - T) * s; }
-  const w = kind === OCEAN ? seaWarm(x, y) : 0;   // the warm current's mixed layer is deep and stays warm far down
-  if (kind === OCEAN && CLIMATE.seaCurrent) T += 5.5 * w - 2.5;   // a mild current to the south-east (~20 °C in summer), cold water to the north-west
-  if (kind === LAKE || kind === OCEAN) {   // layers: warm (or, under ice, cold) water on top, ~4-7 °C below
-    const deep = kind === OCEAN ? (CLIMATE.key === 'arctic' ? Math.max(-1.5, Math.min(T, 1.5)) : Math.min(T, 6 + (CLIMATE.reefsEverywhere ? 14 : 6) * w)) : T > 4 ? Math.min(T, 4 + 2.5 * sstep(0, 0.3, yf)) : 4;
-    const top = kind === OCEAN ? 8 + (CLIMATE.reefsEverywhere ? 30 : 8) * w : T > 12 ? 3 : 1.5, bot = kind === OCEAN ? 30 + 80 * w : T > 12 ? 9 : 5;
-    T += (deep - T) * sstep(top, bot, below);
-    if (kind === OCEAN) T += ((CLIMATE.key === 'arctic' ? 0.5 : 4) - T) * sstep(150, 800, below);   // under the thermocline the deep sea is ~4 °C everywhere, warm current or not
-  } else if (kind === POND) T = T > 4 ? T - below * 0.5 : Math.min(4, T + below * 0.9);
-  return Math.max(Tmin, T);
-}
-function waterTempAt(x, y, below = 0.5) { sample(x, y); return waterTemp(SK, SW, Math.max(0, Math.min(below, SW - hW(SE))), x, y); }
-// Dissolved oxygen (mg/L): cold water holds more; rapids and wind stir it in; warm still ponds run short (more so at
-// night, when weeds stop making it); a summer lake's deep layer is cut off from the air; ice seals it in.
-function oxygen(kind, T, below = 0.5, rap = 0, live = true) {
-  const sat = 14.6 - 0.394 * T + 0.0072 * T * T;
-  let f = [0.97, 0.95, 0.82, 1, 1.02][kind];
-  if (!live) return sat * f;
-  const hour = (Engine.tod ?? 0.4) * 24, photo = Math.sin((hour - 6) / 12 * 3.1416);
-  if (kind === POND) f += (photo > 0 ? 0.22 * photo * (1 - 0.6 * ENV.cloud) : 0.18 * photo) * (0.4 + 0.6 * ENV.growth) - 0.3 * sstep(18, 27, T);
-  if (kind === LAKE && T > 12) f *= 1 - 0.45 * sstep(4, 11, below);
-  if (kind === LAKE || kind === POND) f += 0.08 * ENV.wind;
-  if (kind === POND) f *= 1 - 0.55 * ENV.icePond; if (kind === LAKE) f *= 1 - 0.2 * ENV.iceLake;
-  if (kind >= RIVER) f = Math.max(f, 1.02 + 0.12 * rap);
-  return sat * f;
-}
-const oxyFit = (D, mg) => D._air || D.habitat.oxygen_min_mgL <= 0 ? 1 : sstep(D.habitat.oxygen_min_mgL * 0.7, D.habitat.oxygen_min_mgL * 1.25, mg);   // air breathers don't care
+// Water temperature, springs, warm sea current, pack-ice floe noise and dissolved oxygen: the shared simulation's
+// (src/sim/environment.js), for the game's world (SIM, world/seasons-weather.js), under their old global names.
+const { rawSurfaceT, h21js, vnjs, floe, seaWarm, springPull, waterTemp, waterTempAt, oxygen, oxyFit } = SIM;
 </script>
 <script>
 'use strict';
@@ -4334,121 +5200,22 @@ function coverAt(x, y, r = 4, live = true) {
   c.open = Math.max(0, 1 - c.rocks - c.weeds - c.reeds - c.lilies - c.wood - c.coral);
   return c;
 }
-// preference curves: 1 at the preferred value, falling off to the limits (0 beyond them)
-const fitRange = (v, lo, opt, hi) => v < lo || v > hi ? 0 : 1 - 0.88 * ((v - opt) / Math.max(1e-3, v < opt ? opt - lo : hi - opt)) ** 2;
-function currentFit(c, H) { const p = H.current_ms.preferred, m = H.current_ms.max; return c > m ? 0 : c < p ? 1 - 0.6 * ((p - c) / Math.max(p, 0.3)) ** 2 : 1 - 0.85 * ((c - p) / Math.max(1e-3, m - p)) ** 2; }
-const COVER_KEYS = ['rocks', 'weeds', 'reeds', 'lilies', 'wood', 'coral', 'anemone', 'open'];
-function coverFit(c, H) { const P = H.cover; let s = 0, m = 0; for (const k of COVER_KEYS) { s += (P[k] || 0) * (c[k] || 0); m = Math.max(m, P[k] || 0); }
-  const fl = 0.25 * (1 - clamp(H.cover_required || 0, 0, 1)); return fl + (1 - fl) * Math.min(1, s / (m || 1)); }
+// preference curves (1 at the preferred value, falling off to the limits) and cover fit: src/sim/core.js
+const { fitRange, currentFit, COVER_KEYS, coverFit } = OWSim;
 </script>
 <script>
 'use strict';
-// How well a spot suits a species (habitatScore, envAt), what food is where (foodAvail, foodScore), prey and activity curves.
-// how well a spot suits a species (0..1). env: { kind, level, dep, cur, cover }
-// the deepest a fish goes here: the bottom, or for a mid-water fish over deep sea, its own depth limit
-const fishFloor = (D, wl, g) => D._benthic ? g : Math.max(g, wl - D.habitat.depth_m.max);
-function habitatScore(D, env, below, live = true) {
-  const H = D.habitat, w = H.waters[WATER_KEYS[env.kind]] || 0; if (!w) return 0;
-  const bz = below ?? Math.min(env.dep, Math.max(0.3, H.depth_m.preferred)), T = waterTemp(env.kind, env.level, bz, env.x, env.y, live);
-  const tf = fitRange(T, H.temperature_c.min, H.temperature_c.optimal, H.temperature_c.max);   // laying out populations (live = false), a poor growing season counts for more
-  // water deeper than the species goes: bottom fish can't use it, mid-water fish just swim above the deep (see fishFloor)
-  let df = fitRange(env.dep, H.depth_m.min, H.depth_m.preferred, H.depth_m.max * 1.5);
-  if (env.dep > H.depth_m.preferred && !D._benthic) { const Z = D.behavior.depth_zone, zb = (Z.bottom || 0) / ((Z.surface || 0) + (Z.mid || 0) + (Z.bottom || 0) || 1); df += (1 - df) * (1 - zb) ** 2; }
-  return w * df * (live ? tf : Math.pow(tf, 2.5))
-    * currentFit(env.cur, H) * ((WATER[env.kind].murk + (live && env.kind >= RIVER ? ENV.turb * 0.4 : 0)) > H.turbidity_max ? 0.35 : 1) * (env.cover ? coverFit(env.cover, H) : 1)
-    * (0.15 + 0.85 * oxyFit(D, oxygen(env.kind, T, bz, env.rap || 0, live)));
-}
-function envAt(x, y, withCover = true, live = true) {
-  sample(x, y); const kind = SK, level = SW, dep = SW - hW(SE), rap = SR;
-  return { x, y, kind, level, dep, rap, ground: level - dep, cur: dep > 0 && kind >= RIVER ? flowAt(x, y, kind)[2] : 0, cover: withCover && dep > 0 ? coverAt(x, y, 3.5, live) : null };
-}
-// ---- food: what there is to eat, where and when (0..1 per food) ----
-// the zones each food is found in: [surface, mid-water, bottom]
-const FOOD_ZONES = { insects: [1, 0.35, 0], nymphs: [0.1, 0.45, 1], worms: [0, 0.15, 1], crayfish: [0, 0, 1], fish: [0.3, 1, 0.45], frogs: [1, 0.1, 0],
-  snails: [0, 0.2, 1], shrimp: [0, 0.6, 1], plankton: [0.4, 1, 0.1], plants: [0.2, 0.8, 0.6], eggs: [0, 0.1, 1], leeches: [0, 0.4, 1] };
-// how much of each food each kind of water has, by kind id (insects' sea entry hangs on the wind, so it stays in foodAvail)
-const FOOD_KIND = { nymphs: [0, 0.35, 0.45, 0.9, 1], crayfish: [0, 0.75, 0.8, 1, 0.8], fish: [0.8, 0.7, 0.6, 0.7, 0.5], frogs: [0, 0.5, 1, 0.3, 0.3],
-  shrimp: [1, 0.15, 0.1, 0.35, 0.1], plankton: [0.9, 0.8, 0.9, 0.2, 0.05], leeches: [0, 0.6, 1, 0.3, 0.2] };
-const FOOD_COVER = { rocks: 0.2, weeds: 0.2, reeds: 0.1, lilies: 0.1, wood: 0, open: 0.5 };   // when the spot's cover isn't known
-function foodAvail(food, env, T) {
-  const k = env.kind, c = env.cover || FOOD_COVER, hour = (Engine.tod ?? 0.4) * 24, yf = ENV.yf;
-  const night = 1 - sstep(5, 7, hour) * (1 - sstep(20, 22, hour)), warm = sstep(5, 15, T), shore = 1 - sstep(1, 3.5, env.dep);
-  const veg = Math.min(1, c.weeds + c.reeds + c.lilies + c.wood * 0.6), rocks = Math.min(1, c.rocks + c.wood * 0.5), rap = env.rap || 0;
-  const iced = ENV.iced(k, env.dep, env.x, env.y) ? 1 : 0;
-  switch (food) {
-    case 'insects': return clamp([0, 0.45 + 0.5 * ENV.wind, 0.9, 0.85, 1][k] * warm * (0.15 + 0.85 * ENV.hatch + 0.25 * veg * sstep(0.15, 0.4, yf) * (1 - sstep(0.6, 0.7, yf))) * (1 - iced), 0, 1);
-    case 'nymphs': return clamp(FOOD_KIND.nymphs[k] * (0.35 + 0.65 * Math.max(rocks, rap)) * (0.4 + 0.6 * warm) * (1 + 0.5 * ENV.hatch), 0, 1);
-    case 'worms': return clamp((k === OCEAN ? 0.1 : 1) * shore * (0.2 + 0.8 * ENV.wet) * (0.5 + 0.5 * warm), 0, 1);
-    case 'crayfish': return clamp(FOOD_KIND.crayfish[k] * (0.25 + 0.75 * rocks) * (0.3 + 0.7 * night) * warm, 0, 1);
-    case 'fish': return clamp(FOOD_KIND.fish[k] * (0.35 + 0.65 * veg) * (env.dep < 4 ? 1 : 0.6) * (0.5 + 0.5 * warm) * (1 + 0.4 * sstep(0.3, 1, 1 - ENV.light)), 0, 1);
-    case 'frogs': return clamp(FOOD_KIND.frogs[k] * Math.min(1, c.lilies + c.reeds) * sstep(14, 20, T) * (0.35 + 0.65 * night), 0, 1);
-    case 'snails': return clamp((k === OCEAN ? 0.5 : 1) * (0.2 + 0.8 * Math.max(c.weeds, c.lilies)) * (0.3 + 0.7 * ENV.growth), 0, 1);
-    case 'shrimp': return FOOD_KIND.shrimp[k] * (0.4 + 0.6 * night);
-    case 'plankton': return clamp(FOOD_KIND.plankton[k] * (0.25 + 0.75 * ENV.growth) * (1 - shore * 0.5), 0, 1);
-    case 'plants': return clamp(c.weeds + c.lilies * 0.7, 0, 1) * (0.3 + 0.7 * ENV.growth);
-    case 'eggs': return clamp(((k === LAKE || k === POND) ? shore * sstep(0.04, 0.1, yf) * (1 - sstep(0.18, 0.26, yf)) : 0) + (k >= RIVER ? rap * sstep(0.55, 0.6, yf) * (1 - sstep(0.7, 0.76, yf)) : 0), 0, 1);
-    case 'leeches': return clamp(FOOD_KIND.leeches[k] * (1 - rocks) * warm * (0.5 + 0.5 * night), 0, 1);
-  }
-  return 0.2;
-}
-// how much of what this species eats is here, and in which zone: { q: 0..1, zone }
-function foodScore(D, env, T) {
-  const F = D.diet.food, Z = D.diet.feeding_zone, zm = Math.max(Z.surface || 0, Z.mid || 0, Z.bottom || 0) || 1, tot = [0, 0, 0]; let P = 0;
-  for (const k in F) { const p = F[k]; if (!p) continue; P += p; const a = foodAvail(k, env, T); if (!a) continue; const fz = FOOD_ZONES[k] || [0.3, 1, 0.5]; for (let z = 0; z < 3; z++) tot[z] += p * a * fz[z]; }
-  const w = D._benthic ? [0, 0, 1] : [(Z.surface || 0) / zm, (Z.mid || 0) / zm, (Z.bottom || 0) / zm];
-  let best = 2, q = -1; for (let z = 0; z < 3; z++) { const v = tot[z] * w[z]; if (v > q) { q = v; best = z; } }
-  return { q: P ? clamp(q / P * 1.6, 0, 1) : 0, zone: ['surface', 'mid', 'bottom'][best] };
-}
-// what a simulated animal counts as on a predator's menu
-const preyFood = D => D.body.plan === 'frog' || D.body.plan === 'salamander' ? 'frogs' : D._herp ? null : D._air ? 'mammals' : ({ fish: 'fish', squid: 'fish', cuttlefish: 'fish', octopus: 'crayfish', crab: 'crayfish', lobster: 'crayfish', shrimp: 'shrimp', snail: 'snails' })[D.body.plan || 'fish'] || null;   // a bass eats frogs and newts; snakes, lizards, turtles and alligators aren't on anyone's menu here
-const activityAt = (D, hour) => { const a = D._act, h = ((hour % 24) + 24) % 24, i = Math.floor(h), u = h - i; return a[i] + (a[(i + 1) % 24] - a[i]) * u; };
+// How well a spot suits a species (habitatScore, envAt), what food is where (foodAvail, foodScore), prey and activity
+// curves: the shared simulation's (src/sim/environment.js), for the game's world (SIM), under their old global names.
+const { fishFloor, habitatScore, envAt, FOOD_ZONES, FOOD_KIND, FOOD_COVER, foodAvail, foodScore, preyFood, activityAt } = SIM;
 </script>
 <script>
 'use strict';
-// Fish size / weight statistics and the fixed per-cell fish populations (cellFish).
-// statistics: individual length (log-normal around the typical size, truncated) and weight (W = a·L^b, with condition noise)
-function gauss(rng) { return Math.sqrt(-2 * Math.log(rng() + 1e-12)) * Math.cos(6.2832 * rng()); }
-function sampleFishSize(D, rng) {
-  const L = D.size.length_cm; let cm = L.typical;
-  for (let k = 0; k < 6; k++) { cm = Math.exp(D._mu + D._sig * gauss(rng)); if (cm >= L.min && cm <= L.max) break; }
-  cm = clamp(cm, L.min, L.max);
-  return { cm, kg: D.size.weight.a * cm ** D.size.weight.b * Math.exp(D.size.condition_sd * gauss(rng)) / 1000 };
-}
-function poisson(lam, rng) { if (lam <= 0) return 0; if (lam > 30) return Math.max(0, Math.round(lam + Math.sqrt(lam) * gauss(rng))); let k = 0, p = 1; const L = Math.exp(-lam); do { k++; p *= rng(); } while (p > L); return k - 1; }
-// Each 16 m cell of water has a fixed population (same seed -> same fish in the same places).
-const FISH_CELL = 16;
-const WILDLIFE_SCALE = { 1: 0.4, 2: 1, 3: 2.2 };   // the Settings levels: sparse, standard, abundant
-function cellFish(cx, cy) {
-  const rng = mulberry32((hash2(cx, cy, SEED + 911) * 4294967296) >>> 0), pts = [];
-  for (let k = 0; k < 6; k++) { const x = (cx + 0.08 + 0.84 * rng()) * FISH_CELL, y = (cy + 0.08 + 0.84 * rng()) * FISH_CELL; sample(x, y); if (SW - hW(SE) > 0.3) pts.push([x, y, SK]); }
-  const out = [];
-  for (const kind of new Set(pts.map(p => p[2]))) { // a cell can hold two waters (a creek mouth, say): each gets its own fish
-    const here = pts.filter(p => p[2] === kind), area = FISH_CELL * FISH_CELL * here.length / 6, env = envAt(here[0][0], here[0][1], true, false);
-    for (const [D, si] of FishDB.byKind(kind)) {   // only species that live in this kind of water
-      if (out.length >= CONFIG.cellMaxAnimals) break;   // later species cannot add a group
-      const Ck = D._needCover, req = !!Ck;
-      const s = habitatScore(D, req ? Object.assign({}, env, { cover: { [Ck]: 1 } }) : env, undefined, false); if (s < 0.02) continue;   // laid out for midsummer: in other seasons fish move rather than vanish
-      const Sc = D.population.school, mean = (Sc.min + Sc.max) / 2;
-      // each species draws from its own random stream and numbers its own fish, so adding or removing a species
-      // never changes (or resurrects) the others
-      const rs = mulberry32((hash2(cx * 7 + kind, cy, SEED + D._hid) * 4294967296) >>> 0);
-      let groups = poisson(D.population.density * s * area / 100 * WILDLIFE_SCALE[CONFIG.wildlife] * (D._shell ? CONFIG.shellfishAbundance : D._herp ? CONFIG.herpAbundance : CONFIG.fishAbundance) / mean, rs);
-      if (D._herp) groups = Math.min(groups, 2);   // reptiles and amphibians: two at most per cell
-      if (!groups) continue;
-      let homes = null;
-      if (req) { // e.g. clownfish: each group lives on one anemone
-        const want = COVER_PLANT[Ck] || [];
-        homes = []; for (let gy = Math.ceil(cy * FISH_CELL / 2.5); gy * 2.5 < (cy + 1) * FISH_CELL; gy++) for (let gx = Math.ceil(cx * FISH_CELL / 2.5); gx * 2.5 < (cx + 1) * FISH_CELL; gx++) if (want.includes(plantAt(gx, gy)) && PL.kd === kind) homes.push([PL.x, PL.y]);
-        if (!homes.length) continue; groups = Math.min(groups, homes.length);
-      }
-      for (let g = 0; g < groups && out.length < CONFIG.cellMaxAnimals; g++) {
-        const n = D._herp ? 1 : Math.round(Sc.min + rs() * (Sc.max - Sc.min)), [hx, hy] = homes ? homes[g] : here[rs() * here.length | 0], lead = out.length;
-        for (let k = 0; k < n; k++) out.push({ si, id: `${D.id}@${cx},${cy}.${kind}#${g}.${k}`, hx: hx + (rs() - 0.5) * (homes ? 0.6 : 3), hy: hy + (rs() - 0.5) * (homes ? 0.6 : 3), size: sampleFishSize(D, rs), lead: k ? lead : -1, r: rs() });
-      }
-    }
-  }
-  return out;
-}
+// Fish size / weight statistics and the fixed per-cell fish populations (cellFish): the shared simulation's
+// (src/sim/core.js, src/sim/populations.js), for the game's world (SIM), under their old global names.
+// Each 16 m cell of water has a fixed population (same seed -> same fish in the same places, with the same ids).
+const { gauss, poisson, sampleFishSize } = OWSim;
+const { FISH_CELL, WILDLIFE_SCALE, cellFish } = SIM;
 </script>
 <script>
 'use strict';
@@ -5516,309 +6283,73 @@ Object.assign(Engine, {
 Object.assign(Engine, {
   // ambient fish: spawn in water around you, wander (or hold against the current in rivers), scatter from swimmers
   // ---- fish: fixed populations per 16 m water cell; each fish runs on its species data ----
-  spawned: [], boats: [], boat: null, fishCells: new Map(), fishGone: null, noises: [], cellT: 0, dtH: 0, finder: false, fishRev: -1,
-  disturb(x, y, s = 1) { this.noises.push({ x, y, s, t: this.time }); if (this.noises.length > 16) this.noises.shift(); },
+  spawned: [], boats: [], boat: null, fishCells: new Map(), noises: [], cellT: 0, dtH: 0, finder: false, fishRev: -1,
+  disturb(x, y, s = 1) { OWSim.disturb(this, x, y, s); },   // a splash, a boat, a cast: fish nearby take fright (src/sim/behaviour.js)
+  // caught and kept fish stay gone for CONFIG.fishRespawnMinutes (real minutes), per island, saved in this browser; hook
+  // claims and fish-gone events are the shared ledger's (src/sim/ledger.js)
+  fishLedger: OWSim.createFishLedger({ now: () => Date.now(), respawnMinutes: () => CONFIG.fishRespawnMinutes,
+    store: { load: () => JSON.parse(localStorage.getItem(Engine.goneKey()) || '{}'), save: g => localStorage.setItem(Engine.goneKey(), JSON.stringify(g)) } }),
   goneKey() { return 'engine-fishgone-' + CONFIG.saveName + '-' + SEED; },
-  isGone(id) {
-    if (!this.fishGone) { try { this.fishGone = JSON.parse(localStorage.getItem(this.goneKey()) || '{}'); } catch (e) { this.fishGone = {}; } }
-    const t = this.fishGone[id]; return t && Date.now() - t < CONFIG.fishRespawnMinutes * 60000;
-  },
-  removeFish(f) {
-    if (!f || f.dead) return; f.dead = true; this.isGone(''); this.fishGone[f.id] = Date.now();
-    for (const k in this.fishGone) if (Date.now() - this.fishGone[k] > CONFIG.fishRespawnMinutes * 60000) delete this.fishGone[k];
-    try { localStorage.setItem(this.goneKey(), JSON.stringify(this.fishGone)); } catch (e) { /* storage unavailable */ }
-  },
-  makeFish(sp) {
-    const D = FishDB.list[sp.si]; sample(sp.hx, sp.hy); const wl = SW, g0 = hW(SE), g = fishFloor(D, wl, g0), Lr = D.size.length_cm, T = waterTemp(SK, wl, (wl - g) * 0.5, sp.hx, sp.hy), H = D.habitat.temperature_c, z0 = D._benthic ? g + Math.max(0.01, -D._zmin * sp.size.cm / 100) + 0.01 : g + (wl - g) * 0.5;
-    return { temp: T, tfit: fitRange(T, H.min, H.optimal, H.max), id: sp.id, sp: sp.si, def: D, species: D.id, name: D.name, lengthCm: sp.size.cm, weightKg: sp.size.kg, len: sp.size.cm / 100,
-      x: sp.hx, y: sp.hy, z: z0, a: sp.r * 6.2832, spd: 0, homeX: sp.hx, homeY: sp.hy, kd: SK, wl, ground: g0,
-      state: 'rest', zone: null, tx: sp.hx, ty: sp.hy, tz: z0, tNext: sp.r * 3, hunger: 0.3 + 0.6 * sp.r, stress: 0, act: 0.5, air: D.behavior.breath_hold_s * sp.r, pitch: 0,
-      fx: 0, fy: 0, cur: 0, ph: sp.r * 6.28, tint: 0.35 + 0.3 * sp.r, leader: null, lead: sp.lead, ox: 0, oy: 0, oz: 0,
-      sizeRank: (sp.size.cm - Lr.min) / Math.max(1, Lr.max - Lr.min) };
-  },
+  isGone(id) { return this.fishLedger.isGone(id); },
+  removeFish(f) { this.fishLedger.remove(f); },
+  makeFish(sp) { return SIM.makeFish(sp); },   // a live animal from a population record (src/sim/populations.js)
   syncFishCells() {
     const limit = this.touchUI ? Math.min(CONFIG.maxFish, CONFIG.maxFishTouch) : CONFIG.maxFish;
-    const P = this.P, R = 72, cs = FISH_CELL;
+    const P = this.P, R = 72;
     // populate around you, and around your lure or bait once it's out in the water (a long cast into deep water would
     // otherwise land beyond every fish); distance counts from whichever is nearer
     const centres = [[P.x, P.y, R]], rods = [this.ang, this.ang2].filter(Boolean);   // (a second rod may stand in a holder: fishing/two-rods.js)
     for (const A of rods) { const L = A.out && A.lure; if (L && L.kd >= 0 && !L.land && Math.hypot(L.x - P.x, L.y - P.y) > 24) centres.push([L.x, L.y, 40]); }
-    const far = (x, y) => Math.min(...centres.map(([cx, cy, r]) => Math.hypot(x - cx, y - cy) - r));   // < 0 inside a circle
     if (this.fishRev !== FishDB.revision) { this.fishCells.clear(); this.fishRev = FishDB.revision; }
-    for (const [k, c] of this.fishCells) if (far((c.cx + 0.5) * cs, (c.cy + 0.5) * cs) > 24 && !c.fish.some(f => f.held || rods.some(A => f === A.fish))) this.fishCells.delete(k);
-    const want = [], seen = new Set();
-    for (const [x0, y0, r] of centres) { const ccx = Math.floor(x0 / cs), ccy = Math.floor(y0 / cs), rc = Math.ceil(r / cs);
-      for (let dy = -rc; dy <= rc; dy++) for (let dx = -rc; dx <= rc; dx++) { const cx = ccx + dx, cy = ccy + dy, k = cx + ',' + cy, d = far((cx + 0.5) * cs, (cy + 0.5) * cs);
-        if (d < 0 && !seen.has(k)) { seen.add(k); want.push([d, cx, cy]); } } }
-    want.sort((a, b) => a[0] - b[0]);
-    let total = 0, added = 0;
-    for (const c of this.fishCells.values()) { c.fish = c.fish.filter(f => !f.dead); total += c.fish.length; }
-    if (total > limit) {
-      let room = limit;
-      const cells = [...this.fishCells.values()].sort((a, b) => far((a.cx + 0.5) * cs, (a.cy + 0.5) * cs) - far((b.cx + 0.5) * cs, (b.cy + 0.5) * cs));
-      for (const c of cells) { if (c.fish.length > room) c.fish = this.trimCell(c.fish, room); room -= c.fish.length; }
-      total = limit - room;
-    }
-    for (const [, cx, cy] of want) {
-      const key = cx + ',' + cy; if (this.fishCells.has(key)) continue;
-      if (total >= limit || added >= 3) break;   // a few cells per tick keeps frames smooth
-      const all = cellFish(cx, cy).map(sp => this.makeFish(sp));
-      all.forEach(f => { if (f.lead >= 0) { f.leader = all[f.lead]; const s = f.len * 1.6 + 0.3; f.ox = (Math.random() - 0.7) * s * 2; f.oy = (Math.random() - 0.5) * s * 2; f.oz = (Math.random() - 0.5) * 0.5; } });
-      let fish = all.filter(f => !this.isGone(f.id));
-      if (fish.length > limit - total) fish = this.trimCell(fish, limit - total);   // never past the cap
-      this.fishCells.set(key, { cx, cy, fish }); total += fish.length; added++;
-    }
+    // the cells around those centres, nearest first, under the cap; a cell with a fish on your line or in your hands stays
+    SIM.syncCells(this.fishCells, { centres, limit, rng: Math.random, isGone: id => this.isGone(id), keepCell: c => c.fish.some(f => f.held || rods.some(A => f === A.fish)) });
     this.fish = []; for (const c of this.fishCells.values()) for (const f of c.fish) if (!f.dead) this.fish.push(f);
     this.spawned = this.spawned.filter(f => !f.dead && Math.hypot(f.x - P.x, f.y - P.y) < 250); for (const f of this.spawned) this.fish.push(f);   // ones you spawned stay until you're far away
     for (const A of rods) { const hk = A.fish; if (hk && !hk.dead && !this.fish.includes(hk)) this.fish.push(hk); }   // the fish on your line stays, however far it runs
   },
-  // keep as many whole groups (a school with its leader, or a single fish) as fit in `room`, picked in a fixed
-  // pseudo-random order so no species is always the one left out; followers never lose their leader
-  trimCell(fish, room) {
-    const members = new Set(fish), groups = new Map(); for (const f of fish) { const k = f.leader && members.has(f.leader) ? f.leader : f; (groups.get(k) || groups.set(k, []).get(k)).push(f); }
-    const keep = new Set(); let n = 0;
-    for (const [k, g] of [...groups].sort((a, b) => a[0].tint - b[0].tint)) if (n + g.length <= room) { g.forEach(f => keep.add(f)); n += g.length; }
-    return fish.filter(f => keep.has(f));
-  },
+  trimCell(fish, room) { return SIM.trimCell(fish, room); },   // whole groups only, in a fixed order (src/sim/populations.js)
 });
 </script>
 <script>
 'use strict';
-// Engine: fish behaviour: depth zones, decisions, prey, eating, swimming, and air-breathers surfacing and hauling out.
+// Engine: fish behaviour (depth zones, decisions, prey, eating, swimming, air-breathers surfacing and hauling out) is the
+// shared simulation's (src/sim/behaviour.js). This is its browser side: FISH_CTX hands it the engine's clock, you, the
+// noises, the fish grid, your lure, the game's events, and the rings, drops and spray it leaves (rendering), and the
+// Engine methods keep their old names for the rest of the game.
+const FISH_PLAYER = { x: 0, y: 0, inWater: false, moving: false }, FISH_PLAYERS = [FISH_PLAYER];
+const FISH_CTX = {
+  get time() { return Engine.time; }, get tod() { return Engine.tod; }, get dtH() { return Engine.dtH; }, get frameDt() { return Engine.frameDt; },
+  rng: Math.random,   // fish decisions in the browser are not shared state (a server passes its seeded stream)
+  get noises() { return Engine.noises; },
+  // you: swimming or wading scares fish within their spook range; moving on the bank scares shallow fish nearby
+  get players() { const E = Engine, o = FISH_PLAYER; o.x = E.P.x; o.y = E.P.y; o.inWater = !!(E.swim || E.wade > 0.05); o.moving = !!E.moving; return FISH_PLAYERS; },
+  fishAround: (x, y, r, fn) => Engine.fishAround(x, y, r, fn),
+  // the lure a following fish is after: the rod whose bait it noticed (fishing/two-rods.js), while that bait is still fishing
+  lureFor(f) { const E = Engine, A = f.rod && f.rod === E.ang2 ? f.rod : E.ang, L = A && A.lure; return !L || A.phase !== 'water' || A.fish || L.land ? null : L; },
+  lureArrive: f => Engine.lureArrive(f),   // the bite decision: fishing/bites.js (looked up each time: two-rods.js wraps it)
+  emit: (name, ...args) => Game.emit(name, ...args),
+  fx: {
+    rise(f) { const E = Engine; E.addRipple(f.x, f.y, 0.3 + 0.6 * Math.min(1, f.len * 1.6));   // a rise: rings and a few drops
+      for (let k = 0; k < 4 + f.len * 12; k++) E.spawn(DROP, f.x + E.rnd(-0.1, 0.1), f.y + E.rnd(-0.1, 0.1), f.wl, E.rnd(-0.5, 0.5), E.rnd(-0.5, 0.5), E.rnd(1, 2.2), E.rnd(0.3, 0.5), 0.03); },
+    kill(f, g) { const E = Engine; E.addRipple(g.x, g.y, 0.5 + f.len);   // a strike at the surface
+      for (let k = 0; k < 6 + f.len * 20; k++) E.spawn(DROP, g.x + E.rnd(-0.2, 0.2), g.y + E.rnd(-0.2, 0.2), g.wl, E.rnd(-1, 1), E.rnd(-1, 1), E.rnd(1.5, 3), E.rnd(0.3, 0.6), 0.035); },
+    splashdown(f) { const E = Engine; E.addRipple(f.x, f.y, 0.6 + Math.min(2, f.len));   // a leaping dolphin comes down
+      for (let k = 0; k < 10 + Math.min(80, f.len * 25); k++) E.spawn(DROP, f.x + E.rnd(-0.4, 0.4) * f.len * 0.3, f.y + E.rnd(-0.4, 0.4) * f.len * 0.3, f.wl, E.rnd(-2, 2), E.rnd(-2, 2), E.rnd(2, 4 + f.len), E.rnd(0.5, 1.2), 0.05); },
+    blow(f) { const E = Engine, B = f.def.behavior; E.addRipple(f.x, f.y, 0.3 + Math.min(1.5, f.len * 0.3));   // the blow: a burst of spray from the blowhole
+      if (B.blow > 0) for (let k = 0; k < 6 + 40 * B.blow; k++) E.spawn(STEAM, f.x + Math.cos(f.a) * f.len * 0.3 + E.rnd(-0.15, 0.15), f.y + Math.sin(f.a) * f.len * 0.3 + E.rnd(-0.15, 0.15), f.wl + 0.1, E.rnd(-0.4, 0.4), E.rnd(-0.4, 0.4), E.rnd(1.5, 2.5 + 6 * B.blow), E.rnd(1, 2.4), 0.1 + 0.6 * B.blow); },
+    leap(f) { Engine.addRipple(f.x, f.y, 0.5 + Math.min(1.5, f.len * 0.3)); },
+  },
+};
 Object.assign(Engine, {
-  pickZone(w) { const t = (w.surface || 0) + (w.mid || 0) + (w.bottom || 0); let r = Math.random() * (t || 1); if ((r -= w.surface || 0) < 0) return 'surface'; if ((r -= w.mid || 0) < 0) return 'mid'; return 'bottom'; },
-  zoneZ(f, zone, wl, g, kind) { // a depth for this zone; in stratified water the fish looks for its preferred temperature
-    g = fishFloor(f.def, wl, g);
-    const lo = g + (f.def._jelly && !f.def._benthic ? f.len * 0.2 : Math.max(0.01, -f.def._zmin * f.len)) + 0.01, hi = Math.max(lo, wl - 0.12), dep = wl - g;
-    if (f.def._benthic) return lo;
-    let z = zone === 'surface' ? hi - 0.1 : zone === 'bottom' ? lo + 0.05 : g + dep * (0.3 + 0.4 * Math.random());
-    if (((dep > 3 && (kind === LAKE || kind === OCEAN)) || (dep > 1.2 && kind === POND)) && zone !== 'surface') {   // the layer with the right temperature and enough oxygen
-      const H = f.def.habitat.temperature_c; let bz = z, bf = -1;
-      for (let k = 0; k <= 4; k++) { const zz = lo + (hi - lo) * k / 4, T = waterTemp(kind, wl, wl - zz, f.x, f.y), ff = fitRange(T, H.min, H.optimal, H.max) * (0.2 + 0.8 * oxyFit(f.def, oxygen(kind, T, wl - zz))) - Math.abs(zz - z) * 0.02; if (ff > bf) { bf = ff; bz = zz; } }
-      z = bz;
-    }
-    return clamp(z, lo, hi);
-  },
-  fishSpot(f, cx, cy, radius, n, score) { // best of n random spots of the same water within radius
-    let best = null, bs = -1;
-    for (let k = 0; k < n; k++) {
-      const a = Math.random() * 6.2832, r = radius * Math.sqrt(Math.random()), x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
-      sample(x, y); const dep = SW - hW(SE); if (SK !== f.kd || dep < Math.max(0.25, f.len * 0.8)) continue;
-      const env = { x, y, kind: SK, level: SW, dep, ground: SW - dep, cur: 0, cover: null, rap: SR };
-      const s = score(x, y, env) * (0.85 + 0.3 * Math.random()); if (s > bs) { bs = s; best = env; best.x = x; best.y = y; }
-    }
-    return best;
-  },
-  fishDecide(f) {
-    const D = f.def, B = D.behavior, H = D.habitat, rnd = Math.random, hour = (this.tod ?? 0) * 24;
-    sample(f.x, f.y); f.wl = SW; f.ground = hW(SE); const rap = SR;
-    const fl = flowAt(f.x, f.y, f.kd); f.fx = fl[0]; f.fy = fl[1]; f.cur = f.kd >= RIVER ? fl[2] : 0;
-    const below = clamp(f.wl - f.z, 0, f.wl - f.ground);
-    f.temp = waterTemp(f.kd, f.wl, below, f.x, f.y); f.oxy = oxygen(f.kd, f.temp, below, rap);
-    f.tfit = fitRange(f.temp, H.temperature_c.min, H.temperature_c.optimal, H.temperature_c.max);
-    f.metab = clamp(2 ** ((f.temp - H.temperature_c.optimal) / 10), 0.12, 1.3);   // metabolism follows the water temperature
-    const ofit = oxyFit(D, f.oxy);
-    // weather: a falling barometer ahead of a front turns fish on; the bright, high-pressure day after one turns them off
-    const wx = 1 + 0.35 * sstep(0.4, 3, -ENV.trend) - 0.25 * sstep(0.4, 3, ENV.trend) * (1 - ENV.cloud);
-    f.act = activityAt(D, hour) * (0.12 + 0.88 * f.tfit) * (1 - 0.85 * f.stress) * wx * (0.35 + 0.65 * ofit) * (f.temp < H.temperature_c.min ? 0.5 : 1);
-    const go = (state, e, zone, tNext) => { f.state = state; f.zone = zone; if (e) { f.tx = e.x; f.ty = e.y; f.tz = this.zoneZ(f, zone, e.level, e.ground, f.kd); } f.tNext = tNext; };
-    if (f.stress > 0.5) { // bolt for deeper water and cover, away from the threat
-      const tx = f.thx ?? this.P.x, ty = f.thy ?? this.P.y;
-      const e = this.fishSpot(f, f.x, f.y, 14, 6, (x, y, v) => coverFit(coverAt(x, y, 3), H) * (0.4 + Math.min(1, v.dep / 4)) * (0.3 + Math.min(1, Math.hypot(x - tx, y - ty) / 12)));
-      return go('flee', e, 'bottom', 3 + rnd() * 4);
-    }
-    if (ofit < 0.5 && rnd() < 0.8) { // gasping: find water with more oxygen (moving water, the windward shore, a cooler layer)
-      const e = this.fishSpot(f, f.x, f.y, Math.max(12, D.population.home_range_m * 1.5), 6, (x, y, v) => { v.cur = v.kind >= RIVER ? flowAt(x, y, v.kind)[2] : 0; return habitatScore(D, v); });
-      return go('cruise', e, 'mid', 6 + rnd() * 6);
-    }
-    if (f.leader && !f.leader.dead && f.leader.stress < 0.5) { f.state = 'school'; f.tNext = 1 + rnd() * 2; return; }
-    if (rnd() < f.act * f.hunger * 0.9) { // feed: hunt something alive, or work the spot with the most of what it eats
-      if (f.hunger > 0.35 && rnd() < 0.75) { const prey = this.findPrey(f); if (prey) { f.state = 'hunt'; f.prey = prey; f.zone = 'mid'; f.tNext = 5 + rnd() * 6; return; } }
-      const e = B.burst_bl_s <= 0 ? null : this.fishSpot(f, f.x, f.y, B.ambush > 0.5 ? 4 : 9, 4, (x, y, v) => { v.cover = coverAt(x, y, 2.5); const fs = foodScore(D, v, f.temp); v.fq = fs.q; v.fz = fs.zone; return 0.05 + fs.q; });
-      f.mealQ = e ? e.fq : 0.3; f.tries = (f.tries || 0) + 1;
-      return go('forage', e || { x: f.x, y: f.y, level: f.wl, ground: f.ground }, e ? e.fz : D._benthic ? 'bottom' : this.pickZone(D.diet.feeding_zone), 8);
-    }
-    f.tries = 0;
-    if (f.cur > 0.15 && rnd() < B.station_holding) { // hold a lie in the current, behind cover
-      const e = this.fishSpot(f, f.homeX, f.homeY, Math.min(D.population.home_range_m, 8), 5, (x, y, v) => currentFit(flowAt(x, y, v.kind)[2], H) * coverFit(coverAt(x, y, 2.5), H) * (0.6 + 0.4 * foodScore(D, v, f.temp).q));
-      return go('hold', e, this.pickZone(B.depth_zone), 10 + rnd() * 20);
-    }
-    if (B.haul_out > 0) { // seals and sea lions rest ashore, then slip back into the water
-      if (f.land) { if (rnd() < 0.65) { f.state = 'haul'; f.tx = f.x; f.ty = f.y; f.tNext = 30 + rnd() * 90; return; }
-        const e = this.fishSpot(f, f.x, f.y, 16, 10, (x, y, v) => v.dep); if (e) return go('cruise', e, 'mid', 10); }
-      else if (rnd() < B.haul_out * (D._herp ? 0.6 + 0.6 * ENV.light : 0.35) * (1 - (D._herp ? 0.5 : 1) * f.hunger)) { /* reptiles and frogs bask, most in sunshine */ const e = this.shoreSpot(f, 40); if (e) { f.state = 'haul'; f.zone = 'bottom'; f.tx = e.x; f.ty = e.y; f.tz = e.z; f.tNext = 90 + rnd() * 200; return; } }
-    }
-    // bright sun drives wary fish down and into cover; grey days, rain and dusk bring them out
-    const shy = B.wariness * ENV.light * (1 - 0.6 * ENV.rain);
-    if (rnd() < f.act * (1 - 0.7 * B.ambush) * (1 - 0.5 * shy)) { // roam the home range, favouring good habitat
-      const toHome = Math.hypot(f.x - f.homeX, f.y - f.homeY) > D.population.home_range_m;
-      const e = this.fishSpot(f, toHome ? f.homeX : f.x, toHome ? f.homeY : f.y, D.population.home_range_m, 5, (x, y, v) => { v.cur = v.kind >= RIVER ? flowAt(x, y, v.kind)[2] : 0; v.cover = coverAt(x, y, 3); return habitatScore(D, v); });
-      return go('cruise', e, rnd() < shy * 0.6 ? 'bottom' : this.pickZone(B.depth_zone), 6 + rnd() * 10);
-    }
-    const e = this.fishSpot(f, f.x, f.y, 5, 4, (x, y, v) => coverFit(coverAt(x, y, 2.5), H) * (1 + shy) * fitRange(v.dep, H.depth_m.min, H.depth_m.preferred * (1 + shy), H.depth_m.max * 1.5));
-    go('rest', e, rnd() < shy ? 'bottom' : this.pickZone(B.depth_zone), (6 + rnd() * 14) * (1 + B.ambush) * (f.tfit < 0.2 ? 2 : 1));
-  },
-  // the best thing to chase nearby: on the menu, small enough to swallow, in the same water
-  findPrey(f) {
-    const D = f.def, F = D.diet.food, gape = f.len * (0.22 + 0.3 * D.body.head.mouth), reach = 5 + 8 * Math.min(1, f.len * 2);
-    if (F.fish && D.diet.piscivore_from_cm && f.lengthCm < D.diet.piscivore_from_cm && !F.crayfish && !F.shrimp) return null;
-    let best = null, bs = 0;
-    this.fishAround(f.x, f.y, reach, g => {   // only fish in the grid cells within reach
-      if (g === f || g.dead || g.kd !== f.kd || g.len > gape || g.len < f.len * 0.06) return;
-      const cat = preyFood(g.def); if (!cat || !F[cat]) return;
-      if (cat === 'fish' && D.diet.piscivore_from_cm && f.lengthCm < D.diet.piscivore_from_cm) return;
-      const d = Math.hypot(g.x - f.x, g.y - f.y); if (d > reach) return;
-      const sc = F[cat] / (1 + d * 0.4) * (g.stress < 0.3 ? 1.3 : 1) * (g.def === D ? 0.3 : 1);
-      if (sc > bs) { bs = sc; best = g; }
-    });
-    return best;
-  },
-  fishEat(f, q = f.mealQ ?? 0.5) {
-    f.hunger = Math.max(0, f.hunger - 0.1 - 0.5 * q - 0.1 * Math.random()); f.gulp = 1; f.tries = 0;
-    if (f.zone === 'surface' && CONFIG.fishRises) { // a rise: rings and a few drops
-      this.addRipple(f.x, f.y, 0.3 + 0.6 * Math.min(1, f.len * 1.6));
-      for (let k = 0; k < 4 + f.len * 12; k++) this.spawn(DROP, f.x + this.rnd(-0.1, 0.1), f.y + this.rnd(-0.1, 0.1), f.wl, this.rnd(-0.5, 0.5), this.rnd(-0.5, 0.5), this.rnd(1, 2.2), this.rnd(0.3, 0.5), 0.03);
-      Game.emit('fishRise', f);
-    }
-    Game.emit('fishFeed', f, f.zone);
-    f.state = 'rest'; f.zone = null; f.tNext = 0.5 + Math.random() * 2;
-  },
-  fishStep(f, dt) {
-    const D = f.def, B = D.behavior, P = this.P;
-    // metabolism: hunger grows with the meals it needs a day, much slower in cold water (Q10 ~ 2)
-    const dtH = this.dtH * dt / Math.max(1e-6, this.frameDt || dt);   // game hours in this step (a far fish's step covers several frames)
-    const metab = f.metab ?? (f.metab = clamp(2 ** (((f.temp ?? 15) - D.habitat.temperature_c.optimal) / 10), 0.12, 1.3));   // refreshed when it decides
-    f.hunger = Math.min(1, f.hunger + dtH * D.diet.meals_per_day / 24 * 0.9 * metab);
-    f.stress = Math.max(0, f.stress - dt / B.recover_s);
-    // threats: someone swimming or wading close, someone moving on the bank above shallow fish, splashes, a predator
-    // closing in. Rain on the surface, muddy water and low light hide you; bright calm days don't.
-    const d = Math.hypot(f.x - P.x, f.y - P.y), hide = (1 - 0.35 * ENV.rain) * (f.kd >= RIVER ? 1 - 0.35 * ENV.turb : 1) * (0.7 + 0.3 * ENV.light);
-    const sp = B.spook_m * (0.6 + 0.8 * f.sizeRank) * (0.5 + B.wariness) * hide;
-    let th = 0;
-    if (this.swim || this.wade > 0.05) th = d < sp ? 1 - d / sp : 0;
-    else if (this.moving && d < sp * 0.6 && f.wl - f.z < 1.5) th = 0.5 * (1 - d / (sp * 0.6));
-    if (th > 0) { f.thx = P.x; f.thy = P.y; }
-    for (const n of this.noises) { if (this.time - n.t > 0.4) continue; const r = sp * n.s, dn = Math.hypot(f.x - n.x, f.y - n.y); if (dn < r && (1 - dn / r) * Math.min(1, n.s) > th) { th = (1 - dn / r) * Math.min(1, n.s); f.thx = n.x; f.thy = n.y; } }
-    if (f.chaser && this.time - f.chasedT < 0.4 && !f.chaser.dead) { // being hunted: it notices if it's alert and close enough
-      const c = f.chaser, dc = Math.hypot(c.x - f.x, c.y - f.y), see = (2 + 4 * B.wariness) * (0.6 + 0.4 * ENV.light);
-      if (dc < see && 1 - dc / see > th) { th = (1 - dc / see) * 0.9; f.thx = c.x; f.thy = c.y; }
-    }
-    if (th > 0) { const was = f.stress; f.stress = Math.min(1, f.stress + th * (0.3 + B.wariness) * dt * 5); if (was <= 0.5 && f.stress > 0.5) f.tNext = 0; }
-    if ((f.tNext -= dt) <= 0) this.fishDecide(f);
-    if (!D._benthic && f.state !== 'flee' && f.state !== 'forage' && f.state !== 'hunt' && f.state !== 'lure' && f.wl - f.ground < 8 && !ENV.iced(f.kd, f.wl - f.ground, f.x, f.y)
-      && Math.random() < B.rise_per_hour * f.act * dtH * (0.2 + 1.8 * ENV.hatch) * sstep(5, 12, f.temp ?? 15)) { // takes something off the top (most during a hatch)
-      f.mealQ = 0.25 + 0.5 * ENV.hatch;
-      f.state = 'forage'; f.zone = 'surface'; f.tx = f.x + this.rnd(-1.5, 1.5); f.ty = f.y + this.rnd(-1.5, 1.5); f.tz = f.wl - 0.1; f.tNext = 6;
-    }
-    if (D._air && this.mammalStep(f, dt)) return;   // breathing, and leaping clear of the water
-    let tx = f.tx, ty = f.ty, tz = f.tz;
-    if (f.state === 'school' && f.leader) { const L = f.leader, c = Math.cos(L.a), s = Math.sin(L.a); tx = L.x + c * f.ox - s * f.oy; ty = L.y + s * f.ox + c * f.oy; tz = L.z + f.oz; }
-    if (f.state === 'hunt') { // stalk, then lunge, leading the prey a little
-      const g = f.prey;
-      if (!g || g.dead || Math.hypot(g.x - f.x, g.y - f.y) > 18) { f.state = 'rest'; f.prey = null; f.tNext = 1 + Math.random() * 2; }
-      else { const lead = Math.min(1, Math.hypot(g.x - f.x, g.y - f.y) / 3) * 0.4; tx = g.x + Math.cos(g.a) * g.spd * g.len * lead; ty = g.y + Math.sin(g.a) * g.spd * g.len * lead; tz = g.z; g.chaser = f; g.chasedT = this.time; }
-    }
-    if (f.state === 'lure') { // following your lure or bait in
-      const A = f.rod && f.rod === this.ang2 ? f.rod : this.ang, L = A && A.lure;   // the rod whose bait it noticed (fishing/two-rods.js)
-      if (!L || A.phase !== 'water' || A.fish || L.land) { f.state = 'rest'; f.tNext = 0.5 + Math.random(); }
-      else { tx = L.x; ty = L.y; tz = L.z; }
-    }
-    const dist = Math.hypot(tx - f.x, ty - f.y);
-    let want;   // swimming speed (body lengths a second) for what it's doing; only the current behaviour is worked out
-    switch (f.state) {
-      case 'rest': want = 0.12; break;
-      case 'cruise': want = B.cruise_bl_s * (0.6 + 0.4 * f.act); break;
-      case 'hold': want = 0.25; break;
-      case 'forage': want = B.ambush > 0.5 && dist < 3 ? B.burst_bl_s : B.cruise_bl_s * 1.8; break;
-      case 'flee': want = B.burst_bl_s; break;
-      case 'hunt': want = dist < 2.5 + f.len * 3 ? B.burst_bl_s : B.cruise_bl_s * (B.ambush > 0.5 ? 0.6 : 1.6); break;
-      case 'breathe': want = B.cruise_bl_s * 1.1; break;
-      case 'haul': want = Math.max(B.cruise_bl_s, 0.35 / f.len); break;   // heading for the bank: at least ~0.35 m/s, so a turtle gets there
-      case 'lure': { const L = ((f.rod && f.rod === this.ang2 ? f.rod : this.ang) || {}).lure;   // the lure of the rod it's following
-        want = Math.min(B.burst_bl_s * (L && L.spd > 1.2 ? 1 : 0.5), Math.max(B.cruise_bl_s * 2.5, (dist < 1.2 ? 0.35 : 0.7) / f.len, L ? L.spd * 1.3 / f.len : 0)); break; }   // a trolled lure gets run down flat out
-      case 'school': want = f.leader ? Math.max(0.2, f.leader.spd * f.leader.len / f.len) + dist * 0.5 / f.len : B.cruise_bl_s; break;
-      default: want = 0.5;
-    }
-    let desired = Math.atan2(ty - f.y, tx - f.x);
-    if (B.burst_bl_s <= 0) { want = 0; desired = f.a; }   // sessile (burst_bl_s 0, e.g. giant clam): never moves or turns
-    if (dist < Math.max(0.35, f.len * 0.8) && Math.abs(tz - f.z) < 0.4) { // arrived
-      if (f.state !== 'school') { want = 0.04; desired = f.a; }
-      if (f.state === 'forage') { // did it find anything? richer spots pay off more often
-        if (Math.random() < 0.3 + 0.7 * (f.mealQ ?? 0.5) || (f.tries || 0) > 3) this.fishEat(f); else { f.state = 'rest'; f.tNext = 0.3 + Math.random(); }
-      } else if (f.state === 'hunt') this.fishStrike(f);
-      else if (f.state === 'lure') this.lureArrive(f);
-      else if (f.state === 'cruise') f.tNext = Math.min(f.tNext, 0.5 + Math.random());
-    }
-    if (f.state === 'hold' && f.cur > 0.05 && dist < 2) desired = Math.atan2(-f.fy, -f.fx);   // nose into the current
-    if (f.land) want = Math.min(want, 0.3);   // seals hump along slowly ashore
-    const da = Math.atan2(Math.sin(desired - f.a), Math.cos(desired - f.a)), tr = B.turn_rate * (f.state === 'flee' ? 1.8 : 1);
-    f.a += clamp(da, -tr * dt, tr * dt);
-    f.spd += (want * (Math.abs(da) > 1.5 ? 0.4 : 1) - f.spd) * Math.min(1, dt * (f.state === 'flee' || f.state === 'forage' ? 6 : 1.8));
-    const v = f.spd * f.len; let nx = f.x + Math.cos(f.a) * v * dt, ny = f.y + Math.sin(f.a) * v * dt;
-    if (f.cur > 0.05 && f.state !== 'hold') { nx += f.fx * 0.3 * dt; ny += f.fy * 0.3 * dt; }   // the current carries it a little
-    sample(nx, ny); const dep = SW - hW(SE);
-    // seals and sea lions may cross the shoreline when hauling out (or heading back in): low, gentle ground only
-    const amph = B.haul_out > 0 && (f.state === 'haul' || f.land), ok = amph ? (dep > -2.2 && hW(SE) - f.ground < 0.7 && (SK === f.kd || dep < 0)) : dep >= Math.max(0.18, f.len * 0.35) && SK === f.kd;
-    if (!ok) { f.a += (Math.random() < 0.5 ? 1 : -1) * 1.2; f.spd *= 0.3; if (f.state !== 'school') f.tNext = Math.min(f.tNext, 0.3); }
-    else { f.x = nx; f.y = ny; f.wl = SW; f.ground = SW - dep;
-      if (B.haul_out > 0) { const ic = ENV.iced(SK, dep, nx, ny); f.land = dep < f.len * 0.3 || ic; if (ic) f.ground = SW; } }   // on an ice floe the 'ground' is the ice
-    const lo = f.ground + (D._jelly && !D._benthic ? f.len * 0.2 : Math.max(0.01, -f.def._zmin * f.len)) + 0.01, hi = Math.max(lo, f.wl - (f.state === 'breathe' ? f.len * 0.035 : 0.08));   // a breathing whale's back breaks the surface
-    const vz = Math.min(0.6, Math.max(0.02, B.burst_bl_s * f.len * 0.5)) * dt, z0 = f.z;   // a clam doesn't bob up and down like a trout
-    f.z = D._benthic ? lo : clamp(f.z + clamp(clamp(tz, lo, hi) - f.z, -vz, vz), lo, hi);
-    // pitch: nose up when climbing, down when diving (not for things lying on the bottom or ashore)
-    const ptg = D._benthic || D._jelly || f.land || D.body.lie ? 0 : clamp(Math.atan2((f.z - z0) / Math.max(dt, 1e-3), Math.max(0.15, v)), -0.6, 0.6);
-    f.pitch = (f.pitch || 0) + (ptg - (f.pitch || 0)) * Math.min(1, dt * 3);
-    const beat = 1.6 + 2.2 * Math.min(6, f.state === 'hold' ? f.cur / f.len * 0.6 + 0.4 : f.spd);   // tail beats faster when working
-    f.ph = (f.ph + dt * beat * 3.1416) % 6.2832;
-    // mouth: slow breathing (faster when frightened), wide open closing on food, a snap when it eats
-    f.gulp = Math.max(0, (f.gulp || 0) - dt * 3); f.bph = ((f.bph ?? f.tint * 9) + dt * (1.6 + 3 * f.stress)) % 6.2832;
-    f.open = typeof f.mouthOpen === 'number' ? clamp(f.mouthOpen, 0, 1)
-      : B.burst_bl_s <= 0 ? (f.open ?? 0.8) + ((f.stress > 0.3 ? 0.05 : 0.8) - (f.open ?? 0.8)) * Math.min(1, dt * 0.4)   // sessile: gapes wide, slowly shuts when disturbed
-      : Math.max(0.06 + 0.07 * (0.5 + 0.5 * Math.sin(f.bph)), f.state === 'forage' && dist < Math.max(1, f.len * 3) ? 0.75 : 0, Math.sin(Math.min(1, f.gulp) * 3.1416) * 0.9);
-  },
-  // air breathers: when the breath runs out, swim up and breathe at the surface (whales and dolphins blow), now and
-  // then leap clear of the water. Returns true while airborne (it moves itself).
-  mammalStep(f, dt) {
-    const B = f.def.behavior;
-    if (f.leapV !== undefined) {
-      const sp = Math.max(f.spd, B.burst_bl_s * 0.5) * f.len, nx = f.x + Math.cos(f.a) * sp * dt, ny = f.y + Math.sin(f.a) * sp * dt;
-      sample(nx, ny); if (SW - hW(SE) > f.len * 0.5 && SK === f.kd) { f.x = nx; f.y = ny; } else f.a += 2 * dt;
-      f.leapV -= 9.8 * dt; f.z += f.leapV * dt; f.pitch = clamp(Math.atan2(f.leapV, sp), -1.1, 1.1); f.ph = (f.ph + dt * 7) % 6.2832;
-      if (f.leapV < 0 && f.z < f.wl - f.len * 0.12) { // splashdown
-        this.addRipple(f.x, f.y, 0.6 + Math.min(2, f.len)); this.disturb(f.x, f.y, Math.min(2, 0.4 + f.len * 0.3));
-        for (let k = 0; k < 10 + Math.min(80, f.len * 25); k++) this.spawn(DROP, f.x + this.rnd(-0.4, 0.4) * f.len * 0.3, f.y + this.rnd(-0.4, 0.4) * f.len * 0.3, f.wl, this.rnd(-2, 2), this.rnd(-2, 2), this.rnd(2, 4 + f.len), this.rnd(0.5, 1.2), 0.05);
-        f.leapV = undefined; f.z = f.wl - f.len * 0.25; f.pitch = -0.4;
-      }
-      return true;
-    }
-    if (f.land) { f.air = B.breath_hold_s; return false; }
-    if (f.state !== 'breathe') { f.air -= dt * (f.state === 'flee' || f.state === 'hunt' ? 1.6 : 1); if (f.air <= 0) { f.state = 'breathe'; f.surfT = 0; f.blew = false; f.tNext = 60; } }
-    if (f.state !== 'breathe') return false;
-    f.tx = f.x + Math.cos(f.a) * f.len * 3; f.ty = f.y + Math.sin(f.a) * f.len * 3; f.tz = f.wl;
-    if (f.wl - f.z > f.len * 0.12 + 0.2) return false;
-    if (!f.blew) { // the blow: a burst of spray from the blowhole
-      f.blew = true; this.addRipple(f.x, f.y, 0.3 + Math.min(1.5, f.len * 0.3));
-      if (B.blow > 0) for (let k = 0; k < 6 + 40 * B.blow; k++) this.spawn(STEAM, f.x + Math.cos(f.a) * f.len * 0.3 + this.rnd(-0.15, 0.15), f.y + Math.sin(f.a) * f.len * 0.3 + this.rnd(-0.15, 0.15), f.wl + 0.1, this.rnd(-0.4, 0.4), this.rnd(-0.4, 0.4), this.rnd(1.5, 2.5 + 6 * B.blow), this.rnd(1, 2.4), 0.1 + 0.6 * B.blow);
-      Game.emit('mammalBlow', f);
-    }
-    f.surfT += dt;
-    if (B.leap_per_hour > 0 && Math.random() < B.leap_per_hour * this.dtH * dt / Math.max(1e-6, this.frameDt || dt)) { // a leap (dolphins often; a whale's breach now and then)
-      const h = clamp(f.len * (0.35 + 0.7 * Math.random()), 0.5, 6); f.leapV = Math.sqrt(2 * 9.8 * h); f.z = f.wl - f.len * 0.1; f.spd = B.burst_bl_s * 0.6;
-      this.addRipple(f.x, f.y, 0.5 + Math.min(1.5, f.len * 0.3)); Game.emit('mammalLeap', f); return true;
-    }
-    if (f.surfT > B.surface_s) { f.air = B.breath_hold_s * (0.6 + 0.8 * Math.random()); f.state = 'cruise'; f.tNext = 0; }
-    return false;
-  },
-  // a low, gentle bit of shore near a seal to haul out on (null if none)
-  shoreSpot(f, R) {
-    for (let k = 0; k < 16; k++) {
-      const a = Math.random() * 6.2832, r = R * Math.sqrt(Math.random()), x = f.x + Math.cos(a) * r, y = f.y + Math.sin(a) * r;
-      sample(x, y); const g = hW(SE), dep = SW - g;
-      if (dep > -1.1 && dep < -0.12 && Math.abs(groundAt(x + 1.5, y) - groundAt(x - 1.5, y)) < 0.7 && Math.abs(groundAt(x, y + 1.5) - groundAt(x, y - 1.5)) < 0.7) return { x, y, z: g };
-      if (SK === f.kd && dep > 0.3 && ENV.iced(SK, dep, x, y)) return { x, y, z: SW, ice: true };   // an ice floe will do
-    }
-    return null;
-  },
+  pickZone(w) { return SIM.pickZone(FISH_CTX, w); },
+  zoneZ(f, zone, wl, g, kind) { return SIM.zoneZ(FISH_CTX, f, zone, wl, g, kind); },
+  fishSpot(f, cx, cy, radius, n, score) { return SIM.fishSpot(FISH_CTX, f, cx, cy, radius, n, score); },
+  fishDecide(f) { SIM.fishDecide(FISH_CTX, f); },
+  findPrey(f) { return SIM.findPrey(FISH_CTX, f); },
+  fishEat(f, q) { SIM.fishEat(FISH_CTX, f, q); },
+  fishStep(f, dt) { SIM.fishStep(FISH_CTX, f, dt); },
+  mammalStep(f, dt) { return SIM.mammalStep(FISH_CTX, f, dt); },
+  shoreSpot(f, R) { return SIM.shoreSpot(FISH_CTX, f, R); },
 });
 </script>
 <script>
@@ -6211,21 +6742,8 @@ Object.assign(Engine, {
     this.say(`${n > 1 ? n + ' × ' : ''}${D.name}${at}`, 3); Game.emit('spawn', made);
     return made;
   },
-  // a predator reaches its prey: a lunge that may miss (alert prey and open water favour the prey)
-  fishStrike(f) {
-    const g = f.prey, B = f.def.behavior; f.prey = null;
-    if (!g || g.dead) { f.state = 'rest'; f.tNext = 1; return; }
-    const p = clamp(0.25 + 0.35 * B.ambush + 0.3 * (1 - g.stress) - 0.15 * g.def.behavior.wariness + 0.15 * (1 - ENV.light), 0.08, 0.9);
-    if (Math.random() < p) {
-      // Queries and rendering skip dead animals immediately. Compact once in
-      // syncFishCells instead of copying/scanning the population on every kill.
-      g.dead = true; g.eatenBy = f.id;
-      if (g.wl - g.z < 0.8) { this.addRipple(g.x, g.y, 0.5 + f.len); for (let k = 0; k < 6 + f.len * 20; k++) this.spawn(DROP, g.x + this.rnd(-0.2, 0.2), g.y + this.rnd(-0.2, 0.2), g.wl, this.rnd(-1, 1), this.rnd(-1, 1), this.rnd(1.5, 3), this.rnd(0.3, 0.6), 0.035); }
-      this.disturb(g.x, g.y, 0.25);
-      Game.emit('fishEaten', f, g);
-      f.zone = 'mid'; this.fishEat(f, 0.9 + Math.min(1, g.len / f.len));
-    } else { g.stress = 1; g.thx = f.x; g.thy = f.y; g.tNext = 0; f.state = 'rest'; f.tNext = 1 + Math.random() * 3; }
-  },
+  // a predator reaches its prey: a lunge that may miss (src/sim/behaviour.js)
+  fishStrike(f) { SIM.fishStrike(FISH_CTX, f); },
   // fish within `r` of (x, y), from an 8 m grid rebuilt each frame: callback per fish (may stop early by returning true)
   fishAround(x, y, r, fn) {
     const G = this.fishGrid; if (!G) return; const c = 8, x0 = Math.floor((x - r) / c), x1 = Math.floor((x + r) / c), y0 = Math.floor((y - r) / c), y1 = Math.floor((y + r) / c);
@@ -8934,7 +9452,7 @@ Object.assign(Engine, {
     sample(x, y); f.x = x; f.y = y; f.kd = SK; f.wl = SW; f.ground = hW(SE); f.z = Math.max(f.ground + 0.05, SW - Math.max(0.15, f.len * 0.4)); f.roll = 0; f.pitch = 0; f.land = false; f.hooked = false; f.held = f.stored = false;
     f.state = 'flee'; f.stress = 1; f.thx = this.P.x; f.thy = this.P.y; f.tNext = 0; f.lureCool = this.time + 300; this.splash(f.x, f.y, f.wl, 8);
     // back among the water's own fish: in the list of the cell it went in at, and no longer marked as taken
-    if (this.fishGone && this.fishGone[f.id]) { delete this.fishGone[f.id]; try { localStorage.setItem(this.goneKey(), JSON.stringify(this.fishGone)); } catch (e) { /* */ } }
+    this.fishLedger.restore(f.id);
     for (const c of this.fishCells.values()) { const i = c.fish.indexOf(f); if (i >= 0) c.fish.splice(i, 1); }
     { const c = this.fishCells.get(Math.floor(x / FISH_CELL) + ',' + Math.floor(y / FISH_CELL)) || this.fishCells.values().next().value; if (c) c.fish.push(f); if (!this.fish.includes(f)) this.fish.push(f); }
   },
@@ -10877,7 +11395,7 @@ const Birds = globalThis.Birds = (() => {
 
   // =================== perches ===================
   const providers = new Map();
-  const FEAR = 2;   // scales every species' shy (and, × 0.9, wary) distance: birds keep well clear of you
+  const FEAR = OWSim.FEAR;   // scales every species' shy (and, × 0.9, wary) distance: birds keep well clear of you (src/sim/birds.js)
   let boatIds = 0;
   const boatId = b => b._birdId || (b._birdId = ++boatIds);
   function boatPerches(b) {   // the bow, the transom (beside an outboard), the gunwales fore and aft, clear of where you sit
@@ -11310,7 +11828,7 @@ const Birds = globalThis.Birds = (() => {
       }
       if (hit) {
         Game.splash(b.x, b.y, Fo.splash); Game.ripple(b.x, b.y, Fo.ripple);
-        if (Fo.scare) for (const fi of Game.fishNear(b.x, b.y, Fo.scare)) { fi.stress = 1; fi.thx = b.x; fi.thy = b.y; fi.tNext = 0; }   // the fish below scatter
+        if (Fo.scare) OWSim.birdScatter(Game.fishNear(b.x, b.y, Fo.scare), b.x, b.y, Fo.scare);   // the fish below scatter
         Game.emit('birdDive', b, b.x, b.y); b.roll = 0;
         if (Fo.under > 0) { b.st = 'under'; b.lt = 0; b.v = b.vz = 0; } else after();
         return;
@@ -11320,8 +11838,8 @@ const Birds = globalThis.Birds = (() => {
     perched(b, dt, night) {   // floating, or standing on whatever it came down on (riding it if it moves)
       const s = b.spot, P = Engine.P, bt = Engine.boat, p = Perches.at(s);
       if (p.gone) { this.takeoff(b); return; }
-      const near = Math.hypot(b.x - P.x, b.y - P.y), d3 = Math.hypot(near, b.z - P.z - 1), roost = b.sp.night === 'roost';
-      const sh = b.sp.shy * FEAR, shy = s.bold ? d3 < 2.5 : s.high ? d3 < sh * 0.75 : near < (bt && Math.abs(bt.speed || 0) > 1.5 ? sh * 2.2 : Engine.swim ? sh * 0.65 : sh);
+      const roost = b.sp.night === 'roost';
+      const shy = OWSim.birdSpooked(b.sp, s, b, { x: P.x, y: P.y, z: P.z, boatSpeed: bt ? bt.speed : 0, swimming: Engine.swim });   // too close (src/sim/birds.js)
       if (shy || (p.speed || 0) > (s.flushSpeed ?? 1e9) || ((!night || !roost) && b.lt > b.stay) || (!night && b.stay > 1e8 && rnd() < dt / 40)) { this.takeoff(b); return; }   // at dawn they drift off one by one
       if (s.pose === 'float') {
         const wa = (ENV.windDir ?? 0.8) + Math.PI; b.a += wrap(wa + 0.6 * Math.sin(b.wob + Engine.time * 0.03) - b.a) * Math.min(1, dt * 0.2);   // head to wind
@@ -11357,8 +11875,8 @@ const Birds = globalThis.Birds = (() => {
       b.flap = b.want = false; b.spot = null;
       let land = b.st === 'stand';
       const near = Math.hypot(b.x - P.x, b.y - P.y), seaward = land && b.lt > b.stay;
-      if (land && S && near < sp.shy * FEAR && !b.flee) { b.flee = true; b.lt = b.stay + 1;   // too close: off to the water, the far side from you
-        b.tgt = null; let best = -1; for (const q of S.sea) { const d = Math.hypot(q[0] - P.x, q[1] - P.y); if (d > best) { best = d; b.tgt = { x: q[0], y: q[1] }; } } }
+      if (land && S && OWSim.flightlessSpooked(sp, near) && !b.flee) { b.flee = true; b.lt = b.stay + 1;   // too close: off to the water, the far side from you
+        b.tgt = OWSim.fleeSpot(S.sea, P); }
       if (!b.tgt && (b.idle -= dt) <= 0) {   // where next: about the colony, or out to sea / back ashore when it's time
         const q = land ? pick(seaward ? S?.sea : S?.land) : pick(b.lt > b.stay ? S?.land : S?.sea);
         if (q) b.tgt = { x: q[0] + (rnd() - 0.5) * 2, y: q[1] + (rnd() - 0.5) * 2 }; b.idle = land ? 2 + rnd() * 8 : 0; }

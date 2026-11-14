@@ -30,7 +30,7 @@ for line in (SRC / 'index.html').read_text(encoding='utf-8').splitlines(keepends
 OUT.write_text(''.join(out), encoding='utf-8')
 print(f'Built {OUT.name} from {len(used)} files')
 for p in sorted(SRC.rglob('*')):
-    if p.is_file() and (rel := p.relative_to(SRC).as_posix()) != 'index.html' and rel not in used:
+    if p.is_file() and p.suffix != '.md' and (rel := p.relative_to(SRC).as_posix()) != 'index.html' and rel not in used:   # (notes such as sim/README.md are not game files)
         print(f'  warning: {rel} is not listed in src/index.html, so it is not in the build')
 
 if '--shots' in sys.argv:   # screenshots of the fresh build, in Electron (installed by: cd electron && npm install)
