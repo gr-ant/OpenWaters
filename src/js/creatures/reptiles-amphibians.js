@@ -209,25 +209,17 @@ function planMesh(D) {
 
 
 // ---- registry ----
-const HERP_PLANS = ['turtle', 'crocodilian', 'lizard', 'salamander', 'snake', 'frog'];
+const HERP_PLANS = OWSim.HERP_PLANS;
 const FishDB = {
   list: [], byId: {}, gpu: [], revision: 0,
   register(raw, { save = false, quiet = false } = {}) {
     const r = validateFish(raw);
     if (!r.def) { if (!quiet) console.warn('Fish rejected:', raw && raw.id, r.errors); return r; }
     const d = r.def;
-    d._act = typeof d.activity.pattern === 'string' ? ACTIVITY_PRESETS[d.activity.pattern] : d.activity.pattern.map(v => clamp(v, 0, 1));
     // the mesh (and its lowest point) is built the first time something needs it: a species nobody meets costs nothing
     Object.defineProperty(d, '_mesh', { configurable: true, get: () => FishDB.mesh(d).m });
     Object.defineProperty(d, '_zmin', { configurable: true, get: () => FishDB.mesh(d).zmin });   // lowest point (model units): rests on the bed
-    d._herp = HERP_PLANS.includes(d.body.plan);   // reptiles and amphibians
-    d._shell = !!d.body.plan && !['fish', 'ray', 'pinniped'].includes(d.body.plan) && !d._herp;   // rays and mammals count with fishAbundance, herps with herpAbundance
-    d._air = d.behavior.breath_hold_s > 0;   // breathes air: surfaces to blow, may leap, may haul out
-    d._hid = [...d.id].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261) >>> 0;   // stable per-species seed (all 32 bits: 16 gave two species the same one)
-    d._needCover = (d.habitat.cover_required || 0) >= 0.5 ? Object.keys(d.habitat.cover).filter(k => k !== 'open').sort((a, b) => d.habitat.cover[b] - d.habitat.cover[a])[0] : null;   // e.g. a clownfish's anemone
-    d._jelly = d.body.plan === 'jelly';   // drawn see-through in their own pass; may sting
-    d._benthic = ['bivalve', 'snail', 'crab', 'lobster', 'octopus'].includes(d.body.plan) || (['ray', 'jelly'].includes(d.body.plan) && d.body.parts.bottom >= 0.5);   // crawlers, sessile animals and stingrays live on the bed
-    const L = d.size.length_cm; d._mu = Math.log(L.typical); d._sig = L.spread;
+    OWSim.deriveSpecies(d);   // the fields the simulation reads (_act, _herp, _shell, _air, _hid, _needCover, _jelly, _benthic, _mu, _sig): src/sim/species.js
     const old = this.byId[d.id];
     if (old) { const i = this.list.indexOf(old); this.list[i] = d; if (this.gpu[i]) this.gpu[i].stale = true; } else this.list.push(d);
     this.byId[d.id] = d; this.revision++;
@@ -241,10 +233,7 @@ const FishDB = {
     return (d.__mesh = { m, zmin });
   },
   // species that can live in each kind of water on this island's climate, in list order (so cells come out the same as scoring every species)
-  byKind(kind) {
-    if (this._kindRev !== this.revision) { this._kindRev = this.revision; this._kind = WATER_KEYS.map(W => this.list.map((D, si) => [D, si]).filter(([D]) => (D.habitat.waters[W] || 0) > 0 && (!D.habitat.climates || D.habitat.climates.includes(CLIMATE.key))).sort((a, b) => (a[0]._shell ? 2 : a[0]._herp ? 1 : 0) - (b[0]._shell ? 2 : b[0]._herp ? 1 : 0))); }   // fish first: a cell fills in this order
-    return this._kind[kind] || [];
-  },
+  byKind(kind) { return OWSim.speciesByKind(this, kind, CLIMATE.key); },   // fish first: a cell fills in this order
   saved() { try { const s = JSON.parse(localStorage.getItem('embercrown-fish-defs') || '{}'); return s && typeof s === 'object' && !Array.isArray(s) ? s : {}; } catch (e) { return {}; } },
   forget(id) { const s = this.saved(); delete s[id]; try { localStorage.setItem('embercrown-fish-defs', JSON.stringify(s)); } catch (e) { /* */ } },
 };
