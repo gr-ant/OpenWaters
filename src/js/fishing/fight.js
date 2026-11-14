@@ -191,7 +191,7 @@ Object.assign(Engine, {
     sample(x, y); f.x = x; f.y = y; f.kd = SK; f.wl = SW; f.ground = hW(SE); f.z = Math.max(f.ground + 0.05, SW - Math.max(0.15, f.len * 0.4)); f.roll = 0; f.pitch = 0; f.land = false; f.hooked = false; f.held = f.stored = false;
     f.state = 'flee'; f.stress = 1; f.thx = this.P.x; f.thy = this.P.y; f.tNext = 0; f.lureCool = this.time + 300; this.splash(f.x, f.y, f.wl, 8);
     // back among the water's own fish: in the list of the cell it went in at, and no longer marked as taken
-    if (this.fishGone && this.fishGone[f.id]) { delete this.fishGone[f.id]; try { localStorage.setItem(this.goneKey(), JSON.stringify(this.fishGone)); } catch (e) { /* */ } }
+    this.fishLedger.restore(f.id);
     for (const c of this.fishCells.values()) { const i = c.fish.indexOf(f); if (i >= 0) c.fish.splice(i, 1); }
     { const c = this.fishCells.get(Math.floor(x / FISH_CELL) + ',' + Math.floor(y / FISH_CELL)) || this.fishCells.values().next().value; if (c) c.fish.push(f); if (!this.fish.includes(f)) this.fish.push(f); }
   },
