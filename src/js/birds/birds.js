@@ -159,7 +159,7 @@ const Birds = globalThis.Birds = (() => {
 
   // =================== perches ===================
   const providers = new Map();
-  const FEAR = 2;   // scales every species' shy (and, × 0.9, wary) distance: birds keep well clear of you
+  const FEAR = OWSim.FEAR;   // scales every species' shy (and, × 0.9, wary) distance: birds keep well clear of you (src/sim/birds.js)
   let boatIds = 0;
   const boatId = b => b._birdId || (b._birdId = ++boatIds);
   function boatPerches(b) {   // the bow, the transom (beside an outboard), the gunwales fore and aft, clear of where you sit
@@ -592,7 +592,7 @@ const Birds = globalThis.Birds = (() => {
       }
       if (hit) {
         Game.splash(b.x, b.y, Fo.splash); Game.ripple(b.x, b.y, Fo.ripple);
-        if (Fo.scare) for (const fi of Game.fishNear(b.x, b.y, Fo.scare)) { fi.stress = 1; fi.thx = b.x; fi.thy = b.y; fi.tNext = 0; }   // the fish below scatter
+        if (Fo.scare) OWSim.birdScatter(Game.fishNear(b.x, b.y, Fo.scare), b.x, b.y, Fo.scare);   // the fish below scatter
         Game.emit('birdDive', b, b.x, b.y); b.roll = 0;
         if (Fo.under > 0) { b.st = 'under'; b.lt = 0; b.v = b.vz = 0; } else after();
         return;
@@ -602,8 +602,8 @@ const Birds = globalThis.Birds = (() => {
     perched(b, dt, night) {   // floating, or standing on whatever it came down on (riding it if it moves)
       const s = b.spot, P = Engine.P, bt = Engine.boat, p = Perches.at(s);
       if (p.gone) { this.takeoff(b); return; }
-      const near = Math.hypot(b.x - P.x, b.y - P.y), d3 = Math.hypot(near, b.z - P.z - 1), roost = b.sp.night === 'roost';
-      const sh = b.sp.shy * FEAR, shy = s.bold ? d3 < 2.5 : s.high ? d3 < sh * 0.75 : near < (bt && Math.abs(bt.speed || 0) > 1.5 ? sh * 2.2 : Engine.swim ? sh * 0.65 : sh);
+      const roost = b.sp.night === 'roost';
+      const shy = OWSim.birdSpooked(b.sp, s, b, { x: P.x, y: P.y, z: P.z, boatSpeed: bt ? bt.speed : 0, swimming: Engine.swim });   // too close (src/sim/birds.js)
       if (shy || (p.speed || 0) > (s.flushSpeed ?? 1e9) || ((!night || !roost) && b.lt > b.stay) || (!night && b.stay > 1e8 && rnd() < dt / 40)) { this.takeoff(b); return; }   // at dawn they drift off one by one
       if (s.pose === 'float') {
         const wa = (ENV.windDir ?? 0.8) + Math.PI; b.a += wrap(wa + 0.6 * Math.sin(b.wob + Engine.time * 0.03) - b.a) * Math.min(1, dt * 0.2);   // head to wind
@@ -639,8 +639,8 @@ const Birds = globalThis.Birds = (() => {
       b.flap = b.want = false; b.spot = null;
       let land = b.st === 'stand';
       const near = Math.hypot(b.x - P.x, b.y - P.y), seaward = land && b.lt > b.stay;
-      if (land && S && near < sp.shy * FEAR && !b.flee) { b.flee = true; b.lt = b.stay + 1;   // too close: off to the water, the far side from you
-        b.tgt = null; let best = -1; for (const q of S.sea) { const d = Math.hypot(q[0] - P.x, q[1] - P.y); if (d > best) { best = d; b.tgt = { x: q[0], y: q[1] }; } } }
+      if (land && S && OWSim.flightlessSpooked(sp, near) && !b.flee) { b.flee = true; b.lt = b.stay + 1;   // too close: off to the water, the far side from you
+        b.tgt = OWSim.fleeSpot(S.sea, P); }
       if (!b.tgt && (b.idle -= dt) <= 0) {   // where next: about the colony, or out to sea / back ashore when it's time
         const q = land ? pick(seaward ? S?.sea : S?.land) : pick(b.lt > b.stay ? S?.land : S?.sea);
         if (q) b.tgt = { x: q[0] + (rnd() - 0.5) * 2, y: q[1] + (rnd() - 0.5) * 2 }; b.idle = land ? 2 + rnd() * 8 : 0; }
