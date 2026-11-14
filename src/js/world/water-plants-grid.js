@@ -98,9 +98,5 @@ function coverAt(x, y, r = 4, live = true) {
   c.open = Math.max(0, 1 - c.rocks - c.weeds - c.reeds - c.lilies - c.wood - c.coral);
   return c;
 }
-// preference curves: 1 at the preferred value, falling off to the limits (0 beyond them)
-const fitRange = (v, lo, opt, hi) => v < lo || v > hi ? 0 : 1 - 0.88 * ((v - opt) / Math.max(1e-3, v < opt ? opt - lo : hi - opt)) ** 2;
-function currentFit(c, H) { const p = H.current_ms.preferred, m = H.current_ms.max; return c > m ? 0 : c < p ? 1 - 0.6 * ((p - c) / Math.max(p, 0.3)) ** 2 : 1 - 0.85 * ((c - p) / Math.max(1e-3, m - p)) ** 2; }
-const COVER_KEYS = ['rocks', 'weeds', 'reeds', 'lilies', 'wood', 'coral', 'anemone', 'open'];
-function coverFit(c, H) { const P = H.cover; let s = 0, m = 0; for (const k of COVER_KEYS) { s += (P[k] || 0) * (c[k] || 0); m = Math.max(m, P[k] || 0); }
-  const fl = 0.25 * (1 - clamp(H.cover_required || 0, 0, 1)); return fl + (1 - fl) * Math.min(1, s / (m || 1)); }
+// preference curves (1 at the preferred value, falling off to the limits) and cover fit: src/sim/core.js
+const { fitRange, currentFit, COVER_KEYS, coverFit } = OWSim;
