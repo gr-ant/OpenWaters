@@ -1,8 +1,8 @@
 # Open Waters multiplayer server (Node, v1)
 
 A small WebSocket server for a charter room of up to ~5 players (cap 8). It is server-authoritative: the server runs the
-fish (and the bird spook decisions) on the **shared simulation** (`../src-sim/`, required from where it lives, not
-copied) on the **real island**, loaded headless from the game's own scripts. Clients only render and interpolate what
+fish (and the bird spook decisions) on the **shared simulation** (`../src/sim/` in the same repo checkout, required
+from where it lives, not copied) on the **real island**, loaded headless from the game's own scripts. Clients only render and interpolate what
 they are sent. Everything is in memory for the life of a room, with no auth and no persistence.
 
 Built Nov 14, 2026 by Claude Code (Opus 5.5). Local only: nothing pushed, nothing hosted. No game code was changed
@@ -26,31 +26,36 @@ Built Nov 14, 2026 by Claude Code (Opus 5.5). Local only: nothing pushed, nothin
 Needs Node 22 or newer (tested on v24.22.1). **No `npm install` and no dependencies.** The WebSocket server is
 `ws.js` (stdlib only), and the tests use Node's built-in `WebSocket` client and `fetch`.
 
+Run it from a repo checkout (the `multiplayer` branch), from the repo root:
+
 ```sh
-cd node-server
-node server.js            # ws://localhost:8790  (or: node server.js 9000, or PORT=9000 node server.js)
+cd OpenWaters                    # the repo root
+node node-server/server.js       # ws://localhost:8790  (or: node node-server/server.js 9000, or PORT=9000 ...)
 ```
 
-The server needs the game source for the island, species and bird JSON. By default it uses the local working copy at
-`../../../hidden_files/openwaters-repo` (relative to this folder). Set `OPENWATERS_REPO=/path/to/OpenWaters` to use
-another checkout. HTTP `GET /stats` returns per-room numbers (fish simulated, fish sent per client, birds), and
+The shared sim now comes from `src/sim/` in the same checkout (`require('../src/sim/index.js')`); there is no
+separate `src-sim/` copy. The server also needs the game source for the island, species and bird JSON. It finds it
+like this: `OPENWATERS_REPO` if set; otherwise the parent of `node-server/` if it looks like a repo root (has
+`src/index.html` and `src/sim/index.js`), which is the normal case in a checkout; otherwise the old local working copy
+`../../../hidden_files/openwaters-repo`. `OPENWATERS_REPO=/path/to/OpenWaters` is optional and only needed to point
+the island at a different checkout. HTTP `GET /stats` returns per-room numbers (fish simulated, fish sent per client, birds), and
 `GET /health` returns `ok`.
 
 The first room on a seed + climate builds the island (about 2.3 to 2.7 s for seed 42). Later rooms on the same island reuse it.
 
 ### Tests
 
+From the repo root:
+
 ```sh
-node test_two_clients.mjs                          # starts its own server on a spare port
-SERVER_URL=ws://localhost:8790 node test_two_clients.mjs   # or against one you started
-node verify_real_water.mjs 42 temperate 100        # seed, climate, minimum number of fish to check
+node tests/sim-smoke.mjs                                       # the shared sim's smoke test
+node node-server/test_two_clients.mjs                          # starts its own server on a spare port
+SERVER_URL=ws://localhost:8790 node node-server/test_two_clients.mjs   # or against one you started
+node node-server/verify_real_water.mjs 42 temperate 100        # seed, climate, minimum number of fish to check
 ```
 
-The shared sim's smoke test imports `../src/sim/index.js` and reads `src/index.html`, so it only runs with the **repo
-root** as the working directory. From `shared-sim-refactor/`, `node tests/sim-smoke.mjs` fails with
-`ERR_MODULE_NOT_FOUND .../shared-sim-refactor/src/sim/index.js`. The repo's `src/sim/*` and `tests/sim-smoke.mjs` are
-byte-identical to `../src-sim/*` and `../tests/sim-smoke.mjs` (checked), so run it in the repo:
-`cd hidden_files/openwaters-repo && node tests/sim-smoke.mjs`.
+The smoke test imports `../src/sim/index.js` and reads `src/index.html`, so it needs the repo root as the working
+directory. The server scripts resolve their paths from their own folder, so they work from any working directory.
 
 ## How it works
 

@@ -8,9 +8,13 @@
 const fs = require('fs');
 const path = require('path');
 
-// the game source: OPENWATERS_REPO, or the local working copy next to this folder
+// The game source. OPENWATERS_REPO wins if set. Otherwise, if node-server/ sits at a repo root (its parent has
+// src/index.html and src/sim/index.js), use that checkout. Otherwise fall back to the local working copy used by the
+// shared-sim-refactor layout.
+const PARENT = path.resolve(__dirname, '..');
+const isRepoRoot = dir => fs.existsSync(path.join(dir, 'src/index.html')) && fs.existsSync(path.join(dir, 'src/sim/index.js'));
 const REPO = process.env.OPENWATERS_REPO
-  || path.resolve(__dirname, '../../../hidden_files/openwaters-repo');
+  || (isRepoRoot(PARENT) ? PARENT : path.resolve(__dirname, '../../../hidden_files/openwaters-repo'));
 const read = p => fs.readFileSync(path.join(REPO, p), 'utf8');
 
 let source = null;

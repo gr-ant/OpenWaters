@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url), here = path.dirname(fileURLToPath(import.meta.url));
-const S = require('../src-sim/index.js'), { loadIsland, speciesJson } = require('./island.js');
+const S = require('../src/sim/index.js'), { loadIsland, speciesJson } = require('./island.js');
 const seed = +(process.argv[2] || 42), climate = process.argv[3] || 'temperate', want = +(process.argv[4] || 100);
 
 // ---- the client's island, built here independently of the server process ----

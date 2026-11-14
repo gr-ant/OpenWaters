@@ -3,7 +3,7 @@
 // and the per-client messages (interest-managed state, hashes, snapshots). The server owns fish movement; clients only
 // render and interpolate what they are sent.
 const crypto = require('crypto');
-const S = require('../src-sim/index.js');   // the shared simulation, from its real location (not copied)
+const S = require('../src/sim/index.js');   // the shared simulation, from the same repo checkout (not copied)
 const { createBirds } = require('./room-birds.js');
 
 const TICK_HZ = 20, DT = 1 / TICK_HZ;     // fixed sim tick

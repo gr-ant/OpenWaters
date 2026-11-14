@@ -1,5 +1,5 @@
 'use strict';
-// Open Waters multiplayer server (v1, Node). Server-authoritative fish and bird spooks on the shared sim (src-sim/),
+// Open Waters multiplayer server (v1, Node). Server-authoritative fish and bird spooks on the shared sim (src/sim/),
 // on the real island loaded headless. JSON over WebSocket, message types as the Python server's protocol.md (see README
 // for the differences). No npm dependencies: node server.js [port]   (PORT env also works; default 8790)
 const http = require('http');
@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const { attach } = require('./ws.js');
 const { loadIsland, speciesJson, birdJson } = require('./island.js');
 const { Room, TICK_HZ } = require('./room.js');
-const S = require('../src-sim/index.js');
+const S = require('../src/sim/index.js');
 
 const PORT = +(process.argv[2] || process.env.PORT || 8790);
 const PROTOCOL_VERSION = 1;
