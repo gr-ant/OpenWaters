@@ -8,9 +8,10 @@ import { createHash } from 'node:crypto';
 const read = p => fs.readFileSync(p, 'utf8'), html = read('src/index.html');
 const island = [...html.matchAll(/js\/(world\/island[\w-]*)\.js/g)].map(m => m[1]);
 const files = ['config', 'world/worldgen', ...island, 'engine/shared', 'world/seasons-weather', 'world/water-temp', 'models/mesh-builder', 'creatures/fish', 'birds/birds'];
+const sim = [...read('src/index.html').matchAll(/<script src="(sim\/[\w-]+\.js)">/g)].map(m => read(`src/${m[1]}`));   // the shared simulation (src/sim/) goes first: the game's scripts build on it
 const features = [...html.matchAll(/data-builtin="feature" src="([^"]+)"/g)].map(m => read(`src/${m[1]}`));
 const defs = [...html.matchAll(/data-builtin="bird" src="([^"]+)"/g)].map(m => JSON.parse(read(`src/${m[1]}`)));
-const source = `var BUILTIN = { fish: [], boat: [], tackle: [], feature: [${features.join(',')}], plant: [] }; var TREE_KINDS = [];\n` + files.map(f => read(`src/js/${f}.js`)).join('\n')
+const source = `var BUILTIN = { fish: [], boat: [], tackle: [], feature: [${features.join(',')}], plant: [] }; var TREE_KINDS = [];\n` + sim.concat(files.map(f => read(`src/js/${f}.js`))).join('\n')
   + '\nreturn { Birds, CONFIG, CLIMATE, ENV, LAYOUT, WLW, islandBase, buildIsland, findWater, waterInfo, groundAt };';
 var loaded = {};
 function load(climate, seed) {

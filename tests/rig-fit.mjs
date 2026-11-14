@@ -5,7 +5,8 @@ import fs from 'node:fs';
 // its own rules, and every rod must have reels, lines and an end (bait or lure) to choose from. Run from the repository root: node tests/rig-fit.mjs
 const read = p => fs.readFileSync(p, 'utf8');
 const files = ['config', 'world/worldgen', 'models/mesh-builder', 'creatures/fish', 'tackle'];
-const { TackleDB: T, rigFit: fit, rigSteps: steps, rigAutoName: name, rigStats: stats } = new Function('location', 'history', 'matchMedia', 'localStorage', 'var BUILTIN = { fish: [], boat: [], tackle: [], feature: [] }; var Engine = {};\n' + files.map(f => read(`src/js/${f}.js`)).join('\n') + '\nreturn { TackleDB, rigFit, rigSteps, rigAutoName, rigStats };')(
+const sim = [...read('src/index.html').matchAll(/<script src="(sim\/[\w-]+\.js)">/g)].map(m => read(`src/${m[1]}`));   // the shared simulation (src/sim/) goes first: the game's scripts build on it
+const { TackleDB: T, rigFit: fit, rigSteps: steps, rigAutoName: name, rigStats: stats } = new Function('location', 'history', 'matchMedia', 'localStorage', 'var BUILTIN = { fish: [], boat: [], tackle: [], feature: [] }; var Engine = {};\n' + sim.concat(files.map(f => read(`src/js/${f}.js`))).join('\n') + '\nreturn { TackleDB, rigFit, rigSteps, rigAutoName, rigStats };')(
   { search: '', hash: '' }, { replaceState() {} }, () => ({ matches: false }), { getItem() { return null; }, setItem() {} });
 const all = [...read('src/index.html').matchAll(/data-builtin="tackle" src="([^"]+)"/g)].map(m => JSON.parse(read(`src/${m[1]}`)));
 for (const d of [...all.filter(d => d.type !== 'rig'), ...all.filter(d => d.type === 'rig')]) assert.ok(T.register(d, { quiet: true }).def, d.id);

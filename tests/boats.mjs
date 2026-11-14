@@ -5,7 +5,8 @@ import fs from 'node:fs';
 // Run from the repository root: node tests/boats.mjs
 const read = p => fs.readFileSync(p, 'utf8');
 const files = ['config', 'world/worldgen', 'models/mesh-builder', 'creatures/fish', 'creatures/cephalopods-shellfish', 'boats', 'boat-builder', 'boat-detail'];
-const source = 'var BUILTIN = { fish: [], boat: [], tackle: [], feature: [] }; var Engine = {};\n' + files.map(f => read(`src/js/${f}.js`)).join('\n') + '\n' + read('src/js/engine/on-board.js');
+const sim = [...read('src/index.html').matchAll(/<script src="(sim\/[\w-]+\.js)">/g)].map(m => read(`src/${m[1]}`));   // the shared simulation (src/sim/) goes first: the game's scripts build on it
+const source = 'var BUILTIN = { fish: [], boat: [], tackle: [], feature: [] }; var Engine = {};\n' + sim.concat(files.map(f => read(`src/js/${f}.js`))).join('\n') + '\n' + read('src/js/engine/on-board.js');
 const api = new Function('location', 'history', 'matchMedia', 'localStorage', source + '\nBOAT_PARTS = ' + read('src/boats/parts.json') + ';\nreturn { BoatDB, Engine, oarPose, oarXform, VS, buildBoat, MT, helmPose };')(
   { search: '', hash: '' }, { replaceState() {} }, () => ({ matches: false }), { getItem() { return null; } });
 const { BoatDB, Engine: E, oarPose, oarXform, VS, buildBoat, MT, helmPose } = api;

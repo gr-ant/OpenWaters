@@ -27,6 +27,10 @@ Do not regenerate fixtures simply to make a failing comparison pass. Intentional
 
 `node tests/human-model.mjs` checks the third-person angler (src/js/models/human.js): every part builds with finite vertices, standing it is 1.7–1.8 m tall with its feet at z = 0, and the stride, swim, seated and rod-holding poses stay sane.
 
+## Shared simulation
+
+`node tests/sim-smoke.mjs` loads the shared fish and bird simulation (src/sim/, see its README) in plain Node, as a multiplayer server would: no browser globals, no Math.random. It checks that the same seed gives the same fish (ids, homes, sizes, positions after a run), that swimmers, splashes and diving birds scare fish, that birds flush and penguins waddle off, and that the first hook claim wins, a kept catch is gone for everyone and later respawns as the same fish, and a released one stays.
+
 ## Browser image comparisons
 
 Start an isolated headless Chrome instance in a separate terminal:

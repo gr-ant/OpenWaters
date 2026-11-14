@@ -5,8 +5,9 @@ import fs from 'node:fs';
 // puts them where oarPose in boats.js has the oars or paddle). Run from the repository root: node tests/rowing-hands.mjs
 const read = p => fs.readFileSync(p, 'utf8');
 const files = ['config', 'world/worldgen', 'models/mesh-builder', 'creatures/fish', 'creatures/cephalopods-shellfish', 'boats', 'boat-builder', 'boat-detail', 'models/human'];
+const sim = [...read('src/index.html').matchAll(/<script src="(sim\/[\w-]+\.js)">/g)].map(m => read(`src/${m[1]}`));   // the shared simulation (src/sim/) goes first: the game's scripts build on it
 const source = 'var BUILTIN = { fish: [], boat: [], tackle: [], feature: [] }; var Engine = {}; var EYE = 1.62, Game = { speedMultiplier: 1 }, document = { getElementById: () => null, querySelector: () => null }, uiIcon = () => "";\n'
-  + files.map(f => read(`src/js/${f}.js`)).join('\n') + '\n' + read('src/js/engine/third-person.js');
+  + sim.concat(files.map(f => read(`src/js/${f}.js`))).join('\n') + '\n' + read('src/js/engine/third-person.js');
 const { BoatDB, Engine: E, oarPose, humanPlace, EYE, helmGrip, leverGrip } = new Function('location', 'history', 'matchMedia', 'localStorage', source + '\nBOAT_PARTS = ' + read('src/boats/parts.json') + ';\nreturn { BoatDB, Engine, oarPose, humanPlace, EYE, helmGrip, leverGrip };')(
   { search: '', hash: '' }, { replaceState() {} }, () => ({ matches: false }), { getItem() { return null; } });
 for (const [, name] of read('src/index.html').matchAll(/data-builtin="boat" src="([^"]+)"/g)) BoatDB.register(JSON.parse(read(`src/${name}`)), { quiet: true });
