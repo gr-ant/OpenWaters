@@ -29,21 +29,8 @@ Object.assign(Engine, {
     this.say(`${n > 1 ? n + ' × ' : ''}${D.name}${at}`, 3); Game.emit('spawn', made);
     return made;
   },
-  // a predator reaches its prey: a lunge that may miss (alert prey and open water favour the prey)
-  fishStrike(f) {
-    const g = f.prey, B = f.def.behavior; f.prey = null;
-    if (!g || g.dead) { f.state = 'rest'; f.tNext = 1; return; }
-    const p = clamp(0.25 + 0.35 * B.ambush + 0.3 * (1 - g.stress) - 0.15 * g.def.behavior.wariness + 0.15 * (1 - ENV.light), 0.08, 0.9);
-    if (Math.random() < p) {
-      // Queries and rendering skip dead animals immediately. Compact once in
-      // syncFishCells instead of copying/scanning the population on every kill.
-      g.dead = true; g.eatenBy = f.id;
-      if (g.wl - g.z < 0.8) { this.addRipple(g.x, g.y, 0.5 + f.len); for (let k = 0; k < 6 + f.len * 20; k++) this.spawn(DROP, g.x + this.rnd(-0.2, 0.2), g.y + this.rnd(-0.2, 0.2), g.wl, this.rnd(-1, 1), this.rnd(-1, 1), this.rnd(1.5, 3), this.rnd(0.3, 0.6), 0.035); }
-      this.disturb(g.x, g.y, 0.25);
-      Game.emit('fishEaten', f, g);
-      f.zone = 'mid'; this.fishEat(f, 0.9 + Math.min(1, g.len / f.len));
-    } else { g.stress = 1; g.thx = f.x; g.thy = f.y; g.tNext = 0; f.state = 'rest'; f.tNext = 1 + Math.random() * 3; }
-  },
+  // a predator reaches its prey: a lunge that may miss (src/sim/behaviour.js)
+  fishStrike(f) { SIM.fishStrike(FISH_CTX, f); },
   // fish within `r` of (x, y), from an 8 m grid rebuilt each frame: callback per fish (may stop early by returning true)
   fishAround(x, y, r, fn) {
     const G = this.fishGrid; if (!G) return; const c = 8, x0 = Math.floor((x - r) / c), x1 = Math.floor((x + r) / c), y0 = Math.floor((y - r) / c), y1 = Math.floor((y + r) / c);

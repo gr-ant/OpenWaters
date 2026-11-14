@@ -6,5 +6,5 @@ const FOV = CONFIG.fieldOfView * Math.PI / 180, FAR = CONFIG.viewDistance, EYE =
 const CHW = CHK * SP;                 // terrain chunk width in world units
 const VIEW = CONFIG.terrainChunkRadius, TREE_VIEW = CONFIG.treeChunkRadius;
 const TREE_GRID = CONFIG.treeSpacing;
-const hash2 = (x, y, s) => { let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + s | 0; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };
+const hash2 = OWSim.hash2;   // the fixed grid hash (src/sim/core.js)
 const ITEMS = {}; // filled by Game.registerItem
