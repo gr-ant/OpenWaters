@@ -1,0 +1,14 @@
+{
+  "name": "openwaters-node-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open Waters multiplayer server (v1): server-authoritative fish and bird spooks on the shared sim, real island loaded headless",
+  "main": "server.js",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test_two_clients.mjs",
+    "verify-water": "node verify_real_water.mjs 42 temperate 100"
+  },
+  "dependencies": {}
+}
